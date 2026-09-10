@@ -715,11 +715,13 @@ app.get('/api/stats/admin', (req, res) => {
   });
 
   db.commandes.forEach(o => {
-    o.items.forEach(item => {
+    (o.items || []).forEach(item => {
       if (merchantSales[item.commercant_id]) {
-        merchantSales[item.commercant_id].sales += item.prix * item.quantite;
-        merchantSales[item.commercant_id].commission += item.commission_amount;
-        merchantSales[item.commercant_id].itemsCount += item.quantite;
+        const itemSales = (Number(item.prix) || 0) * (Number(item.quantite) || 1);
+        const itemComm = Number(item.commission_amount) || 0;
+        merchantSales[item.commercant_id].sales += itemSales;
+        merchantSales[item.commercant_id].commission += itemComm;
+        merchantSales[item.commercant_id].itemsCount += (Number(item.quantite) || 1);
       }
     });
   });
@@ -743,11 +745,13 @@ app.get('/api/stats/merchant/:merchantId', (req, res) => {
   let itemsSold = 0;
 
   db.commandes.forEach(o => {
-    o.items.forEach(item => {
+    (o.items || []).forEach(item => {
       if (item.commercant_id === merchantId) {
-        totalSales += item.prix * item.quantite;
-        totalCommission += item.commission_amount;
-        itemsSold += item.quantite;
+        const itemSales = (Number(item.prix) || 0) * (Number(item.quantite) || 1);
+        const itemComm = Number(item.commission_amount) || 0;
+        totalSales += itemSales;
+        totalCommission += itemComm;
+        itemsSold += (Number(item.quantite) || 1);
       }
     });
   });
