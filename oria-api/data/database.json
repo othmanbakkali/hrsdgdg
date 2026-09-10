@@ -1,0 +1,342 @@
+{
+  "users": [
+    {
+      "id": "u_client1",
+      "email": "client@oria.com",
+      "nom": "Yassine Alami",
+      "mot_de_passe": "client123",
+      "role": "client",
+      "favoris": []
+    },
+    {
+      "id": "u_merchant1",
+      "email": "gold@oria.com",
+      "nom": "El Fassi Or",
+      "mot_de_passe": "merchant123",
+      "role": "commercant",
+      "shopName": "Maison El Fassi",
+      "phone": "+212 661-123456",
+      "address": "25 Bd d'Anfa",
+      "city": "Casablanca"
+    },
+    {
+      "id": "u_merchant2",
+      "email": "watch@oria.com",
+      "nom": "Maroc Horlogerie",
+      "mot_de_passe": "merchant123",
+      "role": "commercant",
+      "shopName": "Maroc Chrono",
+      "phone": "+212 662-789012",
+      "address": "45 Av. Mohammed V",
+      "city": "Rabat"
+    },
+    {
+      "id": "u_admin",
+      "email": "admin@oria.com",
+      "nom": "Sophia Bennani",
+      "mot_de_passe": "admin123",
+      "role": "admin"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat_rings",
+      "nom_fr": "Bagues",
+      "nom_ar": "خواتم",
+      "nom_en": "Rings"
+    },
+    {
+      "id": "cat_necklaces",
+      "nom_fr": "Colliers",
+      "nom_ar": "قلادات",
+      "nom_en": "Necklaces"
+    },
+    {
+      "id": "cat_bracelets",
+      "nom_fr": "Bracelets",
+      "nom_ar": "أساور",
+      "nom_en": "Bracelets"
+    },
+    {
+      "id": "cat_earrings",
+      "nom_fr": "Boucles d'oreilles",
+      "nom_ar": "أقراط",
+      "nom_en": "Earrings"
+    },
+    {
+      "id": "cat_watches",
+      "nom_fr": "Montres",
+      "nom_ar": "ساعات",
+      "nom_en": "Watches"
+    }
+  ],
+  "bijoux": [
+    {
+      "id": "b_1",
+      "titre": "Collier Royal en Or Jaune 18k",
+      "description": "Un magnifique collier en or jaune 18 carats de style impérial, ciselé à la main par nos artisans.",
+      "prix": 12500,
+      "gramme": 24.5,
+      "purete": "18k",
+      "images": [
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80"
+      ],
+      "disponibilite": "disponible",
+      "city": "Casablanca",
+      "stock": 2,
+      "category_id": "cat_necklaces",
+      "commercant_id": "u_merchant1",
+      "statut": "Validated",
+      "rejectionReason": "",
+      "date_creation": "2026-05-10T10:00:00Z"
+    },
+    {
+      "id": "b_2",
+      "titre": "Bague Solitaire Diamant 1ct",
+      "description": "Bague solitaire en or blanc 18k surmontée d'un diamant de pureté VVS1, certifié GIA.",
+      "prix": 38000,
+      "gramme": 4.2,
+      "purete": "18k",
+      "images": [
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop&q=80"
+      ],
+      "disponibilite": "rupture",
+      "city": "Rabat",
+      "stock": 0,
+      "category_id": "cat_rings",
+      "commercant_id": "u_merchant1",
+      "statut": "Validated",
+      "rejectionReason": "",
+      "date_creation": "2026-05-12T14:30:00Z"
+    },
+    {
+      "id": "b_3",
+      "titre": "Montre Classique Chronographe Or Rose",
+      "description": "Montre d'exception plaquée or rose avec bracelet en cuir alligator noir véritable.",
+      "prix": 18500,
+      "gramme": 85,
+      "purete": "21k",
+      "images": [
+        "https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=600&auto=format&fit=crop&q=80"
+      ],
+      "disponibilite": "disponible",
+      "city": "Rabat",
+      "stock": 4,
+      "category_id": "cat_watches",
+      "commercant_id": "u_merchant2",
+      "statut": "Validated",
+      "rejectionReason": "",
+      "date_creation": "2026-05-14T11:00:00Z"
+    },
+    {
+      "id": "b_4",
+      "titre": "Bracelet Torsadé en Or 24k",
+      "description": "Bracelet traditionnel torsadé en or pur 24 carats. Une pièce lourde et de grande valeur.",
+      "prix": 27000,
+      "gramme": 42,
+      "purete": "24k",
+      "images": [
+        "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80"
+      ],
+      "disponibilite": "disponible",
+      "city": "Fès",
+      "stock": 1,
+      "category_id": "cat_bracelets",
+      "commercant_id": "u_merchant1",
+      "statut": "Validated",
+      "rejectionReason": "",
+      "date_creation": "2026-05-19T15:00:00Z"
+    },
+    {
+      "id": "b_5",
+      "titre": "Boucles d'oreilles Perles de Culture & Diamants",
+      "description": "Boucles d'oreilles pendantes ornées de perles de culture du Japon de 9mm et de petits diamants étincelants.",
+      "prix": 8900,
+      "gramme": 6.8,
+      "purete": "18k",
+      "images": [
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80"
+      ],
+      "disponibilite": "disponible",
+      "city": "Tangier",
+      "stock": 1,
+      "category_id": "cat_earrings",
+      "commercant_id": "u_merchant1",
+      "statut": "Validated",
+      "rejectionReason": "",
+      "date_creation": "2026-05-19T16:20:00Z"
+    },
+    {
+      "id": "b_tdoeaiwn2",
+      "titre": "tesr",
+      "description": "hkbibk",
+      "prix": 1000,
+      "gramme": 1,
+      "purete": "18k",
+      "images": [
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop&q=80"
+      ],
+      "disponibilite": "disponible",
+      "city": "Casablanca",
+      "stock": 1,
+      "category_id": "cat_rings",
+      "commercant_id": "u_merchant1",
+      "statut": "Pending",
+      "rejectionReason": "",
+      "date_creation": "2026-05-19T21:06:46.741Z"
+    }
+  ],
+  "encheres": [
+    {
+      "id": "e_1",
+      "bijou_id": "b_1",
+      "prix_depart": 10000,
+      "date_debut": "2026-05-18T10:00:00Z",
+      "date_fin": "2026-05-25T18:00:00Z",
+      "increment_min": 200,
+      "prix_reserve": 11500,
+      "statut": "Active"
+    }
+  ],
+  "offresEncheres": [
+    {
+      "id": "o_1",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 10500,
+      "date_offre": "2026-05-19T12:00:00Z"
+    },
+    {
+      "id": "o_r74cabql3",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 10700,
+      "date_offre": "2026-05-19T19:48:03.899Z"
+    },
+    {
+      "id": "o_g48bxw0wy",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 10900,
+      "date_offre": "2026-05-19T19:49:07.735Z"
+    },
+    {
+      "id": "o_z7lh0g1bx",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 11100,
+      "date_offre": "2026-05-19T20:01:10.990Z"
+    },
+    {
+      "id": "o_vkvr4jwim",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 11300,
+      "date_offre": "2026-05-19T20:01:13.685Z"
+    },
+    {
+      "id": "o_pecpgzpon",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 11500,
+      "date_offre": "2026-05-19T20:01:17.791Z"
+    },
+    {
+      "id": "o_ftr41wi6s",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 11700,
+      "date_offre": "2026-05-19T20:01:23.272Z"
+    },
+    {
+      "id": "o_p2czaqpbu",
+      "enchere_id": "e_1",
+      "client_id": "u_client1",
+      "montant": 11900,
+      "date_offre": "2026-05-19T20:37:38.259Z"
+    }
+  ],
+  "commandes": [
+    {
+      "id": "cmd_1",
+      "client_id": "u_client1",
+      "client_nom": "Yassine Alami",
+      "client_telephone": "+212 661-000111",
+      "client_adresse": "12 Rue de la Liberté",
+      "client_ville": "Casablanca",
+      "items": [
+        {
+          "bijou_id": "b_2",
+          "titre": "Bague Solitaire Diamant 1ct",
+          "prix": 38000,
+          "quantite": 1,
+          "commercant_id": "u_merchant1"
+        }
+      ],
+      "total": 38000,
+      "commission": 1900,
+      "commission_rate": 5,
+      "statut": "Confirmed",
+      "date_commande": "2026-05-18T16:00:00Z"
+    },
+    {
+      "id": "cmd_0048l0u5a",
+      "client_id": "u_client1",
+      "client_nom": "kjbihb",
+      "client_telephone": "0669286543",
+      "client_adresse": "AA",
+      "client_ville": "Tanger",
+      "items": [
+        {
+          "bijou_id": "b_2",
+          "titre": "Bague Solitaire Diamant 1ct",
+          "prix": 38000,
+          "quantite": 1,
+          "commercant_id": "u_merchant1",
+          "commission_rate": 5,
+          "commission_amount": 1900
+        },
+        {
+          "bijou_id": "b_3",
+          "titre": "Montre Classique Chronographe Or Rose",
+          "prix": 18500,
+          "quantite": 1,
+          "commercant_id": "u_merchant2",
+          "commission_rate": 4,
+          "commission_amount": 740
+        }
+      ],
+      "total": 56500,
+      "commission": 2640,
+      "statut": "Pending",
+      "date_commande": "2026-05-19T21:02:31.335Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_1",
+      "sender_id": "u_client1",
+      "receiver_id": "u_merchant1",
+      "bijou_id": "b_2",
+      "content": "Bonjour, la bague solitaire est-elle fournie avec un certificat d'authenticité ?",
+      "timestamp": "2026-05-18T15:00:00Z"
+    },
+    {
+      "id": "msg_2",
+      "sender_id": "u_merchant1",
+      "receiver_id": "u_client1",
+      "bijou_id": "b_2",
+      "content": "Bonjour Yassine, oui tout à fait, elle est accompagnée de son certificat GIA original.",
+      "timestamp": "2026-05-18T15:10:00Z"
+    }
+  ],
+  "config": {
+    "commission_globale": 5,
+    "commission_categories": {
+      "cat_watches": 7
+    },
+    "commission_commercants": {
+      "u_merchant2": 4
+    }
+  }
+}

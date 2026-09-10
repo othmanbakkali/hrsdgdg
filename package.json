@@ -1,0 +1,29 @@
+{
+  "name": "oria-platform",
+  "version": "1.0.0",
+  "description": "ORIA - Luxury Moroccan Multi-Vendor Marketplace & Administration Platform",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix oria-api install && npm --prefix oria-admin install && npm --prefix oria-main install",
+    "build:admin": "npm --prefix oria-admin run build",
+    "build:main": "npm --prefix oria-main run build",
+    "build:all": "npm run build:admin && npm run build:main",
+    "start": "node oria-api/server.js",
+    "start:prod": "npm run build:all && node oria-api/server.js",
+    "dev:api": "node oria-api/server.js",
+    "dev:admin": "npm --prefix oria-admin run dev",
+    "dev:main": "npm --prefix oria-main run dev"
+  },
+  "keywords": [
+    "jewelry",
+    "marketplace",
+    "auctions",
+    "morocco",
+    "gold",
+    "admin-dashboard",
+    "react",
+    "express"
+  ],
+  "author": "ORIA Team",
+  "license": "ISC"
+}

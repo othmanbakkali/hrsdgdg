@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  oria-platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oria_platform
+    restart: always
+    ports:
+      - "5077:5077"
+    environment:
+      - NODE_ENV=production
+      - PORT=5077
+      - HOST=0.0.0.0
+    volumes:
+      # Persist database and data across container rebuilds
+      - ./oria-api/data:/app/oria-api/data
