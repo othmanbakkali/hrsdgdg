@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import OriaLogo from './components/OriaLogo';
+import AdminLogin from './components/AdminLogin';
 import './styles/admin.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5077/api';
@@ -36,7 +37,7 @@ const themes = {
 
 function AdminLayout() {
   const { t, lang, setLang } = useLanguage();
-  const { adminUser } = useAuth();
+  const { adminUser, logout } = useAuth();
 
   const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('oria-admin-theme') || 'gold');
 
@@ -635,8 +636,30 @@ function AdminLayout() {
       <aside className="sidebar">
         <div className="logo-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '15px 10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '20px' }}>
           <OriaLogo size={36} subtitle="ADMINISTRATION" />
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginTop: '2px', background: 'rgba(212, 175, 55, 0.08)', padding: '2px 10px', borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
-            Super-Admin • {adminUser.nom}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'rgba(212, 175, 55, 0.08)', padding: '3px 10px', borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+              Super-Admin • {adminUser?.nom || 'Admin'}
+            </div>
+            <button
+              type="button"
+              onClick={logout}
+              title={t('logout')}
+              style={{
+                background: 'rgba(231, 76, 60, 0.1)',
+                border: '1px solid rgba(231, 76, 60, 0.3)',
+                color: '#ff6b6b',
+                borderRadius: '8px',
+                padding: '4px 8px',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.2s'
+              }}
+            >
+              🚪
+            </button>
           </div>
         </div>
 
@@ -680,6 +703,11 @@ function AdminLayout() {
             <li>
               <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => setActiveTab('roles')}>
                 🛡️ {t('roles')}
+              </span>
+            </li>
+            <li style={{ marginTop: '25px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '12px' }}>
+              <span className="nav-link" onClick={logout} style={{ color: '#ff6b6b', cursor: 'pointer' }}>
+                🚪 {t('logout')}
               </span>
             </li>
           </ul>
@@ -1833,11 +1861,53 @@ function AdminLayout() {
   );
 }
 
+function AdminAppContent() {
+  const { adminUser, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#07090b',
+        color: '#d4af37',
+        fontFamily: 'Playfair Display, serif'
+      }}>
+        <div style={{
+          width: '45px',
+          height: '45px',
+          borderRadius: '50%',
+          border: '3px solid rgba(212, 175, 55, 0.15)',
+          borderTopColor: '#d4af37',
+          animation: 'oriaSpin 0.9s linear infinite',
+          marginBottom: '20px'
+        }} />
+        <span style={{ letterSpacing: '3px', fontSize: '1rem', fontWeight: '600' }}>ORIA ADMINISTRATION</span>
+        <style>{`
+          @keyframes oriaSpin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (!adminUser) {
+    return <AdminLogin />;
+  }
+
+  return <AdminLayout />;
+}
+
 export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <AdminLayout />
+        <AdminAppContent />
       </AuthProvider>
     </LanguageProvider>
   );

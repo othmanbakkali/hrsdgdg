@@ -84,7 +84,14 @@ const translations = {
     searchProduct: "Rechercher un article...",
     statusApproved: "Approuvé",
     statusPending: "En attente",
-    statusRejected: "Refusé"
+    statusRejected: "Refusé",
+    adminLoginTitle: "Portail d'Administration",
+    adminLoginSubtitle: "Accès sécurisé réservé aux administrateurs de la Maison ORIA",
+    signIn: "Se Connecter",
+    logout: "Déconnexion",
+    demoAccounts: "Accès Rapide Démo :",
+    demoAdmin: "Super-Admin (Sophia Bennani)",
+    invalidAdmin: "Accès refusé : Ce compte ne possède pas de droits administrateur."
   },
   ar: {
     adminTitle: "لوحة تحكم FMB",
@@ -167,7 +174,14 @@ const translations = {
     searchProduct: "البحث عن معروض...",
     statusApproved: "مقبول",
     statusPending: "قيد الانتظار",
-    statusRejected: "مرفوض"
+    statusRejected: "مرفوض",
+    adminLoginTitle: "بوابة الإدارة",
+    adminLoginSubtitle: "دخول آمن مخصص لمسؤولي دار أوريا للمجوهرات",
+    signIn: "تسجيل الدخول",
+    logout: "تسجيل الخروج",
+    demoAccounts: "وصول سريع تجريبي:",
+    demoAdmin: "المشرف العام (صوفيا بناني)",
+    invalidAdmin: "تم رفض الوصول: هذا الحساب ليس لديه صلاحيات المسؤول."
   },
   en: {
     adminTitle: "FMB Administration",
@@ -250,7 +264,14 @@ const translations = {
     searchProduct: "Search product...",
     statusApproved: "Approved",
     statusPending: "Pending",
-    statusRejected: "Rejected"
+    statusRejected: "Rejected",
+    adminLoginTitle: "Administration Portal",
+    adminLoginSubtitle: "Secure access reserved for ORIA administrators",
+    signIn: "Sign In",
+    logout: "Logout",
+    demoAccounts: "Quick Demo Access:",
+    demoAdmin: "Super-Admin (Sophia Bennani)",
+    invalidAdmin: "Access denied: This account does not have administrator privileges."
   }
 };
 
