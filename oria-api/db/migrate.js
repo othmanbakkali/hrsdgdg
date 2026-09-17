@@ -93,16 +93,45 @@ async function runMigration() {
       ]);
     }
 
+    // Ensure multilingual columns exist
+    await client.query(`
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS titre_fr VARCHAR(255);
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS titre_ar VARCHAR(255);
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS titre_en VARCHAR(255);
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS description_fr TEXT;
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS description_ar TEXT;
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS description_en TEXT;
+      ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS name_fr VARCHAR(100);
+      ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS name_ar VARCHAR(100);
+      ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS name_en VARCHAR(100);
+    `);
+
     // 5. Migrate Bijoux (Products)
     console.log(`💎 Migrating ${db.bijoux?.length || 0} jewelry products...`);
     for (const b of (db.bijoux || [])) {
       await client.query(`
         INSERT INTO bijoux (
-          id, titre, description, prix, ancien_prix, type_vente, matiere, gramme, poids, purete, pierre, taille, etat, annee, nombre_proprietaires, style, occasion, pour_qui, images, disponibilite, city, stock, category_id, commercant_id, vendeur_nom, vendeur_type, vendeur_badge, garantie, facture, certificat, boite, authentifie, badge, note, nombre_avis, favoris_count, statut, rejection_reason, why_this_item, look_complementary_ids
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40)
+          id, titre, titre_fr, titre_ar, titre_en, description, description_fr, description_ar, description_en,
+          prix, ancien_prix, type_vente, matiere, gramme, poids, purete, pierre, taille, etat, annee, nombre_proprietaires,
+          style, occasion, pour_qui, images, disponibilite, city, stock, category_id, commercant_id, vendeur_nom, vendeur_type,
+          vendeur_badge, garantie, facture, certificat, boite, authentifie, badge, note, nombre_avis, favoris_count, statut,
+          rejection_reason, why_this_item, look_complementary_ids
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9,
+          $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
+          $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
+          $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43,
+          $44, $45, $46
+        )
         ON CONFLICT (id) DO UPDATE SET
           titre = EXCLUDED.titre,
+          titre_fr = EXCLUDED.titre_fr,
+          titre_ar = EXCLUDED.titre_ar,
+          titre_en = EXCLUDED.titre_en,
           description = EXCLUDED.description,
+          description_fr = EXCLUDED.description_fr,
+          description_ar = EXCLUDED.description_ar,
+          description_en = EXCLUDED.description_en,
           prix = EXCLUDED.prix,
           ancien_prix = EXCLUDED.ancien_prix,
           stock = EXCLUDED.stock,
@@ -110,8 +139,14 @@ async function runMigration() {
           statut = EXCLUDED.statut
       `, [
         b.id,
-        b.titre,
-        b.description || '',
+        b.titre || b.titre_fr,
+        b.titre_fr || b.titre,
+        b.titre_ar || '',
+        b.titre_en || '',
+        b.description || b.description_fr || '',
+        b.description_fr || b.description || '',
+        b.description_ar || '',
+        b.description_en || '',
         parseFloat(b.prix) || 0,
         b.ancien_prix ? parseFloat(b.ancien_prix) : null,
         b.type_vente || 'FIRST_HAND',

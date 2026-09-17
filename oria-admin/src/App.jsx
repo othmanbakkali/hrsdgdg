@@ -62,20 +62,28 @@ function AdminLayout() {
   // Commission settings state
   const [commissionConfig, setCommissionConfig] = useState({ commission_globale: 5, commission_categories: {}, commission_commercants: {} });
   
-  // Categories inputs
+  // Categories inputs & edit
   const [newCat, setNewCat] = useState({ nom_fr: '', nom_ar: '', nom_en: '' });
+  const [editingCategory, setEditingCategory] = useState(null);
 
   // Rejection modal state
   const [selectedProductForRejection, setSelectedProductForRejection] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  // Products state & modal
+  // Products state & modal (3 Languages: FR, AR, EN)
   const [products, setProducts] = useState([]);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [productLangTab, setProductLangTab] = useState('fr'); // 'fr', 'ar', 'en'
   const [productForm, setProductForm] = useState({ 
     titre: '', 
+    titre_fr: '',
+    titre_ar: '',
+    titre_en: '',
     description: '', 
+    description_fr: '',
+    description_ar: '',
+    description_en: '',
     prix: '', 
     gramme: '', 
     purete: '18k', 
@@ -86,7 +94,8 @@ function AdminLayout() {
     commercant_id: '',
     type_vente: 'direct',
     prix_depart: '',
-    duree: 24
+    duree: 24,
+    images: []
   });
 
   // Product search/filters
@@ -253,11 +262,18 @@ function AdminLayout() {
 
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
+    setProductLangTab('fr');
     const defaultMerchant = users.find(u => u.role === 'commercant')?.id || '';
     const defaultCategory = categories[0]?.id || '';
     setProductForm({
       titre: '',
+      titre_fr: '',
+      titre_ar: '',
+      titre_en: '',
       description: '',
+      description_fr: '',
+      description_ar: '',
+      description_en: '',
       prix: '',
       gramme: '',
       purete: '18k',
@@ -276,11 +292,18 @@ function AdminLayout() {
 
   const handleOpenAddAuction = () => {
     setEditingProduct(null);
+    setProductLangTab('fr');
     const defaultMerchant = users.find(u => u.role === 'commercant')?.id || '';
     const defaultCategory = categories[0]?.id || '';
     setProductForm({
       titre: '',
+      titre_fr: '',
+      titre_ar: '',
+      titre_en: '',
       description: '',
+      description_fr: '',
+      description_ar: '',
+      description_en: '',
       prix: '5000',
       gramme: '10',
       purete: '18k',
@@ -299,9 +322,16 @@ function AdminLayout() {
 
   const handleOpenEditProduct = (p) => {
     setEditingProduct(p);
+    setProductLangTab('fr');
     setProductForm({
-      titre: p.titre || '',
-      description: p.description || '',
+      titre: p.titre || p.titre_fr || '',
+      titre_fr: p.titre_fr || p.titre || '',
+      titre_ar: p.titre_ar || '',
+      titre_en: p.titre_en || '',
+      description: p.description || p.description_fr || '',
+      description_fr: p.description_fr || p.description || '',
+      description_ar: p.description_ar || '',
+      description_en: p.description_en || '',
       prix: p.prix || '',
       gramme: p.gramme || '',
       purete: p.purete || '18k',
@@ -310,8 +340,8 @@ function AdminLayout() {
       category_id: p.category_id || '',
       commercant_id: p.commercant_id || '',
       statut: p.statut || 'Validated',
-      type_vente: 'direct',
-      prix_depart: '',
+      type_vente: (p.disponibilite === 'enchere' || p.type_vente === 'AUCTION') ? 'enchere' : 'direct',
+      prix_depart: p.prix || '',
       duree: 24,
       images: p.images || []
     });
@@ -323,8 +353,14 @@ function AdminLayout() {
     const url = editingProduct ? `${API_URL}/bijoux/${editingProduct.id}` : `${API_URL}/bijoux`;
     const method = editingProduct ? 'PUT' : 'POST';
 
-    // Prepare body
-    const bodyData = { ...productForm };
+    // Prepare body with fallback synchronization
+    const bodyData = { 
+      ...productForm,
+      titre: productForm.titre_fr || productForm.titre || productForm.titre_en || productForm.titre_ar || '',
+      titre_fr: productForm.titre_fr || productForm.titre || '',
+      description: productForm.description_fr || productForm.description || productForm.description_en || productForm.description_ar || '',
+      description_fr: productForm.description_fr || productForm.description || ''
+    };
     if (productForm.type_vente === 'enchere') {
       bodyData.prix = parseFloat(productForm.prix_depart) || parseFloat(productForm.prix) || 1000;
       bodyData.stock = 1;
@@ -707,6 +743,36 @@ function AdminLayout() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleOpenEditCategory = (cat) => {
+    setEditingCategory({
+      id: cat.id,
+      nom_fr: cat.nom_fr || '',
+      nom_ar: cat.nom_ar || '',
+      nom_en: cat.nom_en || '',
+      icon: cat.icon || '💎'
+    });
+  };
+
+  const handleSaveCategory = async (e) => {
+    e.preventDefault();
+    if (!editingCategory) return;
+    try {
+      const res = await fetch(`${API_URL}/categories/${editingCategory.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingCategory)
+      });
+      if (res.ok) {
+        setEditingCategory(null);
+        triggerNotif('Catégorie mise à jour avec succès en 3 langues !');
+        fetchData();
+      }
+    } catch (e) {
+      console.error(e);
+      triggerNotif('Erreur lors de la mise à jour de la catégorie.');
     }
   };
 
@@ -1110,15 +1176,94 @@ function AdminLayout() {
                       <td>{cat.nom_ar}</td>
                       <td>{cat.nom_en}</td>
                       <td>
-                        <button className="btn-reject" onClick={() => handleDeleteCategory(cat.id)}>
-                          {t('delete')}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            type="button" 
+                            className="btn-outline-gold" 
+                            style={{ padding: '5px 12px', fontSize: '0.78rem' }} 
+                            onClick={() => handleOpenEditCategory(cat)}
+                          >
+                            ✏️ {lang === 'ar' ? 'تعديل' : (lang === 'en' ? 'Edit' : 'Modifier')}
+                          </button>
+                          <button className="btn-reject" style={{ padding: '5px 12px', fontSize: '0.78rem' }} onClick={() => handleDeleteCategory(cat.id)}>
+                            {t('delete')}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
+            {/* EDIT CATEGORY MODAL (3 LANGUAGES) */}
+            {editingCategory && (
+              <div className="modal-overlay">
+                <form className="modal-content" onSubmit={handleSaveCategory} style={{ maxWidth: '520px', padding: '25px' }}>
+                  <button type="button" className="modal-close-btn" onClick={() => setEditingCategory(null)}>✕</button>
+                  <h3 style={{ color: 'var(--admin-gold)', marginBottom: '20px', fontFamily: 'Playfair Display', fontSize: '1.4rem' }}>
+                    🌐 Édition Catégorie (3 Langues)
+                  </h3>
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Nom (Français) 🇫🇷</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Obligatoire</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={editingCategory.nom_fr || ''} 
+                      onChange={e => setEditingCategory({ ...editingCategory, nom_fr: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="form-label" style={{ textAlign: 'right', display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>العربية (RTL)</span>
+                      <span>الاسم (بالعربية) 🇲🇦</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      dir="rtl"
+                      className="form-input" 
+                      value={editingCategory.nom_ar || ''} 
+                      onChange={e => setEditingCategory({ ...editingCategory, nom_ar: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Name (English) 🇬🇧</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>English</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={editingCategory.nom_en || ''} 
+                      onChange={e => setEditingCategory({ ...editingCategory, nom_en: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '20px' }}>
+                    <label className="form-label">Icône / Emoji</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={editingCategory.icon || '💎'} 
+                      onChange={e => setEditingCategory({ ...editingCategory, icon: e.target.value })} 
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <button type="button" className="btn-outline-gold" onClick={() => setEditingCategory(null)}>
+                      {t('cancel')}
+                    </button>
+                    <button type="submit" className="btn-gold" style={{ margin: 0 }}>
+                      Enregistrer les 3 Langues
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         )}
 
@@ -1796,9 +1941,17 @@ function AdminLayout() {
                 </thead>
                 <tbody>
                   {products.filter(p => {
-                    const matchesSearch = p.titre?.toLowerCase().includes(productSearch.toLowerCase()) || 
-                                          p.id?.toLowerCase().includes(productSearch.toLowerCase()) ||
-                                          p.description?.toLowerCase().includes(productSearch.toLowerCase());
+                    const q = (productSearch || '').toLowerCase();
+                    const matchesSearch = !q ||
+                      (p.titre || '').toLowerCase().includes(q) ||
+                      (p.titre_fr || '').toLowerCase().includes(q) ||
+                      (p.titre_ar || '').toLowerCase().includes(q) ||
+                      (p.titre_en || '').toLowerCase().includes(q) ||
+                      (p.description || '').toLowerCase().includes(q) ||
+                      (p.description_fr || '').toLowerCase().includes(q) ||
+                      (p.description_ar || '').toLowerCase().includes(q) ||
+                      (p.description_en || '').toLowerCase().includes(q) ||
+                      (p.id || '').toLowerCase().includes(q);
                     const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
                     const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
                     return matchesSearch && matchesStatus && matchesCategory;
@@ -1806,17 +1959,23 @@ function AdminLayout() {
                     const shop = users.find(u => u.id === p.commercant_id)?.shopName || 'Commerçant Inconnu';
                     const category = categories.find(c => c.id === p.category_id);
                     const catName = category ? (lang === 'fr' ? category.nom_fr : (lang === 'ar' ? category.nom_ar : category.nom_en)) : 'Sans Catégorie';
+                    const displayTitle = (lang === 'ar' && p.titre_ar) ? p.titre_ar : ((lang === 'en' && p.titre_en) ? p.titre_en : (p.titre_fr || p.titre));
                     return (
                       <tr key={p.id}>
                         <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{p.id}</td>
                         <td style={{ fontWeight: 'bold' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {p.images?.[0] && (
-                              <img src={p.images[0]} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                              <img src={p.images[0]} alt="" style={{ width: '42px', height: '42px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-gold)' }} />
                             )}
                             <div>
-                              <div>{p.titre}</div>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{p.purete} • {p.gramme}g • {p.city}</span>
+                              <div>{displayTitle}</div>
+                              <div style={{ display: 'flex', gap: '4px', marginTop: '3px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: (p.titre_fr || p.titre) ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: (p.titre_fr || p.titre) ? '#27ae60' : 'var(--text-gray)' }}>FR</span>
+                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: p.titre_ar ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: p.titre_ar ? '#27ae60' : 'var(--text-gray)' }}>AR</span>
+                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: p.titre_en ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: p.titre_en ? '#27ae60' : 'var(--text-gray)' }}>EN</span>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', marginLeft: '4px' }}>• {p.purete} • {p.gramme}g • {p.city}</span>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -2112,17 +2271,163 @@ function AdminLayout() {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-              <div className="form-group">
-                <label className="form-label">Titre</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={productForm.titre} 
-                  onChange={e => setProductForm({ ...productForm, titre: e.target.value })} 
-                  required 
-                />
+            {/* Multilingual 3-Language Content Section */}
+            <div style={{ 
+              background: 'rgba(212, 175, 55, 0.06)', 
+              border: '1.5px solid var(--admin-gold)', 
+              borderRadius: '12px', 
+              padding: '16px', 
+              marginBottom: '20px' 
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>🌐</span>
+                  <strong style={{ fontSize: '0.95rem', color: 'var(--admin-gold)' }}>Contenu en 3 Langues</strong>
+                </div>
+                
+                {/* Language Switcher Tabs */}
+                <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setProductLangTab('fr')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: productLangTab === 'fr' ? 'var(--admin-gold)' : 'transparent',
+                      color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
+                    }}
+                  >
+                    🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProductLangTab('ar')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: productLangTab === 'ar' ? 'var(--admin-gold)' : 'transparent',
+                      color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
+                    }}
+                  >
+                    🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProductLangTab('en')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: productLangTab === 'en' ? 'var(--admin-gold)' : 'transparent',
+                      color: productLangTab === 'en' ? '#000' : 'var(--text-gray)'
+                    }}
+                  >
+                    🇬🇧 English {productForm.titre_en ? '✓' : ''}
+                  </button>
+                </div>
               </div>
+
+              {/* Active Tab Inputs */}
+              {productLangTab === 'fr' && (
+                <div>
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Titre en Français 🇫🇷</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Obligatoire</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="ex: Bague Solitaire Diamant Or Blanc 18K"
+                      value={productForm.titre_fr} 
+                      onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Description en Français 🇫🇷</label>
+                    <textarea 
+                      className="form-input" 
+                      rows="3"
+                      placeholder="Description détaillée du bijou en français..."
+                      value={productForm.description_fr} 
+                      onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })} 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {productLangTab === 'ar' && (
+                <div dir="rtl">
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>العربية (RTL)</span>
+                      <span>العنوان باللغة العربية 🇲🇦</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      dir="rtl"
+                      placeholder="مثال: خاتم سوليتير ألماس ذهب أبيض 18 قيراط"
+                      value={productForm.titre_ar} 
+                      onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" style={{ textAlign: 'right' }}>الوصف باللغة العربية 🇲🇦</label>
+                    <textarea 
+                      className="form-input" 
+                      rows="3"
+                      dir="rtl"
+                      placeholder="وصف تفصيلي للقطعة باللغة العربية..."
+                      value={productForm.description_ar} 
+                      onChange={e => setProductForm({ ...productForm, description_ar: e.target.value })} 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {productLangTab === 'en' && (
+                <div>
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Title in English 🇬🇧</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>English</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="e.g. Diamond Solitaire Ring 18K White Gold"
+                      value={productForm.titre_en} 
+                      onChange={e => setProductForm({ ...productForm, titre_en: e.target.value })} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Description in English 🇬🇧</label>
+                    <textarea 
+                      className="form-input" 
+                      rows="3"
+                      placeholder="Detailed piece description in English..."
+                      value={productForm.description_en} 
+                      onChange={e => setProductForm({ ...productForm, description_en: e.target.value })} 
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '15px' }}>
               {productForm.type_vente === 'enchere' ? (
                 <div className="form-group">
                   <label className="form-label">{t('startingPrice')} (MAD)</label>
@@ -2301,18 +2606,7 @@ function AdminLayout() {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '25px' }}>
-              <label className="form-label">{t('description')}</label>
-              <textarea 
-                className="form-input" 
-                rows="3"
-                value={productForm.description} 
-                onChange={e => setProductForm({ ...productForm, description: e.target.value })} 
-                required 
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button type="button" className="btn-outline-gold" style={{ padding: '10px 20px' }} onClick={() => setShowProductModal(false)}>
                 {t('cancel')}
               </button>

@@ -45,7 +45,7 @@ export default function Marketplace({
   setSortBy,
   resetAllFilters
 }) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, lang } = useLanguage();
   const { user, toggleFavorite } = useAuth();
   const { addToCart } = useCart();
 
@@ -90,8 +90,12 @@ export default function Marketplace({
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchText = (
-        (product.titre || '') + ' ' + 
-        (product.description || '') + ' ' + 
+        (product.titre_fr || product.titre || '') + ' ' + 
+        (product.titre_ar || '') + ' ' + 
+        (product.titre_en || '') + ' ' + 
+        (product.description_fr || product.description || '') + ' ' + 
+        (product.description_ar || '') + ' ' + 
+        (product.description_en || '') + ' ' + 
         (product.matiere || '') + ' ' + 
         (product.pierre || '') + ' ' + 
         (product.style || '') + ' ' + 
@@ -314,7 +318,7 @@ export default function Marketplace({
             onClick={() => setSelectedCategory('')}
           >
             <span className="pill-icon">💎</span>
-            <span className="pill-text">Toutes les catégories</span>
+            <span className="pill-text">{t('allCategories') || 'Toutes les catégories'}</span>
           </button>
           {categories.map(cat => (
             <button 
@@ -323,7 +327,7 @@ export default function Marketplace({
               onClick={() => setSelectedCategory(selectedCategory === cat.id ? '' : cat.id)}
             >
               <span className="pill-icon">{cat.icon || '💎'}</span>
-              <span className="pill-text">{cat.nom_fr}</span>
+              <span className="pill-text">{cat[`nom_${lang}`] || cat.nom_fr || cat.nom}</span>
             </button>
           ))}
         </div>

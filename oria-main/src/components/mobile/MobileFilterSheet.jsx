@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function MobileFilterSheet({
   isOpen,
@@ -27,6 +28,7 @@ export default function MobileFilterSheet({
   onResetFilters,
   totalResultsCount = 0
 }) {
+  const { lang, t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -136,7 +138,7 @@ export default function MobileFilterSheet({
                   className={`sheet-chip ${selectedCategory === c.id ? 'active' : ''}`}
                   onClick={() => onSelectCategory(selectedCategory === c.id ? '' : c.id)}
                 >
-                  {c.icon || '💎'} {c.nom_fr}
+                  {c.icon || '💎'} {c[`nom_${lang}`] || c.nom_fr || c.nom}
                 </button>
               ))}
             </div>

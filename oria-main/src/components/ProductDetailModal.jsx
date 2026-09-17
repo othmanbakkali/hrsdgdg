@@ -16,9 +16,17 @@ export default function ProductDetailModal({
   onOpenChatWithSeller
 }) {
   const isModalOpen = isOpen !== undefined ? isOpen : Boolean(product);
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, lang } = useLanguage();
   const { user, toggleFavorite } = useAuth();
   const { addToCart } = useCart();
+
+  const displayTitle = (lang === 'ar' && product?.titre_ar) 
+    ? product.titre_ar 
+    : ((lang === 'en' && product?.titre_en) ? product.titre_en : (product?.titre_fr || product?.titre || ''));
+
+  const displayDesc = (lang === 'ar' && product?.description_ar) 
+    ? product.description_ar 
+    : ((lang === 'en' && product?.description_en) ? product.description_en : (product?.description_fr || product?.description || ''));
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('details'); // 'details', 'reviews', 'look'
@@ -276,7 +284,7 @@ export default function ProductDetailModal({
               {/* Showcase Image with interactive lens zoom */}
               <img 
                 src={currentImgUrl} 
-                alt={product.titre} 
+                alt={displayTitle} 
                 className="detail-main-img"
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
@@ -322,7 +330,7 @@ export default function ProductDetailModal({
                   <div className="gallery-lightbox-img-wrap">
                     <img 
                       src={currentImgUrl} 
-                      alt={product.titre} 
+                      alt={displayTitle} 
                       className="gallery-lightbox-img" 
                     />
                   </div>
@@ -413,7 +421,7 @@ export default function ProductDetailModal({
 
             {/* Title */}
             <h1 style={{ fontSize: '1.6rem', lineHeight: 1.25, color: 'var(--text-dark)', margin: '4px 0', fontFamily: 'var(--font-serif)' }}>
-              {product.titre}
+              {displayTitle}
             </h1>
 
             {/* Rating & Seller */}
@@ -547,7 +555,7 @@ export default function ProductDetailModal({
 
             {/* Description */}
             <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', lineHeight: 1.5 }}>
-              {product.description}
+              {displayDesc}
             </p>
 
             {/* Specs Grid */}
@@ -605,7 +613,7 @@ export default function ProductDetailModal({
               </button>
 
               <a 
-                href={`https://wa.me/212600000000?text=Bonjour, je suis intéressé par votre bijou : ${encodeURIComponent(product.titre)}`}
+                href={`https://wa.me/212600000000?text=Bonjour, je suis intéressé par votre bijou : ${encodeURIComponent(displayTitle)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-jewelia-secondary"

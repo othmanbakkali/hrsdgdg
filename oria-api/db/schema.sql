@@ -38,7 +38,13 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS bijoux (
     id VARCHAR(64) PRIMARY KEY,
     titre VARCHAR(255) NOT NULL,
+    titre_fr VARCHAR(255),
+    titre_ar VARCHAR(255),
+    titre_en VARCHAR(255),
     description TEXT,
+    description_fr TEXT,
+    description_ar TEXT,
+    description_en TEXT,
     prix NUMERIC(12, 2) NOT NULL,
     ancien_prix NUMERIC(12, 2),
     type_vente VARCHAR(32) NOT NULL DEFAULT 'FIRST_HAND', -- 'FIRST_HAND', 'SECOND_HAND', 'AUCTION'

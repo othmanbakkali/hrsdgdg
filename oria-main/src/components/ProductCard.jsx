@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ProductCard({
   product,
@@ -9,9 +10,14 @@ export default function ProductCard({
   viewMode = 'desktop', // 'desktop', 'grid', or 'list'
   isMobile = false
 }) {
+  const { lang, t } = useLanguage();
   const { user, toggleFavorite } = useAuth();
   const { addToCart } = useCart();
   const [activeImgIndex, setActiveImgIndex] = useState(0);
+
+  const displayTitle = (lang === 'ar' && product.titre_ar) 
+    ? product.titre_ar 
+    : ((lang === 'en' && product.titre_en) ? product.titre_en : (product.titre_fr || product.titre));
 
   const isAuction = product.disponibilite === 'enchere' || product.type_vente === 'AUCTION';
   const isSecondHand = product.type_vente === 'SECOND_HAND' && !isAuction;
@@ -33,7 +39,7 @@ export default function ProductCard({
 
   const sellerPhone = product.vendeur_phone || '+212661889900';
   const sellerCleanPhone = sellerPhone.replace(/[^0-9]/g, '');
-  const whatsappUrl = `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre bijou sur HRSDGDG : ${product.titre} (${product.prix.toLocaleString()} DH)`)}`;
+  const whatsappUrl = `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre bijou sur HRSDGDG : ${displayTitle} (${product.prix.toLocaleString()} DH)`)}`;
 
   // Specs text
   const specsText = [
@@ -61,7 +67,7 @@ export default function ProductCard({
         <div className="gallery-main-photo-wrap">
           <img 
             src={productImages[activeImgIndex] || productImages[0]} 
-            alt={product.titre}
+            alt={displayTitle}
             className="gallery-main-photo"
             loading="lazy"
           />
@@ -126,8 +132,8 @@ export default function ProductCard({
       {/* 2. CARD CONTENT ON CRISP WHITE BACKGROUND */}
       <div className="avito-card-body">
         {/* Title */}
-        <h4 className="avito-card-title" title={product.titre}>
-          {product.titre}
+        <h4 className="avito-card-title" title={displayTitle}>
+          {displayTitle}
         </h4>
 
         {/* Specs / Condition Subtitle */}

@@ -187,6 +187,25 @@ app.post('/api/categories', (req, res) => {
   res.status(201).json(newCat);
 });
 
+app.put('/api/categories/:id', (req, res) => {
+  const { id } = req.params;
+  const { nom_fr, nom_ar, nom_en, icon } = req.body;
+  const db = readDB();
+  const idx = db.categories.findIndex(c => c.id === id);
+  if (idx === -1) return res.status(404).json({ message: 'Catégorie non trouvée' });
+
+  db.categories[idx] = {
+    ...db.categories[idx],
+    nom_fr: nom_fr !== undefined ? nom_fr : db.categories[idx].nom_fr,
+    nom_ar: nom_ar !== undefined ? nom_ar : db.categories[idx].nom_ar,
+    nom_en: nom_en !== undefined ? nom_en : db.categories[idx].nom_en,
+    icon: icon !== undefined ? icon : db.categories[idx].icon
+  };
+
+  writeDB(db);
+  res.json(db.categories[idx]);
+});
+
 app.delete('/api/categories/:id', (req, res) => {
   const { id } = req.params;
   const db = readDB();
@@ -339,7 +358,13 @@ app.get('/api/bijoux/:id', (req, res) => {
 app.post('/api/bijoux', (req, res) => {
   const { 
     titre, 
+    titre_fr,
+    titre_ar,
+    titre_en,
     description, 
+    description_fr,
+    description_ar,
+    description_en,
     prix, 
     ancien_prix,
     type_vente,
@@ -397,10 +422,19 @@ app.post('/api/bijoux', (req, res) => {
     ? req.body.disponibilite 
     : (type_vente === 'AUCTION' || req.body.type_vente === 'enchere' ? 'enchere' : (parseInt(stock || 1) > 0 ? 'disponible' : 'rupture'));
 
+  const finalTitreFr = titre_fr || titre || '';
+  const finalDescFr = description_fr || description || '';
+
   const newProduct = {
     id: 'b_' + Math.random().toString(36).substr(2, 9),
-    titre,
-    description: description || '',
+    titre: finalTitreFr,
+    titre_fr: finalTitreFr,
+    titre_ar: titre_ar || '',
+    titre_en: titre_en || '',
+    description: finalDescFr,
+    description_fr: finalDescFr,
+    description_ar: description_ar || '',
+    description_en: description_en || '',
     prix: parseFloat(prix) || 0,
     ancien_prix: ancien_prix ? parseFloat(ancien_prix) : null,
     type_vente: (type_vente === 'AUCTION' || req.body.type_vente === 'enchere') ? 'SECOND_HAND' : (type_vente || (isSecondHand ? 'SECOND_HAND' : 'FIRST_HAND')),
@@ -457,9 +491,20 @@ app.put('/api/bijoux/:id', (req, res) => {
   if (idx === -1) return res.status(404).json({ message: 'Bijou non trouvé' });
 
   const current = db.bijoux[idx];
+  const updatedTitreFr = req.body.titre_fr !== undefined ? req.body.titre_fr : (req.body.titre !== undefined ? req.body.titre : current.titre_fr);
+  const updatedDescFr = req.body.description_fr !== undefined ? req.body.description_fr : (req.body.description !== undefined ? req.body.description : current.description_fr);
+
   db.bijoux[idx] = {
     ...current,
     ...req.body,
+    titre: updatedTitreFr || current.titre,
+    titre_fr: updatedTitreFr || current.titre_fr,
+    titre_ar: req.body.titre_ar !== undefined ? req.body.titre_ar : current.titre_ar,
+    titre_en: req.body.titre_en !== undefined ? req.body.titre_en : current.titre_en,
+    description: updatedDescFr || current.description,
+    description_fr: updatedDescFr || current.description_fr,
+    description_ar: req.body.description_ar !== undefined ? req.body.description_ar : current.description_ar,
+    description_en: req.body.description_en !== undefined ? req.body.description_en : current.description_en,
     prix: req.body.prix !== undefined ? parseFloat(req.body.prix) : current.prix,
     stock: req.body.stock !== undefined ? parseInt(req.body.stock) : current.stock,
     disponibilite: req.body.stock !== undefined ? (parseInt(req.body.stock) > 0 ? 'disponible' : 'rupture') : current.disponibilite

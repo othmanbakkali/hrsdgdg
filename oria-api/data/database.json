@@ -206,7 +206,7 @@
     {
       "id": "b_8yj7j1s7h",
       "titre": "Solitaire Diamant & Saphir Royal Or Blanc 18K",
-      "description": "Bague d'exception mise aux enchères en exclusivité.",
+      "description": "Bague d'exception mise aux enchères en exclusivité avec diamant central et saphir royal certifié.",
       "prix": 15000,
       "ancien_prix": null,
       "type_vente": "SECOND_HAND",
@@ -250,12 +250,18 @@
         "Poinçon officiel de garantie",
         "Livraison sécurisée avec suivi en temps réel"
       ],
-      "look_complementary_ids": []
+      "look_complementary_ids": [],
+      "titre_fr": "Solitaire Diamant & Saphir Royal Or Blanc 18K",
+      "titre_ar": "خاتم سوليتير ألماس وياقوت أزرق ملكي ذهب أبيض 18 قيراط",
+      "titre_en": "Royal Sapphire & Diamond Solitaire Ring 18K White Gold",
+      "description_fr": "Bague d'exception mise aux enchères en exclusivité avec diamant central et saphir royal certifié.",
+      "description_ar": "خاتم استثنائي فاخر معروض حصرياً في المزاد العلني مع ألماسة مركزية وياقوت أزرق موثق.",
+      "description_en": "Exceptional collector ring exclusively offered at auction featuring a certified sapphire and brilliant diamond."
     },
     {
       "id": "b_2",
       "titre": "Collier Pendentif Goutte d'Or & Diamants 18K",
-      "description": "Collier raffiné en or jaune 18 carats avec un pendentif poire serti de diamants scintillants. Chaîne maille forçat ajustable de 42 à 45 cm.",
+      "description": "Collier raffiné avec pendentif en goutte serti de diamants brillants sur chaîne en or jaune 18K.",
       "prix": 3890,
       "ancien_prix": 4500,
       "type_vente": "FIRST_HAND",
@@ -301,12 +307,18 @@
       "look_complementary_ids": [
         "b_1",
         "b_5"
-      ]
+      ],
+      "titre_fr": "Collier Pendentif Goutte d'Or & Diamants 18K",
+      "titre_ar": "عقد بقلادة قطرة الذهب والألماس 18 قيراط",
+      "titre_en": "Gold Teardrop & Diamond Pendant Necklace 18K",
+      "description_fr": "Collier raffiné avec pendentif en goutte serti de diamants brillants sur chaîne en or jaune 18K.",
+      "description_ar": "عقد راقٍ بقلادة على شكل قطرة مرصعة بأحجار الألماس البراقة على سلسلة ذهب أصفر 18 قيراط.",
+      "description_en": "Refined necklace featuring a teardrop pendant set with brilliant diamonds on an 18K yellow gold chain."
     },
     {
       "id": "b_3",
       "titre": "Bague Vintage Art Déco Or Jaune 18K & Saphir Royal",
-      "description": "Somptueuse bague d'époque Art Déco chinée et expertisée. Saphir bleu de Ceylan 1.8 ct au centre entouré d'une corolle de diamants taille ancienne sur monture ajourée or 18k.",
+      "description": "Pièce d'époque Art Déco des années 1930 en parfait état de conservation, or jaune et saphir naturel.",
       "prix": 4850,
       "ancien_prix": 6200,
       "type_vente": "SECOND_HAND",
@@ -355,12 +367,18 @@
       "look_complementary_ids": [
         "b_4",
         "b_6"
-      ]
+      ],
+      "titre_fr": "Bague Vintage Art Déco Or Jaune 18K & Saphir Royal",
+      "titre_ar": "خاتم فينتيج آرت ديكو ذهب أصفر 18 قيراط وياقوت ملكي",
+      "titre_en": "Vintage Art Deco Ring 18K Yellow Gold & Royal Sapphire",
+      "description_fr": "Pièce d'époque Art Déco des années 1930 en parfait état de conservation, or jaune et saphir naturel.",
+      "description_ar": "قطعة تاريخية من طراز آرت ديكو تعود لثلاثينيات القرن الماضي بحالة ممتازة، ذهب أصفر وياقوت طبيعي.",
+      "description_en": "Authentic 1930s Art Deco vintage ring in impeccable preserved condition, solid yellow gold and natural sapphire."
     },
     {
       "id": "b_4",
       "titre": "Bracelet Jonc Classique Or Jaune 18K Vintage",
-      "description": "Bracelet jonc classique en or jaune massif 18 carats. Poli impeccable sans rayure majeure. Système de fermeture sécurisé avec double huit de sécurité.",
+      "description": "Jonc ouvrant en or jaune poli miroir, fermeture à cliquet sécurisée et finition prestige.",
       "prix": 8900,
       "ancien_prix": 11500,
       "type_vente": "SECOND_HAND",
@@ -408,12 +426,18 @@
       "look_complementary_ids": [
         "b_3",
         "b_2"
-      ]
+      ],
+      "titre_fr": "Bracelet Jonc Classique Or Jaune 18K Vintage",
+      "titre_ar": "سوار صلب كلاسيكي ذهب أصفر 18 قيراط فينتيج",
+      "titre_en": "Classic Bangle Bracelet 18K Yellow Gold Vintage",
+      "description_fr": "Jonc ouvrant en or jaune poli miroir, fermeture à cliquet sécurisée et finition prestige.",
+      "description_ar": "سوار دائري صلب بلمعة المرآة وقفل أمان محكم الصنع وتشطيب راقٍ.",
+      "description_en": "Mirror-polished solid yellow gold bangle with secure safety click clasp and prestigious finish."
     },
     {
       "id": "b_5",
       "titre": "Boucles d'Oreilles Pendantes Cascade Diamants & Or Blanc",
-      "description": "Paire de boucles d'oreilles pendantes modernes en or blanc 18k serties de 24 diamants taille brillant (total 0.90 ct). Fermoir alpa haute sécurité.",
+      "description": "Chute élégante de diamants taille brillant montés sur or blanc 18K pour une brillance absolue.",
       "prix": 4200,
       "ancien_prix": 5200,
       "type_vente": "FIRST_HAND",
@@ -459,12 +483,18 @@
       "look_complementary_ids": [
         "b_1",
         "b_2"
-      ]
+      ],
+      "titre_fr": "Boucles d'Oreilles Pendantes Cascade Diamants & Or Blanc",
+      "titre_ar": "أقراط متدلية شلال الألماس والذهب الأبيض",
+      "titre_en": "Diamond Cascade Drop Earrings 18K White Gold",
+      "description_fr": "Chute élégante de diamants taille brillant montés sur or blanc 18K pour une brillance absolue.",
+      "description_ar": "انسياب مذهل لأحجار الألماس البراقة المثبتة على ذهب أبيض 18 قيراط لبريق مطلق.",
+      "description_en": "Elegant waterfall of brilliant-cut diamonds crafted in 18K white gold for absolute brilliance."
     },
     {
       "id": "b_6",
       "titre": "Parure Royale Marocaine Or Jaune 18K Traditionnelle",
-      "description": "Chef-d'œuvre de l'artisanat marocain : parure complète comprenant le collier plastron or ciselé, le bracelet assorti, la bague fleur et les boucles traditionnelles. Travail d'orfèvre d'une finesse incomparable.",
+      "description": "Ensemble somptueux pour mariée comprenant collier plastron, boucles et bracelet ciselés main.",
       "prix": 24500,
       "ancien_prix": 28000,
       "type_vente": "FIRST_HAND",
@@ -511,12 +541,18 @@
       "look_complementary_ids": [
         "b_1",
         "b_4"
-      ]
+      ],
+      "titre_fr": "Parure Royale Marocaine Or Jaune 18K Traditionnelle",
+      "titre_ar": "طقم ملكي مغربي تقليدي ذهب أصفر 18 قيراط",
+      "titre_en": "Traditional Moroccan Royal Set 18K Yellow Gold",
+      "description_fr": "Ensemble somptueux pour mariée comprenant collier plastron, boucles et bracelet ciselés main.",
+      "description_ar": "طقم عرائسي فاخر متكامل يضم عقداً كبيراً وأقراطاً وسواراً منقوشاً يدوياً بحرفية مغربية.",
+      "description_en": "Opulent bridal set featuring hand-chiseled bib necklace, matching earrings and bracelet."
     },
     {
       "id": "b_7",
       "titre": "Chevalière Homme Or Jaune 18K & Onyx Noir Vintage",
-      "description": "Chevalière masculine vintage en or 18 carats ornée d'un plateau en onyx naturel noir taille coussin. Pièce sobre, charismatique et en superbe état de conservation.",
+      "description": "Chevalière masculine sculptée avec plateau onyx noir profond naturel, monture or 18 carats.",
       "prix": 2750,
       "ancien_prix": 3600,
       "type_vente": "SECOND_HAND",
@@ -564,12 +600,18 @@
       "look_complementary_ids": [
         "b_8",
         "b_4"
-      ]
+      ],
+      "titre_fr": "Chevalière Homme Or Jaune 18K & Onyx Noir Vintage",
+      "titre_ar": "خاتم رجالي عقيق أسود وذهب أصفر 18 قيراط فينتيج",
+      "titre_en": "Men's Signet Ring 18K Yellow Gold & Black Onyx Vintage",
+      "description_fr": "Chevalière masculine sculptée avec plateau onyx noir profond naturel, monture or 18 carats.",
+      "description_ar": "خاتم رجالي فاخر منحوت بحجر العقيق الأسود الطبيعي وإطار متين من الذهب الخالص عيار 18.",
+      "description_en": "Sculpted men's signet ring adorned with deep natural black onyx set in solid 18K gold."
     },
     {
       "id": "b_8",
       "titre": "Bracelet Gourmette Homme Argent 925 Massif Italien",
-      "description": "Gourmette italienne maille cubaine en argent massif 925 millièmes avec fermoir cliquet à double sécurité. Finition brillante haute tenue.",
+      "description": "Maille cubaine imposante en argent massif poinçonné 925 fabriqué en Italie, fermoir boîte à cliquet.",
       "prix": 850,
       "ancien_prix": 1100,
       "type_vente": "FIRST_HAND",
@@ -615,12 +657,18 @@
       "look_complementary_ids": [
         "b_7",
         "b_2"
-      ]
+      ],
+      "titre_fr": "Bracelet Gourmette Homme Argent 925 Massif Italien",
+      "titre_ar": "سوار فضة إيطالية 925 صلبة للرجال",
+      "titre_en": "Men's Cuban Curb Bracelet Solid 925 Italian Silver",
+      "description_fr": "Maille cubaine imposante en argent massif poinçonné 925 fabriqué en Italie, fermoir boîte à cliquet.",
+      "description_ar": "سلسلة كبح رجالية فخمة مصنوعة من الفضة الخالصة عيار 925 المصنعة بإيطاليا مع قفل صندوقي.",
+      "description_en": "Heavy solid 925 sterling silver curb chain bracelet crafted in Italy with box lock clasp."
     },
     {
       "id": "b_9",
       "titre": "Coffret Prestige Cadeau : Collier Trèfle Nacre & Boucles Or 18K",
-      "description": "Magnifique coffret cadeau prestige comprenant un collier ras-de-cou motif trèfle en nacre blanche naturelle et or jaune 18 carats, accompagné de ses puces d'oreilles assorties. Écrin avec ruban de soie.",
+      "description": "Coffret luxe complet prêt à offrir avec certificat d'authenticité et écrin en velours vert émeraude.",
       "prix": 2990,
       "ancien_prix": 3800,
       "type_vente": "FIRST_HAND",
@@ -666,12 +714,18 @@
       "look_complementary_ids": [
         "b_1",
         "b_4"
-      ]
+      ],
+      "titre_fr": "Coffret Prestige Cadeau : Collier Trèfle Nacre & Boucles Or 18K",
+      "titre_ar": "صندوق هدايا فاخر: عقد البرسيم صدف وأقراط ذهب 18 قيراط",
+      "titre_en": "Prestige Gift Set: Mother-of-Pearl Clover Necklace & 18K Earrings",
+      "description_fr": "Coffret luxe complet prêt à offrir avec certificat d'authenticité et écrin en velours vert émeraude.",
+      "description_ar": "صندوق فاخر متكامل جاهز للإهداء مع شهادة أصالة وعلبة مخملية خضراء راقية.",
+      "description_en": "Luxury gift box set ready for presentation with certificate of authenticity and velvet case."
     },
     {
       "id": "b_10",
       "titre": "Bague Solitaire Émeraude de Colombie & Or Jaune 18K (Occasion)",
-      "description": "Bague d'exception or jaune 18k sertie d'une superbe émeraude naturelle de Colombie de 1.20 ct taille émeraude. Couleur vert intense très recherchée. Quelques micro-inclusions naturelles attestant de son origine.",
+      "description": "Émeraude naturelle certifiée de Colombie 1.80 ct entourée de diamants, vérifiée par notre gemmologue.",
       "prix": 5200,
       "ancien_prix": 7500,
       "type_vente": "SECOND_HAND",
@@ -719,12 +773,18 @@
       "look_complementary_ids": [
         "b_2",
         "b_5"
-      ]
+      ],
+      "titre_fr": "Bague Solitaire Émeraude de Colombie & Or Jaune 18K (Occasion)",
+      "titre_ar": "خاتم زمرد كولومبي طبيعي وذهب أصفر 18 قيراط (مستعمل)",
+      "titre_en": "Colombian Emerald Solitaire Ring 18K Yellow Gold (Pre-owned)",
+      "description_fr": "Émeraude naturelle certifiée de Colombie 1.80 ct entourée de diamants, vérifiée par notre gemmologue.",
+      "description_ar": "حجر زمرد كولومبي طبيعي موثق بوزن 1.80 قيراط محاط بالألماس ومفحوص من خبير الأحجار الكريمة.",
+      "description_en": "Certified natural Colombian emerald 1.80 ct framed with diamond accents, gemologist authenticated."
     },
     {
       "id": "b_11",
       "titre": "Collier Sautoir Perles de Culture Akoya & Fermoir Or 18K",
-      "description": "Sautoir d'exception en véritables perles Akoya au lustre éclatant, sublimé par un fermoir ajouré en or jaune 18 carats avec poinçon de maître.",
+      "description": "Rang régulier de 75 perles de culture japonaises Akoya lustre éclatant avec fermoir sécurisé or 18K.",
       "prix": 6800,
       "ancien_prix": 7900,
       "type_vente": "FIRST_HAND",
@@ -768,12 +828,18 @@
         "Perles fines d'eau de mer Akoya 7.5-8mm",
         "Poinçon d'État marocain tête de faucon",
         "Écrin de luxe offert"
-      ]
+      ],
+      "titre_fr": "Collier Sautoir Perles de Culture Akoya & Fermoir Or 18K",
+      "titre_ar": "عقد طويل لؤلؤ أكويا الياباني وقفل ذهب 18 قيراط",
+      "titre_en": "Akoya Cultured Pearl Opera Necklace & 18K Gold Clasp",
+      "description_fr": "Rang régulier de 75 perles de culture japonaises Akoya lustre éclatant avec fermoir sécurisé or 18K.",
+      "description_ar": "صف منتظم من 75 حبة لؤلؤ أكويا طبيعي ببريق بحري فائق مع قفل أمان ذهب 18 قيراط.",
+      "description_en": "Graduated strand of 75 Japanese Akoya cultured pearls with high luster and secure 18K gold clasp."
     },
     {
       "id": "b_12",
       "titre": "Bracelet Manchette Or Rose 18K Martelé à la Main",
-      "description": "Manchette d'art contemporain façonnée artisanalement à Fès, finition martelée chatoyante captant la lumière sous tous les angles.",
+      "description": "Finition artisanale texturée reflétant la lumière sous tous les angles, pièce moderne d'exception.",
       "prix": 11200,
       "ancien_prix": null,
       "type_vente": "FIRST_HAND",
@@ -815,12 +881,18 @@
       "why_this_item": [
         "22.4 grammes d'or rose massif 750/1000",
         "Façonnage manuel par maître artisan maâlem"
-      ]
+      ],
+      "titre_fr": "Bracelet Manchette Or Rose 18K Martelé à la Main",
+      "titre_ar": "سوار كف عريض ذهب وردي 18 قيراط مطروق يدوياً",
+      "titre_en": "Hand-Hammered Cuff Bangle 18K Rose Gold",
+      "description_fr": "Finition artisanale texturée reflétant la lumière sous tous les angles, pièce moderne d'exception.",
+      "description_ar": "تصميم يدوي حرفي بنقوش بارزة تعكس بريق الضوء بأسلوب عصري جذاب وراقي.",
+      "description_en": "Artisanal textured cuff bangle catching light from every perspective, modern statement piece."
     },
     {
       "id": "b_13",
       "titre": "Bague Trilogie Rubis Birman & Diamants Or Jaune 18K",
-      "description": "Bague symbolique représentant le passé, le présent et le futur, ornée d'un rubis taille coussin certifié entouré de deux diamants brillants.",
+      "description": "Rubis birman rouge sang de pigeon flanqué de deux diamants taille brillant sur or jaune 18K.",
       "prix": 7400,
       "ancien_prix": 8600,
       "type_vente": "SECOND_HAND",
@@ -862,12 +934,18 @@
       "why_this_item": [
         "Rubis naturel non chauffé couleur sang de pigeon",
         "Contrôle gemmologique certifié"
-      ]
+      ],
+      "titre_fr": "Bague Trilogie Rubis Birman & Diamants Or Jaune 18K",
+      "titre_ar": "خاتم ثلاثي ياقوت أحمر بورمي وألماس ذهب أصفر 18 قيراط",
+      "titre_en": "Burmese Ruby & Diamond Trilogy Ring 18K Yellow Gold",
+      "description_fr": "Rubis birman rouge sang de pigeon flanqué de deux diamants taille brillant sur or jaune 18K.",
+      "description_ar": "ياقوت بورمي طبيعي أحمر قاني تحيط به حبتان من الألماس البراق على ذهب أصفر 18 قيراط.",
+      "description_en": "Pigeon blood natural Burmese ruby flanked by two sparkling diamonds in 18K yellow gold."
     },
     {
       "id": "b_14",
       "titre": "Boucles Créoles Torsadées Or Jaune 18K Diamètre 35mm",
-      "description": "Créoles intemporelles au relief torsadé raffiné, confectionnées en or 750‰ avec fermoir invisible sécurisé.",
+      "description": "Créoles tubes torsadés ultra-légères et confortables pour le quotidien, or 18 carats garanti.",
       "prix": 2850,
       "ancien_prix": 3200,
       "type_vente": "FIRST_HAND",
@@ -909,12 +987,18 @@
       "why_this_item": [
         "Légères et ultra confortables au porter quotidien",
         "Or 18K anti-allergène garanti"
-      ]
+      ],
+      "titre_fr": "Boucles Créoles Torsadées Or Jaune 18K Diamètre 35mm",
+      "titre_ar": "أقراط دائرية مجدولة ذهب أصفر 18 قيراط قطر 35 مم",
+      "titre_en": "Twisted Hoop Earrings 18K Yellow Gold 35mm Diameter",
+      "description_fr": "Créoles tubes torsadés ultra-légères et confortables pour le quotidien, or 18 carats garanti.",
+      "description_ar": "أقراط حلقية كلاسيكية مجدولة خفيفة ومريحة للاستخدام اليومي من الذهب المضمون.",
+      "description_en": "Lightweight twisted tubing hoop earrings designed for comfortable daily wear in 18K gold."
     },
     {
       "id": "b_15",
       "titre": "Pendentif Khomsa Stylisée Or 18K Serti Diamants & Oeil Saphir",
-      "description": "Protection et raffinement suprême avec cette Khomsa moderne aux arabesques ajourées, rehaussée de diamants taille brillant et d'un saphir central bleu nuit.",
+      "description": "Symbole protecteur revisité en haute joaillerie avec saphir bleu central et pavage diamants.",
       "prix": 5400,
       "ancien_prix": 5900,
       "type_vente": "FIRST_HAND",
@@ -956,12 +1040,18 @@
       "why_this_item": [
         "Symbole protecteur emblématique marocain réinterprété",
         "Finition polie miroir et serti micro-grain"
-      ]
+      ],
+      "titre_fr": "Pendentif Khomsa Stylisée Or 18K Serti Diamants & Oeil Saphir",
+      "titre_ar": "قلادة خمسة عصرية ذهب 18 قيراط مرصعة بالألماس وياقوت أزرق",
+      "titre_en": "Modernized Hamsa Pendant 18K Gold Set with Diamonds & Sapphire Eye",
+      "description_fr": "Symbole protecteur revisité en haute joaillerie avec saphir bleu central et pavage diamants.",
+      "description_ar": "رمز الحماية التقليدي معاد صياغته بلمسة راقية مع حجر ياقوت أزرق ومرصع بالألماس.",
+      "description_en": "Traditional protective amulet reimagined in fine jewelry with blue sapphire and diamond pave."
     },
     {
       "id": "b_16",
       "titre": "Montre Vintage Or Jaune 18K Cadran Émaillé & Cuir Crocodile",
-      "description": "Montre de collection mécanique à remontage manuel, boîte en or massif 18 carats poinçonnée, mouvement suisse révisé avec précision chronométrique.",
+      "description": "Garde-temps de collection révisé par notre maître horloger, mouvement mécanique à remontage manuel.",
       "prix": 18500,
       "ancien_prix": 21000,
       "type_vente": "SECOND_HAND",
@@ -1003,12 +1093,18 @@
       "why_this_item": [
         "Boîtier massif en or jaune 18 carats",
         "Mouvement horloger suisse de manufacture contrôlé"
-      ]
+      ],
+      "titre_fr": "Montre Vintage Or Jaune 18K Cadran Émaillé & Cuir Crocodile",
+      "titre_ar": "ساعة يد كلاسيكية ذهب أصفر 18 قيراط وميناء مطلي وسوار جلد تمساح",
+      "titre_en": "Vintage 18K Yellow Gold Watch Enamel Dial & Crocodile Strap",
+      "description_fr": "Garde-temps de collection révisé par notre maître horloger, mouvement mécanique à remontage manuel.",
+      "description_ar": "تحفة ساعات تاريخية معاد صيانتها بدقة من قبل خبير الساعات، حركة ميكانيكية يدوية التعبئة.",
+      "description_en": "Collector vintage timepiece fully serviced by our master watchmaker with manual winding movement."
     },
     {
       "id": "b_17",
       "titre": "Bague Toi & Moi Diamant et Émeraude Poire Or Blanc 18K",
-      "description": "Harmonie céleste entre une émeraude de Zambie d'un vert profond et un diamant pur de taille poire sur anneau croisé en or blanc palladié.",
+      "description": "Symbole éternel d'amour unissant une émeraude et un diamant poire sur corps de bague or blanc pavé.",
       "prix": 9800,
       "ancien_prix": 11500,
       "type_vente": "SECOND_HAND",
@@ -1050,12 +1146,18 @@
       "why_this_item": [
         "Monture Toi & Moi symbole d'union éternelle",
         "Émeraude naturelle certifiée sans traitement chimique"
-      ]
+      ],
+      "titre_fr": "Bague Toi & Moi Diamant et Émeraude Poire Or Blanc 18K",
+      "titre_ar": "خاتم أنت وأنا ألماس وزمرد كمثري ذهب أبيض 18 قيراط",
+      "titre_en": "Toi & Moi Pear Diamond & Emerald Ring 18K White Gold",
+      "description_fr": "Symbole éternel d'amour unissant une émeraude et un diamant poire sur corps de bague or blanc pavé.",
+      "description_ar": "رمز خالد للحب يجمع بين حجر زمرد كمثري وألماسة نقية على خاتم ذهب أبيض مرصع.",
+      "description_en": "Timeless union of a pear-cut emerald and sparkling brilliant diamond on a diamond-paved band."
     },
     {
       "id": "b_18",
       "titre": "Bracelet Tennis Diamants 2.50 Carats Or Blanc 18K",
-      "description": "Le summum de l'élégance avec cette ligne continue de 52 diamants taille brillant taille identique, sertis à griffes sur une monture flexible et articulée.",
+      "description": "Ligne continue de 48 diamants scintillants sertis 4 griffes, fermoir double sécurité joaillerie.",
       "prix": 21900,
       "ancien_prix": 25000,
       "type_vente": "FIRST_HAND",
@@ -1097,12 +1199,18 @@
       "why_this_item": [
         "Diamants couleur F-G, pureté VS certifiés IGI",
         "Fermoir à cliquet double huit de sécurité"
-      ]
+      ],
+      "titre_fr": "Bracelet Tennis Diamants 2.50 Carats Or Blanc 18K",
+      "titre_ar": "سوار تنس ألماس 2.50 قيراط ذهب أبيض 18 قيراط",
+      "titre_en": "Diamond Tennis Bracelet 2.50 Carats 18K White Gold",
+      "description_fr": "Ligne continue de 48 diamants scintillants sertis 4 griffes, fermoir double sécurité joaillerie.",
+      "description_ar": "خط متصل من 48 ماسة متألقة مثبتة بأربع شوكات من الذهب الأبيض مع قفل أمان مزدوج.",
+      "description_en": "Continuous line of 48 brilliant diamonds set in a classic four-prong mount with double safety catch."
     },
     {
       "id": "b_19",
       "titre": "Chevalière Héraldique Or Jaune 18K Gravure Sur Mesure",
-      "description": "Chevalière massive de style seigneurial, plateau carré poli satiné prêt pour gravure d'initiales ou blason familial, corps forgé en or plein.",
+      "description": "Chevalière massive prête pour gravure d'armoiries ou monogramme personnalisé, or 18 carats plein.",
       "prix": 4600,
       "ancien_prix": null,
       "type_vente": "FIRST_HAND",
@@ -1144,12 +1252,18 @@
       "why_this_item": [
         "Or 18K plein non ajouré, poids généreux de 9.8g",
         "Gravure personnalisée offerte en atelier"
-      ]
+      ],
+      "titre_fr": "Chevalière Héraldique Or Jaune 18K Gravure Sur Mesure",
+      "titre_ar": "خاتم شعار العائلة ذهب أصفر 18 قيراط مع نقش مخصص",
+      "titre_en": "Heraldic Signet Ring 18K Yellow Gold Custom Engraved",
+      "description_fr": "Chevalière massive prête pour gravure d'armoiries ou monogramme personnalisé, or 18 carats plein.",
+      "description_ar": "خاتم نقش صلب مخصص لنقش الشعار العائلي أو الأحرف الأولى بدقة حرفية عالية.",
+      "description_en": "Heavy solid signet ring ready for bespoke family crest or monogram engraving in solid gold."
     },
     {
       "id": "b_20",
       "titre": "Collier Chaîne Maille Royale Byzantine Or Jaune 18K",
-      "description": "Tressage byzantin spectaculaire en mailles d'or entrelacées, offrant une présence et un tombé parfait sur le cou.",
+      "description": "Tissage dense et noble de maillons en or massif réalisé à la main, fermoir mousqueton renforcé.",
       "prix": 13500,
       "ancien_prix": 15200,
       "type_vente": "SECOND_HAND",
@@ -1191,12 +1305,18 @@
       "why_this_item": [
         "26.5 grammes d'or massif 18 carats",
         "Fermoir mousqueton renforcé d'origine"
-      ]
+      ],
+      "titre_fr": "Collier Chaîne Maille Royale Byzantine Or Jaune 18K",
+      "titre_ar": "عقد سلسلة ملكية بيزنطية ذهب أصفر 18 قيراط",
+      "titre_en": "Byzantine Royal Chain Necklace 18K Yellow Gold",
+      "description_fr": "Tissage dense et noble de maillons en or massif réalisé à la main, fermoir mousqueton renforcé.",
+      "description_ar": "حياكة ملكية بيزنطية متقنة لحلقات الذهب الصافي المشغول يدوياً مع قفل قوي ومعزز.",
+      "description_en": "Intricately woven links forming a noble and dense solid gold chain with heavy-duty lobster clasp."
     },
     {
       "id": "b_21",
       "titre": "Boucles d'Oreilles Dormeuses Émeraudes & Perles Fines Époque 1950",
-      "description": "Véritables dormeuses anciennes en or jaune 18K ciselé, rehaussées de cabochons d'émeraude naturelle et de perles fines d'orient.",
+      "description": "Bijou vintage romantique articulé avec émeraudes naturelles goutte et perles fines d'époque.",
       "prix": 3600,
       "ancien_prix": null,
       "type_vente": "SECOND_HAND",
@@ -1238,12 +1358,18 @@
       "why_this_item": [
         "Modèle historique de l'époque coloniale tangéroise",
         "Poinçon d'origine préservé"
-      ]
+      ],
+      "titre_fr": "Boucles d'Oreilles Dormeuses Émeraudes & Perles Fines Époque 1950",
+      "titre_ar": "أقراط متدلية زمرد ولؤلؤ طبيعي حقبة 1950",
+      "titre_en": "Emerald & Natural Pearl Drop Earrings 1950s Era",
+      "description_fr": "Bijou vintage romantique articulé avec émeraudes naturelles goutte et perles fines d'époque.",
+      "description_ar": "مجوهرات كلاسيكية رومانسية مرنة تعود لخمسينيات القرن الماضي بحبات زمرد ولؤلؤ بحري طبيعي.",
+      "description_en": "Articulated romantic vintage earrings set with drop emeralds and period natural pearls."
     },
     {
       "id": "b_22",
       "titre": "Parure Mariée Orientale Or Jaune 18K avec Diadème & Collier Plastron",
-      "description": "Somptueuse parure de mariage comprenant un diadème orné, un collier plastron aux volutes florales et une paire de pendants assortis.",
+      "description": "Ensemble d'apparat d'exception pour cérémonies et mariages traditionnels, chef d'oeuvre de joaillerie.",
       "prix": 34500,
       "ancien_prix": 39000,
       "type_vente": "FIRST_HAND",
@@ -1285,7 +1411,13 @@
       "why_this_item": [
         "68 grammes d'or 18 carats au titrage officiel 750‰",
         "Écrin sur-mesure en velours brodé or offert"
-      ]
+      ],
+      "titre_fr": "Parure Mariée Orientale Or Jaune 18K avec Diadème & Collier Plastron",
+      "titre_ar": "طقم عروس شرقي فخم ذهب أصفر 18 قيراط مع تاج وقلادة عريضة",
+      "titre_en": "Oriental Bridal Set 18K Yellow Gold with Tiara & Collar Necklace",
+      "description_fr": "Ensemble d'apparat d'exception pour cérémonies et mariages traditionnels, chef d'oeuvre de joaillerie.",
+      "description_ar": "طقم احتفالي استثنائي للأعراس والمناسبات الكبرى الفاخرة يجسد قمة الإبداع والصنعة الذهبية.",
+      "description_en": "Spectacular ceremonial heirloom set for weddings and grand royal events, a masterpiece of craftsmanship."
     }
   ],
   "encheres": [
@@ -1461,7 +1593,10 @@
         "Fiche produit & messagerie client instantanée",
         "Paiement à la livraison sécurisé",
         "Support standard par email sous 48h"
-      ]
+      ],
+      "name_fr": "Pass Essentiel",
+      "name_en": "Pass Essentiel",
+      "name_ar": "الباقة الأساسية"
     },
     {
       "id": "plan_pro",
@@ -1482,7 +1617,10 @@
         "Certificats d'authenticité numériques inclus",
         "Tableau de bord & statistiques de conversion",
         "Support WhatsApp prioritaire 7j/7"
-      ]
+      ],
+      "name_fr": "Pack Prestige Joaillier",
+      "name_en": "Pack Prestige Joaillier",
+      "name_ar": "باقة المحترفين"
     },
     {
       "id": "plan_vip",
@@ -1504,7 +1642,10 @@
         "Service shooting photo & retouche IA",
         "Concierge Joaillerie & Account Manager dédié",
         "Accès prioritaire aux enchères et ventes privées"
-      ]
+      ],
+      "name_fr": "Haute Joaillerie VIP",
+      "name_en": "Haute Joaillerie VIP",
+      "name_ar": "باقة النخبة VIP"
     },
     {
       "id": "plan_g3x8oke",
@@ -1521,7 +1662,10 @@
         "Jusqu'à 12 bijoux actifs",
         "Commission de 6% par vente",
         "Support prioritaire"
-      ]
+      ],
+      "name_fr": "Formule Créateurs & Artisans",
+      "name_en": "Formule Créateurs & Artisans",
+      "name_ar": "Formule Créateurs & Artisans"
     }
   ],
   "subscriptions_history": [
