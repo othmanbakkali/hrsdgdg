@@ -118,14 +118,18 @@ function MainLayout() {
   const fetchData = async () => {
     try {
       const res = await fetch(`${API_URL}/bijoux?status=Validated`);
-      const data = await res.json();
-      setAllProducts(data);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setAllProducts(data);
+      }
 
       const catRes = await fetch(`${API_URL}/categories`);
-      const catData = await catRes.json();
-      setCategories(catData);
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        if (Array.isArray(catData)) setCategories(catData);
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching global data:', err);
     }
   };
 

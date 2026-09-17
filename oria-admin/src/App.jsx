@@ -5,7 +5,7 @@ import OriaLogo from './components/OriaLogo';
 import AdminLogin from './components/AdminLogin';
 import './styles/admin.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5077/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const themes = {
   gold: {

@@ -57,12 +57,20 @@ export default function Marketplace({
   const fetchData = async () => {
     try {
       const res = await fetch(`${API_URL}/bijoux?status=Validated`);
-      const data = await res.json();
-      setProducts(data);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setProducts(data);
+        }
+      }
 
       const catRes = await fetch(`${API_URL}/categories`);
-      const catData = await catRes.json();
-      setCategories(catData);
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        if (Array.isArray(catData)) {
+          setCategories(catData);
+        }
+      }
       setLoading(false);
     } catch (err) {
       console.error('Error fetching marketplace data:', err);
