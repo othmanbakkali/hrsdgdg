@@ -75,6 +75,8 @@ function AdminLayout() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [productLangTab, setProductLangTab] = useState('fr'); // 'fr', 'ar', 'en'
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateSuccessMsg, setTranslateSuccessMsg] = useState('');
   const [productForm, setProductForm] = useState({ 
     titre: '', 
     titre_fr: '',
@@ -346,6 +348,134 @@ function AdminLayout() {
       images: p.images || []
     });
     setShowProductModal(true);
+  };
+
+  // Auto-translate product content across FR, AR, EN
+  const handleAutoTranslateProduct = async (sourceLang = productLangTab, showAlert = true) => {
+    const title = sourceLang === 'fr' 
+      ? (productForm.titre_fr || productForm.titre || '') 
+      : (productForm[`titre_${sourceLang}`] || '');
+    const desc = sourceLang === 'fr' 
+      ? (productForm.description_fr || productForm.description || '') 
+      : (productForm[`description_${sourceLang}`] || '');
+
+    if (!title.trim() && !desc.trim()) {
+      if (showAlert) {
+        triggerNotif(`Veuillez d'abord renseigner le titre ou la description en ${sourceLang === 'fr' ? 'Français' : (sourceLang === 'ar' ? 'Arabe' : 'Anglais')} avant de traduire.`);
+      }
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const res = await fetch(`${API_URL}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: sourceLang,
+          fields: {
+            title,
+            description: desc
+          }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.translations) {
+          setProductForm(prev => {
+            const updated = { ...prev };
+            if (data.translations.ar) {
+              if (data.translations.ar.title) updated.titre_ar = data.translations.ar.title;
+              if (data.translations.ar.description) updated.description_ar = data.translations.ar.description;
+            }
+            if (data.translations.en) {
+              if (data.translations.en.title) updated.titre_en = data.translations.en.title;
+              if (data.translations.en.description) updated.description_en = data.translations.en.description;
+            }
+            if (data.translations.fr) {
+              if (data.translations.fr.title) {
+                updated.titre_fr = data.translations.fr.title;
+                updated.titre = data.translations.fr.title;
+              }
+              if (data.translations.fr.description) {
+                updated.description_fr = data.translations.fr.description;
+                updated.description = data.translations.fr.description;
+              }
+            }
+            return updated;
+          });
+          setTranslateSuccessMsg("✓ Traduction automatique effectuée avec succès !");
+          triggerNotif("✨ Traduction automatique effectuée avec succès !");
+          setTimeout(() => setTranslateSuccessMsg(''), 4000);
+        }
+      }
+    } catch (err) {
+      console.error("Auto translate error:", err);
+      triggerNotif("Erreur lors de la traduction automatique.");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Switch tab and automatically translate to target if target is empty
+  const switchProductLangTab = async (targetTab) => {
+    const prevTab = productLangTab;
+    setProductLangTab(targetTab);
+
+    // If source tab has content and target tab is empty, auto-translate automatically!
+    const prevTitle = prevTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm[`titre_${prevTab}`] || '');
+    const prevDesc = prevTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm[`description_${prevTab}`] || '');
+    
+    const targetTitle = targetTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm[`titre_${targetTab}`] || '');
+    const targetDesc = targetTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm[`description_${targetTab}`] || '');
+
+    if ((prevTitle.trim() || prevDesc.trim()) && (!targetTitle.trim() && !targetDesc.trim())) {
+      handleAutoTranslateProduct(prevTab, false);
+    }
+  };
+
+  // Auto-translate category names
+  const handleAutoTranslateCategory = async (catObj, setCatFunc) => {
+    let sourceLang = 'fr';
+    let name = catObj.nom_fr || '';
+    if (!name.trim() && catObj.nom_ar?.trim()) {
+      sourceLang = 'ar';
+      name = catObj.nom_ar;
+    } else if (!name.trim() && catObj.nom_en?.trim()) {
+      sourceLang = 'en';
+      name = catObj.nom_en;
+    }
+
+    if (!name.trim()) {
+      triggerNotif("Veuillez saisir au moins un nom de catégorie.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: sourceLang,
+          fields: { name }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.translations) {
+          setCatFunc(prev => {
+            const updated = { ...prev };
+            if (data.translations.fr?.name) updated.nom_fr = data.translations.fr.name;
+            if (data.translations.ar?.name) updated.nom_ar = data.translations.ar.name;
+            if (data.translations.en?.name) updated.nom_en = data.translations.en.name;
+            return updated;
+          });
+          triggerNotif("✨ Catégorie traduite en 3 langues !");
+        }
+      }
+    } catch (err) {
+      console.error("Category translate error:", err);
+    }
   };
 
   const handleProductSubmit = async (e) => {
@@ -1138,22 +1268,33 @@ function AdminLayout() {
           <div>
             {/* Categories Creation Form */}
             <form className="settings-panel" onSubmit={handleAddCategory} style={{ marginBottom: '30px' }}>
-              <h3 style={{ color: 'var(--admin-gold)', marginBottom: '20px' }}>{t('addNewCategory')}</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ color: 'var(--admin-gold)', margin: 0 }}>{t('addNewCategory')}</h3>
+                <button 
+                  type="button" 
+                  onClick={() => handleAutoTranslateCategory(newCat, setNewCat)}
+                  className="btn-outline-gold"
+                  style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+                  title="Traduit automatiquement le nom renseigné vers les 2 autres langues"
+                >
+                  ✨ Traduire automatiquement vers les autres langues
+                </button>
+              </div>
               <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
                 <div className="form-group">
                   <label className="form-label">{t('catNameFr')}</label>
-                  <input type="text" className="form-input" value={newCat.nom_fr} onChange={e => setNewCat({ ...newCat, nom_fr: e.target.value })} required />
+                  <input type="text" className="form-input" value={newCat.nom_fr} onChange={e => setNewCat({ ...newCat, nom_fr: e.target.value })} placeholder="ex: Colliers" required />
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('catNameAr')}</label>
-                  <input type="text" className="form-input" value={newCat.nom_ar} onChange={e => setNewCat({ ...newCat, nom_ar: e.target.value })} required />
+                  <input type="text" className="form-input" dir="rtl" value={newCat.nom_ar} onChange={e => setNewCat({ ...newCat, nom_ar: e.target.value })} placeholder="مثال: قلائد" required />
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('catNameEn')}</label>
-                  <input type="text" className="form-input" value={newCat.nom_en} onChange={e => setNewCat({ ...newCat, nom_en: e.target.value })} required />
+                  <input type="text" className="form-input" value={newCat.nom_en} onChange={e => setNewCat({ ...newCat, nom_en: e.target.value })} placeholder="e.g. Necklaces" required />
                 </div>
               </div>
-              <button type="submit" className="btn-gold">{t('add')}</button>
+              <button type="submit" className="btn-gold" style={{ marginTop: '15px' }}>{t('add')}</button>
             </form>
 
             {/* List */}
@@ -1201,9 +1342,20 @@ function AdminLayout() {
               <div className="modal-overlay">
                 <form className="modal-content" onSubmit={handleSaveCategory} style={{ maxWidth: '520px', padding: '25px' }}>
                   <button type="button" className="modal-close-btn" onClick={() => setEditingCategory(null)}>✕</button>
-                  <h3 style={{ color: 'var(--admin-gold)', marginBottom: '20px', fontFamily: 'Playfair Display', fontSize: '1.4rem' }}>
-                    🌐 Édition Catégorie (3 Langues)
-                  </h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h3 style={{ color: 'var(--admin-gold)', margin: 0, fontFamily: 'Playfair Display', fontSize: '1.3rem' }}>
+                      🌐 Édition Catégorie (3 Langues)
+                    </h3>
+                    <button 
+                      type="button" 
+                      onClick={() => handleAutoTranslateCategory(editingCategory, setEditingCategory)}
+                      className="btn-outline-gold"
+                      style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+                      title="Traduit automatiquement vers les autres langues"
+                    >
+                      ✨ Traduire auto
+                    </button>
+                  </div>
                   <div className="form-group" style={{ marginBottom: '14px' }}>
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Nom (Français) 🇫🇷</span>
@@ -2279,64 +2431,107 @@ function AdminLayout() {
               padding: '16px', 
               marginBottom: '20px' 
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '1.2rem' }}>🌐</span>
                   <strong style={{ fontSize: '0.95rem', color: 'var(--admin-gold)' }}>Contenu en 3 Langues</strong>
                 </div>
-                
-                {/* Language Switcher Tabs */}
-                <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {/* Magic Auto-Translate Button */}
                   <button
                     type="button"
-                    onClick={() => setProductLangTab('fr')}
+                    onClick={() => handleAutoTranslateProduct(productLangTab)}
+                    disabled={isTranslating}
                     style={{
-                      padding: '5px 12px',
-                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                      color: '#07090b',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
                       border: 'none',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: productLangTab === 'fr' ? 'var(--admin-gold)' : 'transparent',
-                      color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
+                      cursor: isTranslating ? 'wait' : 'pointer',
+                      boxShadow: '0 2px 8px rgba(212, 175, 55, 0.25)'
                     }}
+                    title="Traduit automatiquement le contenu renseigné vers les 2 autres langues"
                   >
-                    🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
+                    {isTranslating ? '⏳ Traduction en cours...' : '✨ Traduire automatiquement vers les autres langues'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setProductLangTab('ar')}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: productLangTab === 'ar' ? 'var(--admin-gold)' : 'transparent',
-                      color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
-                    }}
-                  >
-                    🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProductLangTab('en')}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: productLangTab === 'en' ? 'var(--admin-gold)' : 'transparent',
-                      color: productLangTab === 'en' ? '#000' : 'var(--text-gray)'
-                    }}
-                  >
-                    🇬🇧 English {productForm.titre_en ? '✓' : ''}
-                  </button>
+                  
+                  {/* Language Switcher Tabs */}
+                  <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => switchProductLangTab('fr')}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        background: productLangTab === 'fr' ? 'var(--admin-gold)' : 'transparent',
+                        color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
+                      }}
+                    >
+                      🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchProductLangTab('ar')}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        background: productLangTab === 'ar' ? 'var(--admin-gold)' : 'transparent',
+                        color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
+                      }}
+                    >
+                      🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchProductLangTab('en')}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        background: productLangTab === 'en' ? 'var(--admin-gold)' : 'transparent',
+                        color: productLangTab === 'en' ? '#000' : 'var(--text-gray)'
+                      }}
+                    >
+                      🇬🇧 English {productForm.titre_en ? '✓' : ''}
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {translateSuccessMsg && (
+                <div style={{ 
+                  background: 'rgba(16, 185, 129, 0.15)', 
+                  border: '1px solid rgba(16, 185, 129, 0.4)', 
+                  borderRadius: '6px', 
+                  padding: '6px 12px', 
+                  fontSize: '0.82rem', 
+                  color: '#10b981', 
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>✓</span> {translateSuccessMsg}
+                </div>
+              )}
 
               {/* Active Tab Inputs */}
               {productLangTab === 'fr' && (

@@ -35,6 +35,126 @@ function writeDB(data) {
   }
 }
 
+// In-memory translation cache to optimize performance
+const translationCache = new Map();
+
+function cleanTranslatedHtml(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec))
+    .trim();
+}
+
+async function translateText(text, fromLang = 'auto', toLang = 'fr') {
+  if (!text || typeof text !== 'string' || !text.trim()) return '';
+  const trimmed = text.trim();
+  const cacheKey = `${fromLang}->${toLang}:${trimmed}`;
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey);
+  }
+
+  const sl = fromLang === 'ar' ? 'ar' : (fromLang === 'en' ? 'en' : (fromLang === 'fr' ? 'fr' : 'auto'));
+  const tl = toLang === 'ar' ? 'ar' : (toLang === 'en' ? 'en' : 'fr');
+  if (sl === tl) return trimmed;
+
+  // 1. MyMemory Translation API (Highly reliable, supports FR, AR, EN)
+  try {
+    const pair = `${sl === 'auto' ? 'fr' : sl}|${tl}`;
+    const myMemoryUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=${pair}&de=admin@hrsdgdg.com`;
+    const mmRes = await fetch(myMemoryUrl, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    if (mmRes.ok) {
+      const mmData = await mmRes.json();
+      if (mmData && mmData.responseData && mmData.responseData.translatedText) {
+        const cleaned = cleanTranslatedHtml(mmData.responseData.translatedText);
+        // If MyMemory returns something valid and not an error string
+        if (cleaned && !cleaned.toLowerCase().includes('mymemory warning') && !cleaned.toLowerCase().includes('quota exceeded')) {
+          translationCache.set(cacheKey, cleaned);
+          return cleaned;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[Translate MyMemory] Error:`, err.message);
+  }
+
+  // 2. Google Translate GTX Fallback
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(trimmed)}`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        const translated = data[0].map(item => item[0]).filter(Boolean).join('');
+        if (translated) {
+          const cleaned = cleanTranslatedHtml(translated);
+          translationCache.set(cacheKey, cleaned);
+          return cleaned;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[Translate Google] Error for "${trimmed.slice(0, 20)}":`, err.message);
+  }
+
+  return trimmed;
+}
+
+// Translation endpoint (supports single text or batch of fields)
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { text, from = 'auto', to = 'fr', fields } = req.body;
+
+    // Single text
+    if (text !== undefined) {
+      const translated = await translateText(text, from, to);
+      return res.json({ translatedText: translated, from, to });
+    }
+
+    // Batch dictionary of fields (e.g. { titre: "...", description: "..." })
+    if (fields && typeof fields === 'object') {
+      const sourceLang = from || 'fr';
+      const allLangs = ['fr', 'ar', 'en'];
+      const targetLangs = req.body.targets || allLangs.filter(l => l !== sourceLang);
+
+      const translations = {};
+      for (const targetLang of targetLangs) {
+        translations[targetLang] = {};
+        for (const [key, val] of Object.entries(fields)) {
+          if (typeof val === 'string' && val.trim()) {
+            translations[targetLang][key] = await translateText(val, sourceLang, targetLang);
+          } else {
+            translations[targetLang][key] = val || '';
+          }
+        }
+      }
+
+      return res.json({
+        success: true,
+        sourceLang,
+        translations
+      });
+    }
+
+    return res.status(400).json({ error: 'Texte ou champs requis' });
+  } catch (error) {
+    console.error('Translation error:', error);
+    res.status(500).json({ error: 'Erreur lors de la traduction', message: error.message });
+  }
+});
+
 // Authentication
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
