@@ -90,7 +90,7 @@ function AdminLayout() {
     gramme: '', 
     purete: '18k', 
     city: '', 
-    stock: 0, 
+    stock: 1, 
     category_id: '', 
     statut: 'Validated', 
     commercant_id: '',
@@ -495,6 +495,8 @@ function AdminLayout() {
       bodyData.prix = parseFloat(productForm.prix_depart) || parseFloat(productForm.prix) || 1000;
       bodyData.stock = 1;
       bodyData.disponibilite = 'enchere';
+    } else {
+      bodyData.stock = parseInt(productForm.stock) || 1;
     }
 
     try {
@@ -2699,12 +2701,16 @@ function AdminLayout() {
                 </div>
               ) : (
                 <div className="form-group">
-                  <label className="form-label">{t('stock')}</label>
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{t('stock')}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--admin-gold)' }}>Pièce unique (Défaut: 1)</span>
+                  </label>
                   <input 
                     type="number" 
+                    min="1"
                     className="form-input" 
-                    value={productForm.stock} 
-                    onChange={e => setProductForm({ ...productForm, stock: parseInt(e.target.value) || 0 })} 
+                    value={productForm.stock !== undefined && productForm.stock !== null && productForm.stock !== '' ? productForm.stock : 1} 
+                    onChange={e => setProductForm({ ...productForm, stock: parseInt(e.target.value) || 1 })} 
                     required 
                   />
                 </div>

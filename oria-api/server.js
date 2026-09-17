@@ -573,7 +573,7 @@ app.post('/api/bijoux', (req, res) => {
     images: (images && images.length > 0) ? images : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'],
     disponibilite: effectiveDisponibilite,
     city: city || 'Casablanca',
-    stock: parseInt(stock || 1),
+    stock: (stock !== undefined && stock !== null && stock !== '') ? (parseInt(stock) || 1) : 1,
     category_id: category_id || 'cat_rings',
     commercant_id: targetMerchantId,
     vendeur_nom: vendeur_nom || merchantUser?.shopName || merchantUser?.nom || 'Particulier Vérifié',
