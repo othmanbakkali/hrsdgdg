@@ -77,6 +77,7 @@ function AdminLayout() {
   const [productLangTab, setProductLangTab] = useState('fr'); // 'fr', 'ar', 'en'
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateSuccessMsg, setTranslateSuccessMsg] = useState('');
+  const [adminCustomImageUrl, setAdminCustomImageUrl] = useState('');
   const [productForm, setProductForm] = useState({ 
     titre: '', 
     titre_fr: '',
@@ -348,6 +349,52 @@ function AdminLayout() {
       images: p.images || []
     });
     setShowProductModal(true);
+  };
+
+  // Multi-image handlers for admin product modal
+  const handleAdminFilesSelected = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setProductForm(prev => ({
+            ...prev,
+            images: [...(prev.images || []), reader.result]
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handleAdminAddImageUrl = () => {
+    if (!adminCustomImageUrl.trim()) return;
+    setProductForm(prev => ({
+      ...prev,
+      images: [...(prev.images || []), adminCustomImageUrl.trim()]
+    }));
+    setAdminCustomImageUrl('');
+  };
+
+  const handleAdminRemoveImage = (indexToRemove) => {
+    setProductForm(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleAdminSetPrimaryImage = (indexToPrimary) => {
+    setProductForm(prev => {
+      const imgs = [...(prev.images || [])];
+      const selected = imgs.splice(indexToPrimary, 1)[0];
+      return {
+        ...prev,
+        images: [selected, ...imgs]
+      };
+    });
   };
 
   // Auto-translate product content across FR, AR, EN
@@ -2425,6 +2472,162 @@ function AdminLayout() {
               </div>
             )}
 
+            {/* ======================================================== */}
+            {/* 📸 PHOTOS DU BIJOU (EN HAUT DU FORMULAIRE - MULTI-PHOTOS) */}
+            {/* ======================================================== */}
+            <div style={{
+              background: 'rgba(212, 175, 55, 0.05)',
+              border: '1.5px dashed var(--admin-gold)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <label className="form-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-dark)' }}>
+                  <span style={{ fontSize: '1.2rem' }}>📸</span>
+                  <span>Photos du Bijou (Ajoutez une ou plusieurs photos)</span>
+                </label>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'var(--bg-surface-elevated)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                  {(productForm.images || []).length} photo{((productForm.images || []).length > 1) ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Galerie des images sélectionnées */}
+              {(productForm.images || []).length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(85px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                  {productForm.images.map((img, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        position: 'relative', 
+                        aspectRatio: '1/1', 
+                        borderRadius: '8px', 
+                        overflow: 'hidden', 
+                        border: idx === 0 ? '2.5px solid var(--admin-gold)' : '1px solid var(--border-subtle)',
+                        boxShadow: idx === 0 ? '0 0 8px rgba(212, 175, 55, 0.35)' : 'none',
+                        background: '#07090b'
+                      }}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`Bijou ${idx + 1}`} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+
+                      {/* Badge Photo Principale */}
+                      {idx === 0 ? (
+                        <span style={{
+                          position: 'absolute',
+                          top: '4px',
+                          left: '4px',
+                          background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                          color: '#000',
+                          fontSize: '0.58rem',
+                          fontWeight: 800,
+                          padding: '2px 4px',
+                          borderRadius: '4px'
+                        }}>
+                          ★ PRINCIPALE
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAdminSetPrimaryImage(idx)}
+                          title="Définir comme photo principale"
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            left: '4px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '0.6rem',
+                            cursor: 'pointer',
+                            padding: '2px 4px'
+                          }}
+                        >
+                          ★ Définir
+                        </button>
+                      )}
+
+                      {/* Bouton de suppression */}
+                      <button
+                        type="button"
+                        onClick={() => handleAdminRemoveImage(idx)}
+                        title="Supprimer cette photo"
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(220, 38, 38, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Bouton d'ajout de fichiers multiples & URL */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/*" 
+                  id="admin-multi-photo-input"
+                  style={{ display: 'none' }}
+                  onChange={handleAdminFilesSelected}
+                />
+                <label 
+                  htmlFor="admin-multi-photo-input" 
+                  className="btn-gold"
+                  style={{ 
+                    cursor: 'pointer', 
+                    fontSize: '0.8rem', 
+                    padding: '7px 14px', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '6px',
+                    margin: 0
+                  }}
+                >
+                  📁 Choisir une ou plusieurs photos
+                </label>
+
+                <div style={{ display: 'flex', flex: 1, minWidth: '220px', gap: '6px' }}>
+                  <input 
+                    type="text"
+                    placeholder="Ou collez une URL d'image..."
+                    value={adminCustomImageUrl}
+                    onChange={e => setAdminCustomImageUrl(e.target.value)}
+                    className="form-input"
+                    style={{ fontSize: '0.82rem', padding: '6px 10px', margin: 0 }}
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleAdminAddImageUrl}
+                    className="btn-outline-gold"
+                    style={{ padding: '6px 12px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+                  >
+                    ➕ Ajouter
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Multilingual 3-Language Content Section */}
             <div style={{ 
               background: 'rgba(212, 175, 55, 0.06)', 
@@ -2745,66 +2948,21 @@ function AdminLayout() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-              <div className="form-group">
-                <label className="form-label">{t('merchant')}</label>
-                <select 
-                  className="form-input" 
-                  value={productForm.commercant_id} 
-                  onChange={e => setProductForm({ ...productForm, commercant_id: e.target.value })}
-                  required
-                >
-                  <option value="">-- {t('merchant')} --</option>
-                  {users.filter(u => u.role === 'commercant').map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.shopName || u.nom}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label className="form-label">Image (URL ou Fichier Local)</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="https://images.unsplash.com/... (URL)"
-                  value={productForm.images && productForm.images[0] && !productForm.images[0].startsWith('data:') ? productForm.images[0] : ''} 
-                  onChange={e => setProductForm({ ...productForm, images: e.target.value ? [e.target.value] : [] })} 
-                />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    id="admin-product-file-upload"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setProductForm({ ...productForm, images: [reader.result] });
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                  <label htmlFor="admin-product-file-upload" className="btn-outline-gold" style={{ margin: 0, padding: '6px 12px', fontSize: '0.75rem', cursor: 'pointer', display: 'inline-block' }}>
-                    📁 Choisir un fichier local
-                  </label>
-                  {productForm.images && productForm.images[0] && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <img 
-                        src={productForm.images[0]} 
-                        alt="Aperçu" 
-                        style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--admin-gold)' }} 
-                      />
-                      <span style={{ fontSize: '0.7rem', color: 'var(--success-green)' }}>
-                        {productForm.images[0].startsWith('data:') ? 'Image locale chargée' : 'URL image chargée'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label className="form-label">{t('merchant')}</label>
+              <select 
+                className="form-input" 
+                value={productForm.commercant_id} 
+                onChange={e => setProductForm({ ...productForm, commercant_id: e.target.value })}
+                required
+              >
+                <option value="">-- {t('merchant')} --</option>
+                {users.filter(u => u.role === 'commercant').map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.shopName || u.nom}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end', marginTop: '20px' }}>

@@ -35,6 +35,52 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [customImageUrl, setCustomImageUrl] = useState('');
+
+  const handleFilesSelected = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setFormData(prev => ({
+            ...prev,
+            images: [...(prev.images || []), reader.result]
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handleAddImageUrl = () => {
+    if (!customImageUrl.trim()) return;
+    setFormData(prev => ({
+      ...prev,
+      images: [...(prev.images || []), customImageUrl.trim()]
+    }));
+    setCustomImageUrl('');
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleSetPrimaryImage = (indexToPrimary) => {
+    setFormData(prev => {
+      const imgs = [...(prev.images || [])];
+      const selected = imgs.splice(indexToPrimary, 1)[0];
+      return {
+        ...prev,
+        images: [selected, ...imgs]
+      };
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -220,6 +266,194 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
               </div>
             </div>
 
+            {/* ======================================================== */}
+            {/* 📸 PHOTOS DU PRODUIT (EN HAUT DU FORMULAIRE - MULTI-PHOTOS) */}
+            {/* ======================================================== */}
+            <div style={{
+              background: 'rgba(212, 175, 55, 0.05)',
+              border: '1.5px dashed var(--primary-gold)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginBottom: '6px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <label className="form-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-dark)' }}>
+                  <span style={{ fontSize: '1.25rem' }}>📸</span>
+                  <span>Photos du Bijou (Ajoutez une ou plusieurs photos)</span>
+                </label>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'var(--bg-surface-elevated)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                  {(formData.images || []).length} photo{((formData.images || []).length > 1) ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Galerie des images sélectionnées */}
+              {(formData.images || []).length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                  {formData.images.map((img, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        position: 'relative', 
+                        aspectRatio: '1/1', 
+                        borderRadius: '8px', 
+                        overflow: 'hidden', 
+                        border: idx === 0 ? '2.5px solid var(--primary-gold)' : '1px solid var(--border-subtle)',
+                        boxShadow: idx === 0 ? '0 0 8px rgba(212, 175, 55, 0.4)' : 'none',
+                        background: '#07090b'
+                      }}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`Bijou ${idx + 1}`} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+
+                      {/* Badge Photo Principale sur la 1ère image */}
+                      {idx === 0 ? (
+                        <span style={{
+                          position: 'absolute',
+                          top: '4px',
+                          left: '4px',
+                          background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                          color: '#000',
+                          fontSize: '0.6rem',
+                          fontWeight: 800,
+                          padding: '2px 5px',
+                          borderRadius: '4px'
+                        }}>
+                          ★ PRINCIPALE
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryImage(idx)}
+                          title="Définir comme photo principale"
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            left: '4px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '0.62rem',
+                            cursor: 'pointer',
+                            padding: '2px 4px'
+                          }}
+                        >
+                          ★ Définir
+                        </button>
+                      )}
+
+                      {/* Bouton de suppression */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        title="Supprimer cette photo"
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(220, 38, 38, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Actions d'ajout : Fichiers multiples ou URL */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/*" 
+                  id="sell-modal-multi-upload"
+                  style={{ display: 'none' }}
+                  onChange={handleFilesSelected}
+                />
+                <label 
+                  htmlFor="sell-modal-multi-upload" 
+                  className="btn-jewelia-primary"
+                  style={{ 
+                    cursor: 'pointer', 
+                    fontSize: '0.84rem', 
+                    padding: '8px 16px', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '6px',
+                    margin: 0
+                  }}
+                >
+                  📁 Choisir une ou plusieurs photos
+                </label>
+
+                <div style={{ display: 'flex', flex: 1, minWidth: '220px', gap: '6px' }}>
+                  <input 
+                    type="text"
+                    placeholder="Ou collez une URL d'image..."
+                    value={customImageUrl}
+                    onChange={e => setCustomImageUrl(e.target.value)}
+                    className="form-input"
+                    style={{ fontSize: '0.82rem', padding: '7px 10px', margin: 0 }}
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleAddImageUrl}
+                    className="btn-jewelia-secondary"
+                    style={{ padding: '7px 12px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  >
+                    ➕ Ajouter
+                  </button>
+                </div>
+              </div>
+
+              {/* Raccourcis photos de catalogue d'exemple */}
+              <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-gray)', display: 'block', marginBottom: '6px' }}>
+                  Photos d'exemples joaillerie (cliquez pour ajouter) :
+                </span>
+                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {sampleImages.map((img, i) => (
+                    <img 
+                      key={i} 
+                      src={img} 
+                      alt={`Sample ${i}`} 
+                      onClick={() => {
+                        if (!(formData.images || []).includes(img)) {
+                          setFormData(prev => ({ ...prev, images: [...(prev.images || []), img] }));
+                        }
+                      }}
+                      title="Cliquer pour ajouter cette photo"
+                      style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '6px', 
+                        objectFit: 'cover', 
+                        cursor: 'pointer',
+                        border: (formData.images || []).includes(img) ? '2px solid var(--primary-gold)' : '1px solid var(--border-subtle)',
+                        opacity: (formData.images || []).includes(img) ? 0.6 : 1,
+                        transition: 'transform 0.15s ease'
+                      }} 
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Titre & Catégorie */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
               <div className="form-group" style={{ margin: 0 }}>
@@ -370,39 +604,6 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                   className="form-input"
                 />
               </div>
-            </div>
-
-            {/* Image Picker */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Photos du bijou (Sélectionnez ou URL)</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', marginBottom: '8px' }}>
-                {sampleImages.map((img, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setFormData({ ...formData, images: [img] })}
-                    style={{
-                      aspectRatio: '1/1',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      border: formData.images[0] === img ? '2.5px solid var(--primary-gold)' : '1px solid var(--border-subtle)',
-                      cursor: 'pointer',
-                      transform: formData.images[0] === img ? 'scale(1.05)' : 'none',
-                      boxShadow: formData.images[0] === img ? '0 0 10px rgba(179,135,40,0.3)' : 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <img src={img} alt={`Exemple ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                ))}
-              </div>
-              <input 
-                type="text"
-                placeholder="Ou collez une URL d'image directe..."
-                value={formData.images[0] || ''}
-                onChange={e => setFormData({ ...formData, images: [e.target.value] })}
-                className="form-input"
-                style={{ fontSize: '0.82rem' }}
-              />
             </div>
 
             {/* Submit Button */}
