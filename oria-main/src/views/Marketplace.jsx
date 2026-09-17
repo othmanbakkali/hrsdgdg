@@ -2,513 +2,785 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import MobileProductCard from '../components/mobile/MobileProductCard';
+import ProductCard from '../components/ProductCard';
 import { API_URL } from '../config/api';
 
-export default function Marketplace({ onSelectProduct }) {
-  const { t, lang, isRtl } = useLanguage();
+export default function Marketplace({ 
+  onSelectProduct, 
+  onOpenFinder, 
+  onOpenSellModal,
+  onOpenAIModal,
+  onOpenComparator,
+  comparedProductIds = [],
+  onToggleCompare,
+  initialUniverse = 'ALL',
+  initialCategory = '',
+  initialDealsOnly = false,
+  selectedCity = '',
+  onOpenCityPicker,
+  onOpenFilterSheet,
+  onOpenChatWithSeller,
+  searchQuery = '',
+  setSearchQuery,
+  saleUniverse = 'ALL',
+  setSaleUniverse,
+  selectedCategory = '',
+  setSelectedCategory,
+  selectedMaterial = 'ALL',
+  setSelectedMaterial,
+  selectedCondition = 'ALL',
+  setSelectedCondition,
+  selectedStyle = 'ALL',
+  setSelectedStyle,
+  selectedOccasion = 'ALL',
+  setSelectedOccasion,
+  verifiedOnly = false,
+  setVerifiedOnly,
+  dealsOnly = false,
+  setDealsOnly,
+  priceMax = 35000,
+  setPriceMax,
+  sortBy = 'popular',
+  setSortBy,
+  resetAllFilters
+}) {
+  const { t, isRtl } = useLanguage();
   const { user, toggleFavorite } = useAuth();
   const { addToCart } = useCart();
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [auctions, setAuctions] = useState([]);
-  
-  // Filters State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [weightRange, setWeightRange] = useState({ min: '', max: '' });
-  const [selectedPurity, setSelectedPurity] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
-  const [saleType, setSaleType] = useState('all'); // 'all', 'direct', 'auction'
+  const [loading, setLoading] = useState(true);
+  const [mobileViewMode, setMobileViewMode] = useState('list'); // 'list' (1 article per line, Amazon/Temu mobile style) or 'grid' (2 columns)
 
-  const [cities, setCities] = useState([]);
-
-  // Fetch categories, products, auctions
   const fetchData = async () => {
     try {
-      // Products
-      let url = `${API_URL}/bijoux?status=Validated`;
-      const res = await fetch(url);
+      const res = await fetch(`${API_URL}/bijoux?status=Validated`);
       const data = await res.json();
       setProducts(data);
 
-      // Unique Cities for filters
-      const uniqueCities = [...new Set(data.map(item => item.city))];
-      setCities(uniqueCities);
-
-      // Categories
       const catRes = await fetch(`${API_URL}/categories`);
       const catData = await catRes.json();
       setCategories(catData);
-
-      // Auctions
-      const aucRes = await fetch(`${API_URL}/encheres`);
-      const aucData = await aucRes.json();
-      setAuctions(aucData);
-    } catch (error) {
-      console.error('Error fetching marketplace data:', error);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching marketplace data:', err);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
-    // Poll every 3 seconds for live bids/updates
-    const interval = setInterval(fetchData, 3000);
+    const interval = setInterval(fetchData, 6000);
     return () => clearInterval(interval);
   }, []);
 
   // Filter products locally
   const filteredProducts = products.filter(product => {
-    // Search query
-    if (searchQuery && !product.titre.toLowerCase().includes(searchQuery.toLowerCase()) && !product.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+    // 1. Natural search or query
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchText = (
+        (product.titre || '') + ' ' + 
+        (product.description || '') + ' ' + 
+        (product.matiere || '') + ' ' + 
+        (product.pierre || '') + ' ' + 
+        (product.style || '') + ' ' + 
+        (product.occasion || '') + ' ' + 
+        (product.pour_qui || '') + ' ' + 
+        (product.etat || '') + ' ' +
+        (product.city || '') + ' ' +
+        (product.vendeur_nom || '')
+      ).toLowerCase();
+
+      // Check max price in search query
+      const priceMatch = q.match(/moins de (\d+)/i) || q.match(/< ?(\d+)/i);
+      if (priceMatch && product.prix > parseFloat(priceMatch[1])) {
+        return false;
+      }
+
+      if (q.includes('seconde main') || q.includes('occasion') || q.includes('vintage')) {
+        if (product.type_vente !== 'SECOND_HAND') return false;
+      }
+      if (q.includes('neuf') || q.includes('première main')) {
+        if (product.type_vente !== 'FIRST_HAND') return false;
+      }
+
+      const terms = q.replace(/moins de \d+/gi, '').replace(/dh/gi, '').trim().split(/\s+/);
+      const matchesAnyTerm = terms.every(term => matchText.includes(term) || term.length < 2);
+      if (!matchesAnyTerm) return false;
+    }
+
+    // 2. City Filter
+    if (selectedCity && selectedCity !== 'Toutes les villes') {
+      if ((product.city || '').toLowerCase() !== selectedCity.toLowerCase()) {
+        return false;
+      }
+    }
+
+    // 3. Universe
+    if (saleUniverse === 'AUCTION') {
+      if (product.disponibilite !== 'enchere' && product.type_vente !== 'AUCTION') {
+        return false;
+      }
+    } else if (saleUniverse !== 'ALL' && product.type_vente !== saleUniverse) {
       return false;
     }
-    // Category
+
+    // 4. Category
     if (selectedCategory && product.category_id !== selectedCategory) {
       return false;
     }
-    // Price
-    if (priceRange.min && product.prix < parseFloat(priceRange.min)) {
+
+    // 5. Material
+    if (selectedMaterial !== 'ALL' && (product.matiere || '').toLowerCase() !== selectedMaterial.toLowerCase()) {
       return false;
     }
-    if (priceRange.max && product.prix > parseFloat(priceRange.max)) {
+
+    // 6. Condition
+    if (selectedCondition !== 'ALL' && product.etat !== selectedCondition) {
       return false;
     }
-    // Weight
-    if (weightRange.min && product.gramme < parseFloat(weightRange.min)) {
+
+    // 7. Style
+    if (selectedStyle !== 'ALL' && (product.style || '').toLowerCase() !== selectedStyle.toLowerCase()) {
       return false;
     }
-    if (weightRange.max && product.gramme > parseFloat(weightRange.max)) {
+
+    // 8. Occasion
+    if (selectedOccasion !== 'ALL' && (product.occasion || '').toLowerCase() !== selectedOccasion.toLowerCase()) {
       return false;
     }
-    // Purity
-    if (selectedPurity && product.purete !== selectedPurity) {
+
+    // 9. Verified only
+    if (verifiedOnly && product.authentifie !== 'Vérifié') {
       return false;
     }
-    // City
-    if (selectedCity && product.city.toLowerCase() !== selectedCity.toLowerCase()) {
+
+    // 10. Deals only
+    if (dealsOnly && (!product.ancien_prix || product.ancien_prix <= product.prix)) {
       return false;
     }
-    // Sale Type (direct vs auction)
-    const linkedAuction = auctions.find(a => a.bijou_id === product.id && a.statut === 'Active');
-    if (saleType === 'direct' && linkedAuction) return false;
-    if (saleType === 'auction' && !linkedAuction) return false;
+
+    // 11. Max price
+    if (product.prix > priceMax) {
+      return false;
+    }
 
     return true;
   });
 
-  // Helper for countdown timer
-  const AuctionTimer = ({ endDate, auctionId }) => {
-    const [timeLeft, setTimeLeft] = useState('');
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortBy === 'price_asc') return a.prix - b.prix;
+    if (sortBy === 'price_desc') return b.prix - a.prix;
+    if (sortBy === 'rating') return (b.note || 0) - (a.note || 0);
+    if (sortBy === 'newest') return new Date(b.date_creation || 0) - new Date(a.date_creation || 0);
+    return (b.favoris_count || 0) - (a.favoris_count || 0); // popular default
+  });
 
-    useEffect(() => {
-      const updateTimer = () => {
-        const diff = new Date(endDate) - new Date();
-        if (diff <= 0) {
-          setTimeLeft('Terminé');
-          return;
-        }
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const secs = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeft(`${hours}h ${mins}m ${secs}s`);
-      };
+  // Mobile Pagination & On-Demand Loading State (10 items initially)
+  const MOBILE_PAGE_SIZE = 10;
+  const [mobilePaginationMode, setMobilePaginationMode] = useState('demand'); // 'demand' (charger 10 de plus) or 'page' (pagination 1, 2, 3...)
+  const [mobileCurrentPage, setMobileCurrentPage] = useState(1);
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(10);
 
-      updateTimer();
-      const tInterval = setInterval(updateTimer, 1000);
-      return () => clearInterval(tInterval);
-    }, [endDate]);
+  // Total pages for mobile
+  const totalMobilePages = Math.max(1, Math.ceil(sortedProducts.length / MOBILE_PAGE_SIZE));
 
-    return (
-      <div className="auction-timer-overlay">
-        <span className="auction-urgency">{t('timeRemaining')}: {timeLeft}</span>
-      </div>
-    );
-  };
+  // Reset pagination whenever filters, category or sort order change
+  useEffect(() => {
+    setMobileCurrentPage(1);
+    setMobileVisibleCount(10);
+  }, [
+    searchQuery,
+    selectedCity,
+    saleUniverse,
+    selectedCategory,
+    selectedMaterial,
+    selectedCondition,
+    selectedStyle,
+    selectedOccasion,
+    verifiedOnly,
+    dealsOnly,
+    priceMax,
+    sortBy
+  ]);
 
-  const handleMouseMove = (e) => {
-    const card = e.currentTarget;
-    const box = card.getBoundingClientRect();
-    const x = e.clientX - box.left;
-    const y = e.clientY - box.top;
-    
-    card.style.setProperty('--mouse-x', `${(x / box.width) * 100}%`);
-    card.style.setProperty('--mouse-y', `${(y / box.height) * 100}%`);
-    
-    const rotateX = -((y - box.height / 2) / (box.height / 2)) * 10;
-    const rotateY = ((x - box.width / 2) / (box.width / 2)) * 10;
-    
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px) scale(1.02)`;
-  };
+  // Mobile Products to display: strictly 10 per page in 'page' mode, or accumulated in 'demand' mode
+  const mobileDisplayProducts = mobilePaginationMode === 'page'
+    ? sortedProducts.slice((mobileCurrentPage - 1) * MOBILE_PAGE_SIZE, mobileCurrentPage * MOBILE_PAGE_SIZE)
+    : sortedProducts.slice(0, mobileVisibleCount);
 
-  const handleMouseLeave = (e) => {
-    const card = e.currentTarget;
-    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0) scale(1)';
-  };
+
+  const popularSuggestions = [
+    { label: 'Bague or 18k femme', icon: '💍' },
+    { label: 'Cadeau moins de 2000 DH', icon: '🎁' },
+    { label: 'Bracelet homme 18k', icon: '👔' },
+    { label: 'Bague vintage or & diamant', icon: '✨' },
+    { label: 'Collier nacre & or', icon: '📿' },
+    { label: 'Parure mariage royale', icon: '👑' }
+  ];
 
   return (
-    <div className="marketplace-layout">
-      {/* Sidebar Filters */}
-      <aside className="filters-panel">
-        <h3 style={{ borderBottom: '1px solid var(--primary-gold)', paddingBottom: '10px', marginBottom: '20px', color: 'var(--primary-gold)' }}>
-          {t('filterTitle')}
-        </h3>
+    <div className="marketplace-container">
+      {/* 1. MOBILE QUICK FILTERS & CONTROLS BAR (AVITO STYLE) */}
+      <div className="mobile-quick-filter-chips-bar">
+        <button 
+          className={`mobile-quick-chip ${selectedCity ? 'active' : ''}`}
+          onClick={onOpenCityPicker}
+        >
+          <span>📍 {selectedCity || 'Tout le Maroc'}</span>
+          <span className="chip-arrow">▼</span>
+        </button>
 
-        {/* Categories */}
-        <div className="filter-group">
-          <label className="filter-label">{t('category')}</label>
-          <select 
-            className="filter-input"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+        <button 
+          className={`mobile-quick-chip ${priceMax < 35000 ? 'active' : ''}`}
+          onClick={onOpenFilterSheet}
+        >
+          <span>💰 Max {priceMax.toLocaleString()} DH</span>
+        </button>
+
+        <button 
+          className={`mobile-quick-chip ${selectedMaterial === 'Or' ? 'active' : ''}`}
+          onClick={() => setSelectedMaterial(selectedMaterial === 'Or' ? 'ALL' : 'Or')}
+        >
+          <span>🥇 Or 18K</span>
+        </button>
+
+        <button 
+          className={`mobile-quick-chip ${verifiedOnly ? 'active' : ''}`}
+          onClick={() => setVerifiedOnly(!verifiedOnly)}
+        >
+          <span>🛡️ Vérifiés</span>
+        </button>
+
+        <button 
+          className={`mobile-quick-chip ${dealsOnly ? 'active' : ''}`}
+          onClick={() => setDealsOnly(!dealsOnly)}
+        >
+          <span>🔥 Remises %</span>
+        </button>
+
+        {/* View Switcher: 1 Article/Ligne (Style Amazon/Temu) vs 2 Colonnes */}
+        <div className="mobile-view-toggle-btns">
+          <button 
+            className={`view-btn ${mobileViewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setMobileViewMode('list')}
+            title="Affichage 1 Article par ligne (Amazon / Temu)"
           >
-            <option value="">{t('allCategories')}</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {lang === 'fr' ? cat.nom_fr : (lang === 'ar' ? cat.nom_ar : cat.nom_en)}
-              </option>
-            ))}
-          </select>
+            ☰
+          </button>
+          <button 
+            className={`view-btn ${mobileViewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => setMobileViewMode('grid')}
+            title="Affichage 2 Colonnes"
+          >
+            ⊞
+          </button>
+        </div>
+      </div>
+
+      {/* 2. DESKTOP CATEGORIES BAR (Refined Luxury Look) */}
+      <section className="jewelia-categories-section hide-on-mobile">
+        <div className="section-header">
+          <div>
+            <div className="section-micro-badge">💎 COLLECTIONS HRSDGDG</div>
+            <h2 className="section-title">Catalogue des Bijoux</h2>
+            <p className="section-subtitle">Découvrez nos pièces d'exception Première & Seconde Main certifiées</p>
+          </div>
+          {selectedCategory && (
+            <button 
+              onClick={() => setSelectedCategory('')}
+              className="category-clear-btn"
+            >
+              Afficher tout ✕
+            </button>
+          )}
         </div>
 
-        {/* Sale Type */}
-        <div className="filter-group">
-          <label className="filter-label">{t('typeSale')}</label>
-          <select 
-            className="filter-input"
-            value={saleType}
-            onChange={(e) => setSaleType(e.target.value)}
+        <div className="categories-pills-row">
+          <button 
+            className={`category-pill ${!selectedCategory ? 'active' : ''}`}
+            onClick={() => setSelectedCategory('')}
           >
-            <option value="all">{t('allCategories')}</option>
-            <option value="direct">{t('directSale')}</option>
-            <option value="auction">{t('auctions')}</option>
-          </select>
+            <span className="pill-icon">💎</span>
+            <span className="pill-text">Toutes les catégories</span>
+          </button>
+          {categories.map(cat => (
+            <button 
+              key={cat.id}
+              className={`category-pill ${selectedCategory === cat.id ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(selectedCategory === cat.id ? '' : cat.id)}
+            >
+              <span className="pill-icon">{cat.icon || '💎'}</span>
+              <span className="pill-text">{cat.nom_fr}</span>
+            </button>
+          ))}
         </div>
+      </section>
 
-        {/* Price filter */}
-        <div className="filter-group">
-          <label className="filter-label">{t('price')} (MAD)</label>
-          <div className="filter-range">
-            <input 
-              type="number" 
-              placeholder="Min" 
-              className="filter-input"
-              value={priceRange.min}
-              onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-            />
-            <input 
-              type="number" 
-              placeholder="Max" 
-              className="filter-input"
-              value={priceRange.max}
-              onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-            />
+      {/* LUXURY TRUST PILLARS BANNER */}
+      <div className="hero-trust-banner hide-on-mobile">
+        <div className="trust-item">
+          <div className="trust-icon">🇲🇦</div>
+          <div className="trust-text">
+            <strong>Poinçon d'État Garanti</strong>
+            <span>Or 18K / 750‰ titré & certifié</span>
           </div>
         </div>
-
-        {/* Weight filter */}
-        <div className="filter-group">
-          <label className="filter-label">{t('weight')} (g)</label>
-          <div className="filter-range">
-            <input 
-              type="number" 
-              placeholder="Min" 
-              className="filter-input"
-              value={weightRange.min}
-              onChange={(e) => setWeightRange({ ...weightRange, min: e.target.value })}
-            />
-            <input 
-              type="number" 
-              placeholder="Max" 
-              className="filter-input"
-              value={weightRange.max}
-              onChange={(e) => setWeightRange({ ...weightRange, max: e.target.value })}
-            />
+        <div className="trust-item">
+          <div className="trust-icon">💎</div>
+          <div className="trust-text">
+            <strong>Expertise Joaillière</strong>
+            <span>Contrôle systématique en atelier</span>
           </div>
         </div>
-
-        {/* Purity */}
-        <div className="filter-group">
-          <label className="filter-label">{t('purity')}</label>
-          <select 
-            className="filter-input" 
-            value={selectedPurity} 
-            onChange={(e) => setSelectedPurity(e.target.value)}
-          >
-            <option value="">{t('allCategories')}</option>
-            <option value="18k">18k</option>
-            <option value="21k">21k</option>
-            <option value="24k">24k</option>
-          </select>
+        <div className="trust-item">
+          <div className="trust-icon">🛡️</div>
+          <div className="trust-text">
+            <strong>Paiement Sécurisé</strong>
+            <span>À la livraison ou par Carte</span>
+          </div>
         </div>
-
-        {/* City */}
-        <div className="filter-group">
-          <label className="filter-label">{t('city')}</label>
-          <select 
-            className="filter-input"
-            value={selectedCity}
-            onChange={(e) => setSelectedCity(e.target.value)}
-          >
-            <option value="">{t('allCategories')}</option>
-            {cities.map(city => (
-              <option key={city} value={city}>{city}</option>
-            ))}
-          </select>
+        <div className="trust-item">
+          <div className="trust-icon">⚡</div>
+          <div className="trust-text">
+            <strong>Livraison au Maroc</strong>
+            <span>Expédition discrète 24/48h</span>
+          </div>
         </div>
-      </aside>
+      </div>
 
-      {/* Main product area */}
-      <main>
-        {/* Modern 3D Hero Banner */}
-        <div className="hero-3d-banner">
-          <div className="hero-3d-info">
-            <span className="hero-3d-badge">✨ {t('heroBadge')}</span>
-            <h1 className="hero-3d-title">{t('heroTitle')}</h1>
-            <p className="hero-3d-subtitle">{t('heroSubtitle')}</p>
-            <div style={{ display: 'flex', gap: '15px', marginTop: '25px', flexWrap: 'wrap' }}>
+      {/* SEARCH SHORTCUT SUGGESTIONS (Refined Modern Glass Chips) */}
+      <div className="search-suggestions-row hide-on-mobile">
+        <span className="suggestions-label">💡 Suggestions :</span>
+        <div className="suggestions-chips-wrap">
+          {popularSuggestions.map((tag, i) => (
+            <button 
+              key={i}
+              onClick={() => setSearchQuery(tag.label)}
+              className="suggestion-tag-btn"
+            >
+              <span className="suggestion-icon">{tag.icon}</span>
+              <span>{tag.label}</span>
+            </button>
+          ))}
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="suggestion-clear-btn"
+            >
+              Effacer la recherche ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 3. MARKETPLACE CATALOGUE PRINCIPAL */}
+      <div className="marketplace-layout">
+        {/* Desktop Sidebar Filters */}
+        <aside className="filters-panel hide-on-mobile">
+          <div className="filters-panel-header">
+            <div className="filters-header-title">
+              <span className="filters-lightning">⚡</span>
+              <h3>Filtres de Recherche</h3>
+            </div>
+            <button 
+              onClick={resetAllFilters}
+              className="filters-reset-btn"
+            >
+              Réinitialiser
+            </button>
+          </div>
+
+          {/* Universe Filter */}
+          <div className="filter-group">
+            <label className="filter-label">Univers de Vente</label>
+            <div className="filter-universe-options">
               <button 
-                className="btn-gold" 
-                onClick={() => {
-                  const searchWrapper = document.querySelector('.search-container');
-                  if (searchWrapper) searchWrapper.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => setSaleUniverse('ALL')}
+                className={`filter-universe-btn ${saleUniverse === 'ALL' && !dealsOnly ? 'active' : ''}`}
               >
-                👑 {lang === 'fr' ? 'Découvrir la collection' : (lang === 'ar' ? 'اكتشف المجموعة' : 'Explore Collection')}
+                <span>💎 Tous les bijoux</span>
+                <span className="count-tag">{products.length}</span>
               </button>
+
               <button 
-                className="btn-outline-gold" 
-                onClick={() => {
-                  setSaleType('auction');
-                  const searchWrapper = document.querySelector('.search-container');
-                  if (searchWrapper) searchWrapper.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => setSaleUniverse('FIRST_HAND')}
+                className={`filter-universe-btn first ${saleUniverse === 'FIRST_HAND' ? 'active' : ''}`}
               >
-                🔨 {lang === 'fr' ? 'Enchères en Direct' : (lang === 'ar' ? 'المزادات المباشرة' : 'Live Auctions')}
+                <span>✨ Première Main (Neuf)</span>
+                <span className="count-tag">{products.filter(p => p.type_vente === 'FIRST_HAND').length}</span>
+              </button>
+
+              <button 
+                onClick={() => setSaleUniverse('SECOND_HAND')}
+                className={`filter-universe-btn second ${saleUniverse === 'SECOND_HAND' ? 'active' : ''}`}
+              >
+                <span>♻️ Seconde Main (Occasion)</span>
+                <span className="count-tag second">{products.filter(p => p.type_vente === 'SECOND_HAND').length}</span>
               </button>
             </div>
           </div>
-          <div className="hero-3d-visual">
-            <div className="hero-3d-card-wrapper">
-              <div className="hero-3d-card">
-                <div className="hero-3d-card-inner">
-                  <div className="hero-3d-card-front luxury-jewel-showcase">
-                    <div className="showcase-sparkle">✨</div>
-                    <div className="showcase-emblem">👑</div>
-                    <div className="showcase-badge">🔥 ENCHÈRE PRIVÉE VIP</div>
-                    <h3 className="showcase-title">Solitaire Royal Or 18K & Diamant</h3>
-                    <p className="showcase-desc">Artisanat Impérial • Fès</p>
-                    <div className="showcase-bid-box">
-                      <span className="showcase-bid-label">Dernière Enchère :</span>
-                      <span className="showcase-bid-amount">48 500 MAD</span>
-                    </div>
-                    <div className="showcase-cert-row">
-                      <span>🇲🇦 Poinçon d'État</span>
-                      <span>•</span>
-                      <span>💎 Certifié FMB</span>
-                    </div>
-                    <div className="hero-3d-card-shine"></div>
-                  </div>
-                </div>
+
+          {/* Prix Max */}
+          <div className="filter-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label className="filter-label" style={{ margin: 0 }}>Budget Max</label>
+              <span className="filter-price-display">
+                {priceMax.toLocaleString()} DH
+              </span>
+            </div>
+            <input 
+              type="range"
+              min="500"
+              max="35000"
+              step="500"
+              value={priceMax}
+              onChange={e => setPriceMax(parseFloat(e.target.value))}
+              className="filter-range-input"
+            />
+            <div className="range-labels-row">
+              <span>500 DH</span>
+              <span>15 000 DH</span>
+              <span>35 000+ DH</span>
+            </div>
+          </div>
+
+          {/* Matière */}
+          <div className="filter-group">
+            <label className="filter-label">Matière & Métal</label>
+            <select 
+              value={selectedMaterial}
+              onChange={e => setSelectedMaterial(e.target.value)}
+              className="filter-select-control"
+            >
+              <option value="ALL">Toutes les matières</option>
+              <option value="Or">🥇 Or 18k / 24k</option>
+              <option value="Argent">🥈 Argent 925</option>
+              <option value="Diamant">💠 Diamant & Solitaire</option>
+              <option value="Plaqué or">✨ Plaqué or</option>
+              <option value="Acier">⚙️ Acier inoxydable</option>
+            </select>
+          </div>
+
+          {/* État */}
+          <div className="filter-group">
+            <label className="filter-label">État du bijou</label>
+            <select 
+              value={selectedCondition}
+              onChange={e => setSelectedCondition(e.target.value)}
+              className="filter-select-control"
+            >
+              <option value="ALL">Tous les états</option>
+              <option value="Neuf">Neuf (avec étiquette)</option>
+              <option value="Comme neuf">Comme neuf (jamais porté)</option>
+              <option value="Excellent état">Excellent état (poli)</option>
+              <option value="Très bon état">Très bon état</option>
+              <option value="Bon état">Bon état</option>
+            </select>
+          </div>
+
+          {/* Style */}
+          <div className="filter-group">
+            <label className="filter-label">Style & Allure</label>
+            <select 
+              value={selectedStyle}
+              onChange={e => setSelectedStyle(e.target.value)}
+              className="filter-select-control"
+            >
+              <option value="ALL">Tous les styles</option>
+              <option value="Moderne">Moderne & Épuré</option>
+              <option value="Classique">Classique Chic</option>
+              <option value="Traditionnel">Traditionnel Marocain</option>
+              <option value="Vintage">Vintage & Ancien</option>
+              <option value="Luxe">Haute Joaillerie</option>
+              <option value="Minimaliste">Minimaliste</option>
+            </select>
+          </div>
+
+          {/* Special toggles */}
+          <div className="filter-group">
+            <label className="filter-checkbox-item">
+              <input 
+                type="checkbox" 
+                checked={verifiedOnly}
+                onChange={e => setVerifiedOnly(e.target.checked)}
+                className="filter-checkbox-input"
+              />
+              <div className="checkbox-text-wrap">
+                <strong>🛡️ 100% Vérifié & Expertisé</strong>
+                <span>Poinçon d'État et certificat garantis</span>
               </div>
-            </div>
-          </div>
-        </div>
+            </label>
 
-        {/* Moroccan Jewelry Trust Pillars */}
-        <div className="trust-pillars-grid">
-          <div className="trust-pillar-card">
-            <div className="trust-pillar-icon">💎</div>
-            <div className="trust-pillar-text">
-              <h4>100% Or Poinçonné</h4>
-              <p>Authenticité garantie & titrage officiel</p>
-            </div>
+            <label className="filter-checkbox-item" style={{ marginTop: '10px' }}>
+              <input 
+                type="checkbox" 
+                checked={dealsOnly}
+                onChange={e => setDealsOnly(e.target.checked)}
+                className="filter-checkbox-input"
+              />
+              <div className="checkbox-text-wrap">
+                <strong>🔥 Bonnes Affaires & Remises</strong>
+                <span>Pièces avec réduction de prix</span>
+              </div>
+            </label>
           </div>
-          <div className="trust-pillar-card">
-            <div className="trust-pillar-icon">🔨</div>
-            <div className="trust-pillar-text">
-              <h4>Enchères Sécurisées</h4>
-              <p>Adjudications transparentes en direct</p>
-            </div>
-          </div>
-          <div className="trust-pillar-card">
-            <div className="trust-pillar-icon">🇲🇦</div>
-            <div className="trust-pillar-text">
-              <h4>Maîtres Joailliers</h4>
-              <p>Fès, Marrakech, Casablanca & Tanger</p>
-            </div>
-          </div>
-          <div className="trust-pillar-card">
-            <div className="trust-pillar-icon">🛡️</div>
-            <div className="trust-pillar-text">
-              <h4>Livraison Blindée</h4>
-              <p>Expédition assurée partout au Maroc</p>
-            </div>
-          </div>
-        </div>
+        </aside>
 
-        {/* Interactive Category Pills Bar */}
-        <div className="category-pills-bar">
-          <button 
-            type="button" 
-            className={`category-pill ${!selectedCategory && saleType === 'all' ? 'active' : ''}`}
-            onClick={() => { setSelectedCategory(''); setSaleType('all'); }}
-          >
-            ✨ {t('allCategories')}
-          </button>
-          <button 
-            type="button" 
-            className={`category-pill ${saleType === 'auction' ? 'active' : ''}`}
-            onClick={() => { setSaleType('auction'); setSelectedCategory(''); }}
-          >
-            🔥 {t('auctions')} ({auctions.length})
-          </button>
-          {categories.map(cat => {
-            const icons = {
-              'cat_rings': '💍',
-              'cat_necklaces': '📿',
-              'cat_bracelets': '✨',
-              'cat_earrings': '💎',
-              'cat_watches': '⌚'
-            };
-            return (
-              <button 
-                key={cat.id}
-                type="button" 
-                className={`category-pill ${selectedCategory === cat.id ? 'active' : ''}`}
-                onClick={() => { setSelectedCategory(cat.id); setSaleType('all'); }}
+        {/* Products Grid & Mobile Feed */}
+        <main style={{ width: '100%' }}>
+          {/* Header Bar */}
+          <div className="products-grid-header">
+            <div className="products-count-text">
+              <span className="results-badge">{sortedProducts.length}</span>
+              <span>bijoux disponibles</span>
+              {selectedCity && <span className="city-filter-highlight"> à <strong>{selectedCity}</strong></span>}
+              {saleUniverse === 'FIRST_HAND' && <span className="universe-tag-first"> • ✨ Première Main</span>}
+              {saleUniverse === 'SECOND_HAND' && <span className="universe-tag-second"> • ♻️ Seconde Main</span>}
+              {saleUniverse === 'AUCTION' && <span className="universe-tag-first" style={{ background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}> • 🔨 Enchères en Direct</span>}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }} className="hide-on-mobile">Trier par :</span>
+              <select 
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+                className="products-sort-select"
               >
-                {icons[cat.id] || '👑'} {lang === 'fr' ? cat.nom_fr : (lang === 'ar' ? cat.nom_ar : cat.nom_en)}
+                <option value="popular">⭐ Popularité</option>
+                <option value="newest">🕒 Plus récents</option>
+                <option value="price_asc">💰 Prix croissant</option>
+                <option value="price_desc">💎 Prix décroissant</option>
+                <option value="rating">🏆 Meilleures notes</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Empty state */}
+          {sortedProducts.length === 0 ? (
+            <div className="empty-results-box">
+              <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '16px' }}>🔍</span>
+              <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>Aucun bijou correspondant trouvé</h3>
+              <p style={{ color: 'var(--text-gray)', fontSize: '0.92rem', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
+                Essayez d'élargir votre budget, votre ville ou vos critères de matière.
+              </p>
+              <button onClick={resetAllFilters} className="btn-jewelia-primary">
+                Réinitialiser tous les filtres
               </button>
-            );
-          })}
-        </div>
+            </div>
+          ) : (
+            <>
+              {/* MOBILE FEED (Avito Grid 2 Col or List) */}
+              <div className={`mobile-avito-products-container ${mobileViewMode === 'list' ? 'mode-list' : 'mode-grid'} show-on-mobile-only`}>
+                {mobileDisplayProducts.map(product => (
+                  <MobileProductCard 
+                    key={product.id}
+                    product={product}
+                    onSelectProduct={onSelectProduct}
+                    viewMode={mobileViewMode}
+                    onToggleCompare={onToggleCompare}
+                    isCompared={comparedProductIds.includes(product.id)}
+                    onOpenChatWithSeller={onOpenChatWithSeller}
+                  />
+                ))}
+              </div>
 
-        {/* Search Input */}
-        <div className="search-container">
-          <div className="search-input-wrapper">
-            <input 
-              type="text" 
-              placeholder={t('searchPlaceholder')}
-              className="search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button className="search-btn">🔍</button>
-          </div>
-        </div>
-
-        {/* Products Grid */}
-        {filteredProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-gray)' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '15px' }}>💎</div>
-            <p style={{ fontSize: '1.1rem' }}>{t('noProducts')}</p>
-          </div>
-        ) : (
-          <div className="products-grid">
-            {filteredProducts.map(product => {
-              const activeAuction = auctions.find(a => a.bijou_id === product.id && a.statut === 'Active');
-              const isFav = user && user.favoris && user.favoris.includes(product.id);
-
-              return (
-                <div 
-                  key={product.id} 
-                  className="product-card"
-                  onMouseMove={handleMouseMove}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  {/* Badges */}
-                  {activeAuction ? (
-                    <span className="card-badge auction-live">
-                      🔥 {t('auctions')}
-                    </span>
-                  ) : (
-                    <span className="card-badge">✨ {t('directSale')}</span>
-                  )}
-
-                  {/* Favorite button */}
-                  {user && user.role === 'client' && (
-                    <button 
-                      className={`card-fav-btn ${isFav ? 'active' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(product.id);
-                      }}
-                      title="Favoris"
+              {/* MOBILE PAGINATION & LOAD ON DEMAND CONTROLS */}
+              {sortedProducts.length > MOBILE_PAGE_SIZE && (
+                <div className="mobile-pagination-section show-on-mobile-only">
+                  {/* Mode Switch Tabs: À la demande vs Par page */}
+                  <div className="mobile-pagination-mode-switch">
+                    <button
+                      type="button"
+                      className={`mobile-mode-pill-btn ${mobilePaginationMode === 'demand' ? 'active' : ''}`}
+                      onClick={() => setMobilePaginationMode('demand')}
                     >
-                      {isFav ? '❤️' : '🤍'}
+                      ⚡ À la demande ({Math.min(mobileVisibleCount, sortedProducts.length)}/{sortedProducts.length})
                     </button>
-                  )}
-
-                  <div className="card-image-container" onClick={() => onSelectProduct(product)}>
-                    <img 
-                      src={product.images[0]} 
-                      alt={product.titre} 
-                      className="card-image"
-                    />
-                    {activeAuction && (
-                      <AuctionTimer endDate={activeAuction.date_fin} auctionId={activeAuction.id} />
-                    )}
+                    <button
+                      type="button"
+                      className={`mobile-mode-pill-btn ${mobilePaginationMode === 'page' ? 'active' : ''}`}
+                      onClick={() => setMobilePaginationMode('page')}
+                    >
+                      📄 Par page ({mobileCurrentPage}/{totalMobilePages})
+                    </button>
                   </div>
 
-                  <div className="card-content">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span className="card-category">
-                        {categories.find(c => c.id === product.category_id)?.nom_fr || ''}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
-                        📍 {product.city}
-                      </span>
-                    </div>
-
-                    <h4 className="card-title" onClick={() => onSelectProduct(product)} style={{ cursor: 'pointer' }}>
-                      {product.titre}
-                    </h4>
-                    
-                    <div className="card-specs">
-                      <span className="card-specs-pill">⚖️ {product.gramme}g</span>
-                      <span className="card-specs-pill">👑 {product.purete}</span>
-                      <span className="card-specs-pill">🇲🇦 Poinçonné</span>
-                    </div>
-
-                    <div className="card-footer">
-                      <div>
-                        <span className="card-price-label">
-                          {activeAuction ? t('currentBid') : t('price')}
+                  {/* Mode 1: À la demande (Load More 10 by 10) */}
+                  {mobilePaginationMode === 'demand' ? (
+                    <div className="mobile-demand-container">
+                      <div className="mobile-demand-progress-header">
+                        <span className="progress-text">
+                          Affichage de <strong>{Math.min(mobileVisibleCount, sortedProducts.length)}</strong> sur <strong>{sortedProducts.length}</strong> bijoux
                         </span>
-                        <div className="card-price">
-                          {activeAuction ? activeAuction.highestBid : product.prix} <span style={{ fontSize: '0.9rem', color: 'var(--primary-gold)' }}>{t('currency')}</span>
-                        </div>
+                        <span className="progress-pct">
+                          {Math.round((Math.min(mobileVisibleCount, sortedProducts.length) / sortedProducts.length) * 100)}%
+                        </span>
+                      </div>
+                      <div className="mobile-progress-bar-wrap">
+                        <div 
+                          className="mobile-progress-bar-fill" 
+                          style={{ width: `${(Math.min(mobileVisibleCount, sortedProducts.length) / sortedProducts.length) * 100}%` }}
+                        />
                       </div>
 
-                      {activeAuction ? (
-                        <button className="btn-gold" onClick={() => onSelectProduct(product)} style={{ padding: '8px 16px', fontSize: '0.78rem' }}>
-                          🔨 {t('placeBid')}
-                        </button>
-                      ) : (
-                        product.stock > 0 ? (
-                          <button 
-                            className="btn-gold" 
-                            onClick={() => addToCart(product)} 
-                            style={{ padding: '8px 16px', fontSize: '0.78rem' }}
+                      {mobileVisibleCount < sortedProducts.length ? (
+                        <div className="mobile-demand-actions">
+                          <button
+                            type="button"
+                            className="mobile-load-more-btn"
+                            onClick={() => setMobileVisibleCount(prev => Math.min(prev + MOBILE_PAGE_SIZE, sortedProducts.length))}
                           >
-                            🛒 {t('addToCart')}
+                            <span>Afficher 10 bijoux de plus ▾</span>
+                            <span className="load-more-badge">+{Math.min(MOBILE_PAGE_SIZE, sortedProducts.length - mobileVisibleCount)}</span>
                           </button>
-                        ) : (
-                          <span style={{ color: 'var(--danger-red)', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                            {t('outOfStock')}
-                          </span>
-                        )
+                          
+                          {sortedProducts.length - mobileVisibleCount > MOBILE_PAGE_SIZE && (
+                            <button
+                              type="button"
+                              className="mobile-load-all-link"
+                              onClick={() => setMobileVisibleCount(sortedProducts.length)}
+                            >
+                              Tout afficher ({sortedProducts.length} pièces)
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mobile-all-loaded-banner">
+                          <span>✨ Tous les {sortedProducts.length} bijoux disponibles sont affichés</span>
+                        </div>
                       )}
                     </div>
-                  </div>
+                  ) : (
+                    /* Mode 2: Pagination Numérotée (1, 2, 3...) */
+                    <div className="mobile-page-container">
+                      <div className="mobile-pagination-controls">
+                        <button
+                          type="button"
+                          className="mobile-nav-btn prev"
+                          disabled={mobileCurrentPage <= 1}
+                          onClick={() => {
+                            setMobileCurrentPage(p => Math.max(1, p - 1));
+                            const el = document.querySelector('.mobile-avito-products-container') || document.querySelector('.products-grid-header');
+                            el?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                        >
+                          ‹ Précédent
+                        </button>
+
+                        <div className="mobile-pages-list">
+                          {Array.from({ length: totalMobilePages }, (_, idx) => idx + 1).map(page => (
+                            <button
+                              key={page}
+                              type="button"
+                              className={`mobile-page-num-btn ${mobileCurrentPage === page ? 'active' : ''}`}
+                              onClick={() => {
+                                setMobileCurrentPage(page);
+                                const el = document.querySelector('.mobile-avito-products-container') || document.querySelector('.products-grid-header');
+                                el?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="mobile-nav-btn next"
+                          disabled={mobileCurrentPage >= totalMobilePages}
+                          onClick={() => {
+                            setMobileCurrentPage(p => Math.min(totalMobilePages, p + 1));
+                            const el = document.querySelector('.mobile-avito-products-container') || document.querySelector('.products-grid-header');
+                            el?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                        >
+                          Suivant ›
+                        </button>
+                      </div>
+
+                      <div className="mobile-pages-summary">
+                        Page {mobileCurrentPage} sur {totalMobilePages} • Bijoux {(mobileCurrentPage - 1) * MOBILE_PAGE_SIZE + 1} à {Math.min(mobileCurrentPage * MOBILE_PAGE_SIZE, sortedProducts.length)} sur {sortedProducts.length}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              );
-            })}
+              )}
+
+              {/* DESKTOP GRID (Avito Morocco Multi-Photo White Card Layout) */}
+              <div className="products-grid hide-on-mobile">
+                {sortedProducts.map(product => (
+                  <ProductCard 
+                    key={product.id}
+                    product={product}
+                    onSelectProduct={onSelectProduct}
+                    onOpenChatWithSeller={onOpenChatWithSeller}
+                    viewMode="desktop"
+                    isMobile={false}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* 4. LES DEUX UNIVERS CARDS (Desktop bottom section) */}
+      <section className="jewelia-universes-section hide-on-mobile" style={{ marginTop: '50px', marginBottom: '40px' }}>
+        <div className="universes-grid">
+          {/* Première Main */}
+          <div 
+            className="universe-card first-hand"
+            onClick={() => {
+              setSaleUniverse('FIRST_HAND');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            <div>
+              <div className="universe-header-tag">
+                <span>✨ PREMIÈRE MAIN</span>
+              </div>
+              <h3 className="universe-title">
+                « Des bijoux neufs, directement des bijouteries certifiées »
+              </h3>
+              <p className="universe-desc">
+                Découvrez les collections exclusives de joailliers partenaires avec garantie officielle, poinçon d'État et mise à taille offerte.
+              </p>
+            </div>
+            <button className="universe-btn">
+              {t('universeFirstHandBtn')} ↑
+            </button>
           </div>
-        )}
-      </main>
+
+          {/* Seconde Main */}
+          <div 
+            className="universe-card second-hand"
+            onClick={() => {
+              setSaleUniverse('SECOND_HAND');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            <div>
+              <div className="universe-header-tag">
+                <span>♻️ SECONDE MAIN</span>
+              </div>
+              <h3 className="universe-title">
+                « Des bijoux d'occasion authentifiés pour une seconde vie »
+              </h3>
+              <p className="universe-desc">
+                Pièces vintage rares et bijoux précieux proposés par des particuliers. Contrôlés, expertisés et testés par nos experts avant envoi.
+              </p>
+            </div>
+            <button className="universe-btn">
+              {t('universeSecondHandBtn')} ↑
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

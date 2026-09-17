@@ -1,17 +1,79 @@
 {
-  "short_name": "Oria",
-  "name": "Oria Marketplace de Bijoux",
+  "id": "hrsdgdg-luxury-marketplace",
+  "name": "HRSDGDG — Joaillerie & Bijoux Précieux",
+  "short_name": "HRSDGDG",
+  "description": "Marketplace de joaillerie de luxe au Maroc HRSDGDG : découvrez et achetez des bijoux neufs certifiés (Première main) et d'occasion expertisés (Seconde main).",
+  "lang": "fr",
+  "dir": "auto",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#09090D",
+  "theme_color": "#D4AF37",
+  "categories": ["shopping", "lifestyle", "luxury"],
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3067/3067807.png",
+      "src": "/icons/pwa-192x192.png",
+      "sizes": "192x192",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
-  "start_url": ".",
-  "background_color": "#121212",
-  "theme_color": "#D4AF37",
-  "display": "standalone",
-  "orientation": "portrait"
+  "shortcuts": [
+    {
+      "name": "Explorer les Bijoux",
+      "short_name": "Explorer",
+      "description": "Découvrez toutes les créations",
+      "url": "/#explore",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Vendre un Bijou",
+      "short_name": "Vendre",
+      "description": "Déposez votre bijou en vente ou expertise",
+      "url": "/#sell",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Enchères en Direct",
+      "short_name": "Enchères",
+      "description": "Participez aux ventes aux enchères",
+      "url": "/#auctions",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Trouver mon Bijou (IA)",
+      "short_name": "Assistant IA",
+      "description": "Assistant personnalisé de recherche",
+      "url": "/#finder",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
 }

@@ -5,97 +5,105 @@ import { useCart, CartProvider } from './context/CartContext';
 import Marketplace from './views/Marketplace';
 import ClientDashboard from './views/ClientDashboard';
 import MerchantDashboard from './views/MerchantDashboard';
-import LiveGoldTicker from './components/LiveGoldTicker';
 import OriaLogo from './components/OriaLogo';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
+import ProductDetailModal from './components/ProductDetailModal';
+import JewelFinderWizard from './components/JewelFinderWizard';
+import SellJewelModal from './components/SellJewelModal';
+import ProductComparatorModal from './components/ProductComparatorModal';
+import AIAssistantModal from './components/AIAssistantModal';
+import PWAInstallBanner from './pwa/PWAInstallBanner';
+import PWAInstallButton from './pwa/PWAInstallButton';
+
+// Mobile-specific components
+import MobileTopBar from './components/mobile/MobileTopBar';
+import MobileBottomNav from './components/mobile/MobileBottomNav';
+import MobileFilterSheet from './components/mobile/MobileFilterSheet';
+import MobileCityPicker from './components/mobile/MobileCityPicker';
+import MobileChatDrawer from './components/mobile/MobileChatDrawer';
+import DeviceSimulatorToggle from './components/mobile/DeviceSimulatorToggle';
+
 import { API_URL } from './config/api';
 import './styles/theme.css';
 
-const themes = {
-  gold: {
-    primary: '#d4af37',
-    dark: '#aa7c11',
-    light: '#f3e5ab',
-    border: 'rgba(212, 175, 55, 0.25)',
-    borderFocus: 'rgba(212, 175, 55, 0.6)',
-    shadow: '0 4px 20px rgba(212, 175, 55, 0.15)'
-  },
-  emerald: {
-    primary: '#2ecc71',
-    dark: '#27ae60',
-    light: '#a3e4d7',
-    border: 'rgba(46, 204, 113, 0.25)',
-    borderFocus: 'rgba(46, 204, 113, 0.6)',
-    shadow: '0 4px 20px rgba(46, 204, 113, 0.15)'
-  },
-  ruby: {
-    primary: '#e74c3c',
-    dark: '#c0392b',
-    light: '#fadbd8',
-    border: 'rgba(231, 76, 60, 0.25)',
-    borderFocus: 'rgba(231, 76, 60, 0.6)',
-    shadow: '0 4px 20px rgba(231, 76, 60, 0.15)'
-  },
-  sapphire: {
-    primary: '#3498db',
-    dark: '#2980b9',
-    light: '#aed6f1',
-    border: 'rgba(52, 152, 219, 0.25)',
-    borderFocus: 'rgba(52, 152, 219, 0.6)',
-    shadow: '0 4px 20px rgba(52, 152, 219, 0.15)'
-  },
-  rosegold: {
-    primary: '#b76e79',
-    dark: '#8e545e',
-    light: '#e8c4c8',
-    border: 'rgba(183, 110, 121, 0.25)',
-    borderFocus: 'rgba(183, 110, 121, 0.6)',
-    shadow: '0 4px 20px rgba(183, 110, 121, 0.15)'
-  }
-};
-
 function MainLayout() {
   const { t, lang, setLang, isRtl } = useLanguage();
-  const { user, logout, toggleFavorite } = useAuth();
+  const { user, logout } = useAuth();
   const { cartItems, removeFromCart, updateQuantity, clearCart, cartTotal } = useCart();
 
-  const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('oria-theme') || 'gold');
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Theme State (Light background by default)
+  const [theme, setTheme] = useState(() => localStorage.getItem('hrsdgdg-theme') || 'light');
 
   useEffect(() => {
-    const tVals = themes[selectedTheme] || themes.gold;
-    document.documentElement.style.setProperty('--primary-gold', tVals.primary);
-    document.documentElement.style.setProperty('--dark-gold', tVals.dark);
-    document.documentElement.style.setProperty('--light-gold', tVals.light);
-    document.documentElement.style.setProperty('--border-gold', tVals.border);
-    document.documentElement.style.setProperty('--border-gold-focus', tVals.borderFocus);
-    document.documentElement.style.setProperty('--shadow-gold', tVals.shadow);
-    localStorage.setItem('oria-theme', selectedTheme);
-  }, [selectedTheme]);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+    if (theme === 'light') {
+      document.body.classList.add('light-theme');
+      document.body.classList.remove('dark-theme');
+    } else {
+      document.body.classList.add('dark-theme');
+      document.body.classList.remove('light-theme');
+    }
+    localStorage.setItem('hrsdgdg-theme', theme);
+  }, [theme]);
 
-  const [activeView, setActiveView] = useState('store'); // 'store', 'dashboard'
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  // Navigation State
+  const [activeView, setActiveView] = useState('marketplace'); // 'marketplace', 'client-dashboard', 'merchant-dashboard'
+  const [mobileNavTab, setMobileNavTab] = useState('home'); // 'home', 'explore', 'sell', 'messages', 'account'
+  const [isMobileSimulator, setIsMobileSimulator] = useState(false);
+
+  // Filters State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [saleUniverse, setSaleUniverse] = useState('ALL'); // 'ALL', 'FIRST_HAND', 'SECOND_HAND'
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedMaterial, setSelectedMaterial] = useState('ALL');
+  const [selectedCondition, setSelectedCondition] = useState('ALL');
+  const [selectedStyle, setSelectedStyle] = useState('ALL');
+  const [selectedOccasion, setSelectedOccasion] = useState('ALL');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [dealsOnly, setDealsOnly] = useState(false);
+  const [priceMax, setPriceMax] = useState(35000);
+  const [sortBy, setSortBy] = useState('popular'); // 'popular', 'price_asc', 'price_desc', 'rating', 'newest'
+
+  // Products Data
+  const [allProducts, setAllProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  
-  // Cart Drawer State
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isCheckoutMode, setIsCheckoutMode] = useState(false);
-  
-  // Checkout Form State
-  const [checkoutForm, setCheckoutForm] = useState({ nom: '', telephone: '', adresse: '', ville: '' });
-  
-  // Bidding details in modal
-  const [bidAmount, setBidAmount] = useState('');
-  const [activeAuction, setActiveAuction] = useState(null);
-  const [bidHistory, setBidHistory] = useState([]);
-  
-  // Contact seller state
-  const [isContactingSeller, setIsContactingSeller] = useState(false);
-  const [sellerMessage, setSellerMessage] = useState('');
-  const [isCopied, setIsCopied] = useState(false);
 
-  // Notifications State
+  // Modals & Bottom Sheets State
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isFinderOpen, setIsFinderOpen] = useState(false);
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [isComparatorOpen, setIsComparatorOpen] = useState(false);
+  const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isCityPickerOpen, setIsCityPickerOpen] = useState(false);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [chatTargetProduct, setChatTargetProduct] = useState(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Comparator State
+  const [comparedProductIds, setComparedProductIds] = useState([]);
+
+  // Cart & Checkout Drawer
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Cart, 2: Shipping, 3: Payment, 4: Confirmed
+  const [checkoutForm, setCheckoutForm] = useState({
+    nom: user?.nom || '',
+    telephone: user?.telephone || '',
+    adresse: user?.adresse || '',
+    ville: user?.ville || 'Casablanca',
+    mode_paiement: 'cash_on_delivery'
+  });
+  const [confirmedOrder, setConfirmedOrder] = useState(null);
+
+  // Toast Notifications
   const [notifications, setNotifications] = useState([]);
 
   const addNotification = (message, type = 'info') => {
@@ -103,707 +111,1035 @@ function MainLayout() {
     setNotifications(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 5000);
+    }, 4000);
   };
 
-  const handleCopyLink = (productId) => {
-    const shareUrl = `${window.location.origin}/?product=${productId}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-      addNotification(t('linkCopied'), 'success');
-    }).catch(() => {
-      addNotification("Erreur lors de la copie du lien", "error");
+  // Fetch all products & categories
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${API_URL}/bijoux?status=Validated`);
+      const data = await res.json();
+      setAllProducts(data);
+
+      const catRes = await fetch(`${API_URL}/categories`);
+      const catData = await catRes.json();
+      setCategories(catData);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Compute active filters count for badge
+  const activeFiltersCount = [
+    selectedCity ? 1 : 0,
+    saleUniverse !== 'ALL' ? 1 : 0,
+    selectedCategory ? 1 : 0,
+    selectedMaterial !== 'ALL' ? 1 : 0,
+    selectedCondition !== 'ALL' ? 1 : 0,
+    verifiedOnly ? 1 : 0,
+    dealsOnly ? 1 : 0,
+    priceMax < 35000 ? 1 : 0
+  ].reduce((a, b) => a + b, 0);
+
+  const resetAllFilters = () => {
+    setSearchQuery('');
+    setSelectedCity('');
+    setSaleUniverse('ALL');
+    setSelectedCategory('');
+    setSelectedMaterial('ALL');
+    setSelectedCondition('ALL');
+    setSelectedStyle('ALL');
+    setSelectedOccasion('ALL');
+    setVerifiedOnly(false);
+    setDealsOnly(false);
+    setPriceMax(35000);
+    setSortBy('popular');
+  };
+
+  const handleToggleCompare = (productId) => {
+    setComparedProductIds(prev => {
+      if (prev.includes(productId)) {
+        addNotification("Bijou retiré du comparateur", "info");
+        return prev.filter(id => id !== productId);
+      } else {
+        if (prev.length >= 4) {
+          addNotification("Vous pouvez comparer jusqu'à 4 bijoux au maximum", "warning");
+          return prev;
+        }
+        addNotification("Bijou ajouté au comparateur ⚖️", "success");
+        return [...prev, productId];
+      }
     });
   };
 
-  // Sync details when a product is clicked
-  const handleProductSelect = async (product) => {
-    setSelectedProduct(product);
-    setBidAmount('');
-    setSellerMessage('');
-    setIsContactingSeller(false);
-
-    try {
-      // Find auction details
-      const res = await fetch(`${API_URL}/encheres`);
-      const data = await res.json();
-      const linked = data.find(e => e.bijou_id === product.id && e.statut === 'Active');
-      
-      if (linked) {
-        setActiveAuction(linked);
-        setBidAmount(String(linked.highestBid + linked.increment_min));
-        
-        // Fetch auction bid history
-        // Since the seed API returns bids directly or calculates, we can fetch all bids
-        const allRes = await fetch(`${API_URL}/encheres`); // Server returns calculated bids inside
-        // Let's emulate fetching history
-      } else {
-        setActiveAuction(null);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  const handleOpenChatWithSeller = (product) => {
+    setChatTargetProduct(product);
+    setIsChatDrawerOpen(true);
   };
 
-  // Check query parameters to auto-open shared product
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const productId = params.get('product');
-    if (productId) {
-      const fetchSharedProduct = async () => {
-        try {
-          const res = await fetch(`${API_URL}/bijoux/${productId}`);
-          if (res.ok) {
-            const product = await res.json();
-            handleProductSelect(product);
-          }
-        } catch (e) {
-          console.error("Erreur de chargement du produit partagé :", e);
-        }
-      };
-      fetchSharedProduct();
-    }
-  }, []);
-
-  // Resolve Auction automatically if timer is up
-  useEffect(() => {
-    if (!activeAuction) return;
-    const checkAuctionExpiry = async () => {
-      const diff = new Date(activeAuction.date_fin) - new Date();
-      if (diff <= 0) {
-        try {
-          const res = await fetch(`${API_URL}/encheres/${activeAuction.id}/resolve`, {
-            method: 'POST'
-          });
-          const data = await res.json();
-          addNotification(data.message, 'success');
-          // Refresh details
-          setSelectedProduct(null);
-          setActiveAuction(null);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    };
-
-    const interval = setInterval(checkAuctionExpiry, 3000);
-    return () => clearInterval(interval);
-  }, [activeAuction]);
-
-  const handlePlaceBid = async (e) => {
-    e.preventDefault();
-    if (!activeAuction) return;
-    if (!user) {
-      setIsAuthModalOpen(true);
-      addNotification('Veuillez vous connecter pour participer aux enchères.', 'info');
-      return;
-    }
-    if (user?.role !== 'client') {
-      addNotification('Seuls les comptes clients peuvent enchérir.', 'error');
-      return;
-    }
-    
-    const amount = parseFloat(bidAmount);
-    const minBid = activeAuction.prix_actuel + activeAuction.increment_min;
-    
-    if (isNaN(amount) || amount < minBid) {
-      addNotification(`L'enchère minimale requise est de ${minBid} MAD`, 'error');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/encheres/${activeAuction.id}/bids`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: user.id,
-          montant: amount
-        })
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        addNotification(err.message, 'error');
-        return;
-      }
-
-      const updatedAuction = await res.json();
-      setActiveAuction(updatedAuction);
-      setBidAmount('');
-      addNotification('Votre offre a été enregistrée avec succès ! 🔨', 'success');
-      
-      // Update bid history modal view
-      // fetchBidHistory(updatedAuction.id);
-    } catch (error) {
-      addNotification('Erreur lors du dépôt de l\'enchère', 'error');
-    }
-  };
-
-  const handleCheckout = async (e) => {
+  const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     if (cartItems.length === 0) return;
-    if (!user) {
-      setIsAuthModalOpen(true);
-      addNotification('Veuillez vous connecter pour valider votre commande.', 'info');
-      return;
-    }
 
     try {
+      const payload = {
+        client_id: user?.id || 'u_guest',
+        client_nom: checkoutForm.nom || user?.nom || 'Client JEWELIA',
+        client_telephone: checkoutForm.telephone || '+212 661-000000',
+        client_adresse: checkoutForm.adresse || 'Adresse de livraison',
+        client_ville: checkoutForm.ville || 'Casablanca',
+        mode_paiement: checkoutForm.mode_paiement,
+        items: cartItems.map(item => ({
+          bijou_id: item.id,
+          titre: item.titre,
+          quantite: item.quantity || 1
+        }))
+      };
+
       const res = await fetch(`${API_URL}/commandes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: user.id,
-          client_nom: checkoutForm.nom || user?.nom || 'Client',
-          client_telephone: checkoutForm.telephone,
-          client_adresse: checkoutForm.adresse,
-          client_ville: checkoutForm.ville,
-          items: cartItems.map(i => ({ bijou_id: i.id, titre: i.titre, prix: i.prix, quantite: i.quantite }))
-        })
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        addNotification(err.message, 'error');
-        return;
-      }
-
-      addNotification(t('orderSuccess'), 'success');
-      clearCart();
-      setIsCartOpen(false);
-      setIsCheckoutMode(false);
-      setCheckoutForm({ nom: '', telephone: '', adresse: '', ville: '' });
-      setActiveView('dashboard');
-    } catch (error) {
-      addNotification('Erreur de validation de commande', 'error');
-    }
-  };
-
-  const handleContactSeller = async (e) => {
-    e.preventDefault();
-    if (!sellerMessage.trim() || !selectedProduct) return;
-    if (!user) {
-      setIsAuthModalOpen(true);
-      addNotification('Veuillez vous connecter pour contacter le joaillier.', 'info');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sender_id: user.id,
-          receiver_id: selectedProduct?.commercant_id,
-          content: `[Bijou: ${selectedProduct?.titre}] ${sellerMessage}`
-        })
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
-        addNotification('Message envoyé avec succès !', 'success');
-        setSellerMessage('');
-        setIsContactingSeller(false);
+        const order = await res.json();
+        setConfirmedOrder(order);
+        setCheckoutStep(4);
+        clearCart();
+        addNotification(`Commande confirmée avec succès ! #${order.id}`, "success");
       }
-    } catch (error) {
-      addNotification('Erreur d\'envoi du message', 'error');
+    } catch (err) {
+      console.error(err);
+      addNotification("Erreur lors de la commande", "error");
     }
   };
 
-  return (
-    <div className="app-container">
-      {/* Live Moroccan Gold Market Rates Ticker */}
-      <LiveGoldTicker />
+  // Separate cart items by Universe
+  const firstHandCartItems = cartItems.filter(item => item.type_vente === 'FIRST_HAND' || !item.type_vente);
+  const secondHandCartItems = cartItems.filter(item => item.type_vente === 'SECOND_HAND');
+  const comparedProducts = allProducts.filter(p => comparedProductIds.includes(p.id));
 
-      {/* Header - Navigation */}
-      <header className="navbar">
-        <a href="#" className="navbar-logo" onClick={() => setActiveView('store')} style={{ textDecoration: 'none' }}>
-          <OriaLogo size={32} subtitle="HAUTE JOAILLERIE" />
-        </a>
-        
-        <ul className="navbar-menu">
-          <li>
-            <span className={`navbar-item ${activeView === 'store' ? 'active' : ''}`} onClick={() => setActiveView('store')}>
-              {t('home')}
-            </span>
-          </li>
-          {user && (
-            <li>
-              <span className={`navbar-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>
-                {user.role === 'client' ? t('dashboard') : '🏪 Espace Marchand'}
-              </span>
-            </li>
-          )}
-        </ul>
+  // Handle Mobile Bottom Nav Tab Changes
+  const handleMobileNavTabChange = (tab) => {
+    setMobileNavTab(tab);
+    if (tab === 'home') {
+      setActiveView('marketplace');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (tab === 'explore') {
+      setActiveView('marketplace');
+      setIsFinderOpen(true);
+    } else if (tab === 'sell') {
+      setIsSellModalOpen(true);
+    } else if (tab === 'messages') {
+      setIsChatDrawerOpen(true);
+    } else if (tab === 'account') {
+      if (!user) {
+        setIsAuthModalOpen(true);
+      } else if (user.role === 'commercant') {
+        setActiveView('merchant-dashboard');
+      } else {
+        setActiveView('client-dashboard');
+      }
+    }
+  };
 
-        <div className="navbar-actions">
-          {/* Language Selector */}
-          <select 
-            className="dev-select"
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
-            style={{ padding: '6px 12px', fontSize: '0.82rem', height: '36px' }}
-          >
-            <option value="fr">🇫🇷 FR</option>
-            <option value="ar">🇲🇦 العربية</option>
-            <option value="en">🇬🇧 EN</option>
-          </select>
-
-          {/* Cart Button */}
-          <button 
-            className="btn-outline-gold" 
-            style={{ padding: '7px 14px', position: 'relative', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '6px' }} 
-            onClick={() => { setIsCartOpen(true); setIsCheckoutMode(false); }}
-            title="Panier"
-          >
-            <span>🛒</span>
-            <span className="cart-btn-label" style={{ fontSize: '0.82rem' }}>{t('cart')}</span>
-            <span style={{ 
-              background: 'var(--primary-gold)', 
-              color: '#08080a', 
-              fontWeight: 800, 
-              fontSize: '0.72rem', 
-              borderRadius: '10px', 
-              padding: '1px 6px',
-              marginLeft: '2px'
-            }}>
-              {cartItems.reduce((acc, item) => acc + item.quantite, 0)}
-            </span>
-          </button>
-
-          {/* User Auth Section */}
-          {!user ? (
-            <button 
-              type="button"
-              className="btn-gold" 
-              onClick={() => setIsAuthModalOpen(true)}
-              style={{ padding: '7px 18px', fontSize: '0.82rem', height: '36px' }}
-            >
-              🔑 {lang === 'ar' ? 'تسجيل الدخول' : (lang === 'en' ? 'Sign In' : 'Connexion')}
-            </button>
-          ) : (
-            <div className="user-profile-menu-wrapper" style={{ position: 'relative' }}>
-              <div 
-                className="user-nav-badge"
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(212, 175, 55, 0.12)',
-                  border: '1px solid var(--border-gold)',
-                  borderRadius: '20px',
-                  padding: '4px 12px',
-                  cursor: 'pointer',
-                  height: '36px',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <span style={{ fontSize: '1rem' }}>{user.role === 'client' ? '👤' : '🏪'}</span>
-                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, textAlign: isRtl ? 'right' : 'left' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff', maxWidth: '110px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user.nom}
-                  </span>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--primary-gold)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {user.role === 'client' ? 'Client' : 'Joaillier'}
-                  </span>
-                </div>
-                <span style={{ fontSize: '0.65rem', color: 'var(--primary-gold)', marginLeft: '2px' }}>▼</span>
-              </div>
-
-              {userMenuOpen && (
-                <div 
-                  className="user-dropdown-menu"
-                  style={{
-                    position: 'absolute',
-                    top: '115%',
-                    right: isRtl ? 'auto' : 0,
-                    left: isRtl ? 0 : 'auto',
-                    background: '#121218',
-                    border: '1px solid var(--border-gold)',
-                    borderRadius: '8px',
-                    padding: '6px 0',
-                    minWidth: '190px',
-                    boxShadow: '0 15px 35px rgba(0,0,0,0.9)',
-                    zIndex: 200
-                  }}
-                >
-                  <div 
-                    className="dropdown-item"
-                    onClick={() => { setActiveView('dashboard'); setUserMenuOpen(false); }}
-                    style={{ padding: '10px 16px', cursor: 'pointer', color: '#fff', fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}
-                  >
-                    📊 {t('dashboard')}
-                  </div>
-                  <div 
-                    className="dropdown-item"
-                    onClick={() => { logout(); setUserMenuOpen(false); setActiveView('store'); addNotification('Déconnexion effectuée', 'info'); }}
-                    style={{ padding: '10px 16px', cursor: 'pointer', color: '#ef4444', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: '8px', alignItems: 'center' }}
-                  >
-                    🚪 {lang === 'ar' ? 'تسجيل الخروج' : (lang === 'en' ? 'Sign Out' : 'Se déconnecter')}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Notifications Toast */}
-      <div className="notifications-container">
+  // The Inner App Content
+  const appContent = (
+    <div className="main-app-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Toast Notifications */}
+      <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {notifications.map(n => (
-          <div key={n.id} className={`notif ${n.type}`}>
-            <span>{n.message}</span>
-            <button className="notif-close" onClick={() => setNotifications(prev => prev.filter(x => x.id !== n.id))}>✕</button>
+          <div 
+            key={n.id}
+            style={{
+              padding: '12px 18px',
+              background: n.type === 'success' ? '#10b981' : n.type === 'warning' ? '#f59e0b' : '#1e1e28',
+              color: '#fff',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontSize: '0.88rem',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              animation: 'slideLeft 0.3s ease'
+            }}
+          >
+            {n.message}
           </div>
         ))}
       </div>
 
-      {/* Main Content Area */}
-      <div style={{ flexGrow: 1 }}>
-        {activeView === 'store' ? (
-          <Marketplace onSelectProduct={handleProductSelect} />
-        ) : (
-          user && user.role === 'client' ? (
-            <ClientDashboard onSelectProduct={handleProductSelect} />
-          ) : (
-            <MerchantDashboard />
-          )
+      {/* 1. MOBILE TOP BAR (Avito Style, Visible on Mobile or Simulator) */}
+      <div className="show-on-mobile-only">
+        <MobileTopBar 
+          selectedCity={selectedCity}
+          onOpenCityPicker={() => setIsCityPickerOpen(true)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onClearSearch={() => setSearchQuery('')}
+          onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
+          activeFiltersCount={activeFiltersCount}
+          onOpenCart={() => {
+            setIsCartOpen(true);
+            setCheckoutStep(1);
+          }}
+          cartCount={cartItems.length}
+          onOpenChat={() => setIsChatDrawerOpen(true)}
+          onOpenAI={() => setIsAIOpen(true)}
+          saleUniverse={saleUniverse}
+          onSelectUniverse={setSaleUniverse}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          dealsOnly={dealsOnly}
+          onToggleDeals={() => setDealsOnly(!dealsOnly)}
+          categories={categories}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      </div>
+
+      {/* 2. DESKTOP HEADER (Hidden on Mobile) */}
+      <header className="jewelia-header hide-on-mobile">
+        <div className="jewelia-header-top">
+          {/* Logo */}
+          <div 
+            onClick={() => {
+              setActiveView('marketplace');
+              setSaleUniverse('ALL');
+              setSelectedCategory('');
+              setDealsOnly(false);
+            }} 
+            style={{ cursor: 'pointer' }}
+          >
+            <OriaLogo size={36} showText={true} subtitle="PREMIÈRE & SECONDE MAIN" />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="jewelia-header-actions">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="jewelia-action-btn"
+              title={theme === 'light' ? 'Activer le Mode Nuit' : 'Activer le Fond Clair'}
+              style={{
+                borderColor: 'var(--border-gold)',
+                color: 'var(--primary-gold)',
+                background: theme === 'light' ? 'rgba(179, 135, 40, 0.08)' : 'rgba(255, 255, 255, 0.06)'
+              }}
+            >
+              <span>{theme === 'light' ? '🌙' : '☀️'}</span>
+              <span className="hide-mobile">{theme === 'light' ? 'Mode Nuit' : 'Fond Clair'}</span>
+            </button>
+
+            <button 
+              onClick={() => setIsFinderOpen(true)}
+              className="jewelia-action-btn"
+              title="Assistant intelligent pour trouver un bijou"
+            >
+              <span>🔍</span>
+              <span className="hide-mobile">Trouver mon bijou</span>
+            </button>
+
+            <button 
+              onClick={() => setIsSellModalOpen(true)}
+              className="jewelia-action-btn cta-sell"
+            >
+              <span>♻️</span>
+              <span className="hide-mobile">Vendre mon bijou</span>
+            </button>
+
+            <button 
+              onClick={() => setIsAIOpen(true)}
+              className="jewelia-action-btn"
+              style={{ borderColor: 'var(--primary-gold)', color: 'var(--light-gold)' }}
+            >
+              <span>✨</span>
+              <span className="hide-mobile">Concierge IA</span>
+            </button>
+
+            {comparedProductIds.length > 0 && (
+              <button 
+                onClick={() => setIsComparatorOpen(true)}
+                className="jewelia-action-btn"
+                style={{ background: 'rgba(212, 175, 55, 0.2)', color: 'var(--light-gold)' }}
+              >
+                <span>⚖️</span>
+                <span>({comparedProductIds.length})</span>
+              </button>
+            )}
+
+            {/* PWA Install Button in Desktop Nav */}
+            <PWAInstallButton variant="nav-item" />
+
+            {/* Cart Button */}
+            <button 
+              onClick={() => {
+                setIsCartOpen(true);
+                setCheckoutStep(1);
+              }}
+              className="jewelia-action-btn"
+            >
+              <span>🛒</span>
+              <span className="hide-mobile">{t('cart')}</span>
+              {cartItems.length > 0 && (
+                <span className="badge-count">{cartItems.length}</span>
+              )}
+            </button>
+
+            {/* Account / User Menu */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="jewelia-action-btn"
+              >
+                <span>👤</span>
+                <span className="hide-mobile">{user ? user.nom.split(' ')[0] : t('account')}</span>
+              </button>
+
+              {userMenuOpen && (
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: '44px',
+                    right: 0,
+                    width: '220px',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-gold)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '10px',
+                    boxShadow: 'var(--shadow-card-hover)',
+                    zIndex: 200,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}
+                >
+                  {user ? (
+                    <>
+                      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.85rem' }}>
+                        <strong style={{ color: 'var(--primary-gold)', display: 'block' }}>{user.nom}</strong>
+                        <span style={{ color: 'var(--text-gray)', fontSize: '0.75rem' }}>{user.email}</span>
+                      </div>
+
+                      <button 
+                        onClick={() => {
+                          setActiveView('client-dashboard');
+                          setUserMenuOpen(false);
+                        }}
+                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--text-white)', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}
+                      >
+                        📦 Mon Espace Client
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          setActiveView('merchant-dashboard');
+                          setUserMenuOpen(false);
+                        }}
+                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--primary-gold)', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600 }}
+                      >
+                        🏪 Espace Vendeur & Boutique
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          logout();
+                          setUserMenuOpen(false);
+                        }}
+                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: '#ef4444', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem', borderTop: '1px solid var(--border-subtle)' }}
+                      >
+                        Se déconnecter
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        setIsAuthModalOpen(true);
+                        setUserMenuOpen(false);
+                      }}
+                      className="btn-jewelia-primary"
+                      style={{ padding: '8px', width: '100%', fontSize: '0.85rem' }}
+                    >
+                      Se connecter / S'inscrire
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Language Switcher */}
+            <div style={{ display: 'flex', gap: '4px', marginLeft: '6px' }}>
+              {['fr', 'ar', 'en'].map(l => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    background: lang === l ? 'var(--primary-gold)' : 'rgba(255, 255, 255, 0.05)',
+                    color: lang === l ? '#08080a' : 'var(--text-gray)',
+                    border: 'none',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Bar */}
+        <div className="jewelia-nav-bar">
+          <nav className="jewelia-nav-container">
+            <button 
+              className={`jewelia-nav-link ${activeView === 'marketplace' && saleUniverse === 'ALL' && !dealsOnly ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('marketplace');
+                setSaleUniverse('ALL');
+                setSelectedCategory('');
+                setDealsOnly(false);
+              }}
+            >
+              Accueil
+            </button>
+
+            <button 
+              className={`jewelia-nav-link ${saleUniverse === 'FIRST_HAND' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('marketplace');
+                setSaleUniverse('FIRST_HAND');
+                setDealsOnly(false);
+              }}
+            >
+              <span>✨ Première main</span>
+              <span className="jewelia-nav-badge first">Neuf</span>
+            </button>
+
+            <button 
+              className={`jewelia-nav-link ${saleUniverse === 'SECOND_HAND' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('marketplace');
+                setSaleUniverse('SECOND_HAND');
+                setDealsOnly(false);
+              }}
+            >
+              <span>♻️ Seconde main</span>
+              <span className="jewelia-nav-badge second">Occasion</span>
+            </button>
+
+            <button 
+              className={`jewelia-nav-link ${saleUniverse === 'AUCTION' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('marketplace');
+                setSaleUniverse('AUCTION');
+                setDealsOnly(false);
+              }}
+            >
+              <span>🔨 Enchères</span>
+              <span className="jewelia-nav-badge first" style={{ background: '#ef4444', color: '#fff' }}>En Direct</span>
+            </button>
+
+            <button 
+              className={`jewelia-nav-link ${dealsOnly ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('marketplace');
+                setDealsOnly(true);
+              }}
+            >
+              🔥 Bonnes Affaires
+            </button>
+
+            <button 
+              className="jewelia-nav-link"
+              onClick={() => setIsFinderOpen(true)}
+            >
+              🔍 Trouver mon bijou
+            </button>
+
+            <button 
+              className="jewelia-nav-link"
+              onClick={() => setIsSellModalOpen(true)}
+            >
+              ♻️ Vendre mon bijou
+            </button>
+
+            <button 
+              className={`jewelia-nav-link ${activeView === 'client-dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveView('client-dashboard')}
+            >
+              👤 Espace Client
+            </button>
+
+            <button 
+              className={`jewelia-nav-link ${activeView === 'merchant-dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveView('merchant-dashboard')}
+            >
+              🏪 Espace Vendeur
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      {/* VIEW ROUTING */}
+      <div style={{ flex: 1 }}>
+        {activeView === 'marketplace' && (
+          <Marketplace 
+            onSelectProduct={(p) => setSelectedProduct(p)}
+            onOpenFinder={() => setIsFinderOpen(true)}
+            onOpenSellModal={() => setIsSellModalOpen(true)}
+            onOpenAIModal={() => setIsAIOpen(true)}
+            onOpenComparator={() => setIsComparatorOpen(true)}
+            comparedProductIds={comparedProductIds}
+            onToggleCompare={handleToggleCompare}
+            initialUniverse={saleUniverse}
+            initialCategory={selectedCategory}
+            initialDealsOnly={dealsOnly}
+            selectedCity={selectedCity}
+            onOpenCityPicker={() => setIsCityPickerOpen(true)}
+            onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
+            onOpenChatWithSeller={handleOpenChatWithSeller}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            saleUniverse={saleUniverse}
+            setSaleUniverse={setSaleUniverse}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedMaterial={selectedMaterial}
+            setSelectedMaterial={setSelectedMaterial}
+            selectedCondition={selectedCondition}
+            setSelectedCondition={setSelectedCondition}
+            selectedStyle={selectedStyle}
+            setSelectedStyle={setSelectedStyle}
+            selectedOccasion={selectedOccasion}
+            setSelectedOccasion={setSelectedOccasion}
+            verifiedOnly={verifiedOnly}
+            setVerifiedOnly={setVerifiedOnly}
+            dealsOnly={dealsOnly}
+            setDealsOnly={setDealsOnly}
+            priceMax={priceMax}
+            setPriceMax={setPriceMax}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            resetAllFilters={resetAllFilters}
+          />
+        )}
+
+        {activeView === 'client-dashboard' && (
+          <ClientDashboard 
+            onSelectProduct={(p) => setSelectedProduct(p)}
+            onOpenSellModal={() => setIsSellModalOpen(true)}
+          />
+        )}
+
+        {activeView === 'merchant-dashboard' && (
+          <MerchantDashboard 
+            onOpenSellModal={() => setIsSellModalOpen(true)}
+          />
         )}
       </div>
 
-      {/* Mobile Navigation bar */}
-      <nav className="bottom-nav">
-        <span className={`bottom-nav-item ${activeView === 'store' ? 'active' : ''}`} onClick={() => setActiveView('store')}>
-          <span className="bottom-nav-icon">💎</span>
-          <span>{t('home')}</span>
-        </span>
-        {user && (
-          <span className={`bottom-nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>
-            <span className="bottom-nav-icon">👤</span>
-            <span>{t('dashboard')}</span>
-          </span>
-        )}
-        {user && user.role === 'client' && (
-          <span className="bottom-nav-item" onClick={() => { setIsCartOpen(true); setIsCheckoutMode(false); }}>
-            <span className="bottom-nav-icon">🛒</span>
-            <span>{t('cart')} ({cartItems.reduce((acc, item) => acc + item.quantite, 0)})</span>
-          </span>
-        )}
-      </nav>
+      {/* FOOTER (Desktop only) */}
+      <div className="hide-on-mobile">
+        <Footer 
+          onOpenFinder={() => setIsFinderOpen(true)}
+          onOpenSellModal={() => setIsSellModalOpen(true)}
+        />
+      </div>
 
-      {/* Cart Drawer */}
+      {/* 3. MOBILE BOTTOM NAVIGATION BAR (Avito Style, Fixed at bottom) */}
+      <div className="show-on-mobile-only">
+        <MobileBottomNav 
+          activeTab={mobileNavTab}
+          onChangeTab={handleMobileNavTabChange}
+          onOpenSell={() => setIsSellModalOpen(true)}
+          onOpenChat={() => setIsChatDrawerOpen(true)}
+          onOpenFinder={() => setIsFinderOpen(true)}
+          unreadMessagesCount={1}
+        />
+      </div>
+
+      {/* 4. MODALS & BOTTOM SHEETS */}
+      
+      {/* Mobile City Picker */}
+      <MobileCityPicker 
+        isOpen={isCityPickerOpen}
+        onClose={() => setIsCityPickerOpen(false)}
+        selectedCity={selectedCity}
+        onSelectCity={setSelectedCity}
+      />
+
+      {/* Mobile Filter Sheet */}
+      <MobileFilterSheet 
+        isOpen={isFilterSheetOpen}
+        onClose={() => setIsFilterSheetOpen(false)}
+        saleUniverse={saleUniverse}
+        onSelectUniverse={setSaleUniverse}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        categories={categories}
+        selectedMaterial={selectedMaterial}
+        onSelectMaterial={setSelectedMaterial}
+        selectedCondition={selectedCondition}
+        onSelectCondition={setSelectedCondition}
+        selectedStyle={selectedStyle}
+        onSelectStyle={setSelectedStyle}
+        verifiedOnly={verifiedOnly}
+        onToggleVerified={setVerifiedOnly}
+        dealsOnly={dealsOnly}
+        onToggleDeals={setDealsOnly}
+        priceMax={priceMax}
+        onChangePriceMax={setPriceMax}
+        sortBy={sortBy}
+        onChangeSortBy={setSortBy}
+        selectedCity={selectedCity}
+        onOpenCityPicker={() => {
+          setIsFilterSheetOpen(false);
+          setIsCityPickerOpen(true);
+        }}
+        onResetFilters={resetAllFilters}
+        totalResultsCount={allProducts.length}
+      />
+
+      {/* Mobile Chat Drawer */}
+      <MobileChatDrawer 
+        isOpen={isChatDrawerOpen}
+        onClose={() => {
+          setIsChatDrawerOpen(false);
+          setChatTargetProduct(null);
+        }}
+        targetProduct={chatTargetProduct}
+      />
+
+      {/* Panier & Commande Drawer */}
       {isCartOpen && (
-        <>
-          <div className="cart-drawer-overlay" onClick={() => setIsCartOpen(false)}></div>
-          <div className="cart-drawer">
-            <button className="modal-close-btn" onClick={() => setIsCartOpen(false)}>✕</button>
-            <h3 style={{ borderBottom: '1px solid var(--primary-gold)', paddingBottom: '15px', color: 'var(--primary-gold)' }}>
-              {isCheckoutMode ? t('checkoutTitle') : t('cart')}
-            </h3>
-
-            {!isCheckoutMode ? (
-              // Cart Items List
-              <div style={{ flexGrow: 1, overflowY: 'auto', margin: '20px 0' }}>
-                {cartItems.length === 0 ? (
-                  <p style={{ color: 'var(--text-gray)', textAlign: 'center', marginTop: '50px' }}>Votre panier est vide.</p>
-                ) : (
-                  cartItems.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <img src={item.images[0]} alt={item.titre} className="cart-item-img" />
-                      <div className="cart-item-info">
-                        <div className="cart-item-title">{item.titre}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--primary-gold)', fontWeight: 'bold' }}>
-                          {item.prix} {t('currency')}
-                        </div>
-                        <div className="cart-item-qty">
-                          <button className="qty-btn" onClick={() => item.quantite > 1 ? updateQuantity(item.id, item.quantite - 1) : removeFromCart(item.id)}>-</button>
-                          <span>{item.quantite}</span>
-                          <button className="qty-btn" onClick={() => updateQuantity(item.id, Math.min(item.stock, item.quantite + 1))}>+</button>
-                        </div>
-                      </div>
-                      <button className="qty-btn" style={{ borderColor: 'var(--danger-red)', color: 'var(--danger-red)' }} onClick={() => removeFromCart(item.id)}>✕</button>
-                    </div>
-                  ))
-                )}
+        <div className="jewelia-modal-backdrop" onClick={() => setIsCartOpen(false)}>
+          <div 
+            className="jewelia-cart-drawer" 
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="cart-drawer-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.4rem' }}>🛒</span>
+                <h3>
+                  {checkoutStep === 1 ? 'Votre Panier' : checkoutStep === 2 ? 'Livraison & Adresse' : checkoutStep === 3 ? 'Paiement' : 'Confirmation'}
+                </h3>
               </div>
-            ) : (
-              // Checkout form
-              <form onSubmit={handleCheckout} style={{ flexGrow: 1, overflowY: 'auto', margin: '20px 0' }}>
-                <div className="form-group">
-                  <label className="form-label">{t('clientName')}</label>
-                  <input type="text" className="form-input" value={checkoutForm.nom} onChange={e => setCheckoutForm({ ...checkoutForm, nom: e.target.value })} placeholder={user?.nom || 'Votre nom complet'} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">{t('clientPhone')}</label>
-                  <input type="tel" className="form-input" value={checkoutForm.telephone} onChange={e => setCheckoutForm({ ...checkoutForm, telephone: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">{t('clientAddress')}</label>
-                  <input type="text" className="form-input" value={checkoutForm.adresse} onChange={e => setCheckoutForm({ ...checkoutForm, adresse: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">{t('clientCity')}</label>
-                  <input type="text" className="form-input" value={checkoutForm.ville} onChange={e => setCheckoutForm({ ...checkoutForm, ville: e.target.value })} required />
+              <button 
+                onClick={() => setIsCartOpen(false)}
+                className="cart-drawer-close-btn"
+                title="Fermer le panier"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* STEP 1: CART ITEMS */}
+            {checkoutStep === 1 && (
+              <>
+                <div className="cart-items-scroll">
+                  {cartItems.length === 0 ? (
+                    <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-gray)' }}>
+                      <span style={{ fontSize: '3rem', display: 'block', marginBottom: '12px' }}>🛍️</span>
+                      <p style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: '6px' }}>Votre panier est actuellement vide.</p>
+                      <span style={{ fontSize: '0.85rem' }}>Découvrez nos bijoux d'exception et ajoutez vos coups de cœur.</span>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Première Main Group */}
+                      {firstHandCartItems.length > 0 && (
+                        <div className="cart-universe-group">
+                          <div className="cart-universe-header first">
+                            <span>✨ PREMIÈRE MAIN (Neuf)</span>
+                            <span style={{ fontSize: '0.75rem' }}>{firstHandCartItems.length} article(s)</span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            {firstHandCartItems.map(item => {
+                              const imgUrl = (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80';
+                              const qty = item.quantite || item.quantity || 1;
+                              return (
+                                <div key={item.id} className="cart-item-row">
+                                  <img src={imgUrl} alt={item.titre} className="cart-item-img" />
+                                  <div className="cart-item-details">
+                                    <div>
+                                      <strong className="cart-item-title">{item.titre}</strong>
+                                      <span className="cart-item-seller">Vendu par {item.vendeur_nom || 'Bijouterie'}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                                      <span className="cart-item-price">{item.prix ? item.prix.toLocaleString() : '0'} DH</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <button 
+                                          type="button"
+                                          onClick={() => updateQuantity(item.id, Math.max(1, qty - 1))}
+                                          className="cart-qty-btn"
+                                          title="Diminuer"
+                                        >
+                                          -
+                                        </button>
+                                        <span className="cart-qty-display">{qty}</span>
+                                        <button 
+                                          type="button"
+                                          onClick={() => updateQuantity(item.id, qty + 1)}
+                                          className="cart-qty-btn"
+                                          title="Augmenter"
+                                        >
+                                          +
+                                        </button>
+                                        <button 
+                                          type="button"
+                                          onClick={() => removeFromCart(item.id)}
+                                          className="cart-delete-btn"
+                                          title="Supprimer"
+                                        >
+                                          🗑️
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Seconde Main Group */}
+                      {secondHandCartItems.length > 0 && (
+                        <div className="cart-universe-group" style={{ marginTop: '14px' }}>
+                          <div className="cart-universe-header second">
+                            <span>♻️ SECONDE MAIN (Occasion Authentifiée)</span>
+                            <span style={{ fontSize: '0.75rem' }}>{secondHandCartItems.length} article(s)</span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            {secondHandCartItems.map(item => {
+                              const imgUrl = (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80';
+                              const qty = item.quantite || item.quantity || 1;
+                              return (
+                                <div key={item.id} className="cart-item-row">
+                                  <img src={imgUrl} alt={item.titre} className="cart-item-img" />
+                                  <div className="cart-item-details">
+                                    <div>
+                                      <strong className="cart-item-title">{item.titre}</strong>
+                                      <span className="cart-item-seller" style={{ color: '#10b981' }}>🛡️ Vendeur Particulier vérifié</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                                      <span className="cart-item-price" style={{ color: '#10b981' }}>{item.prix ? item.prix.toLocaleString() : '0'} DH</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <button 
+                                          type="button"
+                                          onClick={() => updateQuantity(item.id, Math.max(1, qty - 1))}
+                                          className="cart-qty-btn"
+                                          title="Diminuer"
+                                        >
+                                          -
+                                        </button>
+                                        <span className="cart-qty-display">{qty}</span>
+                                        <button 
+                                          type="button"
+                                          onClick={() => updateQuantity(item.id, qty + 1)}
+                                          className="cart-qty-btn"
+                                          title="Augmenter"
+                                        >
+                                          +
+                                        </button>
+                                        <button 
+                                          type="button"
+                                          onClick={() => removeFromCart(item.id)}
+                                          className="cart-delete-btn"
+                                          title="Supprimer"
+                                        >
+                                          🗑️
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
-                <button type="submit" className="btn-gold" style={{ width: '100%', marginTop: '20px' }}>
-                  {t('confirmOrder')}
-                </button>
+                {cartItems.length > 0 && (
+                  <div className="cart-drawer-footer">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '1.1rem' }}>
+                      <span style={{ color: 'var(--text-gray)', fontSize: '0.95rem' }}>Total estimé :</span>
+                      <strong style={{ color: 'var(--light-gold, #d4af37)', fontWeight: 800, fontSize: '1.25rem' }}>{cartTotal.toLocaleString()} DH</strong>
+                    </div>
+                    <button 
+                      onClick={() => setCheckoutStep(2)}
+                      className="btn-jewelia-primary"
+                      style={{ width: '100%', padding: '14px', fontSize: '0.95rem', fontWeight: 700 }}
+                    >
+                      Passer la commande sécurisée ➔
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* STEP 2: SHIPPING FORM */}
+            {checkoutStep === 2 && (
+              <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <div className="cart-items-scroll">
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="filter-label">Nom complet</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Ex: Yasmine Benali"
+                      value={checkoutForm.nom}
+                      onChange={e => setCheckoutForm({ ...checkoutForm, nom: e.target.value })}
+                      className="filter-number-input"
+                      style={{ width: '100%', padding: '10px' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="filter-label">Numéro de téléphone (WhatsApp)</label>
+                    <input 
+                      type="tel" 
+                      required
+                      placeholder="+212 661-000000"
+                      value={checkoutForm.telephone}
+                      onChange={e => setCheckoutForm({ ...checkoutForm, telephone: e.target.value })}
+                      className="filter-number-input"
+                      style={{ width: '100%', padding: '10px' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="filter-label">Ville de livraison</label>
+                    <select 
+                      value={checkoutForm.ville}
+                      onChange={e => setCheckoutForm({ ...checkoutForm, ville: e.target.value })}
+                      className="filter-number-input"
+                      style={{ width: '100%', padding: '10px' }}
+                    >
+                      <option value="Casablanca">Casablanca</option>
+                      <option value="Rabat">Rabat</option>
+                      <option value="Marrakech">Marrakech</option>
+                      <option value="Tanger">Tanger</option>
+                      <option value="Fès">Fès</option>
+                      <option value="Agadir">Agadir</option>
+                      <option value="Meknès">Meknès</option>
+                      <option value="Oujda">Oujda</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="filter-label">Adresse complète de livraison</label>
+                    <textarea 
+                      required
+                      rows={3}
+                      placeholder="Quartier, Rue, N° d'appartement..."
+                      value={checkoutForm.adresse}
+                      onChange={e => setCheckoutForm({ ...checkoutForm, adresse: e.target.value })}
+                      className="filter-number-input"
+                      style={{ width: '100%', padding: '10px' }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="filter-label">Mode de paiement</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', cursor: 'pointer' }}>
+                        <input 
+                          type="radio" 
+                          name="payment"
+                          checked={checkoutForm.mode_paiement === 'cash_on_delivery'}
+                          onChange={() => setCheckoutForm({ ...checkoutForm, mode_paiement: 'cash_on_delivery' })}
+                        />
+                        <div>
+                          <strong style={{ fontSize: '0.85rem' }}>💵 Paiement à la livraison</strong>
+                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>Réglez en espèces ou TPE lors de la réception</span>
+                        </div>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', cursor: 'pointer' }}>
+                        <input 
+                          type="radio" 
+                          name="payment"
+                          checked={checkoutForm.mode_paiement === 'cmi'}
+                          onChange={() => setCheckoutForm({ ...checkoutForm, mode_paiement: 'cmi' })}
+                        />
+                        <div>
+                          <strong style={{ fontSize: '0.85rem' }}>💳 Carte bancaire marocaine (CMI)</strong>
+                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>Paiement sécurisé 3D-Secure</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cart-drawer-footer" style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button"
+                    onClick={() => setCheckoutStep(1)}
+                    className="btn-jewelia-secondary"
+                    style={{ flex: 1 }}
+                  >
+                    Retour
+                  </button>
+                  <button 
+                    type="submit"
+                    className="btn-jewelia-primary"
+                    style={{ flex: 2 }}
+                  >
+                    Confirmer la commande ({cartTotal.toLocaleString()} DH)
+                  </button>
+                </div>
               </form>
             )}
 
-            {cartItems.length > 0 && (
-              <div style={{ borderTop: '1px solid var(--border-gold)', paddingTop: '20px', marginTop: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '1.1rem' }}>
-                  <span>{t('total')}:</span>
-                  <span style={{ color: 'var(--primary-gold)', fontWeight: 'bold' }}>{cartTotal} {t('currency')}</span>
+            {/* STEP 4: ORDER CONFIRMED */}
+            {checkoutStep === 4 && confirmedOrder && (
+              <div className="cart-items-scroll" style={{ textAlign: 'center', padding: '30px 20px' }}>
+                <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '14px' }}>🎉</span>
+                <h3 style={{ fontSize: '1.4rem', color: 'var(--light-gold)', marginBottom: '8px' }}>
+                  Commande Confirmée !
+                </h3>
+                <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '20px' }}>
+                  Numéro de référence : <strong style={{ color: '#fff' }}>#{confirmedOrder.id}</strong>
+                </p>
+
+                {/* Tracking Step Checkpoints */}
+                <div className="order-tracking-card" style={{ textAlign: 'left' }}>
+                  <h4 style={{ fontSize: '0.95rem', color: 'var(--primary-gold)', marginBottom: '12px' }}>
+                    Suivi de votre livraison sécurisée
+                  </h4>
+                  <div className="tracking-steps-timeline">
+                    {confirmedOrder.tracking_steps.map((step, idx) => (
+                      <div key={idx} className={`tracking-step ${step.done ? 'done' : ''}`}>
+                        <div className="tracking-step-dot">{step.done ? '✓' : idx + 1}</div>
+                        <span className="tracking-step-title">{step.title}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                {!isCheckoutMode ? (
-                  <button className="btn-gold" style={{ width: '100%' }} onClick={() => setIsCheckoutMode(true)}>
-                    {t('checkoutButton')}
-                  </button>
-                ) : (
-                  <button className="btn-outline-gold" style={{ width: '100%' }} onClick={() => setIsCheckoutMode(false)}>
-                    Retour au panier
-                  </button>
-                )}
+
+                <button 
+                  onClick={() => {
+                    setIsCartOpen(false);
+                    setConfirmedOrder(null);
+                    setCheckoutStep(1);
+                  }}
+                  className="btn-jewelia-primary"
+                  style={{ width: '100%', marginTop: '20px' }}
+                >
+                  Continuer mes achats 💎
+                </button>
               </div>
             )}
-          </div>
-        </>
-      )}
-
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="modal-overlay" onClick={() => setSelectedProduct(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={() => setSelectedProduct(null)}>✕</button>
-
-            <div className="detail-layout">
-              {/* Image zoom wrapper */}
-              <div className="detail-gallery">
-                <div className="detail-image-wrapper">
-                  <img src={selectedProduct.images[0]} alt={selectedProduct.titre} className="detail-image" />
-                </div>
-              </div>
-
-              {/* Information description */}
-              <div className="detail-info">
-                <span className="detail-category">{selectedProduct.purete} gold</span>
-                <h2 className="detail-title">{selectedProduct.titre}</h2>
-                <div className="detail-price">
-                  {activeAuction ? activeAuction.highestBid : selectedProduct.prix} {t('currency')}
-                </div>
-                
-                <p className="detail-description">{selectedProduct.description}</p>
-
-                <div className="detail-specs-list">
-                  <div className="spec-item">
-                    <span className="spec-name">{t('weight')}</span>
-                    <span className="spec-val">{selectedProduct.gramme} {t('grams')}</span>
-                  </div>
-                  <div className="spec-item">
-                    <span className="spec-name">{t('purity')}</span>
-                    <span className="spec-val">{selectedProduct.purete}</span>
-                  </div>
-                  <div className="spec-item">
-                    <span className="spec-name">{t('city')}</span>
-                    <span className="spec-val">{selectedProduct.city}</span>
-                  </div>
-                  <div className="spec-item">
-                    <span className="spec-name">{t('merchant')}</span>
-                    <span className="spec-val">
-                      {selectedProduct.commercant_id === 'u_merchant1' ? 'Maison El Fassi' : 'Maroc Chrono'}
-                    </span>
-                  </div>
-                  <div className="spec-item">
-                    <span className="spec-name">{t('stock')}</span>
-                    <span className="spec-val">{selectedProduct.stock} ex.</span>
-                  </div>
-                </div>
-
-                {/* Auction bidding interaction */}
-                {activeAuction ? (
-                  <div className="bid-panel">
-                    <h4 style={{ color: 'var(--primary-gold)', marginBottom: '10px' }}>🔨 {t('auctionDetails')}</h4>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '10px' }}>
-                      {t('minIncrement')}: <strong style={{ color: 'white' }}>{activeAuction.increment_min} MAD</strong>
-                    </p>
-                    {activeAuction.prix_reserve && (
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '15px' }}>
-                        {t('reservePrice')}: <strong style={{ color: 'white' }}>{activeAuction.prix_reserve} MAD</strong>
-                      </p>
-                    )}
-
-                    {user && user.role === 'client' ? (
-                      <form onSubmit={handlePlaceBid}>
-                        <label className="form-label">{t('yourBid')} (MAD)</label>
-                        <div className="bid-input-group">
-                          <input 
-                            type="number" 
-                            className="form-input" 
-                            style={{ width: '130px' }}
-                            value={bidAmount}
-                            onChange={(e) => setBidAmount(e.target.value)}
-                            min={activeAuction.highestBid + activeAuction.increment_min}
-                            required
-                          />
-                          <button type="submit" className="btn-gold" style={{ flexGrow: 1 }}>
-                            {t('placeBid')}
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <p style={{ color: 'var(--primary-gold)', fontSize: '0.85rem' }}>Connectez-vous en mode client pour enchérir.</p>
-                    )}
-                  </div>
-                ) : (
-                  selectedProduct.stock > 0 ? (
-                    user && user.role === 'client' ? (
-                      <button className="btn-gold" style={{ width: '100%', marginBottom: '15px' }} onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}>
-                        🛒 {t('addToCart')}
-                      </button>
-                    ) : (
-                      <p style={{ color: 'var(--primary-gold)', fontSize: '0.85rem', marginBottom: '15px' }}>Connectez-vous en mode client pour acheter.</p>
-                    )
-                  ) : (
-                    <div style={{ color: 'var(--danger-red)', fontWeight: 'bold', marginBottom: '15px' }}>{t('outOfStock')}</div>
-                  )
-                )}
-
-                {/* Direct merchant chat contact form */}
-                {user && user.role === 'client' && (
-                  <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
-                    {!isContactingSeller ? (
-                      <button className="btn-outline-gold" style={{ width: '100%' }} onClick={() => setIsContactingSeller(true)}>
-                        💬 {t('contactMerchant')}
-                      </button>
-                    ) : (
-                      <form onSubmit={handleContactSeller}>
-                        <label className="form-label">{t('contactMerchant')}</label>
-                        <textarea 
-                          className="form-input" 
-                          rows="3" 
-                          value={sellerMessage}
-                          onChange={(e) => setSellerMessage(e.target.value)}
-                          placeholder="Posez votre question au vendeur..."
-                          required
-                        />
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                          <button type="button" className="btn-outline-gold" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => setIsContactingSeller(false)}>
-                            Annuler
-                          </button>
-                          <button type="submit" className="btn-gold" style={{ padding: '6px 12px', fontSize: '0.8rem', flexGrow: 1 }}>
-                            {t('sendMessage')}
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                )}
-
-                {/* Share Section */}
-                <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
-                  <h4 style={{ color: 'var(--primary-gold)', fontSize: '0.95rem', marginBottom: '12px', fontFamily: 'var(--font-serif)', letterSpacing: '0.5px' }}>
-                    📢 {t('shareTitle')}
-                  </h4>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <a 
-                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Découvrez ce magnifique bijou "${selectedProduct.titre}" sur ORIA - Fédération Marocaine de Bijouterie ! ${window.location.origin}/?product=${selectedProduct.id}`)}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="btn-outline-gold" 
-                      style={{ 
-                        flex: '1', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: '8px', 
-                        textDecoration: 'none', 
-                        fontSize: '0.8rem', 
-                        padding: '10px 15px',
-                        borderColor: '#25d366',
-                        color: '#25d366'
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(37, 211, 102, 0.1)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                    >
-                      <span style={{ fontSize: '1rem' }}>🟢</span> {t('shareWhatsapp')}
-                    </a>
-                    
-                    <a 
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/?product=${selectedProduct.id}`)}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="btn-outline-gold" 
-                      style={{ 
-                        flex: '1', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: '8px', 
-                        textDecoration: 'none', 
-                        fontSize: '0.8rem', 
-                        padding: '10px 15px',
-                        borderColor: '#1877f2',
-                        color: '#1877f2'
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(24, 119, 242, 0.1)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                    >
-                      <span style={{ fontSize: '1rem' }}>🔵</span> {t('shareFacebook')}
-                    </a>
-
-                    <button 
-                      type="button"
-                      onClick={() => handleCopyLink(selectedProduct.id)}
-                      className="btn-outline-gold" 
-                      style={{ 
-                        flex: '1', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: '8px', 
-                        fontSize: '0.8rem', 
-                        padding: '10px 15px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <span style={{ fontSize: '1rem' }}>🔗</span> {isCopied ? t('linkCopied') : t('copyLink')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
 
-      {/* Authentication Modal */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-        onAuthSuccess={(mode) => {
-          addNotification(mode === 'login' ? 'Connexion réussie !' : 'Compte créé avec succès !', 'success');
-        }} 
+      {/* Global Modals */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <JewelFinderWizard 
+        isOpen={isFinderOpen} 
+        onClose={() => setIsFinderOpen(false)} 
+        onSelectProduct={(p) => setSelectedProduct(p)}
+      />
+      <SellJewelModal 
+        isOpen={isSellModalOpen} 
+        onClose={() => setIsSellModalOpen(false)} 
+        onProductPublished={() => fetchData()}
+      />
+      <AIAssistantModal 
+        isOpen={isAIOpen} 
+        onClose={() => setIsAIOpen(false)} 
+        onSelectProduct={(p) => setSelectedProduct(p)}
+      />
+      <ProductComparatorModal 
+        isOpen={isComparatorOpen} 
+        onClose={() => setIsComparatorOpen(false)} 
+        comparedProducts={comparedProducts}
+        onRemoveProduct={(id) => handleToggleCompare(id)}
+      />
+      <ProductDetailModal 
+        isOpen={Boolean(selectedProduct)}
+        product={selectedProduct} 
+        onClose={() => setSelectedProduct(null)} 
+        onToggleCompare={handleToggleCompare}
+        isCompared={selectedProduct ? comparedProductIds.includes(selectedProduct.id) : false}
+        onOpenChatWithSeller={() => {
+          const target = selectedProduct;
+          setSelectedProduct(null);
+          handleOpenChatWithSeller(target);
+        }}
+      />
+      {/* PWA Install Banner & Offline / Update notifications */}
+      <PWAInstallBanner />
+    </div>
+  );
+
+  return (
+    <>
+      {/* Floating Device Simulator Toggle on Desktop */}
+      <DeviceSimulatorToggle 
+        isMobileSimulator={isMobileSimulator}
+        onToggleSimulator={setIsMobileSimulator}
       />
 
-      {/* Modern Luxury Footer */}
-      <Footer onNavigate={setActiveView} user={user} />
-    </div>
+      {/* RENDER IN PHONE FRAME OR STANDARD VIEWPORT */}
+      {isMobileSimulator ? (
+        <div className="desktop-device-simulator-canvas">
+          <div className="iphone-15-frame">
+            {/* Dynamic Island / Speaker */}
+            <div className="iphone-dynamic-island">
+              <div className="island-camera" />
+              <div className="island-sensor" />
+            </div>
+
+            {/* iOS Status Bar */}
+            <div className="iphone-status-bar">
+              <span className="status-time">9:41</span>
+              <div className="status-icons">
+                <span>5G</span>
+                <span>📶</span>
+                <span>🔋 100%</span>
+              </div>
+            </div>
+
+            {/* Scrollable Mobile Screen Body */}
+            <div className="iphone-screen-content">
+              {appContent}
+            </div>
+
+            {/* Home Indicator Bar */}
+            <div className="iphone-home-bar" />
+          </div>
+        </div>
+      ) : (
+        appContent
+      )}
+    </>
   );
 }
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <LanguageProvider>
         <CartProvider>
           <MainLayout />
         </CartProvider>
-      </AuthProvider>
-    </LanguageProvider>
+      </LanguageProvider>
+    </AuthProvider>
   );
 }

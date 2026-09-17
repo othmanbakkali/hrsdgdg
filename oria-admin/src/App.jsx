@@ -99,6 +99,23 @@ function AdminLayout() {
   const [editingUser, setEditingUser] = useState(null);
   const [userForm, setUserForm] = useState({ nom: '', email: '', mot_de_passe: '', role: 'client', shopName: '', phone: '', address: '', city: '' });
 
+  // Subscriptions management state
+  const [subscriptionsData, setSubscriptionsData] = useState(null);
+  const [adminLightMode, setAdminLightMode] = useState(() => localStorage.getItem('oria-admin-light-mode') !== 'false');
+  const [editingPlanModal, setEditingPlanModal] = useState(null);
+  const [merchantSubModal, setMerchantSubModal] = useState(null);
+
+  useEffect(() => {
+    if (adminLightMode) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.body.classList.add('light-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.classList.remove('light-theme');
+    }
+    localStorage.setItem('oria-admin-light-mode', adminLightMode);
+  }, [adminLightMode]);
+
   // Notification Banner
   const [notif, setNotif] = useState(null);
 
@@ -257,6 +274,29 @@ function AdminLayout() {
     setShowProductModal(true);
   };
 
+  const handleOpenAddAuction = () => {
+    setEditingProduct(null);
+    const defaultMerchant = users.find(u => u.role === 'commercant')?.id || '';
+    const defaultCategory = categories[0]?.id || '';
+    setProductForm({
+      titre: '',
+      description: '',
+      prix: '5000',
+      gramme: '10',
+      purete: '18k',
+      city: 'Casablanca',
+      stock: 1,
+      category_id: defaultCategory,
+      commercant_id: defaultMerchant,
+      statut: 'Validated',
+      type_vente: 'enchere',
+      prix_depart: '5000',
+      duree: 48,
+      images: []
+    });
+    setShowProductModal(true);
+  };
+
   const handleOpenEditProduct = (p) => {
     setEditingProduct(p);
     setProductForm({
@@ -285,32 +325,41 @@ function AdminLayout() {
 
     // Prepare body
     const bodyData = { ...productForm };
-    if (!editingProduct && productForm.type_vente === 'enchere') {
-      bodyData.prix = parseFloat(productForm.prix_depart);
+    if (productForm.type_vente === 'enchere') {
+      bodyData.prix = parseFloat(productForm.prix_depart) || parseFloat(productForm.prix) || 1000;
       bodyData.stock = 1;
+      bodyData.disponibilite = 'enchere';
     }
 
     try {
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin': 'true'
+        },
         body: JSON.stringify(bodyData)
       });
       if (res.ok) {
         const createdProduct = await res.json();
         
-        // If it's a new product and is an auction, create the auction entity
-        if (!editingProduct && productForm.type_vente === 'enchere') {
+        // If it's an auction, create or update the auction entity
+        if (productForm.type_vente === 'enchere') {
+          const startPrice = parseFloat(productForm.prix_depart) || parseFloat(productForm.prix) || 1000;
+          const durationHours = parseFloat(productForm.duree) || 48;
           const auctionRes = await fetch(`${API_URL}/encheres`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-admin': 'true'
+            },
             body: JSON.stringify({
               bijou_id: createdProduct.id,
-              prix_depart: parseFloat(productForm.prix_depart),
+              prix_depart: startPrice,
               date_debut: new Date().toISOString(),
-              date_fin: new Date(Date.now() + parseFloat(productForm.duree) * 60 * 60 * 1000).toISOString(),
+              date_fin: new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString(),
               increment_min: 50,
-              prix_reserve: parseFloat(productForm.prix_depart)
+              prix_reserve: startPrice
             })
           });
           if (!auctionRes.ok) {
@@ -321,11 +370,12 @@ function AdminLayout() {
           }
         }
 
-        triggerNotif(editingProduct ? 'Article mis à jour avec succès !' : 'Article créé avec succès !');
+        triggerNotif(editingProduct ? 'Article mis à jour avec succès !' : (productForm.type_vente === 'enchere' ? '🔨 Enchère créée et publiée en direct !' : 'Article créé avec succès !'));
         setShowProductModal(false);
         fetchData();
       } else {
-        triggerNotif(editingProduct ? "Erreur lors de la mise à jour de l'article." : "Erreur lors de la création de l'article.");
+        const errJson = await res.json().catch(() => ({}));
+        triggerNotif(errJson.message || (editingProduct ? "Erreur lors de la mise à jour de l'article." : "Erreur lors de la création de l'article."));
       }
     } catch (e) {
       console.error(e);
@@ -360,7 +410,8 @@ function AdminLayout() {
         configRes,
         usersRes,
         auctionsRes,
-        allBijouxRes
+        allBijouxRes,
+        subscriptionsRes
       ] = await Promise.allSettled([
         fetch(`${API_URL}/stats/admin`),
         fetch(`${API_URL}/bijoux?status=Pending`),
@@ -368,7 +419,8 @@ function AdminLayout() {
         fetch(`${API_URL}/config`),
         fetch(`${API_URL}/users`),
         fetch(`${API_URL}/encheres`),
-        fetch(`${API_URL}/bijoux`)
+        fetch(`${API_URL}/bijoux`),
+        fetch(`${API_URL}/subscriptions/all`)
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
@@ -420,8 +472,73 @@ function AdminLayout() {
         } catch (e) { console.error('Products parse error', e); }
       }
 
+      if (subscriptionsRes.status === 'fulfilled' && subscriptionsRes.value.ok) {
+        try {
+          const subData = await subscriptionsRes.value.json();
+          setSubscriptionsData(subData);
+        } catch (e) { console.error('Subscriptions parse error', e); }
+      }
+
     } catch (error) {
       console.error('Error fetching admin data:', error);
+    }
+  };
+
+  const handleUpdateMerchantSubStatus = async (merchantId, newStatus) => {
+    try {
+      const res = await fetch(`${API_URL}/subscriptions/${merchantId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        triggerNotif(`Statut d'abonnement mis à jour : ${newStatus}`);
+        fetchData();
+      }
+    } catch (e) {
+      console.error(e);
+      triggerNotif('Erreur lors de la mise à jour du statut.');
+    }
+  };
+
+  const handleUpdateMerchantPlan = async (merchantId, newPlanId, newBillingCycle) => {
+    try {
+      const res = await fetch(`${API_URL}/subscriptions/${merchantId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_id: newPlanId, billing_cycle: newBillingCycle })
+      });
+      if (res.ok) {
+        triggerNotif('Forfait commerçant modifié avec succès !');
+        setMerchantSubModal(null);
+        fetchData();
+      }
+    } catch (e) {
+      console.error(e);
+      triggerNotif('Erreur lors de la modification du forfait.');
+    }
+  };
+
+  const handleSavePlanConfig = async (e) => {
+    e.preventDefault();
+    if (!editingPlanModal) return;
+    try {
+      const isNew = !editingPlanModal.id;
+      const url = isNew ? `${API_URL}/subscription-plans` : `${API_URL}/subscription-plans/${editingPlanModal.id}`;
+      const method = isNew ? 'POST' : 'PUT';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingPlanModal)
+      });
+      if (res.ok) {
+        triggerNotif(isNew ? 'Nouveau forfait créé avec succès !' : 'Configuration du forfait enregistrée avec succès !');
+        setEditingPlanModal(null);
+        fetchData();
+      }
+    } catch (e) {
+      console.error(e);
+      triggerNotif('Erreur lors de la sauvegarde du forfait.');
     }
   };
 
@@ -701,6 +818,11 @@ function AdminLayout() {
               </span>
             </li>
             <li>
+              <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => setActiveTab('subscriptions')}>
+                🌟 Abonnements ({subscriptionsData?.merchants?.length || 0})
+              </span>
+            </li>
+            <li>
               <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => setActiveTab('roles')}>
                 🛡️ {t('roles')}
               </span>
@@ -718,9 +840,27 @@ function AdminLayout() {
       <main className="main-content">
         {/* Header */}
         <header className="admin-header">
-          <h1>{t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))}</h1>
+          <h1>{activeTab === 'subscriptions' ? 'Gestion des Abonnements Commerçants' : t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))}</h1>
           
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            {/* Light / Dark Mode Toggle */}
+            <button
+              type="button"
+              onClick={() => setAdminLightMode(!adminLightMode)}
+              style={{
+                padding: '6px 14px',
+                background: adminLightMode ? 'rgba(179,135,40,0.15)' : 'rgba(255,255,255,0.08)',
+                border: '1px solid var(--border-gold)',
+                borderRadius: '8px',
+                color: 'var(--admin-gold)',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {adminLightMode ? '🌙 Mode Nuit' : '☀️ Fond Clair'}
+            </button>
+
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>Couleur:</span>
               <button type="button" onClick={() => setSelectedTheme('gold')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'gold' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#d4af37', cursor: 'pointer', padding: 0 }} title="Or Royal"></button>
@@ -1177,82 +1317,316 @@ function AdminLayout() {
 
         {activeTab === 'auctions' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontFamily: 'Playfair Display' }}>{t('auctionManagement')}</h2>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>{t('auctionManagement')}</h2>
+                <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', margin: '4px 0 0' }}>Superviser les enchères en temps réel, modérer les offres et valider les adjudications.</p>
+              </div>
+              <button className="btn-gold" style={{ padding: '8px 18px', fontSize: '0.85rem' }} onClick={handleOpenAddAuction}>
+                ➕ Lancer une Nouvelle Enchère
+              </button>
             </div>
 
+            {/* Stats Row */}
+            <div className="stats-row" style={{ marginBottom: '25px' }}>
+              <div className="stat-card" style={{ borderLeft: '4px solid var(--admin-gold)' }}>
+                <span className="stat-title">Enchères en Direct</span>
+                <span className="stat-num" style={{ color: 'var(--admin-gold)' }}>
+                  {auctions.filter(a => a.statut === 'Active' && new Date(a.date_fin) > new Date()).length}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--success-green)' }}>En cours de réception d'offres</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-title">Total Enchères Historique</span>
+                <span className="stat-num">{auctions.length}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Créées sur la plateforme</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-title">Offres Déposées</span>
+                <span className="stat-num" style={{ color: 'var(--success-green)' }}>
+                  {auctions.reduce((sum, a) => sum + (a.bidsCount || 0), 0)}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Mises clients cumulées</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-title">Meilleure Adjudication</span>
+                <span className="stat-num" style={{ color: 'var(--admin-gold)' }}>
+                  {Math.max(...auctions.map(a => a.highestBid || 0), 0).toLocaleString()} MAD
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Record de vente</span>
+              </div>
+            </div>
+
+            {/* Table */}
             <div className="table-container">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Bijou</th>
+                    <th>Bijou / Lot</th>
                     <th>Vendeur</th>
-                    <th>Prix de départ</th>
-                    <th>Prix de réserve</th>
-                    <th>Offre actuelle</th>
-                    <th>Offres</th>
-                    <th>Date de fin</th>
+                    <th>Prix de Départ</th>
+                    <th>Offre Actuelle</th>
+                    <th>Mises</th>
+                    <th>Fin de l'Enchère</th>
                     <th>Statut</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {auctions.map(auc => {
-                    const isEnded = new Date(auc.date_fin) < new Date();
-                    return (
-                      <tr key={auc.id}>
-                        <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{auc.id}</td>
-                        <td style={{ fontWeight: 'bold' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {auc.bijou?.images?.[0] && (
-                              <img src={auc.bijou.images[0]} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
-                            )}
-                            <div>
-                              <div>{auc.bijou?.titre || 'Bijou Supprimé'}</div>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{auc.bijou?.purete} • {auc.bijou?.gramme}g</span>
+                  {auctions.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-gray)' }}>
+                        Aucune enchère en cours. Cliquez sur "➕ Lancer une Nouvelle Enchère" pour publier un premier lot.
+                      </td>
+                    </tr>
+                  ) : (
+                    auctions.map(auc => {
+                      const isExpired = new Date(auc.date_fin) < new Date();
+                      const isActive = auc.statut === 'Active' && !isExpired;
+                      return (
+                        <tr key={auc.id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              {auc.bijou?.images?.[0] && (
+                                <img
+                                  src={auc.bijou.images[0]}
+                                  alt={auc.bijou?.titre}
+                                  style={{ width: '42px', height: '42px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-gold)' }}
+                                />
+                              )}
+                              <div>
+                                <strong style={{ display: 'block', color: 'var(--text-dark)' }}>{auc.bijou?.titre || 'Bijou #' + auc.bijou_id}</strong>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{auc.bijou?.gramme || 0}g • {auc.bijou?.purete || '18k'}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
+                          <td style={{ fontSize: '0.85rem' }}>
+                            {auc.bijou?.vendeur_nom || 'Commerçant'}
+                          </td>
+                          <td style={{ fontWeight: 600 }}>
+                            {auc.prix_depart?.toLocaleString()} MAD
+                          </td>
+                          <td>
+                            <strong style={{ color: auc.highestBid > auc.prix_depart ? 'var(--success-green)' : 'var(--admin-gold)', fontSize: '0.95rem' }}>
+                              {auc.highestBid?.toLocaleString()} MAD
+                            </strong>
+                          </td>
+                          <td>
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: (auc.bidsCount || 0) > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)',
+                              color: (auc.bidsCount || 0) > 0 ? '#10b981' : 'var(--text-gray)'
+                            }}>
+                              {auc.bidsCount || 0} offre{(auc.bidsCount || 0) > 1 ? 's' : ''}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '0.82rem' }}>
+                            <div>{new Date(auc.date_fin).toLocaleDateString('fr-FR')}</div>
+                            <div style={{ fontSize: '0.75rem', color: isExpired ? '#ef4444' : 'var(--text-gray)' }}>
+                              {isExpired ? 'Expirée' : new Date(auc.date_fin).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </td>
+                          <td>
+                            <span style={{
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: isActive ? 'rgba(16,185,129,0.15)' : (auc.statut === 'Resolved' ? 'rgba(212,175,55,0.15)' : 'rgba(239,68,68,0.15)'),
+                              color: isActive ? '#10b981' : (auc.statut === 'Resolved' ? 'var(--admin-gold)' : '#ef4444')
+                            }}>
+                              {isActive ? '🟢 En direct' : (auc.statut === 'Resolved' ? '🏆 Adjugé' : (isExpired ? '⏳ Terminée' : '❌ Annulée'))}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                className="btn-approve"
+                                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                title="Voir les offres déposées"
+                                onClick={() => handleViewBids(auc)}
+                              >
+                                👁️ Offres
+                              </button>
+                              {isActive && (
+                                <button
+                                  className="btn-outline-gold"
+                                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                  title="Clôturer et désigner le gagnant"
+                                  onClick={() => handleResolveAuction(auc.id)}
+                                >
+                                  🏆 Clôturer
+                                </button>
+                              )}
+                              {auc.statut !== 'Cancelled' && (
+                                <button
+                                  className="btn-reject"
+                                  style={{ padding: '4px 8px', fontSize: '0.75rem', margin: 0 }}
+                                  title="Annuler l'enchère"
+                                  onClick={() => handleCancelAuction(auc.id)}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'subscriptions' && (
+          <div>
+            {/* Top Metrics Row */}
+            <div className="stats-row" style={{ marginBottom: '25px' }}>
+              <div className="stat-card" style={{ borderLeft: '4px solid var(--admin-gold)' }}>
+                <span className="stat-title">Revenu Mensuel Récurrent (MRR)</span>
+                <span className="stat-num" style={{ color: 'var(--admin-gold)' }}>
+                  {(subscriptionsData?.stats?.mrr || 0).toLocaleString()} MAD
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--success-green)' }}>+18% vs mois précédent</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-title">Revenu Annuel Projeté (ARR)</span>
+                <span className="stat-num">
+                  {(subscriptionsData?.stats?.arr || 0).toLocaleString()} MAD
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Base abonnements actifs</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-title">Commerçants Abonnés Payants</span>
+                <span className="stat-num">
+                  {subscriptionsData?.stats?.subscribed_paying || 0} / {subscriptionsData?.stats?.total_merchants || 0}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--admin-gold)' }}>
+                  {subscriptionsData?.stats?.total_merchants ? Math.round(((subscriptionsData.stats.subscribed_paying || 0) / subscriptionsData.stats.total_merchants) * 100) : 0}% de conversion
+                </span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-title">Répartition par Formule</span>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px', fontSize: '0.78rem', flexWrap: 'wrap' }}>
+                  <span style={{ padding: '3px 8px', background: 'rgba(156,163,175,0.15)', borderRadius: '4px' }}>
+                    Pass: <strong>{subscriptionsData?.stats?.by_plan?.plan_starter || 0}</strong>
+                  </span>
+                  <span style={{ padding: '3px 8px', background: 'rgba(212,175,55,0.15)', color: 'var(--admin-gold)', borderRadius: '4px' }}>
+                    Prestige: <strong>{subscriptionsData?.stats?.by_plan?.plan_pro || 0}</strong>
+                  </span>
+                  <span style={{ padding: '3px 8px', background: 'rgba(183,110,121,0.15)', color: '#b76e79', borderRadius: '4px' }}>
+                    VIP: <strong>{subscriptionsData?.stats?.by_plan?.plan_vip || 0}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Merchant Subscriptions Table */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>Abonnements Commerçants Actifs</h2>
+            </div>
+
+            <div className="table-container" style={{ marginBottom: '36px' }}>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Boutique & Marchand</th>
+                    <th>Forfait Actif</th>
+                    <th>Quota Dépôts Bijoux</th>
+                    <th>Commission</th>
+                    <th>Tarif / Cycle</th>
+                    <th>Statut</th>
+                    <th>Échéance</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(subscriptionsData?.merchants || []).map(m => {
+                    const sub = m.subscription || {};
+                    return (
+                      <tr key={m.id}>
                         <td>
-                          {users.find(u => u.id === auc.bijou?.commercant_id)?.shopName || 'Commerçant Inconnu'}
-                        </td>
-                        <td>{auc.prix_depart} MAD</td>
-                        <td>{auc.prix_reserve ? `${auc.prix_reserve} MAD` : 'Aucun'}</td>
-                        <td style={{ color: 'var(--admin-gold)', fontWeight: 'bold' }}>
-                          {auc.highestBid} MAD
-                        </td>
-                        <td>
-                          <button className="btn-approve" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={() => handleViewBids(auc)}>
-                            🔍 {auc.bidsCount} offres
-                          </button>
-                        </td>
-                        <td style={{ fontSize: '0.8rem' }}>
-                          {new Date(auc.date_fin).toLocaleString()}
-                          {isEnded && <span style={{ color: 'var(--danger-red)', display: 'block', fontSize: '0.7rem', fontWeight: 'bold' }}>Terminée</span>}
+                          <strong style={{ color: 'var(--text-white)' }}>{m.shopName}</strong>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{m.nom} • {m.email}</div>
                         </td>
                         <td>
                           <span style={{
-                            backgroundColor: auc.statut === 'Active' ? 'rgba(46, 204, 113, 0.15)' : (auc.statut === 'Cancelled' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(255, 255, 255, 0.1)'),
-                            color: auc.statut === 'Active' ? '#2ecc71' : (auc.statut === 'Cancelled' ? '#e74c3c' : 'white'),
-                            padding: '2px 8px',
-                            borderRadius: '3px',
-                            fontSize: '0.75rem',
-                            fontWeight: 'bold'
+                            padding: '3px 10px',
+                            borderRadius: '12px',
+                            background: sub.plan_id === 'plan_vip' ? 'rgba(183,110,121,0.2)' : (sub.plan_id === 'plan_pro' ? 'rgba(212,175,55,0.2)' : 'rgba(156,163,175,0.15)'),
+                            color: sub.plan_id === 'plan_vip' ? '#b76e79' : (sub.plan_id === 'plan_pro' ? 'var(--admin-gold)' : 'var(--text-gray)'),
+                            fontSize: '0.78rem',
+                            fontWeight: 800,
+                            border: '1px solid var(--border-gold)'
                           }}>
-                            {auc.statut}
+                            {sub.plan_name || 'Pass Essentiel'}
                           </span>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            {auc.statut === 'Active' && !isEnded && (
-                              <button className="btn-reject" style={{ padding: '6px 12px', fontSize: '0.75rem', margin: 0 }} onClick={() => handleCancelAuction(auc.id)}>
-                                Annuler
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>{m.current_products_count} / {m.max_products > 1000 ? '∞' : m.max_products}</span>
+                            <div style={{ width: '60px', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                              <div style={{ width: `${m.usage_percentage}%`, height: '100%', background: 'var(--admin-gold)' }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 700, color: 'var(--admin-gold)' }}>
+                          {sub.commission_rate || 8}%
+                        </td>
+                        <td>
+                          <strong>{sub.price?.toLocaleString()} MAD</strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', display: 'block' }}>
+                            {sub.billing_cycle === 'annual' ? 'Annuel' : 'Mensuel'}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            background: sub.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                            color: sub.status === 'active' ? '#10b981' : '#ef4444'
+                          }}>
+                            {sub.status === 'active' ? 'Actif' : 'Suspendu'}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+                          {sub.end_date ? new Date(sub.end_date).toLocaleDateString('fr-FR') : '-'}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              className="btn-approve"
+                              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                              title="Changer ou surclasser le forfait"
+                              onClick={() => setMerchantSubModal(m)}
+                            >
+                              ⚙️ Modifier
+                            </button>
+                            {sub.status === 'active' ? (
+                              <button
+                                className="btn-reject"
+                                style={{ padding: '4px 8px', fontSize: '0.75rem', margin: 0 }}
+                                title="Suspendre l'abonnement"
+                                onClick={() => handleUpdateMerchantSubStatus(m.id, 'suspended')}
+                              >
+                                ⏸️
                               </button>
-                            )}
-                            {auc.statut === 'Active' && (
-                              <button className="btn-approve" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => handleResolveAuction(auc.id)}>
-                                Clôturer
+                            ) : (
+                              <button
+                                className="btn-approve"
+                                style={{ padding: '4px 8px', fontSize: '0.75rem', margin: 0 }}
+                                title="Réactiver l'abonnement"
+                                onClick={() => handleUpdateMerchantSubStatus(m.id, 'active')}
+                              >
+                                ▶️
                               </button>
                             )}
                           </div>
@@ -1260,6 +1634,98 @@ function AdminLayout() {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Plans Configuration Settings Editor */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+              <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>Configuration des Tarifs & Quotas des Forfaits</h2>
+              <button
+                className="btn-gold"
+                style={{ margin: 0, padding: '8px 18px', fontSize: '0.85rem' }}
+                onClick={() => setEditingPlanModal({
+                  name: '',
+                  tagline: 'Formule sur mesure pour bijoutiers',
+                  price_monthly: 390,
+                  price_annual: 3700,
+                  max_products: 15,
+                  commission_rate: 5,
+                  badge: '💎 Joaillier Élite',
+                  popular: false,
+                  color: '#b38728'
+                })}
+              >
+                ➕ Créer un Nouveau Forfait
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '36px' }}>
+              {(subscriptionsData?.plans || []).map(plan => (
+                <div key={plan.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '22px', boxShadow: 'var(--shadow)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ fontSize: '1.2rem', color: 'var(--admin-gold)', margin: 0 }}>{plan.name}</h3>
+                    <button
+                      className="btn-outline-gold"
+                      style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                      onClick={() => setEditingPlanModal({ ...plan })}
+                    >
+                      ✏️ Éditer
+                    </button>
+                  </div>
+                  <p style={{ color: 'var(--text-gray)', fontSize: '0.82rem', marginBottom: '16px' }}>{plan.tagline}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-gray)' }}>Prix Mensuel :</span>
+                      <strong>{plan.price_monthly} MAD</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-gray)' }}>Prix Annuel :</span>
+                      <strong>{plan.price_annual} MAD</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-gray)' }}>Dépôts Bijoux Max :</span>
+                      <strong style={{ color: 'var(--admin-gold)' }}>{plan.max_products > 1000 ? 'Illimité' : plan.max_products}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-gray)' }}>Commission Plateforme :</span>
+                      <strong style={{ color: '#10b981' }}>{plan.commission_rate}%</strong>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Invoices Log */}
+            <h2 style={{ fontFamily: 'Playfair Display', marginBottom: '16px' }}>Historique Global des Factures & Encaissements</h2>
+            <div className="table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>N° Facture</th>
+                    <th>Boutique</th>
+                    <th>Forfait</th>
+                    <th>Montant</th>
+                    <th>Cycle</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(subscriptionsData?.invoices || []).map(inv => (
+                    <tr key={inv.id}>
+                      <td style={{ fontWeight: 'bold' }}>{inv.invoice_number}</td>
+                      <td>{inv.merchant_name}</td>
+                      <td style={{ color: 'var(--admin-gold)' }}>{inv.plan_name}</td>
+                      <td><strong>{inv.amount?.toLocaleString()} MAD</strong></td>
+                      <td>{inv.billing_cycle === 'annual' ? 'Annuel' : 'Mensuel'}</td>
+                      <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{new Date(inv.date).toLocaleDateString('fr-FR')}</td>
+                      <td>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: '0.75rem', fontWeight: 700 }}>
+                          {inv.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -1857,6 +2323,150 @@ function AdminLayout() {
           </form>
         </div>
       )}
+
+      {/* PLAN EDITING MODAL */}
+      {editingPlanModal && (
+        <div className="modal-backdrop" onClick={() => setEditingPlanModal(null)}>
+          <div className="modal-content" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ fontFamily: 'Playfair Display' }}>Édition du Forfait : {editingPlanModal.name}</h3>
+              <button className="btn-close" onClick={() => setEditingPlanModal(null)}>✕</button>
+            </div>
+            <form onSubmit={handleSavePlanConfig}>
+              <div className="form-group" style={{ marginBottom: '14px' }}>
+                <label className="form-label">Nom du Forfait</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={editingPlanModal.name} 
+                  onChange={e => setEditingPlanModal({ ...editingPlanModal, name: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '14px' }}>
+                <label className="form-label">Slogan / Sous-titre</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={editingPlanModal.tagline} 
+                  onChange={e => setEditingPlanModal({ ...editingPlanModal, tagline: e.target.value })} 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">Prix Mensuel (MAD)</label>
+                  <input 
+                    type="number" 
+                    className="form-input" 
+                    value={editingPlanModal.price_monthly} 
+                    onChange={e => setEditingPlanModal({ ...editingPlanModal, price_monthly: parseFloat(e.target.value) || 0 })} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Prix Annuel (MAD)</label>
+                  <input 
+                    type="number" 
+                    className="form-input" 
+                    value={editingPlanModal.price_annual} 
+                    onChange={e => setEditingPlanModal({ ...editingPlanModal, price_annual: parseFloat(e.target.value) || 0 })} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                <div className="form-group">
+                  <label className="form-label">Quota Dépôts Bijoux Max</label>
+                  <input 
+                    type="number" 
+                    className="form-input" 
+                    value={editingPlanModal.max_products} 
+                    onChange={e => setEditingPlanModal({ ...editingPlanModal, max_products: parseInt(e.target.value) || 5 })} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Taux de Commission (%)</label>
+                  <input 
+                    type="number" 
+                    step="0.5"
+                    className="form-input" 
+                    value={editingPlanModal.commission_rate} 
+                    onChange={e => setEditingPlanModal({ ...editingPlanModal, commission_rate: parseFloat(e.target.value) || 0 })} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn-outline-gold" onClick={() => setEditingPlanModal(null)}>
+                  {t('cancel')}
+                </button>
+                <button type="submit" className="btn-gold" style={{ margin: 0 }}>
+                  Enregistrer les modifications
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MERCHANT SUBSCRIPTION MODAL */}
+      {merchantSubModal && (
+        <div className="modal-backdrop" onClick={() => setMerchantSubModal(null)}>
+          <div className="modal-content" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ fontFamily: 'Playfair Display' }}>Forfait : {merchantSubModal.shopName}</h3>
+              <button className="btn-close" onClick={() => setMerchantSubModal(null)}>✕</button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const planId = e.target.plan_id.value;
+              const cycle = e.target.billing_cycle.value;
+              handleUpdateMerchantPlan(merchantSubModal.id, planId, cycle);
+            }}>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label">Sélectionner la Formule</label>
+                <select 
+                  name="plan_id" 
+                  className="form-input" 
+                  defaultValue={merchantSubModal.subscription?.plan_id || 'plan_starter'}
+                >
+                  {(subscriptionsData?.plans || []).map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — {p.price_monthly} MAD/mois ({p.max_products > 1000 ? 'Illimité' : `${p.max_products} bijoux`}, {p.commission_rate}%)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label className="form-label">Cycle de Facturation</label>
+                <select 
+                  name="billing_cycle" 
+                  className="form-input" 
+                  defaultValue={merchantSubModal.subscription?.billing_cycle || 'monthly'}
+                >
+                  <option value="monthly">Facturation Mensuelle</option>
+                  <option value="annual">Facturation Annuelle (-20%)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn-outline-gold" onClick={() => setMerchantSubModal(null)}>
+                  {t('cancel')}
+                </button>
+                <button type="submit" className="btn-gold" style={{ margin: 0 }}>
+                  Appliquer le changement
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1886,7 +2496,7 @@ function AdminAppContent() {
           animation: 'oriaSpin 0.9s linear infinite',
           marginBottom: '20px'
         }} />
-        <span style={{ letterSpacing: '3px', fontSize: '1rem', fontWeight: '600' }}>ORIA ADMINISTRATION</span>
+        <span style={{ letterSpacing: '3px', fontSize: '1rem', fontWeight: '600' }}>HRSDGDG ADMINISTRATION</span>
         <style>{`
           @keyframes oriaSpin {
             to { transform: rotate(360deg); }

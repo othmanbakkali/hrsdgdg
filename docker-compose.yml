@@ -1,18 +1,53 @@
 version: '3.8'
 
 services:
-  oria-platform:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hrsdgdg_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: hrsdgdg_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: hrsdgdg_pass_2026
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./oria-api/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hrsdgdg_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hrsdgdg_net
+
+  hrsdgdg-platform:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: oria_platform
+    image: hrsdgdg-platform:latest
+    container_name: hrsdgdg_platform
     restart: always
     ports:
-      - "5077:5077"
+      - "127.0.0.1:5077:5077"
     environment:
       - NODE_ENV=production
       - PORT=5077
       - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://postgres:hrsdgdg_pass_2026@postgres:5432/hrsdgdg_db
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
-      # Persist database and data across container rebuilds
       - ./oria-api/data:/app/oria-api/data
+    networks:
+      - hrsdgdg_net
+
+networks:
+  hrsdgdg_net:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local

@@ -26,14 +26,18 @@ export const CartProvider = ({ children }) => {
   const addToCart = (product, quantity = 1) => {
     const existing = cartItems.find(item => item.id === product.id);
     let newCart = [];
+    const maxStock = product.stock || 99;
     if (existing) {
+      const currentQty = existing.quantite || existing.quantity || 1;
+      const targetQty = Math.min(maxStock, currentQty + quantity);
       newCart = cartItems.map(item =>
         item.id === product.id
-          ? { ...item, quantite: Math.min(product.stock, item.quantite + quantity) }
+          ? { ...item, quantite: targetQty, quantity: targetQty }
           : item
       );
     } else {
-      newCart = [...cartItems, { ...product, quantite: Math.min(product.stock, quantity) }];
+      const initialQty = Math.min(maxStock, quantity);
+      newCart = [...cartItems, { ...product, quantite: initialQty, quantity: initialQty }];
     }
     saveCart(newCart);
   };
@@ -44,8 +48,9 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateQuantity = (productId, qty) => {
+    const targetQty = Math.max(1, qty);
     const newCart = cartItems.map(item =>
-      item.id === productId ? { ...item, quantite: qty } : item
+      item.id === productId ? { ...item, quantite: targetQty, quantity: targetQty } : item
     );
     saveCart(newCart);
   };
@@ -54,7 +59,11 @@ export const CartProvider = ({ children }) => {
     saveCart([]);
   };
 
-  const cartTotal = cartItems.reduce((acc, item) => acc + (item.prix * item.quantite), 0);
+  const cartTotal = cartItems.reduce((acc, item) => {
+    const qty = item.quantite || item.quantity || 1;
+    const price = typeof item.prix === 'number' ? item.prix : (parseFloat(item.prix) || 0);
+    return acc + (price * qty);
+  }, 0);
 
   return (
     <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal }}>

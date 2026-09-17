@@ -59,7 +59,7 @@ export default function OriaLogo({ size = 30, showText = true, subtitle = "ADMIN
             WebkitTextFillColor: 'transparent',
             display: 'block'
           }}>
-            ORIA
+            HRSDGDG
           </span>
           {subtitle && (
             <span style={{ 

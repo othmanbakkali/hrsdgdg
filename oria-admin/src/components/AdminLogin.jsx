@@ -28,7 +28,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
   };
 
   const handleFillDemo = () => {
-    setEmail('admin@oria.com');
+    setEmail('admin@hrsdgdg.com');
     setPassword('admin123');
     setErrorMsg('');
   };
@@ -175,7 +175,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
               <input
                 type="email"
                 className="form-input"
-                placeholder="admin@oria.com"
+                placeholder="admin@hrsdgdg.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

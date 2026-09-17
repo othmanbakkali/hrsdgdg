@@ -1,0 +1,49 @@
+{
+  "id": "hrsdgdg-admin-dashboard",
+  "name": "HRSDGDG Admin — Console de Gestion",
+  "short_name": "HRSDGDG Admin",
+  "description": "Console d'administration et de gestion pour la marketplace joaillière HRSDGDG.",
+  "lang": "fr",
+  "dir": "auto",
+  "start_url": "/admin/",
+  "scope": "/admin/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0F1117",
+  "theme_color": "#D4AF37",
+  "categories": ["business", "productivity", "management"],
+  "icons": [
+    {
+      "src": "/admin/icons/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/admin/icons/pwa-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/admin/icons/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/admin/icons/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/admin/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "prefer_related_applications": false
+}
