@@ -101,6 +101,8 @@ function AdminLayout() {
     images: []
   });
 
+  const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
+
   // Product search/filters
   const [productSearch, setProductSearch] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState('All');
@@ -352,21 +354,51 @@ function AdminLayout() {
   };
 
   // Multi-image handlers for admin product modal
-  const handleAdminFilesSelected = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    files.forEach(file => {
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setProductForm(prev => ({
-            ...prev,
-            images: [...(prev.images || []), reader.result]
-          }));
-        }
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = () => resolve(e.target.result);
+        img.src = e.target.result;
       };
+      reader.onerror = () => resolve(null);
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleAdminFilesSelected = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    for (const file of files) {
+      const compressed = await compressImage(file);
+      if (compressed) {
+        setProductForm(prev => ({
+          ...prev,
+          images: [...(prev.images || []), compressed]
+        }));
+      }
+    }
     e.target.value = '';
   };
 
@@ -527,6 +559,8 @@ function AdminLayout() {
 
   const handleProductSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingProduct) return;
+    setIsSubmittingProduct(true);
     const url = editingProduct ? `${API_URL}/bijoux/${editingProduct.id}` : `${API_URL}/bijoux`;
     const method = editingProduct ? 'PUT' : 'POST';
 
@@ -595,6 +629,8 @@ function AdminLayout() {
     } catch (e) {
       console.error(e);
       triggerNotif("Erreur de connexion au serveur.");
+    } finally {
+      setIsSubmittingProduct(false);
     }
   };
 
@@ -2969,8 +3005,13 @@ function AdminLayout() {
               <button type="button" className="btn-outline-gold" style={{ padding: '10px 20px' }} onClick={() => setShowProductModal(false)}>
                 {t('cancel')}
               </button>
-              <button type="submit" className="btn-gold" style={{ margin: 0, padding: '10px 20px' }}>
-                {t('saveConfig')}
+              <button 
+                type="submit" 
+                className="btn-gold" 
+                style={{ margin: 0, padding: '10px 20px', opacity: isSubmittingProduct ? 0.7 : 1, cursor: isSubmittingProduct ? 'not-allowed' : 'pointer' }}
+                disabled={isSubmittingProduct}
+              >
+                {isSubmittingProduct ? '⏳ Enregistrement...' : t('saveConfig')}
               </button>
             </div>
           </form>

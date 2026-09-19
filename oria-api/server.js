@@ -35,6 +35,36 @@ function writeDB(data) {
   }
 }
 
+// Uploads directory and static serving
+const UPLOADS_DIR = path.join(__dirname, 'data', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '30d' }));
+
+function processImages(images) {
+  if (!images) return [];
+  const list = Array.isArray(images) ? images : [images];
+  return list.map(img => {
+    if (typeof img === 'string' && img.startsWith('data:image/')) {
+      try {
+        const matches = img.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (matches) {
+          const rawExt = matches[1].toLowerCase();
+          const ext = rawExt === 'jpeg' ? 'jpg' : (rawExt === 'svg+xml' ? 'svg' : rawExt);
+          const buffer = Buffer.from(matches[2], 'base64');
+          const filename = `img_${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${ext}`;
+          fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+          return `/uploads/${filename}`;
+        }
+      } catch (err) {
+        console.error('Failed to save base64 image:', err.message);
+      }
+    }
+    return img;
+  });
+}
+
 // In-memory translation cache to optimize performance
 const translationCache = new Map();
 
@@ -570,7 +600,7 @@ app.post('/api/bijoux', (req, res) => {
     style: style || 'Moderne',
     occasion: occasion || 'Cadeau',
     pour_qui: pour_qui || 'Femme',
-    images: (images && images.length > 0) ? images : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'],
+    images: (processImages(images) && processImages(images).length > 0) ? processImages(images) : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'],
     disponibilite: effectiveDisponibilite,
     city: city || 'Casablanca',
     stock: (stock !== undefined && stock !== null && stock !== '') ? (parseInt(stock) || 1) : 1,
@@ -613,10 +643,12 @@ app.put('/api/bijoux/:id', (req, res) => {
   const current = db.bijoux[idx];
   const updatedTitreFr = req.body.titre_fr !== undefined ? req.body.titre_fr : (req.body.titre !== undefined ? req.body.titre : current.titre_fr);
   const updatedDescFr = req.body.description_fr !== undefined ? req.body.description_fr : (req.body.description !== undefined ? req.body.description : current.description_fr);
+  const updatedImages = req.body.images !== undefined ? processImages(req.body.images) : current.images;
 
   db.bijoux[idx] = {
     ...current,
     ...req.body,
+    images: updatedImages,
     titre: updatedTitreFr || current.titre,
     titre_fr: updatedTitreFr || current.titre_fr,
     titre_ar: req.body.titre_ar !== undefined ? req.body.titre_ar : current.titre_ar,
@@ -1556,7 +1588,7 @@ if (fs.existsSync(adminDistPath)) {
 if (fs.existsSync(mainDistPath)) {
   app.use(express.static(mainDistPath, staticOptions));
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/admin')) {
+    if (req.path.startsWith('/api') || req.path.startsWith('/admin') || req.path.startsWith('/uploads')) {
       return next();
     }
     res.sendFile(path.join(mainDistPath, 'index.html'));
