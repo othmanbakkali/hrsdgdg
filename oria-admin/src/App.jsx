@@ -74,7 +74,7 @@ function AdminLayout() {
   const [products, setProducts] = useState([]);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [productLangTab, setProductLangTab] = useState('fr'); // 'fr', 'ar', 'en'
+  const [productLangTab, setProductLangTab] = useState('ar'); // 'ar', 'fr'
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateSuccessMsg, setTranslateSuccessMsg] = useState('');
   const [adminCustomImageUrl, setAdminCustomImageUrl] = useState('');
@@ -118,6 +118,19 @@ function AdminLayout() {
   const [adminLightMode, setAdminLightMode] = useState(() => localStorage.getItem('oria-admin-light-mode') !== 'false');
   const [editingPlanModal, setEditingPlanModal] = useState(null);
   const [merchantSubModal, setMerchantSubModal] = useState(null);
+
+  // Gold Rates Management State
+  const [goldRatesData, setGoldRatesData] = useState({
+    currentPrice24k: 1045,
+    caratRates: { '24k': 1045, '21k': 914, '18k': 784, '14k': 610, '9k': 392, ounce: 32503, kilo: 1045000 },
+    history: [],
+    lastUpdated: '',
+    updatedBy: ''
+  });
+  const [goldPriceInput, setGoldPriceInput] = useState('1045');
+  const [goldSourceInput, setGoldSourceInput] = useState('');
+  const [goldNoteInput, setGoldNoteInput] = useState('');
+  const [isUpdatingGold, setIsUpdatingGold] = useState(false);
 
   useEffect(() => {
     if (adminLightMode) {
@@ -199,9 +212,20 @@ function AdminLayout() {
     setTimeout(() => setNotif(null), 4000);
   };
 
-  const handleOpenAddUser = () => {
+  const handleOpenAddUser = (initialRole = 'client') => {
     setEditingUser(null);
-    setUserForm({ nom: '', email: '', mot_de_passe: '', role: 'client', shopName: '', phone: '', address: '', city: '' });
+    setUserForm({
+      nom: '',
+      email: '',
+      mot_de_passe: '',
+      role: initialRole,
+      shopName: '',
+      phone: '',
+      address: '',
+      city: 'Casablanca',
+      plan_id: (subscriptionsData?.plans && subscriptionsData.plans[0]?.id) || 'plan_starter',
+      billing_cycle: 'monthly'
+    });
     setShowUserModal(true);
   };
 
@@ -215,7 +239,9 @@ function AdminLayout() {
       shopName: u.shopName || '',
       phone: u.phone || '',
       address: u.address || '',
-      city: u.city || ''
+      city: u.city || '',
+      plan_id: u.subscription?.plan_id || 'plan_starter',
+      billing_cycle: u.subscription?.billing_cycle || 'monthly'
     });
     setShowUserModal(true);
   };
@@ -268,7 +294,7 @@ function AdminLayout() {
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
     setProductLangTab('fr');
-    const defaultMerchant = users.find(u => u.role === 'commercant')?.id || '';
+    const defaultMerchant = adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin';
     const defaultCategory = categories[0]?.id || '';
     setProductForm({
       titre: '',
@@ -282,11 +308,12 @@ function AdminLayout() {
       prix: '',
       gramme: '',
       purete: '18k',
-      city: 'Casablanca',
+      city: adminUser?.city || 'Casablanca',
       stock: 1,
       category_id: defaultCategory,
       commercant_id: defaultMerchant,
-      statut: 'Pending',
+      statut: 'Validated',
+      etat: 'Neuf',
       type_vente: 'direct',
       prix_depart: '',
       duree: 24,
@@ -298,7 +325,7 @@ function AdminLayout() {
   const handleOpenAddAuction = () => {
     setEditingProduct(null);
     setProductLangTab('fr');
-    const defaultMerchant = users.find(u => u.role === 'commercant')?.id || '';
+    const defaultMerchant = adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin';
     const defaultCategory = categories[0]?.id || '';
     setProductForm({
       titre: '',
@@ -312,11 +339,12 @@ function AdminLayout() {
       prix: '5000',
       gramme: '10',
       purete: '18k',
-      city: 'Casablanca',
+      city: adminUser?.city || 'Casablanca',
       stock: 1,
       category_id: defaultCategory,
       commercant_id: defaultMerchant,
       statut: 'Validated',
+      etat: 'Neuf',
       type_vente: 'enchere',
       prix_depart: '5000',
       duree: 48,
@@ -338,17 +366,18 @@ function AdminLayout() {
       description_ar: p.description_ar || '',
       description_en: p.description_en || '',
       prix: p.prix || '',
-      gramme: p.gramme || '',
+      gramme: p.gramme || p.poids || '',
       purete: p.purete || '18k',
-      city: p.city || '',
-      stock: p.stock || 0,
+      city: p.city || p.ville || 'Casablanca',
+      stock: p.stock || 1,
       category_id: p.category_id || '',
-      commercant_id: p.commercant_id || '',
+      commercant_id: p.commercant_id || adminUser?.id || 'admin',
       statut: p.statut || 'Validated',
+      etat: p.etat || 'Neuf',
       type_vente: (p.disponibilite === 'enchere' || p.type_vente === 'AUCTION') ? 'enchere' : 'direct',
       prix_depart: p.prix || '',
       duree: 24,
-      images: p.images || []
+      images: Array.isArray(p.images) ? p.images : (p.image ? [p.image] : [])
     });
     setShowProductModal(true);
   };
@@ -429,29 +458,31 @@ function AdminLayout() {
     });
   };
 
-  // Auto-translate product content across FR, AR, EN
+  // Auto-translate product content between AR and FR
   const handleAutoTranslateProduct = async (sourceLang = productLangTab, showAlert = true) => {
     const title = sourceLang === 'fr' 
       ? (productForm.titre_fr || productForm.titre || '') 
-      : (productForm[`titre_${sourceLang}`] || '');
+      : (productForm.titre_ar || '');
     const desc = sourceLang === 'fr' 
       ? (productForm.description_fr || productForm.description || '') 
-      : (productForm[`description_${sourceLang}`] || '');
+      : (productForm.description_ar || '');
 
     if (!title.trim() && !desc.trim()) {
       if (showAlert) {
-        triggerNotif(`Veuillez d'abord renseigner le titre ou la description en ${sourceLang === 'fr' ? 'Français' : (sourceLang === 'ar' ? 'Arabe' : 'Anglais')} avant de traduire.`);
+        triggerNotif(t('notifFillBeforeTranslate'));
       }
       return;
     }
 
     setIsTranslating(true);
     try {
+      const targetLang = sourceLang === 'ar' ? 'fr' : 'ar';
       const res = await fetch(`${API_URL}/translate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: sourceLang,
+          targets: [targetLang],
           fields: {
             title,
             description: desc
@@ -467,10 +498,6 @@ function AdminLayout() {
               if (data.translations.ar.title) updated.titre_ar = data.translations.ar.title;
               if (data.translations.ar.description) updated.description_ar = data.translations.ar.description;
             }
-            if (data.translations.en) {
-              if (data.translations.en.title) updated.titre_en = data.translations.en.title;
-              if (data.translations.en.description) updated.description_en = data.translations.en.description;
-            }
             if (data.translations.fr) {
               if (data.translations.fr.title) {
                 updated.titre_fr = data.translations.fr.title;
@@ -483,14 +510,14 @@ function AdminLayout() {
             }
             return updated;
           });
-          setTranslateSuccessMsg("✓ Traduction automatique effectuée avec succès !");
-          triggerNotif("✨ Traduction automatique effectuée avec succès !");
+          setTranslateSuccessMsg(t('notifTranslateSuccess'));
+          triggerNotif(t('notifTranslateSuccess'));
           setTimeout(() => setTranslateSuccessMsg(''), 4000);
         }
       }
     } catch (err) {
       console.error("Auto translate error:", err);
-      triggerNotif("Erreur lors de la traduction automatique.");
+      triggerNotif(t('notifTranslateError'));
     } finally {
       setIsTranslating(false);
     }
@@ -502,40 +529,39 @@ function AdminLayout() {
     setProductLangTab(targetTab);
 
     // If source tab has content and target tab is empty, auto-translate automatically!
-    const prevTitle = prevTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm[`titre_${prevTab}`] || '');
-    const prevDesc = prevTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm[`description_${prevTab}`] || '');
+    const prevTitle = prevTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm.titre_ar || '');
+    const prevDesc = prevTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm.description_ar || '');
     
-    const targetTitle = targetTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm[`titre_${targetTab}`] || '');
-    const targetDesc = targetTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm[`description_${targetTab}`] || '');
+    const targetTitle = targetTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm.titre_ar || '');
+    const targetDesc = targetTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm.description_ar || '');
 
     if ((prevTitle.trim() || prevDesc.trim()) && (!targetTitle.trim() && !targetDesc.trim())) {
       handleAutoTranslateProduct(prevTab, false);
     }
   };
 
-  // Auto-translate category names
+  // Auto-translate category names between AR and FR
   const handleAutoTranslateCategory = async (catObj, setCatFunc) => {
-    let sourceLang = 'fr';
-    let name = catObj.nom_fr || '';
-    if (!name.trim() && catObj.nom_ar?.trim()) {
-      sourceLang = 'ar';
-      name = catObj.nom_ar;
-    } else if (!name.trim() && catObj.nom_en?.trim()) {
-      sourceLang = 'en';
-      name = catObj.nom_en;
+    let sourceLang = 'ar';
+    let name = catObj.nom_ar || '';
+    if (!name.trim() && catObj.nom_fr?.trim()) {
+      sourceLang = 'fr';
+      name = catObj.nom_fr;
     }
 
     if (!name.trim()) {
-      triggerNotif("Veuillez saisir au moins un nom de catégorie.");
+      triggerNotif(t('notifFillBeforeTranslate'));
       return;
     }
 
     try {
+      const targetLang = sourceLang === 'ar' ? 'fr' : 'ar';
       const res = await fetch(`${API_URL}/translate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: sourceLang,
+          targets: [targetLang],
           fields: { name }
         })
       });
@@ -565,8 +591,14 @@ function AdminLayout() {
     const method = editingProduct ? 'PUT' : 'POST';
 
     // Prepare body with fallback synchronization
+    const defaultMerchant = adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin';
     const bodyData = { 
       ...productForm,
+      purete: '18k',
+      stock: 1,
+      statut: productForm.statut || (editingProduct ? editingProduct.statut : 'Validated'),
+      commercant_id: productForm.commercant_id || defaultMerchant,
+      etat: productForm.etat || 'Neuf',
       titre: productForm.titre_fr || productForm.titre || productForm.titre_en || productForm.titre_ar || '',
       titre_fr: productForm.titre_fr || productForm.titre || '',
       description: productForm.description_fr || productForm.description || productForm.description_en || productForm.description_ar || '',
@@ -574,10 +606,9 @@ function AdminLayout() {
     };
     if (productForm.type_vente === 'enchere') {
       bodyData.prix = parseFloat(productForm.prix_depart) || parseFloat(productForm.prix) || 1000;
-      bodyData.stock = 1;
       bodyData.disponibilite = 'enchere';
     } else {
-      bodyData.stock = parseInt(productForm.stock) || 1;
+      bodyData.stock = 1;
     }
 
     try {
@@ -662,7 +693,8 @@ function AdminLayout() {
         usersRes,
         auctionsRes,
         allBijouxRes,
-        subscriptionsRes
+        subscriptionsRes,
+        goldRes
       ] = await Promise.allSettled([
         fetch(`${API_URL}/stats/admin`),
         fetch(`${API_URL}/bijoux?status=Pending`),
@@ -671,7 +703,8 @@ function AdminLayout() {
         fetch(`${API_URL}/users`),
         fetch(`${API_URL}/encheres`),
         fetch(`${API_URL}/bijoux`),
-        fetch(`${API_URL}/subscriptions/all`)
+        fetch(`${API_URL}/subscriptions/all`),
+        fetch(`${API_URL}/gold-rates`)
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
@@ -730,6 +763,18 @@ function AdminLayout() {
         } catch (e) { console.error('Subscriptions parse error', e); }
       }
 
+      if (goldRes.status === 'fulfilled' && goldRes.value.ok) {
+        try {
+          const goldData = await goldRes.value.json();
+          if (goldData.success) {
+            setGoldRatesData(goldData);
+            if (!goldPriceInput || goldPriceInput === '1045') {
+              setGoldPriceInput(String(goldData.currentPrice18k || 1045));
+            }
+          }
+        } catch (e) { console.error('Gold rates parse error', e); }
+      }
+
     } catch (error) {
       console.error('Error fetching admin data:', error);
     }
@@ -773,6 +818,10 @@ function AdminLayout() {
   const handleSavePlanConfig = async (e) => {
     e.preventDefault();
     if (!editingPlanModal) return;
+    if (!editingPlanModal.name || !editingPlanModal.name.trim()) {
+      triggerNotif(lang === 'ar' ? 'يرجى إدخال اسم الباقة' : 'Veuillez saisir un nom pour le forfait.');
+      return;
+    }
     try {
       const isNew = !editingPlanModal.id;
       const url = isNew ? `${API_URL}/subscription-plans` : `${API_URL}/subscription-plans/${editingPlanModal.id}`;
@@ -783,13 +832,87 @@ function AdminLayout() {
         body: JSON.stringify(editingPlanModal)
       });
       if (res.ok) {
-        triggerNotif(isNew ? 'Nouveau forfait créé avec succès !' : 'Configuration du forfait enregistrée avec succès !');
+        triggerNotif(isNew ? (lang === 'ar' ? 'تم إنشاء الباقة بنجاح !' : 'Nouveau forfait créé avec succès !') : (lang === 'ar' ? 'تم حفظ التعديلات بنجاح !' : 'Configuration du forfait enregistrée avec succès !'));
         setEditingPlanModal(null);
         fetchData();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        triggerNotif(errorData.message || (lang === 'ar' ? 'خطأ أثناء حفظ الباقة.' : 'Erreur lors de la sauvegarde du forfait.'));
       }
     } catch (e) {
       console.error(e);
-      triggerNotif('Erreur lors de la sauvegarde du forfait.');
+      triggerNotif(lang === 'ar' ? 'خطأ في الاتصال بالخادم.' : 'Erreur lors de la sauvegarde du forfait.');
+    }
+  };
+
+  const handleDeletePlan = async (planId) => {
+    if (!window.confirm(lang === 'ar' ? 'هل أنت متأكد من حذف هذه الباقة؟' : 'Êtes-vous sûr de vouloir supprimer ce forfait ?')) return;
+    try {
+      const res = await fetch(`${API_URL}/subscription-plans/${planId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        triggerNotif(lang === 'ar' ? 'تم حذف الباقة بنجاح !' : 'Forfait supprimé avec succès !');
+        fetchData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        triggerNotif(err.message || (lang === 'ar' ? 'خطأ أثناء الحذف' : 'Erreur lors de la suppression.'));
+      }
+    } catch (e) {
+      console.error(e);
+      triggerNotif(lang === 'ar' ? 'خطأ في الاتصال بالخادم.' : 'Erreur lors de la suppression.');
+    }
+  };
+
+  const handleUpdateGoldRate = async (e) => {
+    e.preventDefault();
+    const val = parseFloat(goldPriceInput);
+    if (!val || isNaN(val) || val <= 0) {
+      triggerNotif('Veuillez saisir un prix valide (ex: 1045)');
+      return;
+    }
+
+    setIsUpdatingGold(true);
+    try {
+      const res = await fetch(`${API_URL}/admin/gold-rates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          price18k: val,
+          source: goldSourceInput.trim() || (lang === 'ar' ? 'السعر الرسمي المحدد - المغرب' : 'Fixation Officielle Maroc'),
+          note: goldNoteInput.trim() || (lang === 'ar' ? 'تحديث دوري معتمد' : 'Mise à jour régulière'),
+          updatedBy: adminUser?.nom || 'Super-Admin'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerNotif(lang === 'ar' ? 'تم تحديث سعر الذهب عيار 18 بنجاح !' : 'Cours de l\'or 18K mis à jour avec succès !');
+        setGoldSourceInput('');
+        setGoldNoteInput('');
+        fetchData();
+      } else {
+        triggerNotif(data.error || 'Erreur lors de la mise à jour');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotif('Erreur de communication avec le serveur.');
+    } finally {
+      setIsUpdatingGold(false);
+    }
+  };
+
+  const handleDeleteGoldHistory = async (id) => {
+    if (!window.confirm(lang === 'ar' ? 'هل أنت متأكد من حذف هذا السجل ؟' : 'Supprimer cette entrée d\'historique ?')) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/gold-rates/history/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        triggerNotif(lang === 'ar' ? 'تم حذف السجل بنجاح' : 'Entrée supprimée de l\'historique.');
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -1089,6 +1212,11 @@ function AdminLayout() {
               </span>
             </li>
             <li>
+              <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => setActiveTab('gold_rates')}>
+                🥇 {t('goldRates')}
+              </span>
+            </li>
+            <li>
               <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
                 👥 {t('users')}
               </span>
@@ -1100,7 +1228,7 @@ function AdminLayout() {
             </li>
             <li>
               <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => setActiveTab('subscriptions')}>
-                🌟 Abonnements ({subscriptionsData?.merchants?.length || 0})
+                🌟 {t('subscriptions')} ({subscriptionsData?.merchants?.length || 0})
               </span>
             </li>
             <li>
@@ -1121,7 +1249,7 @@ function AdminLayout() {
       <main className="main-content">
         {/* Header */}
         <header className="admin-header">
-          <h1>{activeTab === 'subscriptions' ? 'Gestion des Abonnements Commerçants' : t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))}</h1>
+          <h1>{activeTab === 'subscriptions' ? t('subscriptionsTitle') : t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))}</h1>
           
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             {/* Light / Dark Mode Toggle */}
@@ -1139,11 +1267,11 @@ function AdminLayout() {
                 cursor: 'pointer'
               }}
             >
-              {adminLightMode ? '🌙 Mode Nuit' : '☀️ Fond Clair'}
+              {adminLightMode ? t('themeNight') : t('themeLight')}
             </button>
 
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>Couleur:</span>
+              <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>{t('themeColor')}</span>
               <button type="button" onClick={() => setSelectedTheme('gold')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'gold' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#d4af37', cursor: 'pointer', padding: 0 }} title="Or Royal"></button>
               <button type="button" onClick={() => setSelectedTheme('rosegold')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'rosegold' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#b76e79', cursor: 'pointer', padding: 0 }} title="Or Rose"></button>
               <button type="button" onClick={() => setSelectedTheme('emerald')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'emerald' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#2ecc71', cursor: 'pointer', padding: 0 }} title="Émeraude"></button>
@@ -1156,9 +1284,8 @@ function AdminLayout() {
               value={lang} 
               onChange={(e) => setLang(e.target.value)}
             >
+              <option value="ar">العربية 🇲🇦</option>
               <option value="fr">Français 🇫🇷</option>
-              <option value="ar">العربية 🇲🇦 (RTL)</option>
-              <option value="en">English 🇬🇧</option>
             </select>
           </div>
         </header>
@@ -1199,10 +1326,10 @@ function AdminLayout() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Boutique</th>
-                    <th>Chiffre d'affaires</th>
-                    <th>Commissions Générées</th>
-                    <th>Articles vendus</th>
+                    <th>{t('shop')}</th>
+                    <th>{t('salesAmount')}</th>
+                    <th>{t('commissionsGenerated')}</th>
+                    <th>{t('itemsSold')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1360,23 +1487,19 @@ function AdminLayout() {
                   onClick={() => handleAutoTranslateCategory(newCat, setNewCat)}
                   className="btn-outline-gold"
                   style={{ fontSize: '0.82rem', padding: '6px 14px' }}
-                  title="Traduit automatiquement le nom renseigné vers les 2 autres langues"
+                  title="Traduit automatiquement le nom renseigné vers l'autre langue"
                 >
-                  ✨ Traduire automatiquement vers les autres langues
+                  {lang === 'ar' ? '✨ ترجمة تلقائية للغة الأخرى' : '✨ Traduire automatiquement'}
                 </button>
               </div>
-              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
-                <div className="form-group">
-                  <label className="form-label">{t('catNameFr')}</label>
-                  <input type="text" className="form-input" value={newCat.nom_fr} onChange={e => setNewCat({ ...newCat, nom_fr: e.target.value })} placeholder="ex: Colliers" required />
-                </div>
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                 <div className="form-group">
                   <label className="form-label">{t('catNameAr')}</label>
                   <input type="text" className="form-input" dir="rtl" value={newCat.nom_ar} onChange={e => setNewCat({ ...newCat, nom_ar: e.target.value })} placeholder="مثال: قلائد" required />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('catNameEn')}</label>
-                  <input type="text" className="form-input" value={newCat.nom_en} onChange={e => setNewCat({ ...newCat, nom_en: e.target.value })} placeholder="e.g. Necklaces" required />
+                  <label className="form-label">{t('catNameFr')}</label>
+                  <input type="text" className="form-input" value={newCat.nom_fr} onChange={e => setNewCat({ ...newCat, nom_fr: e.target.value })} placeholder="ex: Colliers" required />
                 </div>
               </div>
               <button type="submit" className="btn-gold" style={{ marginTop: '15px' }}>{t('add')}</button>
@@ -1388,9 +1511,8 @@ function AdminLayout() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Français</th>
-                    <th>العربية</th>
-                    <th>English</th>
+                    <th>العربية 🇲🇦</th>
+                    <th>Français 🇫🇷</th>
                     <th>{t('action')}</th>
                   </tr>
                 </thead>
@@ -1398,9 +1520,8 @@ function AdminLayout() {
                   {categories.map(cat => (
                     <tr key={cat.id}>
                       <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{cat.id}</td>
-                      <td>{cat.nom_fr}</td>
-                      <td>{cat.nom_ar}</td>
-                      <td>{cat.nom_en}</td>
+                      <td style={{ fontWeight: '600' }}>{cat.nom_ar || '-'}</td>
+                      <td>{cat.nom_fr || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button 
@@ -1409,7 +1530,7 @@ function AdminLayout() {
                             style={{ padding: '5px 12px', fontSize: '0.78rem' }} 
                             onClick={() => handleOpenEditCategory(cat)}
                           >
-                            ✏️ {lang === 'ar' ? 'تعديل' : (lang === 'en' ? 'Edit' : 'Modifier')}
+                            ✏️ {t('edit')}
                           </button>
                           <button className="btn-reject" style={{ padding: '5px 12px', fontSize: '0.78rem' }} onClick={() => handleDeleteCategory(cat.id)}>
                             {t('delete')}
@@ -1422,42 +1543,29 @@ function AdminLayout() {
               </table>
             </div>
 
-            {/* EDIT CATEGORY MODAL (3 LANGUAGES) */}
+            {/* EDIT CATEGORY MODAL (AR & FR) */}
             {editingCategory && (
               <div className="modal-overlay">
                 <form className="modal-content" onSubmit={handleSaveCategory} style={{ maxWidth: '520px', padding: '25px' }}>
                   <button type="button" className="modal-close-btn" onClick={() => setEditingCategory(null)}>✕</button>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '8px' }}>
                     <h3 style={{ color: 'var(--admin-gold)', margin: 0, fontFamily: 'Playfair Display', fontSize: '1.3rem' }}>
-                      🌐 Édition Catégorie (3 Langues)
+                      🌐 {t('editCategory')}
                     </h3>
                     <button 
                       type="button" 
                       onClick={() => handleAutoTranslateCategory(editingCategory, setEditingCategory)}
                       className="btn-outline-gold"
                       style={{ fontSize: '0.78rem', padding: '4px 10px' }}
-                      title="Traduit automatiquement vers les autres langues"
+                      title="Traduit automatiquement vers l'autre langue"
                     >
-                      ✨ Traduire auto
+                      {lang === 'ar' ? '✨ ترجمة فورية' : '✨ Traduire auto'}
                     </button>
-                  </div>
-                  <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Nom (Français) 🇫🇷</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Obligatoire</span>
-                    </label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={editingCategory.nom_fr || ''} 
-                      onChange={e => setEditingCategory({ ...editingCategory, nom_fr: e.target.value })} 
-                      required 
-                    />
                   </div>
                   <div className="form-group" style={{ marginBottom: '14px' }}>
                     <label className="form-label" style={{ textAlign: 'right', display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>العربية (RTL)</span>
-                      <span>الاسم (بالعربية) 🇲🇦</span>
+                      <span>{t('catNameAr')}</span>
                     </label>
                     <input 
                       type="text" 
@@ -1470,19 +1578,19 @@ function AdminLayout() {
                   </div>
                   <div className="form-group" style={{ marginBottom: '14px' }}>
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Name (English) 🇬🇧</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>English</span>
+                      <span>{t('catNameFr')}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Français</span>
                     </label>
                     <input 
                       type="text" 
                       className="form-input" 
-                      value={editingCategory.nom_en || ''} 
-                      onChange={e => setEditingCategory({ ...editingCategory, nom_en: e.target.value })} 
+                      value={editingCategory.nom_fr || ''} 
+                      onChange={e => setEditingCategory({ ...editingCategory, nom_fr: e.target.value })} 
                       required 
                     />
                   </div>
                   <div className="form-group" style={{ marginBottom: '20px' }}>
-                    <label className="form-label">Icône / Emoji</label>
+                    <label className="form-label">{lang === 'ar' ? 'الأيقونة / الرمز التعبيري' : 'Icône / Emoji'}</label>
                     <input 
                       type="text" 
                       className="form-input" 
@@ -1495,7 +1603,7 @@ function AdminLayout() {
                       {t('cancel')}
                     </button>
                     <button type="submit" className="btn-gold" style={{ margin: 0 }}>
-                      Enregistrer les 3 Langues
+                      {t('save')}
                     </button>
                   </div>
                 </form>
@@ -1521,7 +1629,7 @@ function AdminLayout() {
                     <th>{t('name')}</th>
                     <th>{t('email')}</th>
                     <th>{t('role')}</th>
-                    <th>Info Boutique / Contact</th>
+                    <th>{lang === 'ar' ? 'معلومات المتجر / الاتصال' : 'Info Boutique / Contact'}</th>
                     <th>{t('action')}</th>
                   </tr>
                 </thead>
@@ -1541,7 +1649,7 @@ function AdminLayout() {
                           textTransform: 'uppercase',
                           fontWeight: 'bold'
                         }}>
-                          {u.role === 'admin' ? 'Admin' : (u.role === 'commercant' ? 'Commerçant' : 'Client')}
+                          {u.role === 'admin' ? t('roleAdmin') : (u.role === 'commercant' ? t('roleMerchant') : t('roleClient'))}
                         </span>
                       </td>
                       <td>
@@ -1650,10 +1758,10 @@ function AdminLayout() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Utilisateur</th>
-                    <th>Email</th>
-                    <th>Rôle Actuel</th>
-                    <th>Nouveau Rôle</th>
+                    <th>{t('name')}</th>
+                    <th>{t('email')}</th>
+                    <th>{lang === 'ar' ? 'الدور الحالي' : 'Rôle Actuel'}</th>
+                    <th>{lang === 'ar' ? 'الدور الجديد' : 'Nouveau Rôle'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1674,7 +1782,7 @@ function AdminLayout() {
                           textTransform: 'uppercase',
                           fontWeight: 'bold'
                         }}>
-                          {u.role === 'admin' ? 'Admin' : (u.role === 'commercant' ? 'Commerçant' : 'Client')}
+                          {u.role === 'admin' ? t('roleAdmin') : (u.role === 'commercant' ? t('roleMerchant') : t('roleClient'))}
                         </span>
                       </td>
                       <td>
@@ -1684,9 +1792,9 @@ function AdminLayout() {
                           value={u.role}
                           onChange={(e) => handleQuickRoleChange(u.id, e.target.value)}
                         >
-                          <option value="client">Client</option>
-                          <option value="commercant">Commerçant (Vendeur)</option>
-                          <option value="admin">Administrateur</option>
+                          <option value="client">{t('roleClient')}</option>
+                          <option value="commercant">{t('roleMerchant')}</option>
+                          <option value="admin">{t('roleAdmin')}</option>
                         </select>
                       </td>
                     </tr>
@@ -1703,40 +1811,42 @@ function AdminLayout() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
               <div>
                 <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>{t('auctionManagement')}</h2>
-                <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', margin: '4px 0 0' }}>Superviser les enchères en temps réel, modérer les offres et valider les adjudications.</p>
+                <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', margin: '4px 0 0' }}>
+                  {lang === 'ar' ? 'متابعة وإدارة المزادات العلنية في الوقت الفعلي والتحكم بالعروض والمزايدات.' : 'Superviser les enchères en temps réel, modérer les offres et valider les adjudications.'}
+                </p>
               </div>
               <button className="btn-gold" style={{ padding: '8px 18px', fontSize: '0.85rem' }} onClick={handleOpenAddAuction}>
-                ➕ Lancer une Nouvelle Enchère
+                ➕ {lang === 'ar' ? 'إطلاق مزاد جديد' : 'Lancer une Nouvelle Enchère'}
               </button>
             </div>
 
             {/* Stats Row */}
             <div className="stats-row" style={{ marginBottom: '25px' }}>
               <div className="stat-card" style={{ borderLeft: '4px solid var(--admin-gold)' }}>
-                <span className="stat-title">Enchères en Direct</span>
+                <span className="stat-title">{lang === 'ar' ? 'مزادات مباشرة نشطة' : 'Enchères en Direct'}</span>
                 <span className="stat-num" style={{ color: 'var(--admin-gold)' }}>
                   {auctions.filter(a => a.statut === 'Active' && new Date(a.date_fin) > new Date()).length}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--success-green)' }}>En cours de réception d'offres</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--success-green)' }}>{lang === 'ar' ? 'تستقبل عروض المزايدة حالياً' : 'En cours de réception d\'offres'}</span>
               </div>
               <div className="stat-card">
-                <span className="stat-title">Total Enchères Historique</span>
+                <span className="stat-title">{lang === 'ar' ? 'إجمالي المزادات' : 'Total Enchères Historique'}</span>
                 <span className="stat-num">{auctions.length}</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Créées sur la plateforme</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{lang === 'ar' ? 'مسجلة على المنصة' : 'Créées sur la plateforme'}</span>
               </div>
               <div className="stat-card">
-                <span className="stat-title">Offres Déposées</span>
+                <span className="stat-title">{lang === 'ar' ? 'العروض المقدمة' : 'Offres Déposées'}</span>
                 <span className="stat-num" style={{ color: 'var(--success-green)' }}>
                   {auctions.reduce((sum, a) => sum + (a.bidsCount || 0), 0)}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Mises clients cumulées</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{lang === 'ar' ? 'مجموع مزايدات الزبناء' : 'Mises clients cumulées'}</span>
               </div>
               <div className="stat-card">
-                <span className="stat-title">Meilleure Adjudication</span>
+                <span className="stat-title">{lang === 'ar' ? 'أعلى مزاد رابح' : 'Meilleure Adjudication'}</span>
                 <span className="stat-num" style={{ color: 'var(--admin-gold)' }}>
                   {Math.max(...auctions.map(a => a.highestBid || 0), 0).toLocaleString()} MAD
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Record de vente</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{lang === 'ar' ? 'رقم قياسي' : 'Record de vente'}</span>
               </div>
             </div>
 
@@ -1745,27 +1855,28 @@ function AdminLayout() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Bijou / Lot</th>
-                    <th>Vendeur</th>
-                    <th>Prix de Départ</th>
-                    <th>Offre Actuelle</th>
-                    <th>Mises</th>
-                    <th>Fin de l'Enchère</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
+                    <th>{lang === 'ar' ? 'القطعة / المزاد' : 'Bijou / Lot'}</th>
+                    <th>{t('merchant')}</th>
+                    <th>{t('startingPrice')}</th>
+                    <th>{t('highestBid')}</th>
+                    <th>{t('bidsCount')}</th>
+                    <th>{t('endDate')}</th>
+                    <th>{t('status')}</th>
+                    <th>{t('action')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {auctions.length === 0 ? (
                     <tr>
                       <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-gray)' }}>
-                        Aucune enchère en cours. Cliquez sur "➕ Lancer une Nouvelle Enchère" pour publier un premier lot.
+                        {t('noAuctions')}
                       </td>
                     </tr>
                   ) : (
                     auctions.map(auc => {
                       const isExpired = new Date(auc.date_fin) < new Date();
                       const isActive = auc.statut === 'Active' && !isExpired;
+                      const aucTitle = (lang === 'ar' && auc.bijou?.titre_ar) ? auc.bijou.titre_ar : (auc.bijou?.titre_fr || auc.bijou?.titre || `Bijou #${auc.bijou_id}`);
                       return (
                         <tr key={auc.id}>
                           <td>
@@ -1773,12 +1884,12 @@ function AdminLayout() {
                               {auc.bijou?.images?.[0] && (
                                 <img
                                   src={auc.bijou.images[0]}
-                                  alt={auc.bijou?.titre}
+                                  alt={aucTitle}
                                   style={{ width: '42px', height: '42px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-gold)' }}
                                 />
                               )}
                               <div>
-                                <strong style={{ display: 'block', color: 'var(--text-dark)' }}>{auc.bijou?.titre || 'Bijou #' + auc.bijou_id}</strong>
+                                <strong style={{ display: 'block', color: 'var(--text-dark)' }}>{aucTitle}</strong>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{auc.bijou?.gramme || 0}g • {auc.bijou?.purete || '18k'}</span>
                               </div>
                             </div>
@@ -1803,13 +1914,13 @@ function AdminLayout() {
                               background: (auc.bidsCount || 0) > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)',
                               color: (auc.bidsCount || 0) > 0 ? '#10b981' : 'var(--text-gray)'
                             }}>
-                              {auc.bidsCount || 0} offre{(auc.bidsCount || 0) > 1 ? 's' : ''}
+                              {auc.bidsCount || 0} {lang === 'ar' ? 'عرض' : 'offre'}{(auc.bidsCount || 0) > 1 && lang === 'fr' ? 's' : ''}
                             </span>
                           </td>
                           <td style={{ fontSize: '0.82rem' }}>
-                            <div>{new Date(auc.date_fin).toLocaleDateString('fr-FR')}</div>
+                            <div>{new Date(auc.date_fin).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-FR')}</div>
                             <div style={{ fontSize: '0.75rem', color: isExpired ? '#ef4444' : 'var(--text-gray)' }}>
-                              {isExpired ? 'Expirée' : new Date(auc.date_fin).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              {isExpired ? (lang === 'ar' ? 'منتهي' : 'Expirée') : new Date(auc.date_fin).toLocaleTimeString(lang === 'ar' ? 'ar-MA' : 'fr-FR', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </td>
                           <td>
@@ -1821,7 +1932,7 @@ function AdminLayout() {
                               background: isActive ? 'rgba(16,185,129,0.15)' : (auc.statut === 'Resolved' ? 'rgba(212,175,55,0.15)' : 'rgba(239,68,68,0.15)'),
                               color: isActive ? '#10b981' : (auc.statut === 'Resolved' ? 'var(--admin-gold)' : '#ef4444')
                             }}>
-                              {isActive ? '🟢 En direct' : (auc.statut === 'Resolved' ? '🏆 Adjugé' : (isExpired ? '⏳ Terminée' : '❌ Annulée'))}
+                              {isActive ? (lang === 'ar' ? '🟢 مباشر' : '🟢 En direct') : (auc.statut === 'Resolved' ? (lang === 'ar' ? '🏆 مكتمل' : '🏆 Adjugé') : (isExpired ? (lang === 'ar' ? '⏳ منتهي' : '⏳ Terminée') : (lang === 'ar' ? '❌ ملغى' : '❌ Annulée')))}
                             </span>
                           </td>
                           <td>
@@ -1832,7 +1943,7 @@ function AdminLayout() {
                                 title="Voir les offres déposées"
                                 onClick={() => handleViewBids(auc)}
                               >
-                                👁️ Offres
+                                👁️ {t('bids')}
                               </button>
                               {isActive && (
                                 <button
@@ -1841,7 +1952,7 @@ function AdminLayout() {
                                   title="Clôturer et désigner le gagnant"
                                   onClick={() => handleResolveAuction(auc.id)}
                                 >
-                                  🏆 Clôturer
+                                  🏆 {lang === 'ar' ? 'إقفال' : 'Clôturer'}
                                 </button>
                               )}
                               {auc.statut !== 'Cancelled' && (
@@ -1871,30 +1982,30 @@ function AdminLayout() {
             {/* Top Metrics Row */}
             <div className="stats-row" style={{ marginBottom: '25px' }}>
               <div className="stat-card" style={{ borderLeft: '4px solid var(--admin-gold)' }}>
-                <span className="stat-title">Revenu Mensuel Récurrent (MRR)</span>
+                <span className="stat-title">{lang === 'ar' ? 'الدخل الشهري المتكرر (MRR)' : 'Revenu Mensuel Récurrent (MRR)'}</span>
                 <span className="stat-num" style={{ color: 'var(--admin-gold)' }}>
                   {(subscriptionsData?.stats?.mrr || 0).toLocaleString()} MAD
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--success-green)' }}>+18% vs mois précédent</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--success-green)' }}>{lang === 'ar' ? '+18% مقارنة بالشهر السابق' : '+18% vs mois précédent'}</span>
               </div>
               <div className="stat-card">
-                <span className="stat-title">Revenu Annuel Projeté (ARR)</span>
+                <span className="stat-title">{lang === 'ar' ? 'الدخل السنوي المتوقع (ARR)' : 'Revenu Annuel Projeté (ARR)'}</span>
                 <span className="stat-num">
                   {(subscriptionsData?.stats?.arr || 0).toLocaleString()} MAD
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Base abonnements actifs</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{lang === 'ar' ? 'قاعدة الاشتراكات النشطة' : 'Base abonnements actifs'}</span>
               </div>
               <div className="stat-card">
-                <span className="stat-title">Commerçants Abonnés Payants</span>
+                <span className="stat-title">{lang === 'ar' ? 'التجار المشتركون المؤدون' : 'Commerçants Abonnés Payants'}</span>
                 <span className="stat-num">
                   {subscriptionsData?.stats?.subscribed_paying || 0} / {subscriptionsData?.stats?.total_merchants || 0}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--admin-gold)' }}>
-                  {subscriptionsData?.stats?.total_merchants ? Math.round(((subscriptionsData.stats.subscribed_paying || 0) / subscriptionsData.stats.total_merchants) * 100) : 0}% de conversion
+                  {subscriptionsData?.stats?.total_merchants ? Math.round(((subscriptionsData.stats.subscribed_paying || 0) / subscriptionsData.stats.total_merchants) * 100) : 0}% {lang === 'ar' ? 'نسبة التحويل' : 'de conversion'}
                 </span>
               </div>
               <div className="stat-card">
-                <span className="stat-title">Répartition par Formule</span>
+                <span className="stat-title">{lang === 'ar' ? 'التوزيع حسب الباقة' : 'Répartition par Formule'}</span>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px', fontSize: '0.78rem', flexWrap: 'wrap' }}>
                   <span style={{ padding: '3px 8px', background: 'rgba(156,163,175,0.15)', borderRadius: '4px' }}>
                     Pass: <strong>{subscriptionsData?.stats?.by_plan?.plan_starter || 0}</strong>
@@ -1911,21 +2022,28 @@ function AdminLayout() {
 
             {/* Merchant Subscriptions Table */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-              <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>Abonnements Commerçants Actifs</h2>
+              <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>{t('subscriptionsTitle')}</h2>
+              <button
+                className="btn-gold"
+                style={{ margin: 0, padding: '8px 18px', fontSize: '0.85rem' }}
+                onClick={() => handleOpenAddUser('commercant')}
+              >
+                ➕ {lang === 'ar' ? 'إضافة تاجر جديد' : 'Nouveau Commerçant'}
+              </button>
             </div>
 
             <div className="table-container" style={{ marginBottom: '36px' }}>
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Boutique & Marchand</th>
-                    <th>Forfait Actif</th>
-                    <th>Quota Dépôts Bijoux</th>
-                    <th>Commission</th>
-                    <th>Tarif / Cycle</th>
-                    <th>Statut</th>
-                    <th>Échéance</th>
-                    <th>Actions</th>
+                    <th>{lang === 'ar' ? 'المتجر والتاجر' : 'Boutique & Marchand'}</th>
+                    <th>{lang === 'ar' ? 'الباقة الحالية' : 'Forfait Actif'}</th>
+                    <th>{lang === 'ar' ? 'حصة المعروضات' : 'Quota Dépôts Bijoux'}</th>
+                    <th>{t('commissions')}</th>
+                    <th>{lang === 'ar' ? 'السعر / الدورة' : 'Tarif / Cycle'}</th>
+                    <th>{t('status')}</th>
+                    <th>{lang === 'ar' ? 'تاريخ التجديد' : 'Échéance'}</th>
+                    <th>{t('action')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1964,7 +2082,7 @@ function AdminLayout() {
                         <td>
                           <strong>{sub.price?.toLocaleString()} MAD</strong>
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', display: 'block' }}>
-                            {sub.billing_cycle === 'annual' ? 'Annuel' : 'Mensuel'}
+                            {sub.billing_cycle === 'annual' ? (lang === 'ar' ? 'سنوي' : 'Annuel') : (lang === 'ar' ? 'شهري' : 'Mensuel')}
                           </span>
                         </td>
                         <td>
@@ -1976,11 +2094,11 @@ function AdminLayout() {
                             background: sub.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
                             color: sub.status === 'active' ? '#10b981' : '#ef4444'
                           }}>
-                            {sub.status === 'active' ? 'Actif' : 'Suspendu'}
+                            {sub.status === 'active' ? (lang === 'ar' ? 'نشط' : 'Actif') : (lang === 'ar' ? 'معلق' : 'Suspendu')}
                           </span>
                         </td>
                         <td style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
-                          {sub.end_date ? new Date(sub.end_date).toLocaleDateString('fr-FR') : '-'}
+                          {sub.end_date ? new Date(sub.end_date).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-FR') : '-'}
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '6px' }}>
@@ -1990,7 +2108,7 @@ function AdminLayout() {
                               title="Changer ou surclasser le forfait"
                               onClick={() => setMerchantSubModal(m)}
                             >
-                              ⚙️ Modifier
+                              ⚙️ {t('edit')}
                             </button>
                             {sub.status === 'active' ? (
                               <button
@@ -2022,7 +2140,7 @@ function AdminLayout() {
 
             {/* Plans Configuration Settings Editor */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
-              <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>Configuration des Tarifs & Quotas des Forfaits</h2>
+              <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>{lang === 'ar' ? 'إعدادات باقات واشتراكات التجار' : 'Configuration des Tarifs & Quotas des Forfaits'}</h2>
               <button
                 className="btn-gold"
                 style={{ margin: 0, padding: '8px 18px', fontSize: '0.85rem' }}
@@ -2038,7 +2156,7 @@ function AdminLayout() {
                   color: '#b38728'
                 })}
               >
-                ➕ Créer un Nouveau Forfait
+                ➕ {lang === 'ar' ? 'إنشاء باقة جديدة' : 'Créer un Nouveau Forfait'}
               </button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '36px' }}>
@@ -2046,30 +2164,40 @@ function AdminLayout() {
                 <div key={plan.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '22px', boxShadow: 'var(--shadow)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <h3 style={{ fontSize: '1.2rem', color: 'var(--admin-gold)', margin: 0 }}>{plan.name}</h3>
-                    <button
-                      className="btn-outline-gold"
-                      style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                      onClick={() => setEditingPlanModal({ ...plan })}
-                    >
-                      ✏️ Éditer
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        className="btn-outline-gold"
+                        style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                        onClick={() => setEditingPlanModal({ ...plan })}
+                      >
+                        ✏️ {t('edit')}
+                      </button>
+                      <button
+                        className="btn-reject"
+                        style={{ padding: '4px 8px', fontSize: '0.75rem', margin: 0 }}
+                        title={lang === 'ar' ? 'حذف هذه الباقة' : 'Supprimer ce forfait'}
+                        onClick={() => handleDeletePlan(plan.id)}
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                   <p style={{ color: 'var(--text-gray)', fontSize: '0.82rem', marginBottom: '16px' }}>{plan.tagline}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-gray)' }}>Prix Mensuel :</span>
+                      <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'السعر الشهري :' : 'Prix Mensuel :'}</span>
                       <strong>{plan.price_monthly} MAD</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-gray)' }}>Prix Annuel :</span>
+                      <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'السعر السنوي :' : 'Prix Annuel :'}</span>
                       <strong>{plan.price_annual} MAD</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-gray)' }}>Dépôts Bijoux Max :</span>
-                      <strong style={{ color: 'var(--admin-gold)' }}>{plan.max_products > 1000 ? 'Illimité' : plan.max_products}</strong>
+                      <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'أقصى عدد معروضات :' : 'Dépôts Bijoux Max :'}</span>
+                      <strong style={{ color: 'var(--admin-gold)' }}>{plan.max_products > 1000 ? (lang === 'ar' ? 'غير محدود' : 'Illimité') : plan.max_products}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-gray)' }}>Commission Plateforme :</span>
+                      <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'عمولة المنصة :' : 'Commission Plateforme :'}</span>
                       <strong style={{ color: '#10b981' }}>{plan.commission_rate}%</strong>
                     </div>
                   </div>
@@ -2078,18 +2206,18 @@ function AdminLayout() {
             </div>
 
             {/* Invoices Log */}
-            <h2 style={{ fontFamily: 'Playfair Display', marginBottom: '16px' }}>Historique Global des Factures & Encaissements</h2>
+            <h2 style={{ fontFamily: 'Playfair Display', marginBottom: '16px' }}>{lang === 'ar' ? 'سجل الفواتير والدفعات' : 'Historique Global des Factures & Encaissements'}</h2>
             <div className="table-container">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>N° Facture</th>
-                    <th>Boutique</th>
-                    <th>Forfait</th>
-                    <th>Montant</th>
-                    <th>Cycle</th>
-                    <th>Date</th>
-                    <th>Statut</th>
+                    <th>{lang === 'ar' ? 'رقم الفاتورة' : 'N° Facture'}</th>
+                    <th>{t('shop')}</th>
+                    <th>{lang === 'ar' ? 'الباقة' : 'Forfait'}</th>
+                    <th>{lang === 'ar' ? 'المبلغ' : 'Montant'}</th>
+                    <th>{lang === 'ar' ? 'الدورة' : 'Cycle'}</th>
+                    <th>{t('date')}</th>
+                    <th>{t('status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2099,8 +2227,8 @@ function AdminLayout() {
                       <td>{inv.merchant_name}</td>
                       <td style={{ color: 'var(--admin-gold)' }}>{inv.plan_name}</td>
                       <td><strong>{inv.amount?.toLocaleString()} MAD</strong></td>
-                      <td>{inv.billing_cycle === 'annual' ? 'Annuel' : 'Mensuel'}</td>
-                      <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{new Date(inv.date).toLocaleDateString('fr-FR')}</td>
+                      <td>{inv.billing_cycle === 'annual' ? (lang === 'ar' ? 'سنوي' : 'Annuel') : (lang === 'ar' ? 'شهري' : 'Mensuel')}</td>
+                      <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{new Date(inv.date).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-FR')}</td>
                       <td>
                         <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: '0.75rem', fontWeight: 700 }}>
                           {inv.status}
@@ -2193,10 +2321,10 @@ function AdminLayout() {
                     const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
                     return matchesSearch && matchesStatus && matchesCategory;
                   }).map(p => {
-                    const shop = users.find(u => u.id === p.commercant_id)?.shopName || 'Commerçant Inconnu';
+                    const shop = users.find(u => u.id === p.commercant_id)?.shopName || (lang === 'ar' ? 'تاجر غير محدد' : 'Commerçant Inconnu');
                     const category = categories.find(c => c.id === p.category_id);
-                    const catName = category ? (lang === 'fr' ? category.nom_fr : (lang === 'ar' ? category.nom_ar : category.nom_en)) : 'Sans Catégorie';
-                    const displayTitle = (lang === 'ar' && p.titre_ar) ? p.titre_ar : ((lang === 'en' && p.titre_en) ? p.titre_en : (p.titre_fr || p.titre));
+                    const catName = category ? (lang === 'ar' ? (category.nom_ar || category.nom_fr) : (category.nom_fr || category.nom_ar)) : (lang === 'ar' ? 'بدون فئة' : 'Sans Catégorie');
+                    const displayTitle = (lang === 'ar' && p.titre_ar) ? p.titre_ar : (p.titre_fr || p.titre);
                     return (
                       <tr key={p.id}>
                         <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{p.id}</td>
@@ -2208,9 +2336,8 @@ function AdminLayout() {
                             <div>
                               <div>{displayTitle}</div>
                               <div style={{ display: 'flex', gap: '4px', marginTop: '3px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: (p.titre_fr || p.titre) ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: (p.titre_fr || p.titre) ? '#27ae60' : 'var(--text-gray)' }}>FR</span>
                                 <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: p.titre_ar ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: p.titre_ar ? '#27ae60' : 'var(--text-gray)' }}>AR</span>
-                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: p.titre_en ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: p.titre_en ? '#27ae60' : 'var(--text-gray)' }}>EN</span>
+                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: (p.titre_fr || p.titre) ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: (p.titre_fr || p.titre) ? '#27ae60' : 'var(--text-gray)' }}>FR</span>
                                 <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', marginLeft: '4px' }}>• {p.purete} • {p.gramme}g • {p.city}</span>
                               </div>
                             </div>
@@ -2262,7 +2389,289 @@ function AdminLayout() {
                   }).length === 0 && (
                     <tr>
                       <td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-gray)' }}>
-                        Aucun article trouvé.
+                        {lang === 'ar' ? 'لم يتم العثور على أي معروضات.' : 'Aucun article trouvé.'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'gold_rates' && (
+          <div>
+            {/* Header & Status */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display', margin: '0 0 6px 0', fontSize: '1.8rem', color: 'var(--admin-gold)' }}>
+                  {lang === 'ar' ? '🥇 إدارة ومتابعة سعر الذهب عيار 18 بالمغرب' : '🥇 Gestion & Cours Officiel de l\'Or 18K au Maroc'}
+                </h2>
+                <p style={{ color: 'var(--text-gray)', margin: 0, fontSize: '0.88rem' }}>
+                  {lang === 'ar' 
+                    ? 'تحديد ومتابعة سعر غرام الذهب عيار 18 قيراط (المعيار الرسمي المعتمد للصياغة والمجوهرات بالمغرب)' 
+                    : 'Fixation et suivi du cours officiel du gramme d\'or 18 carats (Standard de référence au Maroc)'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  background: 'rgba(16, 185, 129, 0.12)', 
+                  color: '#10b981', 
+                  padding: '6px 14px', 
+                  borderRadius: '20px', 
+                  fontSize: '0.82rem', 
+                  fontWeight: 700,
+                  border: '1px solid rgba(16, 185, 129, 0.25)'
+                }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }}></span>
+                  {lang === 'ar' ? 'الخدمة متصلة ونشطة' : 'Cotation en direct'}
+                </span>
+              </div>
+            </div>
+
+            {/* Current Rates Cards (Exclusive 18K Focus) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px', marginBottom: '28px' }}>
+              {/* Main 18K Card */}
+              <div style={{ background: 'var(--bg-card)', border: '2px solid var(--admin-gold)', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 24px rgba(212,175,55,0.15)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: '-10px', right: lang === 'ar' ? 'auto' : '-10px', left: lang === 'ar' ? '-10px' : 'auto', fontSize: '4rem', opacity: 0.08, pointerEvents: 'none' }}>🥇</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--admin-gold)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                  {lang === 'ar' ? 'ذهب عيار 18 قيراط (المعيار الرسمي)' : 'Or 18 Karats (Standard Maroc)'}
+                </div>
+                <div style={{ fontSize: '2.8rem', fontWeight: 900, color: 'var(--text-white)', lineHeight: 1.1, marginBottom: '8px' }}>
+                  {goldRatesData.currentPrice18k || 1045} <span style={{ fontSize: '1.2rem', color: 'var(--admin-gold)', fontWeight: 700 }}>MAD / g</span>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#10b981', fontWeight: 700 }}>
+                  ▲ {lang === 'ar' ? 'السعر الحالي المعتمد بالمنصة' : 'Cotation officielle active'}
+                </div>
+              </div>
+
+              {/* Info Card */}
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                  {lang === 'ar' ? 'معلومات التحديث' : 'Dernière mise à jour'}
+                </div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-white)', marginBottom: '4px' }}>
+                  {goldRatesData.lastUpdated ? new Date(goldRatesData.lastUpdated).toLocaleString(lang === 'ar' ? 'ar-MA' : 'fr-FR') : '20/09/2026'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+                  {lang === 'ar' ? `المسؤول: ${goldRatesData.updatedBy || 'Super-Admin'}` : `Modifié par: ${goldRatesData.updatedBy || 'Super-Admin'}`}
+                </div>
+              </div>
+            </div>
+
+            {/* Update Form Card */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '24px', marginBottom: '32px', boxShadow: 'var(--shadow)' }}>
+              <h3 style={{ fontFamily: 'Playfair Display', margin: '0 0 16px 0', fontSize: '1.3rem', color: 'var(--admin-gold)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>✏️</span>
+                <span>{lang === 'ar' ? 'تحديث سعر الذهب عيار 18 اليوم' : 'Mettre à jour le cours de l\'Or 18K'}</span>
+              </h3>
+
+              <form onSubmit={handleUpdateGoldRate} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-white)' }}>
+                    {lang === 'ar' ? 'سعر غرام الذهب عيار 18 (د.م/غ) *' : 'Prix de l\'Or 18K (MAD/g) *'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="100"
+                    max="10000"
+                    required
+                    value={goldPriceInput}
+                    onChange={(e) => setGoldPriceInput(e.target.value)}
+                    placeholder="1045"
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      background: 'rgba(0,0,0,0.2)',
+                      border: '1px solid var(--border-gold)',
+                      borderRadius: '8px',
+                      color: 'var(--text-white)',
+                      fontSize: '1.2rem',
+                      fontWeight: 800
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-white)' }}>
+                    {lang === 'ar' ? 'المصدر / المرجع' : 'Source / Bourse de référence'}
+                  </label>
+                  <input
+                    type="text"
+                    value={goldSourceInput}
+                    onChange={(e) => setGoldSourceInput(e.target.value)}
+                    placeholder={lang === 'ar' ? 'مثال: سوق الصاغة الدار البيضاء...' : 'Ex: Marché de Casablanca, Clôture officielle...'}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      background: 'rgba(0,0,0,0.2)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '8px',
+                      color: 'var(--text-white)',
+                      fontSize: '0.95rem'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-white)' }}>
+                    {lang === 'ar' ? 'ملاحظة أو تبرير التغيير' : 'Note ou motif d\'évolution'}
+                  </label>
+                  <input
+                    type="text"
+                    value={goldNoteInput}
+                    onChange={(e) => setGoldNoteInput(e.target.value)}
+                    placeholder={lang === 'ar' ? 'مثال: استقرار الطلب بالسوق المغربي...' : 'Ex: Fixation hebdomadaire officielle...'}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      background: 'rgba(0,0,0,0.2)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '8px',
+                      color: 'var(--text-white)',
+                      fontSize: '0.95rem'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingGold}
+                    className="btn-gold"
+                    style={{
+                      width: '100%',
+                      padding: '12px 20px',
+                      fontSize: '0.95rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      margin: 0
+                    }}
+                  >
+                    {isUpdatingGold ? '⏳ ...' : (lang === 'ar' ? '💾 تثبيت السعر (18K)' : '💾 Enregistrer la cotation 18K')}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* History Table */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <h3 style={{ fontFamily: 'Playfair Display', margin: 0, fontSize: '1.4rem', color: 'var(--text-white)' }}>
+                {lang === 'ar' ? '📊 سجل التغييرات التاريخية لسعر الذهب عيار 18' : '📊 Historique des Changements du Cours 18K'}
+              </h3>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-gray)' }}>
+                {lang === 'ar' ? `إجمالي التعديلات : ${(goldRatesData.history || []).length}` : `Total cotations : ${(goldRatesData.history || []).length}`}
+              </span>
+            </div>
+
+            <div className="table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{lang === 'ar' ? 'التاريخ والوقت' : 'Date & Heure'}</th>
+                    <th>{lang === 'ar' ? 'سعر 18K (د.م/غ)' : 'Prix Or 18K (MAD/g)'}</th>
+                    <th>{lang === 'ar' ? 'التغيير' : 'Variation'}</th>
+                    <th>{lang === 'ar' ? 'المصدر' : 'Source'}</th>
+                    <th>{lang === 'ar' ? 'ملاحظة' : 'Note'}</th>
+                    <th>{lang === 'ar' ? 'إجراء' : 'Action'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...(goldRatesData.history || [])].reverse().map((item) => {
+                    const isPositive = item.change && item.change.startsWith('+');
+                    const isNeutral = !item.change || item.change === '0.0%' || item.change === '0%';
+                    const getLocalizedSource = (s) => {
+                      if (!s) return lang === 'ar' ? 'سوق الذهب المغربي' : 'Marché Maroc';
+                      if (lang === 'ar') {
+                        const map = {
+                          'Fixation Casablanca': 'تحديد الدار البيضاء',
+                          'Marché national': 'السوق الوطني للذهب',
+                          'Bourse de référence': 'بورصة الذهب المعتمدة',
+                          'Cours officiel de clôture': 'السعر الرسمي للإغلاق',
+                          'Cours officiel clôture': 'السعر الرسمي للإغلاق',
+                          'Fixation Officielle Maroc': 'السعر الرسمي المحدد بالمغرب',
+                          'Marché Maroc': 'سوق الذهب المغربي'
+                        };
+                        return map[s] || s;
+                      }
+                      return s;
+                    };
+                    const getLocalizedNote = (n) => {
+                      if (!n || n === '-') return '-';
+                      if (lang === 'ar') {
+                        const map = {
+                          'Cours matinal': 'السعر الصباحي الافتتاحي',
+                          'Forte demande joaillerie': 'طلب متزايد على الصياغة',
+                          'Tendance haussière': 'اتجاه تصاعدي في السوق',
+                          'Cours actuel du jour': 'السعر الرسمي المعتمد اليوم',
+                          'Validation 18K': 'تأكيد سعر عيار 18',
+                          'Mise à jour régulière': 'تحديث دوري معتمد'
+                        };
+                        return map[n] || n;
+                      }
+                      return n;
+                    };
+                    return (
+                      <tr key={item.id}>
+                        <td style={{ fontWeight: 600, color: 'var(--text-white)', whiteSpace: 'nowrap' }} dir="ltr">
+                          📅 {item.date}
+                        </td>
+                        <td style={{ color: 'var(--admin-gold)', fontWeight: 800, fontSize: '1.1rem' }} dir="ltr">
+                          {item.price18k || 1045} {lang === 'ar' ? 'د.م' : 'MAD'}
+                        </td>
+                        <td>
+                          <span dir="ltr" style={{
+                            display: 'inline-block',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.78rem',
+                            fontWeight: 800,
+                            background: isNeutral ? 'rgba(255,255,255,0.06)' : (isPositive ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'),
+                            color: isNeutral ? 'var(--text-gray)' : (isPositive ? '#10b981' : '#ef4444')
+                          }}>
+                            {item.change || '0.0%'}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.85rem', color: 'var(--text-white)' }}>
+                          {getLocalizedSource(item.source)}
+                        </td>
+                        <td style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>
+                          {getLocalizedNote(item.note)}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGoldHistory(item.id)}
+                            title={lang === 'ar' ? 'حذف من السجل' : 'Supprimer de l\'historique'}
+                            style={{
+                              background: 'rgba(239,68,68,0.12)',
+                              border: '1px solid rgba(239,68,68,0.3)',
+                              color: '#ef4444',
+                              borderRadius: '6px',
+                              padding: '5px 10px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {(!goldRatesData.history || goldRatesData.history.length === 0) && (
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-gray)' }}>
+                        {lang === 'ar' ? 'لا يوجد سجل تغييرات سابق.' : 'Aucun historique enregistré pour le moment.'}
                       </td>
                     </tr>
                   )}
@@ -2274,8 +2683,8 @@ function AdminLayout() {
 
         {/* Footer copyright */}
         <footer className="footer-copyright">
-          <p>Fédération Marocaine de Bijouterie • Portail Administratif</p>
-          <p className="sub-text">Copyright © 2026; sdbo.ma • Tous droits réservés.</p>
+          <p>{lang === 'ar' ? 'الفيدرالية المغربية للصياغة والمجوهرات • بوابة الإدارة المركزية' : 'Fédération Marocaine de Bijouterie • Portail Administratif'}</p>
+          <p className="sub-text">{lang === 'ar' ? 'جميع الحقوق محفوظة © 2026; sdbo.ma' : 'Copyright © 2026; sdbo.ma • Tous droits réservés.'}</p>
         </footer>
       </main>
 
@@ -2360,16 +2769,16 @@ function AdminLayout() {
                   value={userForm.role} 
                   onChange={e => setUserForm({ ...userForm, role: e.target.value })}
                 >
-                  <option value="client">Client</option>
-                  <option value="commercant">Commerçant (Vendeur)</option>
-                  <option value="admin">Administrateur</option>
+                  <option value="client">{t('roleClient')}</option>
+                  <option value="commercant">{t('roleMerchant')}</option>
+                  <option value="admin">{t('roleAdmin')}</option>
                 </select>
               </div>
             </div>
 
             {userForm.role === 'commercant' && (
               <fieldset style={{ border: '1px solid var(--border-gold)', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
-                <legend style={{ color: 'var(--admin-gold)', padding: '0 8px', fontSize: '0.85rem' }}>Informations Boutique</legend>
+                <legend style={{ color: 'var(--admin-gold)', padding: '0 8px', fontSize: '0.85rem' }}>{lang === 'ar' ? 'معلومات المتجر والتواصل' : 'Informations Boutique'}</legend>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                   <div className="form-group">
                     <label className="form-label">{t('shopName')}</label>
@@ -2391,7 +2800,7 @@ function AdminLayout() {
                     />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                   <div className="form-group">
                     <label className="form-label">{t('address')}</label>
                     <input 
@@ -2411,6 +2820,35 @@ function AdminLayout() {
                     />
                   </div>
                 </div>
+
+                {/* Initial Subscription Plan */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', paddingTop: '12px', borderTop: '1px dashed rgba(212,175,55,0.25)' }}>
+                  <div className="form-group">
+                    <label className="form-label">{lang === 'ar' ? 'باقة الاشتراك' : 'Forfait d\'Abonnement'}</label>
+                    <select
+                      className="form-input"
+                      value={userForm.plan_id || 'plan_starter'}
+                      onChange={e => setUserForm({ ...userForm, plan_id: e.target.value })}
+                    >
+                      {(subscriptionsData?.plans || []).map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({p.price_monthly} MAD/m - {p.max_products > 1000 ? 'Illimité' : `${p.max_products} bijoux`})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">{lang === 'ar' ? 'دورة الفوترة' : 'Cycle de Facturation'}</label>
+                    <select
+                      className="form-input"
+                      value={userForm.billing_cycle || 'monthly'}
+                      onChange={e => setUserForm({ ...userForm, billing_cycle: e.target.value })}
+                    >
+                      <option value="monthly">{lang === 'ar' ? 'شهري' : 'Mensuel'}</option>
+                      <option value="annual">{lang === 'ar' ? 'سنوي' : 'Annuel'}</option>
+                    </select>
+                  </div>
+                </div>
               </fieldset>
             )}
 
@@ -2419,7 +2857,7 @@ function AdminLayout() {
                 {t('cancel')}
               </button>
               <button type="submit" className="btn-gold" style={{ margin: 0, padding: '8px 16px', fontSize: '0.8rem' }}>
-                {editingUser ? 'Mettre à jour' : 'Créer'}
+                {editingUser ? (lang === 'ar' ? 'تحديث' : 'Mettre à jour') : (lang === 'ar' ? 'إنشاء' : 'Créer')}
               </button>
             </div>
           </form>
@@ -2700,27 +3138,14 @@ function AdminLayout() {
                     }}
                     title="Traduit automatiquement le contenu renseigné vers les 2 autres langues"
                   >
-                    {isTranslating ? '⏳ Traduction en cours...' : '✨ Traduire automatiquement vers les autres langues'}
+                    {isTranslating 
+                      ? (lang === 'ar' ? '⏳ جاري الترجمة...' : '⏳ Traduction en cours...') 
+                      : (lang === 'ar' ? '✨ ترجمة تلقائية (عربي ⇄ فرنسي)' : '✨ Traduction automatique (Arabe ⇄ Français)')
+                    }
                   </button>
                   
                   {/* Language Switcher Tabs */}
                   <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => switchProductLangTab('fr')}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        background: productLangTab === 'fr' ? 'var(--admin-gold)' : 'transparent',
-                        color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
-                      }}
-                    >
-                      🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
-                    </button>
                     <button
                       type="button"
                       onClick={() => switchProductLangTab('ar')}
@@ -2739,7 +3164,7 @@ function AdminLayout() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => switchProductLangTab('en')}
+                      onClick={() => switchProductLangTab('fr')}
                       style={{
                         padding: '5px 12px',
                         borderRadius: '6px',
@@ -2747,11 +3172,11 @@ function AdminLayout() {
                         fontSize: '0.82rem',
                         fontWeight: 600,
                         cursor: 'pointer',
-                        background: productLangTab === 'en' ? 'var(--admin-gold)' : 'transparent',
-                        color: productLangTab === 'en' ? '#000' : 'var(--text-gray)'
+                        background: productLangTab === 'fr' ? 'var(--admin-gold)' : 'transparent',
+                        color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
                       }}
                     >
-                      🇬🇧 English {productForm.titre_en ? '✓' : ''}
+                      🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
                     </button>
                   </div>
                 </div>
@@ -2775,41 +3200,12 @@ function AdminLayout() {
               )}
 
               {/* Active Tab Inputs */}
-              {productLangTab === 'fr' && (
-                <div>
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
-                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Titre en Français 🇫🇷</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Obligatoire</span>
-                    </label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      placeholder="ex: Bague Solitaire Diamant Or Blanc 18K"
-                      value={productForm.titre_fr} 
-                      onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })} 
-                      required 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Description en Français 🇫🇷</label>
-                    <textarea 
-                      className="form-input" 
-                      rows="3"
-                      placeholder="Description détaillée du bijou en français..."
-                      value={productForm.description_fr} 
-                      onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })} 
-                    />
-                  </div>
-                </div>
-              )}
-
               {productLangTab === 'ar' && (
                 <div dir="rtl">
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'right' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>العربية (RTL)</span>
-                      <span>العنوان باللغة العربية 🇲🇦</span>
+                      <span>{lang === 'ar' ? 'العنوان باللغة العربية 🇲🇦' : 'Titre en Arabe 🇲🇦'}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{lang === 'ar' ? 'مطلوب' : 'Obligatoire'}</span>
                     </label>
                     <input 
                       type="text" 
@@ -2819,9 +3215,38 @@ function AdminLayout() {
                       value={productForm.titre_ar} 
                       onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })} 
                     />
+                    {/* اقتراحات سريعة للعنوان */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ اقتراحات :</span>
+                      {[
+                        '💍 خاتم سوليتير ألماس 18k',
+                        '📿 قلادة سلسلة فاخرة 18k',
+                        '🔗 سوار رويال أنيق 18k',
+                        '✨ ميدالية ذهبية عيار 18k',
+                        '💎 أقراط دائرية عيار 18k',
+                        '👑 طقم عرائسي ملكي 18k'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ ...productForm, titre_ar: sug })}
+                          style={{
+                            background: 'rgba(212, 175, 55, 0.1)',
+                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.74rem',
+                            color: 'var(--admin-gold)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {sug}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label className="form-label" style={{ textAlign: 'right' }}>الوصف باللغة العربية 🇲🇦</label>
+                    <label className="form-label" style={{ textAlign: 'right' }}>{lang === 'ar' ? 'الوصف باللغة العربية 🇲🇦' : 'Description en Arabe 🇲🇦'}</label>
                     <textarea 
                       className="form-input" 
                       rows="3"
@@ -2830,34 +3255,125 @@ function AdminLayout() {
                       value={productForm.description_ar} 
                       onChange={e => setProductForm({ ...productForm, description_ar: e.target.value })} 
                     />
+                    {/* اقتراحات سريعة للوصف */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ أضف للوصف :</span>
+                      {[
+                        '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
+                        '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
+                        '📦 مرفق بشهادة أصالة معتمدة وعلبة فاخرة.',
+                        '🔒 قفل أمان محكم ومفحوص بدقة من خبير معتمد.'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ 
+                            ...productForm, 
+                            description_ar: productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug 
+                          })}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.72rem',
+                            color: '#e5e7eb',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
 
-              {productLangTab === 'en' && (
-                <div>
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
+              {productLangTab === 'fr' && (
+                <div dir="ltr">
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Title in English 🇬🇧</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>English</span>
+                      <span>{lang === 'ar' ? 'العنوان باللغة الفرنسية 🇫🇷' : 'Titre en Français 🇫🇷'}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{lang === 'ar' ? 'مطلوب' : 'Obligatoire'}</span>
                     </label>
                     <input 
                       type="text" 
                       className="form-input" 
-                      placeholder="e.g. Diamond Solitaire Ring 18K White Gold"
-                      value={productForm.titre_en} 
-                      onChange={e => setProductForm({ ...productForm, titre_en: e.target.value })} 
+                      placeholder="ex: Bague Solitaire Diamant Or Blanc 18K"
+                      value={productForm.titre_fr} 
+                      onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })} 
+                      required 
                     />
+                    {/* Suggestions Titre Rapide */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Suggestions :</span>
+                      {[
+                        '💍 Bague Solitaire Diamant 18K',
+                        '📿 Collier Chaine Forçat 18K',
+                        '🔗 Bracelet Gourmette Royale 18K',
+                        '✨ Pendentif Médaille Oria 18K',
+                        '💎 Boucles d\'Oreilles Créoles 18K',
+                        '👑 Parure Traditionnelle 18K'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ ...productForm, titre_fr: sug, titre: sug })}
+                          style={{
+                            background: 'rgba(212, 175, 55, 0.1)',
+                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.74rem',
+                            color: 'var(--admin-gold)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {sug}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Description in English 🇬🇧</label>
+                    <label className="form-label">{lang === 'ar' ? 'الوصف باللغة الفرنسية 🇫🇷' : 'Description en Français 🇫🇷'}</label>
                     <textarea 
                       className="form-input" 
                       rows="3"
-                      placeholder="Detailed piece description in English..."
-                      value={productForm.description_en} 
-                      onChange={e => setProductForm({ ...productForm, description_en: e.target.value })} 
+                      placeholder="Description détaillée du bijou en français..."
+                      value={productForm.description_fr} 
+                      onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })} 
                     />
+                    {/* Suggestions Description Rapide */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Insérer dans le texte :</span>
+                      {[
+                        '✨ Or 18K certifié avec poinçon d\'état officiel.',
+                        '💎 Finition artisanale marocaine haute joaillerie.',
+                        '📦 Livré avec certificat d\'authenticité et écrin de luxe.',
+                        '🔒 Fermoir de sécurité renforcé et contrôle bijoutier.'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ 
+                            ...productForm, 
+                            description_fr: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug,
+                            description: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug
+                          })}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.72rem',
+                            color: '#e5e7eb',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -2869,6 +3385,8 @@ function AdminLayout() {
                   <label className="form-label">{t('startingPrice')} (MAD)</label>
                   <input 
                     type="number" 
+                    min="100"
+                    placeholder="ex: 5000"
                     className="form-input" 
                     value={productForm.prix_depart} 
                     onChange={e => setProductForm({ ...productForm, prix_depart: e.target.value })} 
@@ -2880,6 +3398,8 @@ function AdminLayout() {
                   <label className="form-label">{t('price')} (MAD)</label>
                   <input 
                     type="number" 
+                    min="100"
+                    placeholder="ex: 6400"
                     className="form-input" 
                     value={productForm.prix} 
                     onChange={e => setProductForm({ ...productForm, prix: e.target.value })} 
@@ -2889,71 +3409,21 @@ function AdminLayout() {
               )}
             </div>
 
+            {/* Poids, Catégorie & Ville */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
               <div className="form-group">
-                <label className="form-label">{t('weight')} (g)</label>
+                <label className="form-label">{t('weight')}</label>
                 <input 
                   type="number" 
                   step="0.01"
+                  min="0.1"
+                  placeholder="ex: 4.5"
                   className="form-input" 
                   value={productForm.gramme} 
                   onChange={e => setProductForm({ ...productForm, gramme: e.target.value })} 
                   required 
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">{t('purity')}</label>
-                <select 
-                  className="form-input" 
-                  value={productForm.purete} 
-                  onChange={e => setProductForm({ ...productForm, purete: e.target.value })}
-                >
-                  <option value="18k">18k</option>
-                  <option value="21k">21k</option>
-                  <option value="22k">22k</option>
-                  <option value="24k">24k</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t('city')}</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={productForm.city} 
-                  onChange={e => setProductForm({ ...productForm, city: e.target.value })} 
-                  required 
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-              {productForm.type_vente === 'enchere' ? (
-                <div className="form-group">
-                  <label className="form-label">{t('durationHours')}</label>
-                  <input 
-                    type="number" 
-                    className="form-input" 
-                    value={productForm.duree} 
-                    onChange={e => setProductForm({ ...productForm, duree: parseInt(e.target.value) || 24 })} 
-                    required 
-                  />
-                </div>
-              ) : (
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{t('stock')}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--admin-gold)' }}>Pièce unique (Défaut: 1)</span>
-                  </label>
-                  <input 
-                    type="number" 
-                    min="1"
-                    className="form-input" 
-                    value={productForm.stock !== undefined && productForm.stock !== null && productForm.stock !== '' ? productForm.stock : 1} 
-                    onChange={e => setProductForm({ ...productForm, stock: parseInt(e.target.value) || 1 })} 
-                    required 
-                  />
-                </div>
-              )}
               <div className="form-group">
                 <label className="form-label">{t('category')}</label>
                 <select 
@@ -2971,35 +3441,67 @@ function AdminLayout() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">{t('status')}</label>
-                <select 
+                <label className="form-label">{t('city')}</label>
+                <input 
+                  type="text" 
                   className="form-input" 
-                  value={productForm.statut} 
-                  onChange={e => setProductForm({ ...productForm, statut: e.target.value })}
-                >
-                  <option value="Validated">{t('statusApproved')}</option>
-                  <option value="Pending">{t('statusPending')}</option>
-                  <option value="Rejected">{t('statusRejected')}</option>
-                </select>
+                  placeholder="ex: Casablanca"
+                  value={productForm.city} 
+                  onChange={e => setProductForm({ ...productForm, city: e.target.value })} 
+                  required 
+                />
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label className="form-label">{t('merchant')}</label>
-              <select 
-                className="form-input" 
-                value={productForm.commercant_id} 
-                onChange={e => setProductForm({ ...productForm, commercant_id: e.target.value })}
-                required
-              >
-                <option value="">-- {t('merchant')} --</option>
-                {users.filter(u => u.role === 'commercant').map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.shopName || u.nom}
-                  </option>
-                ))}
-              </select>
+            {/* État du bijou : Neuf, Remis à neuf, Occasion */}
+            <div className="form-group" style={{ marginBottom: '18px' }}>
+              <label className="form-label">{lang === 'ar' ? 'حالة القطعة' : 'État du Bijou'}</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {[
+                  { value: 'Neuf', fr: '✨ Neuf', ar: '✨ جديد' },
+                  { value: 'Remis à neuf', fr: '💎 Remis à neuf', ar: '💎 مجدد ومصقول' },
+                  { value: 'Occasion', fr: '🏷️ Occasion', ar: '🏷️ مستعمل ممتاز' }
+                ].map(item => {
+                  const isActive = (productForm.etat || 'Neuf') === item.value;
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setProductForm({ ...productForm, etat: item.value })}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: '8px',
+                        border: isActive ? '1.5px solid var(--admin-gold)' : '1px solid rgba(255,255,255,0.12)',
+                        background: isActive ? 'rgba(212, 175, 55, 0.16)' : 'rgba(255,255,255,0.03)',
+                        color: isActive ? 'var(--admin-gold)' : 'var(--text-gray)',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {lang === 'ar' ? item.ar : item.fr}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Si enchère : Durée */}
+            {productForm.type_vente === 'enchere' && (
+              <div className="form-group" style={{ marginBottom: '18px' }}>
+                <label className="form-label">{t('durationHours')}</label>
+                <input 
+                  type="number" 
+                  min="1"
+                  className="form-input" 
+                  value={productForm.duree} 
+                  onChange={e => setProductForm({ ...productForm, duree: parseInt(e.target.value) || 24 })} 
+                  required 
+                />
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button type="button" className="btn-outline-gold" style={{ padding: '10px 20px' }} onClick={() => setShowProductModal(false)}>
@@ -3020,39 +3522,44 @@ function AdminLayout() {
 
       {/* PLAN EDITING MODAL */}
       {editingPlanModal && (
-        <div className="modal-backdrop" onClick={() => setEditingPlanModal(null)}>
-          <div className="modal-content" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 style={{ fontFamily: 'Playfair Display' }}>Édition du Forfait : {editingPlanModal.name}</h3>
-              <button className="btn-close" onClick={() => setEditingPlanModal(null)}>✕</button>
+        <div className="modal-overlay" onClick={() => setEditingPlanModal(null)}>
+          <div className="modal-content" style={{ maxWidth: '560px', padding: '30px' }} onClick={e => e.stopPropagation()}>
+            <button type="button" className="modal-close-btn" onClick={() => setEditingPlanModal(null)}>✕</button>
+            <div className="modal-header" style={{ marginBottom: '20px' }}>
+              <h3 style={{ color: 'var(--admin-gold)', margin: 0, fontFamily: 'Playfair Display', fontSize: '1.5rem' }}>
+                {editingPlanModal.id ? (lang === 'ar' ? `تعديل الباقة : ${editingPlanModal.name}` : `Édition du Forfait : ${editingPlanModal.name}`) : (lang === 'ar' ? 'إنشاء باقة جديدة' : 'Créer un Nouveau Forfait')}
+              </h3>
             </div>
             <form onSubmit={handleSavePlanConfig}>
               <div className="form-group" style={{ marginBottom: '14px' }}>
-                <label className="form-label">Nom du Forfait</label>
+                <label className="form-label">{lang === 'ar' ? 'اسم الباقة' : 'Nom du Forfait'}</label>
                 <input 
                   type="text" 
                   className="form-input" 
                   value={editingPlanModal.name} 
                   onChange={e => setEditingPlanModal({ ...editingPlanModal, name: e.target.value })} 
+                  placeholder={lang === 'ar' ? 'مثال: باقة النخبة الذهبية' : 'Ex: Pack Élite Joaillier'}
                   required 
                 />
               </div>
 
               <div className="form-group" style={{ marginBottom: '14px' }}>
-                <label className="form-label">Slogan / Sous-titre</label>
+                <label className="form-label">{lang === 'ar' ? 'الشعار / الوصف المختصر' : 'Slogan / Sous-titre'}</label>
                 <input 
                   type="text" 
                   className="form-input" 
                   value={editingPlanModal.tagline} 
                   onChange={e => setEditingPlanModal({ ...editingPlanModal, tagline: e.target.value })} 
+                  placeholder={lang === 'ar' ? 'وصف تسويقي للباقة...' : 'Formule sur mesure pour bijoutiers...'}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '14px' }}>
                 <div className="form-group">
-                  <label className="form-label">Prix Mensuel (MAD)</label>
+                  <label className="form-label">{lang === 'ar' ? 'السعر الشهري (MAD)' : 'Prix Mensuel (MAD)'}</label>
                   <input 
                     type="number" 
+                    min="0"
                     className="form-input" 
                     value={editingPlanModal.price_monthly} 
                     onChange={e => setEditingPlanModal({ ...editingPlanModal, price_monthly: parseFloat(e.target.value) || 0 })} 
@@ -3060,9 +3567,10 @@ function AdminLayout() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Prix Annuel (MAD)</label>
+                  <label className="form-label">{lang === 'ar' ? 'السعر السنوي (MAD)' : 'Prix Annuel (MAD)'}</label>
                   <input 
                     type="number" 
+                    min="0"
                     className="form-input" 
                     value={editingPlanModal.price_annual} 
                     onChange={e => setEditingPlanModal({ ...editingPlanModal, price_annual: parseFloat(e.target.value) || 0 })} 
@@ -3073,9 +3581,10 @@ function AdminLayout() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                 <div className="form-group">
-                  <label className="form-label">Quota Dépôts Bijoux Max</label>
+                  <label className="form-label">{lang === 'ar' ? 'أقصى عدد معروضات' : 'Quota Dépôts Bijoux Max'}</label>
                   <input 
                     type="number" 
+                    min="1"
                     className="form-input" 
                     value={editingPlanModal.max_products} 
                     onChange={e => setEditingPlanModal({ ...editingPlanModal, max_products: parseInt(e.target.value) || 5 })} 
@@ -3083,10 +3592,12 @@ function AdminLayout() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Taux de Commission (%)</label>
+                  <label className="form-label">{lang === 'ar' ? 'عمولة المنصة (%)' : 'Taux de Commission (%)'}</label>
                   <input 
                     type="number" 
-                    step="0.5"
+                    step="0.1"
+                    min="0"
+                    max="100"
                     className="form-input" 
                     value={editingPlanModal.commission_rate} 
                     onChange={e => setEditingPlanModal({ ...editingPlanModal, commission_rate: parseFloat(e.target.value) || 0 })} 
@@ -3095,12 +3606,12 @@ function AdminLayout() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn-outline-gold" onClick={() => setEditingPlanModal(null)}>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                <button type="button" className="btn-outline-gold" style={{ padding: '8px 18px', fontSize: '0.85rem' }} onClick={() => setEditingPlanModal(null)}>
                   {t('cancel')}
                 </button>
-                <button type="submit" className="btn-gold" style={{ margin: 0 }}>
-                  Enregistrer les modifications
+                <button type="submit" className="btn-gold" style={{ margin: 0, padding: '8px 20px', fontSize: '0.85rem' }}>
+                  {editingPlanModal.id ? (lang === 'ar' ? 'حفظ التعديلات' : 'Enregistrer les modifications') : (lang === 'ar' ? 'إنشاء الباقة' : 'Créer le forfait')}
                 </button>
               </div>
             </form>
@@ -3110,11 +3621,13 @@ function AdminLayout() {
 
       {/* MERCHANT SUBSCRIPTION MODAL */}
       {merchantSubModal && (
-        <div className="modal-backdrop" onClick={() => setMerchantSubModal(null)}>
-          <div className="modal-content" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 style={{ fontFamily: 'Playfair Display' }}>Forfait : {merchantSubModal.shopName}</h3>
-              <button className="btn-close" onClick={() => setMerchantSubModal(null)}>✕</button>
+        <div className="modal-overlay" onClick={() => setMerchantSubModal(null)}>
+          <div className="modal-content" style={{ maxWidth: '500px', padding: '30px' }} onClick={e => e.stopPropagation()}>
+            <button type="button" className="modal-close-btn" onClick={() => setMerchantSubModal(null)}>✕</button>
+            <div className="modal-header" style={{ marginBottom: '20px' }}>
+              <h3 style={{ color: 'var(--admin-gold)', margin: 0, fontFamily: 'Playfair Display', fontSize: '1.4rem' }}>
+                {lang === 'ar' ? 'تعديل باقة التاجر :' : 'Modifier le Forfait :'} {merchantSubModal.shopName}
+              </h3>
             </div>
             <form onSubmit={(e) => {
               e.preventDefault();
@@ -3123,7 +3636,7 @@ function AdminLayout() {
               handleUpdateMerchantPlan(merchantSubModal.id, planId, cycle);
             }}>
               <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label className="form-label">Sélectionner la Formule</label>
+                <label className="form-label">{lang === 'ar' ? 'اختيار الباقة' : 'Sélectionner la Formule'}</label>
                 <select 
                   name="plan_id" 
                   className="form-input" 
@@ -3131,30 +3644,30 @@ function AdminLayout() {
                 >
                   {(subscriptionsData?.plans || []).map(p => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — {p.price_monthly} MAD/mois ({p.max_products > 1000 ? 'Illimité' : `${p.max_products} bijoux`}, {p.commission_rate}%)
+                      {p.name} — {p.price_monthly} MAD/mois ({p.max_products > 1000 ? (lang === 'ar' ? 'غير محدود' : 'Illimité') : `${p.max_products} bijoux`}, {p.commission_rate}%)
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="form-group" style={{ marginBottom: '24px' }}>
-                <label className="form-label">Cycle de Facturation</label>
+                <label className="form-label">{lang === 'ar' ? 'دورة الفوترة' : 'Cycle de Facturation'}</label>
                 <select 
                   name="billing_cycle" 
                   className="form-input" 
                   defaultValue={merchantSubModal.subscription?.billing_cycle || 'monthly'}
                 >
-                  <option value="monthly">Facturation Mensuelle</option>
-                  <option value="annual">Facturation Annuelle (-20%)</option>
+                  <option value="monthly">{lang === 'ar' ? 'فوترة شهرية' : 'Facturation Mensuelle'}</option>
+                  <option value="annual">{lang === 'ar' ? 'فوترة سنوية (-20%)' : 'Facturation Annuelle (-20%)'}</option>
                 </select>
               </div>
 
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn-outline-gold" onClick={() => setMerchantSubModal(null)}>
+                <button type="button" className="btn-outline-gold" style={{ padding: '8px 18px', fontSize: '0.85rem' }} onClick={() => setMerchantSubModal(null)}>
                   {t('cancel')}
                 </button>
-                <button type="submit" className="btn-gold" style={{ margin: 0 }}>
-                  Appliquer le changement
+                <button type="submit" className="btn-gold" style={{ margin: 0, padding: '8px 20px', fontSize: '0.85rem' }}>
+                  {lang === 'ar' ? 'تطبيق التعديلات' : 'Appliquer les modifications'}
                 </button>
               </div>
             </form>

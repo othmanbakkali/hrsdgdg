@@ -3,7 +3,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 
 export default function JewelFinderWizard({ isOpen, onClose, products = [], onSelectProduct }) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, lang } = useLanguage();
+  const isAr = lang === 'ar';
   const { addToCart } = useCart();
 
   const [step, setStep] = useState(1);
@@ -63,39 +64,45 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
 
       // 2. Occasion match
       if (answers.occasion) {
-        if (product.occasion && product.occasion.toLowerCase() === answers.occasion.toLowerCase()) {
+        if (product.occasion && product.occasion.toLowerCase().includes(answers.occasion.toLowerCase())) {
           score += 1;
-        } else if (product.occasion === 'Cadeau' || product.occasion === 'Quotidien') {
-          score += 0.5;
+        } else if (answers.occasion === 'Cadeau') {
+          score += 0.7;
         }
       }
 
       // 3. Style match
       if (answers.style) {
-        if (product.style && product.style.toLowerCase() === answers.style.toLowerCase()) {
+        if (product.style && product.style.toLowerCase().includes(answers.style.toLowerCase())) {
           score += 1;
         }
       }
 
       // 4. Budget match
-      if (product.prix <= answers.budget) {
-        score += 1;
-      } else if (product.prix <= answers.budget * 1.15) {
-        score += 0.5;
+      if (answers.budget) {
+        if (product.prix <= answers.budget) {
+          score += 1;
+        } else if (product.prix <= answers.budget * 1.15) {
+          score += 0.5; // Slightly over budget
+        }
       }
 
-      // 5. Universe match
-      if (answers.universe !== 'ALL' && product.type_vente !== answers.universe) {
-        score *= 0.5;
+      // 5. Universe filter
+      if (answers.universe && answers.universe !== 'ALL') {
+        if (product.type_vente !== answers.universe) {
+          score = score * 0.3; // Penalize wrong universe heavily
+        }
       }
 
-      const matchPercent = Math.min(100, Math.round((score / totalCriteria) * 100));
+      const matchPercent = Math.min(Math.round((score / totalCriteria) * 100), 99);
 
       return {
         ...product,
         matchPercent
       };
-    }).sort((a, b) => b.matchPercent - a.matchPercent).slice(0, 6);
+    })
+    .sort((a, b) => b.matchPercent - a.matchPercent)
+    .slice(0, 6);
   };
 
   const recommendations = step === 6 ? calculateMatches() : [];
@@ -111,7 +118,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
 
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div className="hero-pill-badge" style={{ margin: '0 auto 12px' }}>
-            ✨ ASSISTANT INTELLIGENT JEWELIA
+            ✨ {isAr ? 'المساعد الذكي HRSDGDG' : 'ASSISTANT INTELLIGENT HRSDGDG'}
           </div>
           <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>
             {t('finderTitle')}
@@ -146,10 +153,10 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px' }}>
               {[
-                { id: 'Moi', label: 'Pour Moi-même', icon: '✨' },
-                { id: 'Femme', label: 'Une Femme', icon: '👩' },
-                { id: 'Homme', label: 'Un Homme', icon: '👨' },
-                { id: 'Enfant', label: 'Un Enfant', icon: '🧒' }
+                { id: 'Moi', label: isAr ? 'لنفسي' : 'Pour Moi-même', icon: '✨' },
+                { id: 'Femme', label: isAr ? 'امرأة' : 'Une Femme', icon: '👩' },
+                { id: 'Homme', label: isAr ? 'رجل' : 'Un Homme', icon: '👨' },
+                { id: 'Enfant', label: isAr ? 'طفل' : 'Un Enfant', icon: '🧒' }
               ].map(opt => (
                 <button
                   key={opt.id}
@@ -184,12 +191,12 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
               {[
-                { id: 'Mariage', label: 'Mariage', icon: '💍' },
-                { id: 'Fiançailles', label: 'Fiançailles', icon: '💎' },
-                { id: 'Anniversaire', label: 'Anniversaire', icon: '🎂' },
-                { id: 'Cadeau', label: 'Cadeau Spécial', icon: '🎁' },
-                { id: 'Travail', label: 'Travail / Affaires', icon: '💼' },
-                { id: 'Quotidien', label: 'Quotidien', icon: '✨' }
+                { id: 'Mariage', label: isAr ? 'زفاف' : 'Mariage', icon: '💍' },
+                { id: 'Fiançailles', label: isAr ? 'خطوبة' : 'Fiançailles', icon: '💎' },
+                { id: 'Anniversaire', label: isAr ? 'عيد ميلاد' : 'Anniversaire', icon: '🎂' },
+                { id: 'Cadeau', label: isAr ? 'هدية مميزة' : 'Cadeau Spécial', icon: '🎁' },
+                { id: 'Travail', label: isAr ? 'عمل / مناسبات رسمية' : 'Travail / Affaires', icon: '💼' },
+                { id: 'Quotidien', label: isAr ? 'استخدام يومي' : 'Quotidien', icon: '✨' }
               ].map(opt => (
                 <button
                   key={opt.id}
@@ -224,11 +231,11 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px' }}>
               {[
-                { id: 'Élégant', label: 'Élégant & Chic', desc: 'Raffinement intemporel' },
-                { id: 'Moderne', label: 'Moderne & Tendance', desc: 'Lignes épurées' },
-                { id: 'Traditionnel', label: 'Traditionnel', desc: 'Artisanal marocain' },
-                { id: 'Vintage', label: 'Vintage / Rétro', desc: 'Pièces d\'époque uniques' },
-                { id: 'Minimaliste', label: 'Minimaliste', desc: 'Discret et quotidien' }
+                { id: 'Élégant', label: isAr ? 'أنيق وراقٍ' : 'Élégant & Chic', desc: isAr ? 'فخامة كلاسيكية دائمة' : 'Raffinement intemporel' },
+                { id: 'Moderne', label: isAr ? 'عصري وجذاب' : 'Moderne & Tendance', desc: isAr ? 'خطوط وتصاميم معاصرة' : 'Lignes épurées' },
+                { id: 'Traditionnel', label: isAr ? 'تقليدي أصيل' : 'Traditionnel', desc: isAr ? 'صناعة وصياغة مغربية' : 'Artisanal marocain' },
+                { id: 'Vintage', label: isAr ? 'فينتاج / نادر' : 'Vintage / Rétro', desc: isAr ? 'قطع أثرية فريدة' : 'Pièces d\'époque uniques' },
+                { id: 'Minimaliste', label: isAr ? 'بسيط وهادئ' : 'Minimaliste', desc: isAr ? 'ناعم ومناسب لليومي' : 'Discret et quotidien' }
               ].map(opt => (
                 <button
                   key={opt.id}
@@ -262,11 +269,11 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
               4. {t('finderStep4')}
             </h3>
             <div style={{ margin: '30px 0' }}>
-              <span style={{ fontSize: '2.4rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }}>
-                {answers.budget.toLocaleString()} DH
+              <span style={{ fontSize: '2.4rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }} dir="ltr">
+                {answers.budget.toLocaleString()} {isAr ? 'درهم' : 'DH'}
               </span>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', marginTop: '6px' }}>
-                Budget maximum souhaité
+                {isAr ? 'الميزانية القصوى المرغوبة' : 'Budget maximum souhaité'}
               </p>
             </div>
             <input 
@@ -284,7 +291,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                 borderRadius: '4px'
               }}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-gray)', fontSize: '0.8rem', marginTop: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-gray)', fontSize: '0.8rem', marginTop: '8px' }} dir="ltr">
               <span>500 DH</span>
               <span>15 000 DH</span>
               <span>30 000+ DH</span>
@@ -302,18 +309,18 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
               {[
                 { 
                   id: 'FIRST_HAND', 
-                  title: '✨ Première main', 
-                  desc: 'Bijoux neufs certifiés directement des bijoutiers professionnels.' 
+                  title: isAr ? '✨ مجوهرات جديدة' : '✨ Première main', 
+                  desc: isAr ? 'مجوهرات جديدة معتمدة مباشرة من كبار الصاغة.' : 'Bijoux neufs certifiés directement des bijoutiers professionnels.' 
                 },
                 { 
                   id: 'SECOND_HAND', 
-                  title: '♻️ Seconde main', 
-                  desc: 'Bijoux d\'occasion uniques, authentifiés avec fortes économies.' 
+                  title: isAr ? '♻️ مجوهرات مستعملة' : '♻️ Seconde main', 
+                  desc: isAr ? 'قطع فريدة ونادرة، مفحوصة وموثوقة بتوفير كبير.' : 'Bijoux d\'occasion uniques, authentifiés avec fortes économies.' 
                 },
                 { 
                   id: 'ALL', 
-                  title: '💎 Les deux univers', 
-                  desc: 'Montrez-moi les meilleures opportunités neuves et occasions.' 
+                  title: isAr ? '💎 كلا القسمين' : '💎 Les deux univers', 
+                  desc: isAr ? 'عرض أفضل الفرص من الجديد والمستعمل معاً.' : 'Montrez-moi les meilleures opportunités neuves et occasions.' 
                 }
               ].map(opt => (
                 <button
@@ -329,7 +336,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
-                    textAlign: 'left',
+                    textAlign: isAr ? 'right' : 'left',
                     transition: 'all 0.2s ease'
                   }}
                 >
@@ -354,7 +361,10 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                   {t('finderResultsTitle')}
                 </h3>
                 <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>
-                  Basé sur vos critères : {answers.target || 'Tous'}, {answers.occasion || 'Toutes occasions'}, {answers.style || 'Tous styles'}, budget ≤ {answers.budget.toLocaleString()} DH
+                  {isAr 
+                    ? `بناءً على معاييرك: ${answers.target || 'الكل'}, ${answers.occasion || 'جميع المناسبات'}, ${answers.style || 'كل الأنماط'}, ميزانية ≤ ${answers.budget.toLocaleString()} درهم`
+                    : `Basé sur vos critères : ${answers.target || 'Tous'}, ${answers.occasion || 'Toutes occasions'}, ${answers.style || 'Tous styles'}, budget ≤ ${answers.budget.toLocaleString()} DH`
+                  }
                 </p>
               </div>
               <button 
@@ -369,7 +379,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                   cursor: 'pointer'
                 }}
               >
-                🔄 Relancer le test
+                🔄 {isAr ? 'إعادة الاختبار' : 'Relancer le test'}
               </button>
             </div>
 
@@ -408,7 +418,10 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                         border: `1px solid ${item.type_vente === 'SECOND_HAND' ? '#10b981' : 'var(--primary-gold)'}`
                       }}
                     >
-                      {item.type_vente === 'SECOND_HAND' ? '♻️ SECONDE MAIN' : '✨ PREMIÈRE MAIN'}
+                      {item.type_vente === 'SECOND_HAND' 
+                        ? (isAr ? '♻️ مستعمل' : '♻️ SECONDE MAIN')
+                        : (isAr ? '✨ جديد' : '✨ PREMIÈRE MAIN')
+                      }
                     </span>
                     <span 
                       style={{
@@ -423,7 +436,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                         fontWeight: 800
                       }}
                     >
-                      {item.matchPercent}% match
+                      {item.matchPercent}% {isAr ? 'تطابق' : 'match'}
                     </span>
                   </div>
 
@@ -431,8 +444,8 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                     <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {item.titre}
                     </span>
-                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--light-gold)' }}>
-                      {item.prix.toLocaleString()} DH
+                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--light-gold)' }} dir="ltr">
+                      {item.prix.toLocaleString()} {isAr ? 'درهم' : 'DH'}
                     </span>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
                       <button 
@@ -452,7 +465,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                           cursor: 'pointer'
                         }}
                       >
-                        Voir détails
+                        {isAr ? 'عرض التفاصيل' : 'Voir détails'}
                       </button>
                       <button 
                         onClick={() => addToCart(item)}
@@ -467,7 +480,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                           cursor: 'pointer'
                         }}
                       >
-                        + Panier
+                        {isAr ? '+ السلة' : '+ Panier'}
                       </button>
                     </div>
                   </div>
@@ -492,7 +505,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                 fontWeight: 600
               }}
             >
-              ← Précédent
+              {isAr ? '‹ السابق' : '← Précédent'}
             </button>
           ) : <div />}
 
@@ -501,21 +514,21 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
               onClick={handleNext}
               className="btn-jewelia-primary"
             >
-              Suivant →
+              {isAr ? 'التالي ›' : 'Suivant →'}
             </button>
           ) : step === 5 ? (
             <button 
               onClick={handleNext}
               className="btn-jewelia-primary"
             >
-              Voir mes recommandations ✨
+              {isAr ? 'عرض ترشيحاتي ✨' : 'Voir mes recommandations ✨'}
             </button>
           ) : (
             <button 
               onClick={onClose}
               className="btn-jewelia-secondary"
             >
-              Fermer l'assistant
+              {isAr ? 'إغلاق المساعد' : "Fermer l'assistant"}
             </button>
           )}
         </div>

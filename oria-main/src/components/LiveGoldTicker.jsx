@@ -1,33 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { API_URL } from '../config/api';
 
 export default function LiveGoldTicker() {
   const { lang, isRtl } = useLanguage();
   const [rates, setRates] = useState({
-    gold18k: 688.50,
-    gold21k: 802.20,
-    gold24k: 918.00,
-    silver925: 12.80,
-    variation: '+0.45%'
+    gold18k: 1045.00,
+    gold21k: 1219.00,
+    gold24k: 1393.00,
+    silver925: 14.50,
+    variation: '+0.7%'
   });
 
   const [showCalculator, setShowCalculator] = useState(false);
   const [calcGrams, setCalcGrams] = useState(10);
   const [calcKarat, setCalcKarat] = useState('18k');
 
-  // Subtle live fluctuation effect to simulate real-time market ticks
   useEffect(() => {
-    const interval = setInterval(() => {
-      const delta = (Math.random() - 0.48) * 0.3;
-      setRates(prev => ({
-        ...prev,
-        gold18k: parseFloat((prev.gold18k + delta).toFixed(2)),
-        gold21k: parseFloat((prev.gold21k + delta * 1.15).toFixed(2)),
-        gold24k: parseFloat((prev.gold24k + delta * 1.3).toFixed(2)),
-        variation: delta >= 0 ? `+${(Math.random() * 0.6 + 0.2).toFixed(2)}%` : `-${(Math.random() * 0.4 + 0.1).toFixed(2)}%`
-      }));
-    }, 8000);
-    return () => clearInterval(interval);
+    fetch(`${API_URL}/gold-rates`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success && data.currentPrice18k) {
+          const p18 = data.currentPrice18k;
+          setRates(prev => ({
+            ...prev,
+            gold18k: p18,
+            gold21k: Math.round(p18 * (21 / 18)),
+            gold24k: Math.round(p18 * (24 / 18)),
+            variation: (data.history && data.history.length > 0 && data.history[data.history.length - 1].change) || '+0.7%'
+          }));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const getCalculatedValue = () => {

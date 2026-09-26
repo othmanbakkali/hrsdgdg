@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function MobileBottomNav({
   activeTab, // 'home', 'explore', 'sell', 'messages', 'account'
@@ -12,6 +13,8 @@ export default function MobileBottomNav({
 }) {
   const { user } = useAuth();
   const { cartItems } = useCart();
+  const { lang, t } = useLanguage();
+  const isAr = lang === 'ar';
   const cartCount = cartItems.length;
 
   return (
@@ -27,7 +30,7 @@ export default function MobileBottomNav({
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
         </span>
-        <span className="nav-text">Accueil</span>
+        <span className="nav-text">{t('home')}</span>
       </button>
 
       {/* 2. Explorer / Finder */}
@@ -44,7 +47,7 @@ export default function MobileBottomNav({
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
         </span>
-        <span className="nav-text">Recherche</span>
+        <span className="nav-text">{t('search')}</span>
       </button>
 
       {/* 3. Central Big "+ Déposer" CTA Button (Avito Key Hallmark) */}
@@ -52,12 +55,12 @@ export default function MobileBottomNav({
         <button 
           className="mobile-nav-sell-btn"
           onClick={onOpenSell}
-          title="Déposer une annonce ou lancer une enchère"
+          title={isAr ? "نشر إعلان أو إطلاق مزاد" : "Déposer une annonce ou lancer une enchère"}
         >
           <div className="sell-btn-inner">
             <span className="sell-plus-icon">+</span>
           </div>
-          <span className="sell-btn-label">Vendre</span>
+          <span className="sell-btn-label">{isAr ? 'بيع' : 'Vendre'}</span>
         </button>
       </div>
 
@@ -77,7 +80,7 @@ export default function MobileBottomNav({
             <span className="nav-badge-pill">{unreadMessagesCount}</span>
           )}
         </span>
-        <span className="nav-text">Messages</span>
+        <span className="nav-text">{t('messages')}</span>
       </button>
 
       {/* 5. Mon Compte */}
@@ -94,7 +97,7 @@ export default function MobileBottomNav({
             <span className="nav-badge-pill" style={{ background: 'var(--primary-gold)' }}>{cartCount}</span>
           )}
         </span>
-        <span className="nav-text">{user ? (user.nom.split(' ')[0] || 'Compte') : 'Compte'}</span>
+        <span className="nav-text">{user ? (user.nom.split(' ')[0] || t('account')) : t('account')}</span>
       </button>
     </div>
   );

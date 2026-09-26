@@ -155,8 +155,8 @@ app.post('/api/translate', async (req, res) => {
 
     // Batch dictionary of fields (e.g. { titre: "...", description: "..." })
     if (fields && typeof fields === 'object') {
-      const sourceLang = from || 'fr';
-      const allLangs = ['fr', 'ar', 'en'];
+      const sourceLang = from || 'ar';
+      const allLangs = ['ar', 'fr'];
       const targetLangs = req.body.targets || allLangs.filter(l => l !== sourceLang);
 
       const translations = {};
@@ -208,7 +208,7 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.post('/api/auth/register', (req, res) => {
-  const { email, nom, mot_de_passe, role, shopName, phone, address, city } = req.body;
+  const { email, nom, mot_de_passe, role, shopName, phone, address, city, plan_id, billing_cycle } = req.body;
   const db = readDB();
   
   if (db.users.some(u => u.email === email)) {
@@ -221,14 +221,65 @@ app.post('/api/auth/register', (req, res) => {
     nom,
     mot_de_passe,
     role,
+    phone: phone || '',
+    telephone: phone || '',
+    city: city || 'Casablanca',
+    ville: city || 'Casablanca',
+    address: address || city || '',
     favoris: []
   };
 
   if (role === 'commercant') {
     newUser.shopName = shopName || nom;
-    newUser.phone = phone || '';
-    newUser.address = address || '';
-    newUser.city = city || '';
+    newUser.seller_type = 'bijouterie';
+    newUser.badges = ['Vendeur vérifié'];
+
+    // Setup initial subscription
+    const plans = db.subscription_plans || [];
+    const selectedPlan = plans.find(p => p.id === plan_id) || plans.find(p => p.id === 'plan_starter') || plans[0] || {
+      id: 'plan_starter',
+      name: 'Pass Essentiel',
+      price_monthly: 0,
+      price_annual: 0,
+      max_products: 5,
+      commission_rate: 8
+    };
+
+    const cycle = billing_cycle === 'annual' ? 'annual' : 'monthly';
+    const price = cycle === 'annual' ? Number(selectedPlan.price_annual || 0) : Number(selectedPlan.price_monthly || 0);
+    const durationDays = cycle === 'annual' ? 365 : 30;
+    const now = new Date();
+    const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    newUser.subscription = {
+      plan_id: selectedPlan.id,
+      plan_name: selectedPlan.name,
+      billing_cycle: cycle,
+      price: price,
+      status: 'active',
+      start_date: now.toISOString(),
+      end_date: endDate.toISOString(),
+      auto_renew: true,
+      max_products: Number(selectedPlan.max_products || 5),
+      commission_rate: Number(selectedPlan.commission_rate || 8)
+    };
+
+    // If paid plan, generate invoice in history
+    if (price > 0) {
+      if (!db.subscriptions_history) db.subscriptions_history = [];
+      db.subscriptions_history.unshift({
+        id: 'sub_tx_' + Math.random().toString(36).substr(2, 9),
+        merchant_id: newUser.id,
+        merchant_name: newUser.shopName,
+        plan_id: selectedPlan.id,
+        plan_name: selectedPlan.name,
+        amount: price,
+        billing_cycle: cycle,
+        status: 'Paid',
+        date: now.toISOString(),
+        invoice_number: `INV-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+      });
+    }
   }
 
   db.users.push(newUser);
@@ -243,7 +294,7 @@ app.get('/api/users', (req, res) => {
 });
 
 app.post('/api/users', (req, res) => {
-  const { email, nom, mot_de_passe, role, shopName, phone, address, city } = req.body;
+  const { email, nom, mot_de_passe, role, shopName, phone, address, city, plan_id, billing_cycle } = req.body;
   const db = readDB();
   
   if (db.users.some(u => u.email === email)) {
@@ -264,6 +315,54 @@ app.post('/api/users', (req, res) => {
     newUser.phone = phone || '';
     newUser.address = address || '';
     newUser.city = city || '';
+    newUser.seller_type = 'bijouterie';
+    newUser.badges = ['Vendeur vérifié'];
+
+    // Setup initial subscription for merchant created by Admin
+    const plans = db.subscription_plans || [];
+    const selectedPlan = plans.find(p => p.id === plan_id) || plans.find(p => p.id === 'plan_starter') || plans[0] || {
+      id: 'plan_starter',
+      name: 'Pass Essentiel',
+      price_monthly: 0,
+      price_annual: 0,
+      max_products: 5,
+      commission_rate: 8
+    };
+
+    const cycle = billing_cycle === 'annual' ? 'annual' : 'monthly';
+    const price = cycle === 'annual' ? Number(selectedPlan.price_annual || 0) : Number(selectedPlan.price_monthly || 0);
+    const durationDays = cycle === 'annual' ? 365 : 30;
+    const now = new Date();
+    const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    newUser.subscription = {
+      plan_id: selectedPlan.id,
+      plan_name: selectedPlan.name,
+      billing_cycle: cycle,
+      price: price,
+      status: 'active',
+      start_date: now.toISOString(),
+      end_date: endDate.toISOString(),
+      auto_renew: true,
+      max_products: Number(selectedPlan.max_products || 5),
+      commission_rate: Number(selectedPlan.commission_rate || 8)
+    };
+
+    if (price > 0) {
+      if (!db.subscriptions_history) db.subscriptions_history = [];
+      db.subscriptions_history.unshift({
+        id: 'sub_tx_' + Math.random().toString(36).substr(2, 9),
+        merchant_id: newUser.id,
+        merchant_name: newUser.shopName,
+        plan_id: selectedPlan.id,
+        plan_name: selectedPlan.name,
+        amount: price,
+        billing_cycle: cycle,
+        status: 'Paid',
+        date: now.toISOString(),
+        invoice_number: `INV-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+      });
+    }
   }
 
   db.users.push(newUser);
@@ -272,7 +371,7 @@ app.post('/api/users', (req, res) => {
 });
 
 app.put('/api/users/:id', (req, res) => {
-  const { email, nom, mot_de_passe, role, shopName, phone, address, city } = req.body;
+  const { email, nom, mot_de_passe, role, shopName, phone, address, city, plan_id, billing_cycle } = req.body;
   const db = readDB();
   const user = db.users.find(u => u.id === req.params.id);
   if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
@@ -291,6 +390,22 @@ app.put('/api/users/:id', (req, res) => {
     user.phone = phone || user.phone || '';
     user.address = address || user.address || '';
     user.city = city || user.city || '';
+
+    if (plan_id) {
+      const plans = db.subscription_plans || [];
+      const plan = plans.find(p => p.id === plan_id);
+      if (plan) {
+        if (!user.subscription) user.subscription = {};
+        user.subscription.plan_id = plan.id;
+        user.subscription.plan_name = plan.name;
+        user.subscription.max_products = Number(plan.max_products || 5);
+        user.subscription.commission_rate = Number(plan.commission_rate || 8);
+        if (billing_cycle) {
+          user.subscription.billing_cycle = billing_cycle;
+          user.subscription.price = billing_cycle === 'annual' ? Number(plan.price_annual || 0) : Number(plan.price_monthly || 0);
+        }
+      }
+    }
   } else {
     delete user.shopName;
     delete user.phone;
@@ -601,6 +716,7 @@ app.post('/api/bijoux', (req, res) => {
     occasion: occasion || 'Cadeau',
     pour_qui: pour_qui || 'Femme',
     images: (processImages(images) && processImages(images).length > 0) ? processImages(images) : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'],
+    video: req.body.video || null,
     disponibilite: effectiveDisponibilite,
     city: city || 'Casablanca',
     stock: (stock !== undefined && stock !== null && stock !== '') ? (parseInt(stock) || 1) : 1,
@@ -1272,27 +1388,32 @@ app.post('/api/subscription-plans', (req, res) => {
   const db = readDB();
   if (!db.subscription_plans) db.subscription_plans = [];
 
+  const max_products = Number(req.body.max_products || 10);
+  const commission_rate = Number(req.body.commission_rate || 5);
+
   const newPlan = {
     id: 'plan_' + Math.random().toString(36).substr(2, 7),
     name: req.body.name || 'Nouveau Forfait',
-    tagline: req.body.tagline || '',
+    name_fr: req.body.name || 'Nouveau Forfait',
+    name_ar: req.body.name_ar || req.body.name || 'باقة جديدة',
+    tagline: req.body.tagline || 'Formule sur mesure pour bijoutiers',
     price_monthly: Number(req.body.price_monthly || 0),
     price_annual: Number(req.body.price_annual || 0),
-    max_products: Number(req.body.max_products || 10),
-    commission_rate: Number(req.body.commission_rate || 5),
+    max_products: max_products,
+    commission_rate: commission_rate,
     badge: req.body.badge || '💎 Partenaire',
     popular: !!req.body.popular,
     color: req.body.color || '#b38728',
-    features: Array.isArray(req.body.features) ? req.body.features : [
-      `Jusqu'à ${req.body.max_products || 10} bijoux actifs`,
-      `Commission de ${req.body.commission_rate || 5}% par vente`,
-      "Support prioritaire"
+    features: Array.isArray(req.body.features) && req.body.features.length > 0 ? req.body.features : [
+      `Jusqu'à ${max_products > 1000 ? 'Illimité' : max_products} bijoux actifs`,
+      `Commission de ${commission_rate}% par vente`,
+      "Mise en avant et support prioritaire"
     ]
   };
 
   db.subscription_plans.push(newPlan);
   writeDB(db);
-  res.json(newPlan);
+  res.status(201).json(newPlan);
 });
 
 // 2. Admin update subscription plan
@@ -1305,15 +1426,38 @@ app.put('/api/subscription-plans/:id', (req, res) => {
     return res.status(404).json({ message: 'Plan introuvable' });
   }
 
+  const existing = db.subscription_plans[planIndex];
+  const max_products = req.body.max_products !== undefined ? Number(req.body.max_products) : existing.max_products;
+  const commission_rate = req.body.commission_rate !== undefined ? Number(req.body.commission_rate) : existing.commission_rate;
+
   const updatedPlan = {
-    ...db.subscription_plans[planIndex],
+    ...existing,
     ...req.body,
+    price_monthly: req.body.price_monthly !== undefined ? Number(req.body.price_monthly) : existing.price_monthly,
+    price_annual: req.body.price_annual !== undefined ? Number(req.body.price_annual) : existing.price_annual,
+    max_products,
+    commission_rate,
     id: planId // preserve ID
   };
 
   db.subscription_plans[planIndex] = updatedPlan;
   writeDB(db);
   res.json(updatedPlan);
+});
+
+// 2b. Admin delete subscription plan
+app.delete('/api/subscription-plans/:id', (req, res) => {
+  const db = readDB();
+  const planId = req.params.id;
+  const planIndex = (db.subscription_plans || []).findIndex(p => p.id === planId);
+
+  if (planIndex === -1) {
+    return res.status(404).json({ message: 'Plan introuvable' });
+  }
+
+  const deleted = db.subscription_plans.splice(planIndex, 1)[0];
+  writeDB(db);
+  res.json({ message: 'Plan supprimé avec succès', plan: deleted });
 });
 
 // 3. Get merchant subscription details & quota metrics
@@ -1558,6 +1702,116 @@ app.put('/api/subscriptions/:merchantId/status', (req, res) => {
 
   writeDB(db);
   res.json({ message: 'Abonnement mis à jour par l’administrateur', merchant });
+});
+
+// ==========================================
+// GOLD RATES & HISTORY API (EXCLUSIVE OR 18K)
+// ==========================================
+
+// Public: Get current gold rate (18K) and history
+app.get('/api/gold-rates', (req, res) => {
+  const db = readDB();
+  const goldRates = db.goldRates || {
+    currentPrice18k: 1045,
+    carat: '18K',
+    unit: 'MAD/g',
+    lastUpdated: new Date().toISOString(),
+    updatedBy: 'Admin',
+    history: []
+  };
+
+  const currentPrice18k = Number(goldRates.currentPrice18k) || 1045;
+
+  res.json({
+    success: true,
+    currentPrice18k,
+    carat: '18K',
+    unit: goldRates.unit || 'MAD/g',
+    lastUpdated: goldRates.lastUpdated,
+    updatedBy: goldRates.updatedBy || 'Administration',
+    history: goldRates.history || []
+  });
+});
+
+// Admin: Update gold rate (18K) & record history
+app.post('/api/admin/gold-rates', (req, res) => {
+  const { price18k, price, price24k, source, note, updatedBy } = req.body;
+  const rawPrice = price18k || price || price24k;
+  const numPrice = parseFloat(rawPrice);
+
+  if (!numPrice || isNaN(numPrice) || numPrice <= 0) {
+    return res.status(400).json({ error: 'Le prix de l\'or 18K doit être un nombre positif valide (ex: 1045).' });
+  }
+
+  const db = readDB();
+  if (!db.goldRates) {
+    db.goldRates = {
+      currentPrice18k: 1045,
+      carat: '18K',
+      unit: 'MAD/g',
+      lastUpdated: new Date().toISOString(),
+      updatedBy: 'Admin',
+      history: []
+    };
+  }
+
+  const oldPrice = Number(db.goldRates.currentPrice18k) || numPrice;
+  const diff = numPrice - oldPrice;
+  const pct = oldPrice > 0 ? ((diff / oldPrice) * 100).toFixed(1) : '0.0';
+  const changeStr = diff > 0 ? `+${pct}%` : (diff < 0 ? `${pct}%` : '0.0%');
+
+  const now = new Date();
+  const dateFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const newHistoryEntry = {
+    id: `gh_${Date.now()}`,
+    date: dateFormatted,
+    price18k: numPrice,
+    change: changeStr,
+    source: source ? source.trim() : 'Fixation Officielle Maroc',
+    note: note ? note.trim() : ''
+  };
+
+  db.goldRates.currentPrice18k = numPrice;
+  db.goldRates.carat = '18K';
+  db.goldRates.lastUpdated = now.toISOString();
+  db.goldRates.updatedBy = updatedBy || 'Super-Admin';
+  
+  if (!Array.isArray(db.goldRates.history)) {
+    db.goldRates.history = [];
+  }
+  db.goldRates.history.push(newHistoryEntry);
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: 'Cours de l\'or 18K mis à jour avec succès',
+    currentPrice18k: numPrice,
+    carat: '18K',
+    history: db.goldRates.history,
+    newEntry: newHistoryEntry
+  });
+});
+
+// Admin: Delete history record
+app.delete('/api/admin/gold-rates/history/:id', (req, res) => {
+  const { id } = req.params;
+  const db = readDB();
+
+  if (!db.goldRates || !Array.isArray(db.goldRates.history)) {
+    return res.status(404).json({ error: 'Historique introuvable' });
+  }
+
+  const initialLen = db.goldRates.history.length;
+  db.goldRates.history = db.goldRates.history.filter(item => item.id !== id);
+
+  if (db.goldRates.history.length === initialLen) {
+    return res.status(404).json({ error: 'Entrée introuvable' });
+  }
+
+  writeDB(db);
+  res.json({ success: true, message: 'Entrée supprimée avec succès', history: db.goldRates.history });
 });
 
 // Static Files & Production SPA Serving with PWA headers

@@ -13,6 +13,7 @@ import JewelFinderWizard from './components/JewelFinderWizard';
 import SellJewelModal from './components/SellJewelModal';
 import ProductComparatorModal from './components/ProductComparatorModal';
 import AIAssistantModal from './components/AIAssistantModal';
+import GoldPriceHistoryModal from './components/GoldPriceHistoryModal';
 import PWAInstallBanner from './pwa/PWAInstallBanner';
 import PWAInstallButton from './pwa/PWAInstallButton';
 
@@ -82,6 +83,7 @@ function MainLayout() {
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [isComparatorOpen, setIsComparatorOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isGoldModalOpen, setIsGoldModalOpen] = useState(false);
   const [isCityPickerOpen, setIsCityPickerOpen] = useState(false);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
@@ -294,6 +296,8 @@ function MainLayout() {
           cartCount={cartItems.length}
           onOpenChat={() => setIsChatDrawerOpen(true)}
           onOpenAI={() => setIsAIOpen(true)}
+          onOpenSell={() => setIsSellModalOpen(true)}
+          onOpenGoldModal={() => setIsGoldModalOpen(true)}
           saleUniverse={saleUniverse}
           onSelectUniverse={setSaleUniverse}
           selectedCategory={selectedCategory}
@@ -303,6 +307,10 @@ function MainLayout() {
           categories={categories}
           theme={theme}
           onToggleTheme={toggleTheme}
+          user={user}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onLogout={logout}
+          onNavigate={setActiveView}
         />
       </div>
 
@@ -317,18 +325,58 @@ function MainLayout() {
               setSelectedCategory('');
               setDealsOnly(false);
             }} 
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', flexShrink: 0 }}
           >
-            <OriaLogo size={36} showText={true} subtitle="PREMIÈRE & SECONDE MAIN" />
+            <OriaLogo size={32} showText={true} subtitle="PREMIÈRE & SECONDE MAIN" />
+          </div>
+
+          {/* Desktop Central Search Bar */}
+          <div className="jewelia-search-wrapper">
+            <span className="jewelia-search-icon">🔍</span>
+            <input 
+              type="text" 
+              className="jewelia-search-input"
+              placeholder={lang === 'ar' ? 'ابحث عن مجوهرات، خاتم، سوار، ذهب 18 قيراط...' : 'Rechercher un bijou, bague, bracelet, or 18k...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  [lang === 'ar' ? 'left' : 'right']: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           {/* Quick Actions */}
           <div className="jewelia-header-actions">
+            {/* City Selector */}
+            <button 
+              onClick={() => setIsCityPickerOpen(true)}
+              className="jewelia-action-btn"
+              title={lang === 'ar' ? "اختر مدينة في المغرب" : "Sélectionner une ville"}
+            >
+              <span>📍</span>
+              <span className="hide-tablet">{selectedCity || (lang === 'ar' ? 'كل المغرب' : 'Tout le Maroc')}</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--primary-gold)' }}>▼</span>
+            </button>
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
               className="jewelia-action-btn"
-              title={theme === 'light' ? 'Activer le Mode Nuit' : 'Activer le Fond Clair'}
+              title={theme === 'light' ? (lang === 'ar' ? 'تفعيل الوضع الليلي' : 'Activer le Mode Nuit') : (lang === 'ar' ? 'تفعيل الوضع النهاري' : 'Activer le Fond Clair')}
               style={{
                 borderColor: 'var(--border-gold)',
                 color: 'var(--primary-gold)',
@@ -336,16 +384,16 @@ function MainLayout() {
               }}
             >
               <span>{theme === 'light' ? '🌙' : '☀️'}</span>
-              <span className="hide-mobile">{theme === 'light' ? 'Mode Nuit' : 'Fond Clair'}</span>
+              <span className="hide-mobile">{lang === 'ar' ? (theme === 'light' ? 'الوضع الليلي' : 'الوضع النهاري') : (theme === 'light' ? 'Mode Nuit' : 'Fond Clair')}</span>
             </button>
 
             <button 
               onClick={() => setIsFinderOpen(true)}
               className="jewelia-action-btn"
-              title="Assistant intelligent pour trouver un bijou"
+              title={lang === 'ar' ? "المساعد الذكي لاختيار مجوهراتك" : "Assistant intelligent pour trouver un bijou"}
             >
               <span>🔍</span>
-              <span className="hide-mobile">Trouver mon bijou</span>
+              <span className="hide-mobile">{lang === 'ar' ? 'البحث الذكي' : 'Trouver mon bijou'}</span>
             </button>
 
             <button 
@@ -353,7 +401,7 @@ function MainLayout() {
               className="jewelia-action-btn cta-sell"
             >
               <span>♻️</span>
-              <span className="hide-mobile">Vendre mon bijou</span>
+              <span className="hide-mobile">{lang === 'ar' ? 'بيع مجوهراتي' : 'Vendre mon bijou'}</span>
             </button>
 
             <button 
@@ -362,7 +410,7 @@ function MainLayout() {
               style={{ borderColor: 'var(--primary-gold)', color: 'var(--light-gold)' }}
             >
               <span>✨</span>
-              <span className="hide-mobile">Concierge IA</span>
+              <span className="hide-mobile">{lang === 'ar' ? 'المساعد الذكي' : 'Concierge IA'}</span>
             </button>
 
             {comparedProductIds.length > 0 && (
@@ -434,9 +482,9 @@ function MainLayout() {
                           setActiveView('client-dashboard');
                           setUserMenuOpen(false);
                         }}
-                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--text-white)', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}
+                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--text-white)', textAlign: lang === 'ar' ? 'right' : 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}
                       >
-                        📦 Mon Espace Client
+                        📦 {lang === 'ar' ? 'فضاء الزبون' : 'Mon Espace Client'}
                       </button>
 
                       <button 
@@ -444,9 +492,9 @@ function MainLayout() {
                           setActiveView('merchant-dashboard');
                           setUserMenuOpen(false);
                         }}
-                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--primary-gold)', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600 }}
+                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--primary-gold)', textAlign: lang === 'ar' ? 'right' : 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600 }}
                       >
-                        🏪 Espace Vendeur & Boutique
+                        🏪 {lang === 'ar' ? 'فضاء التاجر والمتجر' : 'Espace Vendeur & Boutique'}
                       </button>
 
                       <button 
@@ -454,9 +502,9 @@ function MainLayout() {
                           logout();
                           setUserMenuOpen(false);
                         }}
-                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: '#ef4444', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem', borderTop: '1px solid var(--border-subtle)' }}
+                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: '#ef4444', textAlign: lang === 'ar' ? 'right' : 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem', borderTop: '1px solid var(--border-subtle)' }}
                       >
-                        Se déconnecter
+                        {lang === 'ar' ? 'تسجيل الخروج' : 'Se déconnecter'}
                       </button>
                     </>
                   ) : (
@@ -468,16 +516,16 @@ function MainLayout() {
                       className="btn-jewelia-primary"
                       style={{ padding: '8px', width: '100%', fontSize: '0.85rem' }}
                     >
-                      Se connecter / S'inscrire
+                      {lang === 'ar' ? 'تسجيل الدخول / حساب جديد' : 'Se connecter / S\'inscrire'}
                     </button>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Language Switcher */}
+            {/* Language Switcher (Arabic and French only) */}
             <div style={{ display: 'flex', gap: '4px', marginLeft: '6px' }}>
-              {['fr', 'ar', 'en'].map(l => (
+              {['ar', 'fr'].map(l => (
                 <button
                   key={l}
                   onClick={() => setLang(l)}
@@ -489,11 +537,10 @@ function MainLayout() {
                     border: 'none',
                     fontSize: '0.72rem',
                     fontWeight: 800,
-                    cursor: 'pointer',
-                    textTransform: 'uppercase'
+                    cursor: 'pointer'
                   }}
                 >
-                  {l}
+                  {l === 'ar' ? 'العربية 🇲🇦' : 'FR 🇫🇷'}
                 </button>
               ))}
             </div>
@@ -512,7 +559,7 @@ function MainLayout() {
                 setDealsOnly(false);
               }}
             >
-              Accueil
+              {t('home')}
             </button>
 
             <button 
@@ -523,8 +570,8 @@ function MainLayout() {
                 setDealsOnly(false);
               }}
             >
-              <span>✨ Première main</span>
-              <span className="jewelia-nav-badge first">Neuf</span>
+              <span>{t('firstHand')}</span>
+              <span className="jewelia-nav-badge first">{lang === 'ar' ? 'جديد' : 'Neuf'}</span>
             </button>
 
             <button 
@@ -535,8 +582,8 @@ function MainLayout() {
                 setDealsOnly(false);
               }}
             >
-              <span>♻️ Seconde main</span>
-              <span className="jewelia-nav-badge second">Occasion</span>
+              <span>{t('secondHand')}</span>
+              <span className="jewelia-nav-badge second">{lang === 'ar' ? 'مستعمل' : 'Occasion'}</span>
             </button>
 
             <button 
@@ -547,8 +594,8 @@ function MainLayout() {
                 setDealsOnly(false);
               }}
             >
-              <span>🔨 Enchères</span>
-              <span className="jewelia-nav-badge first" style={{ background: '#ef4444', color: '#fff' }}>En Direct</span>
+              <span>{lang === 'ar' ? '🔨 المزادات' : '🔨 Enchères'}</span>
+              <span className="jewelia-nav-badge first" style={{ background: '#ef4444', color: '#fff' }}>{lang === 'ar' ? 'مباشر' : 'En Direct'}</span>
             </button>
 
             <button 
@@ -558,35 +605,47 @@ function MainLayout() {
                 setDealsOnly(true);
               }}
             >
-              🔥 Bonnes Affaires
+              {t('deals')}
+            </button>
+
+            <button 
+              className="jewelia-nav-link"
+              onClick={() => setIsGoldModalOpen(true)}
+              title={lang === 'ar' ? 'سعر الذهب اليوم ومباشر وسجل التغييرات' : 'Cours officiel de l\'or et historique'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <span>🥇 {lang === 'ar' ? 'سعر الذهب' : 'Cours de l\'Or'}</span>
+              <span className="jewelia-nav-badge first" style={{ background: 'rgba(212, 175, 55, 0.25)', color: 'var(--primary-gold)', border: '1px solid rgba(212, 175, 55, 0.4)' }}>
+                {lang === 'ar' ? 'سجل الأسعار 📈' : 'Historique 📈'}
+              </span>
             </button>
 
             <button 
               className="jewelia-nav-link"
               onClick={() => setIsFinderOpen(true)}
             >
-              🔍 Trouver mon bijou
+              {t('findJewel')}
             </button>
 
             <button 
               className="jewelia-nav-link"
               onClick={() => setIsSellModalOpen(true)}
             >
-              ♻️ Vendre mon bijou
+              {t('sellJewel')}
             </button>
 
             <button 
               className={`jewelia-nav-link ${activeView === 'client-dashboard' ? 'active' : ''}`}
               onClick={() => setActiveView('client-dashboard')}
             >
-              👤 Espace Client
+              👤 {lang === 'ar' ? 'فضاء الزبون' : 'Espace Client'}
             </button>
 
             <button 
               className={`jewelia-nav-link ${activeView === 'merchant-dashboard' ? 'active' : ''}`}
               onClick={() => setActiveView('merchant-dashboard')}
             >
-              🏪 Espace Vendeur
+              🏪 {lang === 'ar' ? 'فضاء التاجر' : 'Espace Vendeur'}
             </button>
           </nav>
         </div>
@@ -601,6 +660,7 @@ function MainLayout() {
             onOpenSellModal={() => setIsSellModalOpen(true)}
             onOpenAIModal={() => setIsAIOpen(true)}
             onOpenComparator={() => setIsComparatorOpen(true)}
+            onOpenGoldModal={() => setIsGoldModalOpen(true)}
             comparedProductIds={comparedProductIds}
             onToggleCompare={handleToggleCompare}
             initialUniverse={saleUniverse}
@@ -704,6 +764,7 @@ function MainLayout() {
         sortBy={sortBy}
         onChangeSortBy={setSortBy}
         selectedCity={selectedCity}
+        onSelectCity={setSelectedCity}
         onOpenCityPicker={() => {
           setIsFilterSheetOpen(false);
           setIsCityPickerOpen(true);
@@ -1068,6 +1129,11 @@ function MainLayout() {
         isOpen={isAIOpen} 
         onClose={() => setIsAIOpen(false)} 
         onSelectProduct={(p) => setSelectedProduct(p)}
+      />
+      <GoldPriceHistoryModal 
+        isOpen={isGoldModalOpen}
+        onClose={() => setIsGoldModalOpen(false)}
+        onOpenSellModal={() => setIsSellModalOpen(true)}
       />
       <ProductComparatorModal 
         isOpen={isComparatorOpen} 

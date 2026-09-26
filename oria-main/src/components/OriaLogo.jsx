@@ -1,6 +1,18 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function OriaLogo({ size = 32, showText = true, subtitle = "PREMIÈRE & SECONDE MAIN" }) {
+export default function OriaLogo({ size = 32, showText = true, subtitle }) {
+  let isAr = true;
+  try {
+    const langCtx = useLanguage();
+    isAr = langCtx?.lang === 'ar';
+  } catch (e) {
+    isAr = false;
+  }
+
+  const effectiveSubtitle = subtitle !== undefined 
+    ? (subtitle === "PREMIÈRE & SECONDE MAIN" ? (isAr ? 'مجوهرات جديدة ومستعملة' : 'PREMIÈRE & SECONDE MAIN') : subtitle)
+    : (isAr ? 'مجوهرات جديدة ومستعملة' : 'PREMIÈRE & SECONDE MAIN');
   return (
     <div className="jewelia-logo-wrapper" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', userSelect: 'none' }}>
       {/* Sleek Diamond & Infinity Gold Emblem */}
@@ -71,7 +83,7 @@ export default function OriaLogo({ size = 32, showText = true, subtitle = "PREMI
           }}>
             HRSDGDG
           </span>
-          {subtitle && (
+          {effectiveSubtitle && (
             <span style={{ 
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", 
               fontSize: `${Math.max(size * 0.22, 7.5)}px`, 
@@ -82,7 +94,7 @@ export default function OriaLogo({ size = 32, showText = true, subtitle = "PREMI
               textTransform: 'uppercase',
               marginTop: '4px'
             }}>
-              {subtitle}
+              {effectiveSubtitle}
             </span>
           )}
         </div>

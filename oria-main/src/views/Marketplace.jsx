@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import MobileProductCard from '../components/mobile/MobileProductCard';
 import ProductCard from '../components/ProductCard';
+import GoldPriceCard from '../components/GoldPriceCard';
 import { API_URL } from '../config/api';
 
 export default function Marketplace({ 
@@ -12,6 +13,7 @@ export default function Marketplace({
   onOpenSellModal,
   onOpenAIModal,
   onOpenComparator,
+  onOpenGoldModal,
   comparedProductIds = [],
   onToggleCompare,
   initialUniverse = 'ALL',
@@ -227,90 +229,23 @@ export default function Marketplace({
 
 
   const popularSuggestions = [
-    { label: 'Bague or 18k femme', icon: '💍' },
-    { label: 'Cadeau moins de 2000 DH', icon: '🎁' },
-    { label: 'Bracelet homme 18k', icon: '👔' },
-    { label: 'Bague vintage or & diamant', icon: '✨' },
-    { label: 'Collier nacre & or', icon: '📿' },
-    { label: 'Parure mariage royale', icon: '👑' }
+    { label: lang === 'ar' ? 'خاتم ذهب 18 قيراط نسائي' : 'Bague or 18k femme', icon: '💍' },
+    { label: lang === 'ar' ? 'هدية أقل من 2000 درهم' : 'Cadeau moins de 2000 DH', icon: '🎁' },
+    { label: lang === 'ar' ? 'سوار رجالي ذهب 18 قيراط' : 'Bracelet homme 18k', icon: '👔' },
+    { label: lang === 'ar' ? 'خاتم فينتاج ذهب وألماس' : 'Bague vintage or & diamant', icon: '✨' },
+    { label: lang === 'ar' ? 'قلادة صدف وذهب' : 'Collier nacre & or', icon: '📿' },
+    { label: lang === 'ar' ? 'طقم زفاف ملكي' : 'Parure mariage royale', icon: '👑' }
   ];
 
   return (
     <div className="marketplace-container">
-      {/* 1. MOBILE QUICK FILTERS & CONTROLS BAR (AVITO STYLE) */}
-      <div className="mobile-quick-filter-chips-bar">
-        <button 
-          className={`mobile-quick-chip ${selectedCity ? 'active' : ''}`}
-          onClick={onOpenCityPicker}
-        >
-          <span>📍 {selectedCity || 'Tout le Maroc'}</span>
-          <span className="chip-arrow">▼</span>
-        </button>
-
-        <button 
-          className={`mobile-quick-chip ${priceMax < 35000 ? 'active' : ''}`}
-          onClick={onOpenFilterSheet}
-        >
-          <span>💰 Max {priceMax.toLocaleString()} DH</span>
-        </button>
-
-        <button 
-          className={`mobile-quick-chip ${selectedMaterial === 'Or' ? 'active' : ''}`}
-          onClick={() => setSelectedMaterial(selectedMaterial === 'Or' ? 'ALL' : 'Or')}
-        >
-          <span>🥇 Or 18K</span>
-        </button>
-
-        <button 
-          className={`mobile-quick-chip ${verifiedOnly ? 'active' : ''}`}
-          onClick={() => setVerifiedOnly(!verifiedOnly)}
-        >
-          <span>🛡️ Vérifiés</span>
-        </button>
-
-        <button 
-          className={`mobile-quick-chip ${dealsOnly ? 'active' : ''}`}
-          onClick={() => setDealsOnly(!dealsOnly)}
-        >
-          <span>🔥 Remises %</span>
-        </button>
-
-        {/* View Switcher: 1 Article/Ligne (Style Amazon/Temu) vs 2 Colonnes */}
-        <div className="mobile-view-toggle-btns">
-          <button 
-            className={`view-btn ${mobileViewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setMobileViewMode('list')}
-            title="Affichage 1 Article par ligne (Amazon / Temu)"
-          >
-            ☰
-          </button>
-          <button 
-            className={`view-btn ${mobileViewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setMobileViewMode('grid')}
-            title="Affichage 2 Colonnes"
-          >
-            ⊞
-          </button>
-        </div>
+      {/* 1. OFFICIAL LIVE GOLD RATE BANNER (DISPLAYED ON MOBILE & DESKTOP) */}
+      <div className="gold-ribbon-placement-container" style={{ padding: '0 16px', maxWidth: '1400px', margin: '4px auto 14px', width: '100%', boxSizing: 'border-box' }}>
+        <GoldPriceCard onOpenHistoryModal={onOpenGoldModal} />
       </div>
 
-      {/* 2. DESKTOP CATEGORIES BAR (Refined Luxury Look) */}
-      <section className="jewelia-categories-section hide-on-mobile">
-        <div className="section-header">
-          <div>
-            <div className="section-micro-badge">💎 COLLECTIONS HRSDGDG</div>
-            <h2 className="section-title">Catalogue des Bijoux</h2>
-            <p className="section-subtitle">Découvrez nos pièces d'exception Première & Seconde Main certifiées</p>
-          </div>
-          {selectedCategory && (
-            <button 
-              onClick={() => setSelectedCategory('')}
-              className="category-clear-btn"
-            >
-              Afficher tout ✕
-            </button>
-          )}
-        </div>
+      {/* 2. CATEGORIES BAR (Direct Category Access) */}
+      <section className="jewelia-categories-section">
 
         <div className="categories-pills-row">
           <button 
@@ -318,7 +253,7 @@ export default function Marketplace({
             onClick={() => setSelectedCategory('')}
           >
             <span className="pill-icon">💎</span>
-            <span className="pill-text">{t('allCategories') || 'Toutes les catégories'}</span>
+            <span className="pill-text">{t('allCategories') || (lang === 'ar' ? 'جميع الفئات' : 'Toutes les catégories')}</span>
           </button>
           {categories.map(cat => (
             <button 
@@ -327,7 +262,7 @@ export default function Marketplace({
               onClick={() => setSelectedCategory(selectedCategory === cat.id ? '' : cat.id)}
             >
               <span className="pill-icon">{cat.icon || '💎'}</span>
-              <span className="pill-text">{cat[`nom_${lang}`] || cat.nom_fr || cat.nom}</span>
+              <span className="pill-text">{(lang === 'ar' && cat.nom_ar) ? cat.nom_ar : (cat.nom_fr || cat.nom)}</span>
             </button>
           ))}
         </div>
@@ -338,36 +273,36 @@ export default function Marketplace({
         <div className="trust-item">
           <div className="trust-icon">🇲🇦</div>
           <div className="trust-text">
-            <strong>Poinçon d'État Garanti</strong>
-            <span>Or 18K / 750‰ titré & certifié</span>
+            <strong>{lang === 'ar' ? 'طابع وضمان الدولة' : 'Poinçon d\'État Garanti'}</strong>
+            <span>{lang === 'ar' ? 'ذهب عيار 18 قيراط / 750‰ معتمد' : 'Or 18K / 750‰ titré & certifié'}</span>
           </div>
         </div>
         <div className="trust-item">
           <div className="trust-icon">💎</div>
           <div className="trust-text">
-            <strong>Expertise Joaillière</strong>
-            <span>Contrôle systématique en atelier</span>
+            <strong>{lang === 'ar' ? 'فحص وخبرة الصياغة' : 'Expertise Joaillière'}</strong>
+            <span>{lang === 'ar' ? 'فحص دقيق وشامل في الورشة' : 'Contrôle systématique en atelier'}</span>
           </div>
         </div>
         <div className="trust-item">
           <div className="trust-icon">🛡️</div>
           <div className="trust-text">
-            <strong>Paiement Sécurisé</strong>
-            <span>À la livraison ou par Carte</span>
+            <strong>{lang === 'ar' ? 'أداء آمن وموثوق' : 'Paiement Sécurisé'}</strong>
+            <span>{lang === 'ar' ? 'عند الاستلام أو بالبطاقة البنكية' : 'À la livraison ou par Carte'}</span>
           </div>
         </div>
         <div className="trust-item">
           <div className="trust-icon">⚡</div>
           <div className="trust-text">
-            <strong>Livraison au Maroc</strong>
-            <span>Expédition discrète 24/48h</span>
+            <strong>{lang === 'ar' ? 'توصيل لجميع مدن المغرب' : 'Livraison au Maroc'}</strong>
+            <span>{lang === 'ar' ? 'شحن سري وسريع خلال 24/48 ساعة' : 'Expédition discrète 24/48h'}</span>
           </div>
         </div>
       </div>
 
       {/* SEARCH SHORTCUT SUGGESTIONS (Refined Modern Glass Chips) */}
       <div className="search-suggestions-row hide-on-mobile">
-        <span className="suggestions-label">💡 Suggestions :</span>
+        <span className="suggestions-label">{lang === 'ar' ? '💡 اقتراحات :' : '💡 Suggestions :'}</span>
         <div className="suggestions-chips-wrap">
           {popularSuggestions.map((tag, i) => (
             <button 
@@ -384,7 +319,7 @@ export default function Marketplace({
               onClick={() => setSearchQuery('')}
               className="suggestion-clear-btn"
             >
-              Effacer la recherche ✕
+              {lang === 'ar' ? 'مسح البحث ✕' : 'Effacer la recherche ✕'}
             </button>
           )}
         </div>
@@ -397,25 +332,25 @@ export default function Marketplace({
           <div className="filters-panel-header">
             <div className="filters-header-title">
               <span className="filters-lightning">⚡</span>
-              <h3>Filtres de Recherche</h3>
+              <h3>{lang === 'ar' ? 'تصفية النتائج' : 'Filtres de Recherche'}</h3>
             </div>
             <button 
               onClick={resetAllFilters}
               className="filters-reset-btn"
             >
-              Réinitialiser
+              {lang === 'ar' ? 'إعادة ضبط' : 'Réinitialiser'}
             </button>
           </div>
 
           {/* Universe Filter */}
           <div className="filter-group">
-            <label className="filter-label">Univers de Vente</label>
+            <label className="filter-label">{lang === 'ar' ? 'نوع المعروضات' : 'Univers de Vente'}</label>
             <div className="filter-universe-options">
               <button 
                 onClick={() => setSaleUniverse('ALL')}
                 className={`filter-universe-btn ${saleUniverse === 'ALL' && !dealsOnly ? 'active' : ''}`}
               >
-                <span>💎 Tous les bijoux</span>
+                <span>💎 {lang === 'ar' ? 'جميع المجوهرات' : 'Tous les bijoux'}</span>
                 <span className="count-tag">{products.length}</span>
               </button>
 
@@ -423,7 +358,7 @@ export default function Marketplace({
                 onClick={() => setSaleUniverse('FIRST_HAND')}
                 className={`filter-universe-btn first ${saleUniverse === 'FIRST_HAND' ? 'active' : ''}`}
               >
-                <span>✨ Première Main (Neuf)</span>
+                <span>✨ {lang === 'ar' ? 'مجوهرات جديدة' : 'Première Main (Neuf)'}</span>
                 <span className="count-tag">{products.filter(p => p.type_vente === 'FIRST_HAND').length}</span>
               </button>
 
@@ -431,7 +366,7 @@ export default function Marketplace({
                 onClick={() => setSaleUniverse('SECOND_HAND')}
                 className={`filter-universe-btn second ${saleUniverse === 'SECOND_HAND' ? 'active' : ''}`}
               >
-                <span>♻️ Seconde Main (Occasion)</span>
+                <span>♻️ {lang === 'ar' ? 'مجوهرات مستعملة' : 'Seconde Main (Occasion)'}</span>
                 <span className="count-tag second">{products.filter(p => p.type_vente === 'SECOND_HAND').length}</span>
               </button>
             </div>
@@ -440,9 +375,9 @@ export default function Marketplace({
           {/* Prix Max */}
           <div className="filter-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <label className="filter-label" style={{ margin: 0 }}>Budget Max</label>
-              <span className="filter-price-display">
-                {priceMax.toLocaleString()} DH
+              <label className="filter-label" style={{ margin: 0 }}>{lang === 'ar' ? 'الميزانية القصوى' : 'Budget Max'}</label>
+              <span className="filter-price-display" dir="ltr">
+                {priceMax.toLocaleString()} {t('currency') || 'DH'}
               </span>
             </div>
             <input 
@@ -454,62 +389,62 @@ export default function Marketplace({
               onChange={e => setPriceMax(parseFloat(e.target.value))}
               className="filter-range-input"
             />
-            <div className="range-labels-row">
-              <span>500 DH</span>
-              <span>15 000 DH</span>
-              <span>35 000+ DH</span>
+            <div className="range-labels-row" dir="ltr">
+              <span>500 {t('currency') || 'DH'}</span>
+              <span>15 000 {t('currency') || 'DH'}</span>
+              <span>35 000+ {t('currency') || 'DH'}</span>
             </div>
           </div>
 
           {/* Matière */}
           <div className="filter-group">
-            <label className="filter-label">Matière & Métal</label>
+            <label className="filter-label">{lang === 'ar' ? 'المعدن والمادة' : 'Matière & Métal'}</label>
             <select 
               value={selectedMaterial}
               onChange={e => setSelectedMaterial(e.target.value)}
               className="filter-select-control"
             >
-              <option value="ALL">Toutes les matières</option>
-              <option value="Or">🥇 Or 18k / 24k</option>
-              <option value="Argent">🥈 Argent 925</option>
-              <option value="Diamant">💠 Diamant & Solitaire</option>
-              <option value="Plaqué or">✨ Plaqué or</option>
-              <option value="Acier">⚙️ Acier inoxydable</option>
+              <option value="ALL">{lang === 'ar' ? 'جميع المواد' : 'Toutes les matières'}</option>
+              <option value="Or">{lang === 'ar' ? '🥇 ذهب 18 / 24 قيراط' : '🥇 Or 18k / 24k'}</option>
+              <option value="Argent">{lang === 'ar' ? '🥈 فضة 925' : '🥈 Argent 925'}</option>
+              <option value="Diamant">{lang === 'ar' ? '💠 ألماس وسوليتير' : '💠 Diamant & Solitaire'}</option>
+              <option value="Plaqué or">{lang === 'ar' ? '✨ مطلي بالذهب' : '✨ Plaqué or'}</option>
+              <option value="Acier">{lang === 'ar' ? '⚙️ فولاذ مقاوم للصدأ' : '⚙️ Acier inoxydable'}</option>
             </select>
           </div>
 
           {/* État */}
           <div className="filter-group">
-            <label className="filter-label">État du bijou</label>
+            <label className="filter-label">{lang === 'ar' ? 'حالة القطعة' : 'État du bijou'}</label>
             <select 
               value={selectedCondition}
               onChange={e => setSelectedCondition(e.target.value)}
               className="filter-select-control"
             >
-              <option value="ALL">Tous les états</option>
-              <option value="Neuf">Neuf (avec étiquette)</option>
-              <option value="Comme neuf">Comme neuf (jamais porté)</option>
-              <option value="Excellent état">Excellent état (poli)</option>
-              <option value="Très bon état">Très bon état</option>
-              <option value="Bon état">Bon état</option>
+              <option value="ALL">{lang === 'ar' ? 'جميع الحالات' : 'Tous les états'}</option>
+              <option value="Neuf">{lang === 'ar' ? 'جديد (مع البطاقة)' : 'Neuf (avec étiquette)'}</option>
+              <option value="Comme neuf">{lang === 'ar' ? 'كالجديد (لم يلبس)' : 'Comme neuf (jamais porté)'}</option>
+              <option value="Excellent état">{lang === 'ar' ? 'حالة ممتازة (مصقول)' : 'Excellent état (poli)'}</option>
+              <option value="Très bon état">{lang === 'ar' ? 'حالة جيدة جداً' : 'Très bon état'}</option>
+              <option value="Bon état">{lang === 'ar' ? 'حالة جيدة' : 'Bon état'}</option>
             </select>
           </div>
 
           {/* Style */}
           <div className="filter-group">
-            <label className="filter-label">Style & Allure</label>
+            <label className="filter-label">{lang === 'ar' ? 'النمط والتصميم' : 'Style & Allure'}</label>
             <select 
               value={selectedStyle}
               onChange={e => setSelectedStyle(e.target.value)}
               className="filter-select-control"
             >
-              <option value="ALL">Tous les styles</option>
-              <option value="Moderne">Moderne & Épuré</option>
-              <option value="Classique">Classique Chic</option>
-              <option value="Traditionnel">Traditionnel Marocain</option>
-              <option value="Vintage">Vintage & Ancien</option>
-              <option value="Luxe">Haute Joaillerie</option>
-              <option value="Minimaliste">Minimaliste</option>
+              <option value="ALL">{lang === 'ar' ? 'جميع الأنماط' : 'Tous les styles'}</option>
+              <option value="Moderne">{lang === 'ar' ? 'عصري وناعم' : 'Moderne & Épuré'}</option>
+              <option value="Classique">{lang === 'ar' ? 'كلاسيكي أنيق' : 'Classique Chic'}</option>
+              <option value="Traditionnel">{lang === 'ar' ? 'تقليدي مغربي' : 'Traditionnel Marocain'}</option>
+              <option value="Vintage">{lang === 'ar' ? 'فينتاج وأثري' : 'Vintage & Ancien'}</option>
+              <option value="Luxe">{lang === 'ar' ? 'مجوهرات فاخرة' : 'Haute Joaillerie'}</option>
+              <option value="Minimaliste">{lang === 'ar' ? 'بسيط مينيست' : 'Minimaliste'}</option>
             </select>
           </div>
 
@@ -523,8 +458,8 @@ export default function Marketplace({
                 className="filter-checkbox-input"
               />
               <div className="checkbox-text-wrap">
-                <strong>🛡️ 100% Vérifié & Expertisé</strong>
-                <span>Poinçon d'État et certificat garantis</span>
+                <strong>{lang === 'ar' ? '🛡️ مفحوص وموثق 100%' : '🛡️ 100% Vérifié & Expertisé'}</strong>
+                <span>{lang === 'ar' ? 'طابع الدولة وشهادة الأصالة مضمونة' : 'Poinçon d\'État et certificat garantis'}</span>
               </div>
             </label>
 
@@ -536,8 +471,8 @@ export default function Marketplace({
                 className="filter-checkbox-input"
               />
               <div className="checkbox-text-wrap">
-                <strong>🔥 Bonnes Affaires & Remises</strong>
-                <span>Pièces avec réduction de prix</span>
+                <strong>{lang === 'ar' ? '🔥 عروض وتخفيضات خاصة' : '🔥 Bonnes Affaires & Remises'}</strong>
+                <span>{lang === 'ar' ? 'قطع بأسعار مخفضة ومميزة' : 'Pièces avec réduction de prix'}</span>
               </div>
             </label>
           </div>
@@ -549,25 +484,25 @@ export default function Marketplace({
           <div className="products-grid-header">
             <div className="products-count-text">
               <span className="results-badge">{sortedProducts.length}</span>
-              <span>bijoux disponibles</span>
-              {selectedCity && <span className="city-filter-highlight"> à <strong>{selectedCity}</strong></span>}
-              {saleUniverse === 'FIRST_HAND' && <span className="universe-tag-first"> • ✨ Première Main</span>}
-              {saleUniverse === 'SECOND_HAND' && <span className="universe-tag-second"> • ♻️ Seconde Main</span>}
-              {saleUniverse === 'AUCTION' && <span className="universe-tag-first" style={{ background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}> • 🔨 Enchères en Direct</span>}
+              <span>{lang === 'ar' ? 'قطعة مجوهرات متوفرة' : 'bijoux disponibles'}</span>
+              {selectedCity && <span className="city-filter-highlight"> {lang === 'ar' ? 'في' : 'à'} <strong>{selectedCity}</strong></span>}
+              {saleUniverse === 'FIRST_HAND' && <span className="universe-tag-first"> • {lang === 'ar' ? '✨ مجوهرات جديدة' : '✨ Première Main'}</span>}
+              {saleUniverse === 'SECOND_HAND' && <span className="universe-tag-second"> • {lang === 'ar' ? '♻️ مجوهرات مستعملة' : '♻️ Seconde Main'}</span>}
+              {saleUniverse === 'AUCTION' && <span className="universe-tag-first" style={{ background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}> • {lang === 'ar' ? '🔨 مزادات مباشرة' : '🔨 Enchères en Direct'}</span>}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }} className="hide-on-mobile">Trier par :</span>
+              <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }} className="hide-on-mobile">{lang === 'ar' ? 'ترتيب حسب :' : 'Trier par :'}</span>
               <select 
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
                 className="products-sort-select"
               >
-                <option value="popular">⭐ Popularité</option>
-                <option value="newest">🕒 Plus récents</option>
-                <option value="price_asc">💰 Prix croissant</option>
-                <option value="price_desc">💎 Prix décroissant</option>
-                <option value="rating">🏆 Meilleures notes</option>
+                <option value="popular">{lang === 'ar' ? '⭐ الأكثر شعبية' : '⭐ Popularité'}</option>
+                <option value="newest">{lang === 'ar' ? '🕒 الأحدث' : '🕒 Plus récents'}</option>
+                <option value="price_asc">{lang === 'ar' ? '💰 السعر: تصاعدي' : '💰 Prix croissant'}</option>
+                <option value="price_desc">{lang === 'ar' ? '💎 السعر: تنازلي' : '💎 Prix décroissant'}</option>
+                <option value="rating">{lang === 'ar' ? '🏆 الأعلى تقييماً' : '🏆 Meilleures notes'}</option>
               </select>
             </div>
           </div>
@@ -576,12 +511,12 @@ export default function Marketplace({
           {sortedProducts.length === 0 ? (
             <div className="empty-results-box">
               <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '16px' }}>🔍</span>
-              <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>Aucun bijou correspondant trouvé</h3>
+              <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>{lang === 'ar' ? 'لم يتم العثور على قطع تطابق البحث' : 'Aucun bijou correspondant trouvé'}</h3>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.92rem', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
-                Essayez d'élargir votre budget, votre ville ou vos critères de matière.
+                {lang === 'ar' ? 'يرجى تجربة توسيع نطاق الميزانية أو اختيار مدينة أخرى أو تغيير نوع المعدن.' : 'Essayez d\'élargir votre budget, votre ville ou vos critères de matière.'}
               </p>
               <button onClick={resetAllFilters} className="btn-jewelia-primary">
-                Réinitialiser tous les filtres
+                {lang === 'ar' ? 'إعادة ضبط كافة الفلاتر' : 'Réinitialiser tous les filtres'}
               </button>
             </div>
           ) : (
@@ -611,14 +546,14 @@ export default function Marketplace({
                       className={`mobile-mode-pill-btn ${mobilePaginationMode === 'demand' ? 'active' : ''}`}
                       onClick={() => setMobilePaginationMode('demand')}
                     >
-                      ⚡ À la demande ({Math.min(mobileVisibleCount, sortedProducts.length)}/{sortedProducts.length})
+                      ⚡ {lang === 'ar' ? `عرض تدريجي (${Math.min(mobileVisibleCount, sortedProducts.length)}/${sortedProducts.length})` : `À la demande (${Math.min(mobileVisibleCount, sortedProducts.length)}/${sortedProducts.length})`}
                     </button>
                     <button
                       type="button"
                       className={`mobile-mode-pill-btn ${mobilePaginationMode === 'page' ? 'active' : ''}`}
                       onClick={() => setMobilePaginationMode('page')}
                     >
-                      📄 Par page ({mobileCurrentPage}/{totalMobilePages})
+                      📄 {lang === 'ar' ? `بالصفحات (${mobileCurrentPage}/${totalMobilePages})` : `Par page (${mobileCurrentPage}/${totalMobilePages})`}
                     </button>
                   </div>
 
@@ -627,7 +562,11 @@ export default function Marketplace({
                     <div className="mobile-demand-container">
                       <div className="mobile-demand-progress-header">
                         <span className="progress-text">
-                          Affichage de <strong>{Math.min(mobileVisibleCount, sortedProducts.length)}</strong> sur <strong>{sortedProducts.length}</strong> bijoux
+                          {lang === 'ar' ? (
+                            <>عرض <strong>{Math.min(mobileVisibleCount, sortedProducts.length)}</strong> من أصل <strong>{sortedProducts.length}</strong> قطعة مجوهرات</>
+                          ) : (
+                            <>Affichage de <strong>{Math.min(mobileVisibleCount, sortedProducts.length)}</strong> sur <strong>{sortedProducts.length}</strong> bijoux</>
+                          )}
                         </span>
                         <span className="progress-pct">
                           {Math.round((Math.min(mobileVisibleCount, sortedProducts.length) / sortedProducts.length) * 100)}%
@@ -647,7 +586,7 @@ export default function Marketplace({
                             className="mobile-load-more-btn"
                             onClick={() => setMobileVisibleCount(prev => Math.min(prev + MOBILE_PAGE_SIZE, sortedProducts.length))}
                           >
-                            <span>Afficher 10 bijoux de plus ▾</span>
+                            <span>{lang === 'ar' ? 'عرض 10 مجوهرات إضافية ▾' : 'Afficher 10 bijoux de plus ▾'}</span>
                             <span className="load-more-badge">+{Math.min(MOBILE_PAGE_SIZE, sortedProducts.length - mobileVisibleCount)}</span>
                           </button>
                           
@@ -657,13 +596,13 @@ export default function Marketplace({
                               className="mobile-load-all-link"
                               onClick={() => setMobileVisibleCount(sortedProducts.length)}
                             >
-                              Tout afficher ({sortedProducts.length} pièces)
+                              {lang === 'ar' ? `عرض الكل (${sortedProducts.length} قطعة)` : `Tout afficher (${sortedProducts.length} pièces)`}
                             </button>
                           )}
                         </div>
                       ) : (
                         <div className="mobile-all-loaded-banner">
-                          <span>✨ Tous les {sortedProducts.length} bijoux disponibles sont affichés</span>
+                          <span>✨ {lang === 'ar' ? `تم عرض جميع قطع المجوهرات المتوفرة (${sortedProducts.length} قطعة)` : `Tous les ${sortedProducts.length} bijoux disponibles sont affichés`}</span>
                         </div>
                       )}
                     </div>
@@ -681,7 +620,7 @@ export default function Marketplace({
                             el?.scrollIntoView({ behavior: 'smooth' });
                           }}
                         >
-                          ‹ Précédent
+                          {lang === 'ar' ? 'السابق ‹' : '‹ Précédent'}
                         </button>
 
                         <div className="mobile-pages-list">
@@ -711,12 +650,16 @@ export default function Marketplace({
                             el?.scrollIntoView({ behavior: 'smooth' });
                           }}
                         >
-                          Suivant ›
+                          {lang === 'ar' ? '› التالي' : 'Suivant ›'}
                         </button>
                       </div>
 
                       <div className="mobile-pages-summary">
-                        Page {mobileCurrentPage} sur {totalMobilePages} • Bijoux {(mobileCurrentPage - 1) * MOBILE_PAGE_SIZE + 1} à {Math.min(mobileCurrentPage * MOBILE_PAGE_SIZE, sortedProducts.length)} sur {sortedProducts.length}
+                        {lang === 'ar' ? (
+                          `الصفحة ${mobileCurrentPage} من ${totalMobilePages} • المجوهرات من ${(mobileCurrentPage - 1) * MOBILE_PAGE_SIZE + 1} إلى ${Math.min(mobileCurrentPage * MOBILE_PAGE_SIZE, sortedProducts.length)} من ${sortedProducts.length}`
+                        ) : (
+                          <>Page {mobileCurrentPage} sur {totalMobilePages} • Bijoux {(mobileCurrentPage - 1) * MOBILE_PAGE_SIZE + 1} à {Math.min(mobileCurrentPage * MOBILE_PAGE_SIZE, sortedProducts.length)} sur {sortedProducts.length}</>
+                        )}
                       </div>
                     </div>
                   )}
@@ -754,13 +697,16 @@ export default function Marketplace({
           >
             <div>
               <div className="universe-header-tag">
-                <span>✨ PREMIÈRE MAIN</span>
+                <span>{lang === 'ar' ? '✨ مجوهرات جديدة' : '✨ PREMIÈRE MAIN'}</span>
               </div>
               <h3 className="universe-title">
-                « Des bijoux neufs, directement des bijouteries certifiées »
+                {lang === 'ar' ? '« مجوهرات جديدة مباشرة من كبار الصاغة المعتمدين »' : '« Des bijoux neufs, directement des bijouteries certifiées »'}
               </h3>
               <p className="universe-desc">
-                Découvrez les collections exclusives de joailliers partenaires avec garantie officielle, poinçon d'État et mise à taille offerte.
+                {lang === 'ar' 
+                  ? 'اكتشفوا تشكيلات حصرية من شركائنا الصاغة مع ضمان رسمي وطابع الدولة وتعديل المقاس مجاناً.'
+                  : 'Découvrez les collections exclusives de joailliers partenaires avec garantie officielle, poinçon d\'État et mise à taille offerte.'
+                }
               </p>
             </div>
             <button className="universe-btn">
@@ -778,13 +724,16 @@ export default function Marketplace({
           >
             <div>
               <div className="universe-header-tag">
-                <span>♻️ SECONDE MAIN</span>
+                <span>{lang === 'ar' ? '♻️ مجوهرات مستعملة' : '♻️ SECONDE MAIN'}</span>
               </div>
               <h3 className="universe-title">
-                « Des bijoux d'occasion authentifiés pour une seconde vie »
+                {lang === 'ar' ? '« مجوهرات مستعملة موثقة تمنح حياة ثانية »' : '« Des bijoux d\'occasion authentifiés pour une seconde vie »'}
               </h3>
               <p className="universe-desc">
-                Pièces vintage rares et bijoux précieux proposés par des particuliers. Contrôlés, expertisés et testés par nos experts avant envoi.
+                {lang === 'ar'
+                  ? 'قطع أثرية ونادرة ومجوهرات ثمينة معروضة من أفراد، مفحوصة ومختبرة بدقة من خبرائنا قبل الشحن.'
+                  : 'Pièces vintage rares et bijoux précieux proposés par des particuliers. Contrôlés, expertisés et testés par nos experts avant envoi.'
+                }
               </p>
             </div>
             <button className="universe-btn">

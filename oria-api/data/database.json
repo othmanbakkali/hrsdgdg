@@ -142,6 +142,14 @@
       "nom": "Sophia Bennani",
       "mot_de_passe": "admin123",
       "role": "admin"
+    },
+    {
+      "id": "u_qahmvddj4",
+      "email": "sara.test@example.com",
+      "nom": "Sara Tazi",
+      "mot_de_passe": "Oria2026!Gold",
+      "role": "client",
+      "favoris": []
     }
   ],
   "categories": [
@@ -1717,5 +1725,46 @@
       "date": "2026-06-01T10:00:00Z",
       "invoice_number": "INV-2026-0098"
     }
-  ]
+  ],
+  "goldRates": {
+    "currentPrice18k": 1045,
+    "carat": "18K",
+    "unit": "MAD/g",
+    "lastUpdated": "2026-09-20T21:46:00Z",
+    "updatedBy": "Super-Admin",
+    "history": [
+      {
+        "id": "gh_1",
+        "date": "2026-09-15 09:30",
+        "price18k": 1010,
+        "change": "+0.5%",
+        "source": "تحديد الدار البيضاء",
+        "note": "السعر الصباحي الافتتاحي"
+      },
+      {
+        "id": "gh_2",
+        "date": "2026-09-17 14:15",
+        "price18k": 1025,
+        "change": "+1.5%",
+        "source": "السوق الوطني للذهب",
+        "note": "طلب متزايد على الصياغة"
+      },
+      {
+        "id": "gh_3",
+        "date": "2026-09-19 11:00",
+        "price18k": 1038,
+        "change": "+1.3%",
+        "source": "بورصة الذهب المعتمدة",
+        "note": "اتجاه تصاعدي في السوق"
+      },
+      {
+        "id": "gh_4",
+        "date": "2026-09-20 21:45",
+        "price18k": 1045,
+        "change": "+0.7%",
+        "source": "السعر الرسمي للإغلاق",
+        "note": "السعر الرسمي المعتمد اليوم"
+      }
+    ]
+  }
 }

@@ -22,11 +22,11 @@ export default function ProductDetailModal({
 
   const displayTitle = (lang === 'ar' && product?.titre_ar) 
     ? product.titre_ar 
-    : ((lang === 'en' && product?.titre_en) ? product.titre_en : (product?.titre_fr || product?.titre || ''));
+    : (product?.titre_fr || product?.titre || '');
 
   const displayDesc = (lang === 'ar' && product?.description_ar) 
     ? product.description_ar 
-    : ((lang === 'en' && product?.description_en) ? product.description_en : (product?.description_fr || product?.description || ''));
+    : (product?.description_fr || product?.description || '');
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('details'); // 'details', 'reviews', 'look'
@@ -321,6 +321,26 @@ export default function ProductDetailModal({
                 </button>
               ))}
             </div>
+
+            {/* Product 10s Video Showcase if available */}
+            {product?.video && (
+              <div className="product-video-showcase-box" style={{ marginTop: '14px' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: '700', color: '#2563eb', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🎥</span>
+                  <span>{lang === 'ar' ? 'فيديو حقيقي للقطعة (10 ثوانٍ كحد أقصى) :' : 'Vidéo authentique de la pièce (10s max) :'}</span>
+                </div>
+                <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1.5px solid #3b82f6', background: '#0b0f19', boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)' }}>
+                  <video 
+                    src={product.video} 
+                    controls 
+                    playsInline 
+                    loop 
+                    muted 
+                    style={{ width: '100%', maxHeight: '220px', objectFit: 'contain', display: 'block' }} 
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Lightbox Modal */}
             {isLightboxOpen && (

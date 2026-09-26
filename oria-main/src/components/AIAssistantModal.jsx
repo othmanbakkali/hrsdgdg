@@ -3,14 +3,17 @@ import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 
 export default function AIAssistantModal({ isOpen, onClose, products = [], onSelectProduct }) {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const isAr = lang === 'ar';
   const { addToCart } = useCart();
 
   const [inputQuery, setInputQuery] = useState('');
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "✨ Bonjour ! Je suis votre Concierge IA JEWELIA. Décrivez-moi ce que vous cherchez (occasion, destinataire, style, budget...) et je sélectionnerai pour vous les plus belles pièces de nos univers Première & Seconde Main.",
+      content: isAr 
+        ? "✨ مرحباً بكم! أنا المساعد الذكي لمجوهرات HRSDGDG. صفوا لي ما تبحثون عنه (المناسبة، لمن الهدية، النمط، الميزانية...) وسأختار لكم أفضل القطع من تشكيلاتنا الجديدة والمستعملة المعتمدة."
+        : "✨ Bonjour ! Je suis votre Concierge IA HRSDGDG. Décrivez-moi ce que vous cherchez (occasion, destinataire, style, budget...) et je sélectionnerai pour vous les plus belles pièces de nos univers Première & Seconde Main.",
       recommendations: []
     }
   ]);
@@ -31,7 +34,7 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
       // Analyze text
       const lower = userText.toLowerCase();
       let maxBudget = 25000;
-      const budgetMatch = lower.match(/(\d+)\s*(dh|mad|dhs)?/i);
+      const budgetMatch = lower.match(/(\d+)\s*(dh|mad|dhs|درهم)?/i);
       if (budgetMatch && parseInt(budgetMatch[1]) > 100) {
         maxBudget = parseInt(budgetMatch[1]);
       }
@@ -41,12 +44,12 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
         const full = (p.titre + ' ' + p.description + ' ' + p.matiere + ' ' + p.pierre + ' ' + p.style + ' ' + p.occasion + ' ' + p.pour_qui).toLowerCase();
         
         let matchesKey = true;
-        if (lower.includes('femme') && p.pour_qui && p.pour_qui !== 'Femme') matchesKey = false;
-        if (lower.includes('homme') && p.pour_qui && p.pour_qui !== 'Homme') matchesKey = false;
-        if (lower.includes('vintage') && p.type_vente !== 'SECOND_HAND') matchesKey = false;
-        if (lower.includes('bague') && p.category_id !== 'cat_rings') matchesKey = false;
-        if (lower.includes('collier') && p.category_id !== 'cat_necklaces') matchesKey = false;
-        if (lower.includes('bracelet') && p.category_id !== 'cat_bracelets') matchesKey = false;
+        if ((lower.includes('femme') || lower.includes('نساء') || lower.includes('زوجتي')) && p.pour_qui && p.pour_qui !== 'Femme') matchesKey = false;
+        if ((lower.includes('homme') || lower.includes('رجال') || lower.includes('زوجي')) && p.pour_qui && p.pour_qui !== 'Homme') matchesKey = false;
+        if ((lower.includes('vintage') || lower.includes('مستعمل') || lower.includes('قديم')) && p.type_vente !== 'SECOND_HAND') matchesKey = false;
+        if ((lower.includes('bague') || lower.includes('خاتم')) && p.category_id !== 'cat_rings') matchesKey = false;
+        if ((lower.includes('collier') || lower.includes('قلادة') || lower.includes('عقد')) && p.category_id !== 'cat_necklaces') matchesKey = false;
+        if ((lower.includes('bracelet') || lower.includes('سوار') || lower.includes('دملج')) && p.category_id !== 'cat_bracelets') matchesKey = false;
 
         return matchesKey && p.prix <= maxBudget;
       }).slice(0, 4);
@@ -54,9 +57,13 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
       const firstHandCount = matches.filter(m => m.type_vente === 'FIRST_HAND').length;
       const secondHandCount = matches.filter(m => m.type_vente === 'SECOND_HAND').length;
 
+      const aiContent = isAr 
+        ? `✨ وجدت ${matches.length} قطعة مجوهرات تطابق بحثكم بدقة (الميزانية ≤ ${maxBudget.toLocaleString()} درهم).\n\n• ${firstHandCount} قطعة جديدة مع الضمان والفاتورة\n• ${secondHandCount} قطعة مستعملة معتمدة ومفحوصة`
+        : `✨ J'ai trouvé ${matches.length} bijoux qui correspondent parfaitement à votre recherche (budget ≤ ${maxBudget.toLocaleString()} DH).\n\n• ${firstHandCount} bijou(x) Première Main (neufs avec garantie)\n• ${secondHandCount} bijou(x) Seconde Main (d'époque certifiés)`;
+
       const aiResponse = {
         role: 'assistant',
-        content: `✨ J'ai trouvé ${matches.length} bijoux qui correspondent parfaitement à votre recherche (budget ≤ ${maxBudget.toLocaleString()} DH).\n\n• ${firstHandCount} bijou(x) Première Main (neufs avec garantie)\n• ${secondHandCount} bijou(x) Seconde Main (d'époque certifiés)`,
+        content: aiContent,
         recommendations: matches
       };
 
@@ -80,8 +87,12 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
             ✨
           </div>
           <div>
-            <h3 style={{ fontSize: '1.15rem', color: '#fff' }}>Concierge IA JEWELIA</h3>
-            <span style={{ fontSize: '0.78rem', color: '#10b981' }}>● En ligne • Recommandations intelligentes</span>
+            <h3 style={{ fontSize: '1.15rem', color: '#fff' }}>
+              {isAr ? 'المساعد الذكي HRSDGDG' : 'Concierge IA HRSDGDG'}
+            </h3>
+            <span style={{ fontSize: '0.78rem', color: '#10b981' }}>
+              ● {isAr ? 'متصل الآن • ترشيحات ذكية وفورية' : 'En ligne • Recommandations intelligentes'}
+            </span>
           </div>
         </div>
 
@@ -137,13 +148,16 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.68rem', fontWeight: 800, color: item.type_vente === 'SECOND_HAND' ? '#6ee7b7' : 'var(--light-gold)' }}>
-                          {item.type_vente === 'SECOND_HAND' ? '♻️ Seconde Main' : '✨ Première Main'}
+                          {item.type_vente === 'SECOND_HAND' 
+                            ? (isAr ? '♻️ مستعمل' : '♻️ Seconde Main')
+                            : (isAr ? '✨ جديد' : '✨ Première Main')
+                          }
                         </div>
                         <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {item.titre}
                         </div>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--primary-gold)' }}>
-                          {item.prix} DH
+                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--primary-gold)' }} dir="ltr">
+                          {item.prix} {isAr ? 'درهم' : 'DH'}
                         </div>
                       </div>
                       <button 
@@ -161,7 +175,7 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
                           cursor: 'pointer'
                         }}
                       >
-                        Voir
+                        {isAr ? 'عرض' : 'Voir'}
                       </button>
                     </div>
                   ))}
@@ -172,7 +186,7 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
 
           {isThinking && (
             <div style={{ alignSelf: 'flex-start', padding: '12px 18px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '16px', color: 'var(--light-gold)', fontSize: '0.85rem' }}>
-              ✨ Le Concierge recherche les meilleures pièces...
+              ✨ {isAr ? 'المساعد الذكي يبحث لكم عن أنسب القطع...' : 'Le Concierge recherche les meilleures pièces...'}
             </div>
           )}
         </div>
@@ -181,14 +195,14 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
         <form onSubmit={handleSend} style={{ padding: '16px 20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '10px' }}>
           <input 
             type="text"
-            placeholder="Ex: Je cherche un cadeau pour ma femme, budget 1500 DH..."
+            placeholder={isAr ? "مثال: أبحث عن هدية لزوجتي بميزانية 2500 درهم..." : "Ex: Je cherche un cadeau pour ma femme, budget 1500 DH..."}
             value={inputQuery}
             onChange={e => setInputQuery(e.target.value)}
             className="filter-number-input"
             style={{ flex: 1, padding: '12px 16px' }}
           />
           <button type="submit" className="btn-jewelia-primary" style={{ padding: '12px 20px' }}>
-            Envoyer
+            {isAr ? 'إرسال' : 'Envoyer'}
           </button>
         </form>
       </div>

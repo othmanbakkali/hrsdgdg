@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { usePWA } from './usePWA';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function PWAInstallButton({ variant = 'default', style = {} }) {
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWA();
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const { lang } = useLanguage();
+  const isAr = lang === 'ar';
 
   if (isInstalled) {
     return null;
@@ -51,7 +54,7 @@ export default function PWAInstallButton({ variant = 'default', style = {} }) {
           }}
         >
           <span>📲</span>
-          <span>Installer l'App</span>
+          <span>{isAr ? 'تثبيت التطبيق' : "Installer l'App"}</span>
         </button>
 
         {showIOSModal && (
@@ -87,12 +90,16 @@ export default function PWAInstallButton({ variant = 'default', style = {} }) {
             >
               <img src="/icons/pwa-192x192.png" alt="HRSDGDG" style={{ width: '56px', height: '56px', borderRadius: '14px', border: '1px solid #D4AF37', marginBottom: '12px' }} />
               <h3 id="pwa-install-title" style={{ fontSize: '1.2rem', color: '#FFF2C6', margin: '0 0 8px 0', fontFamily: 'Cinzel, Georgia, serif' }}>
-                Installer l'App HRSDGDG
+                {isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'App HRSDGDG"}
               </h3>
               <p style={{ fontSize: '0.86rem', color: '#ccc', marginBottom: '16px', lineHeight: 1.5 }}>
                 {isIOS 
-                  ? "Sur Safari iOS : Touchez l'icône Partager ⎙ puis « Sur l'écran d'accueil » ➕ pour installer l'application."
-                  : "Ouvrez le menu de votre navigateur et sélectionnez « Installer l'application » ou « Ajouter à l'écran d'accueil »."
+                  ? (isAr 
+                      ? "على متصفح Safari iOS: اضغط على أيقونة المشاركة ⎙ ثم اختر «إضافة إلى الشاشة الرئيسية» ➕ لتثبيت التطبيق."
+                      : "Sur Safari iOS : Touchez l'icône Partager ⎙ puis « Sur l'écran d'accueil » ➕ pour installer l'application.")
+                  : (isAr
+                      ? "افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»."
+                      : "Ouvrez le menu de votre navigateur et sélectionnez « Installer l'application » ou « Ajouter à l'écran d'accueil ».")
                 }
               </p>
               <button
@@ -107,7 +114,7 @@ export default function PWAInstallButton({ variant = 'default', style = {} }) {
                   cursor: 'pointer'
                 }}
               >
-                Fermer
+                {isAr ? 'إغلاق' : 'Fermer'}
               </button>
             </div>
           </div>
@@ -136,7 +143,7 @@ export default function PWAInstallButton({ variant = 'default', style = {} }) {
       }}
     >
       <span>📲</span>
-      <span>Installer l'App HRSDGDG</span>
+      <span>{isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'App HRSDGDG"}</span>
     </button>
   );
 }
