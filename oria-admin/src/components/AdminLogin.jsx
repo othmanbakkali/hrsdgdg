@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import OriaLogo from './OriaLogo';
@@ -7,12 +7,30 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
   const { login } = useAuth();
   const { t, lang, setLang, isRtl } = useLanguage();
 
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('hrsdgdg-theme') || 'light');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themeMode);
+    document.body.setAttribute('data-theme', themeMode);
+    if (themeMode === 'light') {
+      document.body.classList.add('light-theme');
+      document.body.classList.remove('dark-theme');
+    } else {
+      document.body.classList.add('dark-theme');
+      document.body.classList.remove('light-theme');
+    }
+    localStorage.setItem('hrsdgdg-theme', themeMode);
+  }, [themeMode]);
+
+  const toggleTheme = () => {
+    setThemeMode(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +40,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
     try {
       await login(email, password, rememberMe);
     } catch (err) {
-      setErrorMsg(err.message || 'Identifiants incorrects.');
+      setErrorMsg(err.message || (lang === 'ar' ? 'بيانات الاعتماد غير صحيحة.' : 'Identifiants incorrects.'));
     } finally {
       setLoading(false);
     }
@@ -34,6 +52,8 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
     setErrorMsg('');
   };
 
+  const isLight = themeMode === 'light';
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -41,20 +61,21 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#07090b',
-      backgroundImage: 'radial-gradient(circle at 50% 20%, rgba(212, 175, 55, 0.08) 0%, rgba(7, 9, 11, 0.95) 70%)',
+      backgroundColor: 'var(--bg-slate)',
       padding: '20px',
       position: 'relative',
       overflow: 'hidden',
-      fontFamily: 'Inter, system-ui, sans-serif'
+      fontFamily: 'var(--font-sans)',
+      transition: 'background-color 0.3s ease'
     }}>
       {/* Background Decorative Rings */}
       <div style={{
         position: 'absolute',
-        width: '600px',
-        height: '600px',
+        width: '640px',
+        height: '640px',
         borderRadius: '50%',
-        border: '1px solid rgba(212, 175, 55, 0.06)',
+        border: '1px solid var(--border-gold)',
+        opacity: isLight ? 0.35 : 0.15,
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
@@ -62,10 +83,11 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
       }} />
       <div style={{
         position: 'absolute',
-        width: '900px',
-        height: '900px',
+        width: '920px',
+        height: '920px',
         borderRadius: '50%',
-        border: '1px solid rgba(212, 175, 55, 0.03)',
+        border: '1px solid var(--border-gold)',
+        opacity: isLight ? 0.2 : 0.08,
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
@@ -80,27 +102,38 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
         left: isRtl ? '25px' : 'auto',
         display: 'flex',
         alignItems: 'center',
-        gap: '15px',
+        gap: '12px',
         zIndex: 10
       }}>
+        {/* Light / Dark Mode Toggle */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="theme-mode-btn"
+          style={{
+            padding: '7px 14px',
+            borderRadius: '20px',
+            fontSize: '0.82rem'
+          }}
+          title={isLight ? (lang === 'ar' ? 'الوضع الليلي' : 'Mode Nuit') : (lang === 'ar' ? 'الوضع النهاري' : 'Fond Clair')}
+        >
+          <span>{isLight ? '🌙' : '☀️'}</span>
+          <span>{isLight ? (lang === 'ar' ? 'الوضع الليلي' : 'Mode Nuit') : (lang === 'ar' ? 'الوضع النهاري' : 'Fond Clair')}</span>
+        </button>
+
         {/* Language selector */}
         <select
           className="lang-select"
           value={lang}
           onChange={(e) => setLang(e.target.value)}
           style={{
-            backgroundColor: 'rgba(15, 20, 26, 0.8)',
-            border: '1px solid var(--border-gold)',
-            color: '#f5f5f7',
-            padding: '6px 12px',
             borderRadius: '20px',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            outline: 'none'
+            padding: '7px 14px',
+            fontSize: '0.82rem'
           }}
         >
           <option value="fr">Français 🇫🇷</option>
-          <option value="ar">العربية 🇲🇦 (RTL)</option>
+          <option value="ar">العربية 🇲🇦</option>
           <option value="en">English 🇬🇧</option>
         </select>
       </div>
@@ -109,32 +142,36 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
       <div style={{
         width: '100%',
         maxWidth: '460px',
-        backgroundColor: 'rgba(15, 18, 24, 0.85)',
-        backdropFilter: 'blur(16px)',
+        backgroundColor: 'var(--bg-card)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         border: '1px solid var(--border-gold)',
-        borderRadius: '16px',
-        padding: '40px 35px',
-        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.08)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '42px 36px',
+        boxShadow: isLight 
+          ? '0 20px 50px rgba(0, 0, 0, 0.08), 0 0 25px rgba(179, 135, 40, 0.1)'
+          : '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(212, 175, 55, 0.12)',
         zIndex: 5,
-        position: 'relative'
+        position: 'relative',
+        transition: 'background-color 0.3s ease, box-shadow 0.3s ease'
       }}>
         {/* Logo & Header */}
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={{ display: 'inline-block', marginBottom: '15px' }}>
-            <OriaLogo size={42} subtitle="ADMINISTRATION" />
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ display: 'inline-block', marginBottom: '16px' }}>
+            <OriaLogo size={44} subtitle="ADMINISTRATION" />
           </div>
           <h2 style={{
-            fontSize: '1.4rem',
-            fontWeight: '600',
-            color: '#ffffff',
-            margin: '0 0 6px 0',
-            fontFamily: 'Playfair Display, serif',
-            letterSpacing: '0.5px'
+            fontSize: '1.45rem',
+            fontWeight: '700',
+            color: 'var(--text-white)',
+            margin: '0 0 8px 0',
+            fontFamily: 'var(--font-serif)',
+            letterSpacing: '0.4px'
           }}>
             {t('adminLoginTitle')}
           </h2>
           <p style={{
-            fontSize: '0.85rem',
+            fontSize: '0.88rem',
             color: 'var(--text-gray)',
             margin: 0
           }}>
@@ -145,16 +182,17 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
         {/* Error Alert */}
         {errorMsg && (
           <div style={{
-            backgroundColor: 'rgba(231, 76, 60, 0.12)',
-            border: '1px solid rgba(231, 76, 60, 0.4)',
-            color: '#ff6b6b',
+            backgroundColor: 'var(--danger-bg)',
+            border: '1px solid var(--danger-border)',
+            color: 'var(--danger-red)',
             padding: '12px 16px',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-sm)',
             fontSize: '0.88rem',
-            marginBottom: '20px',
+            marginBottom: '22px',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px'
+            gap: '10px',
+            fontWeight: '600'
           }}>
             <span>⚠️</span>
             <span>{errorMsg}</span>
@@ -163,11 +201,12 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label className="form-label" style={{
+          <div className="form-group" style={{ marginBottom: '22px' }}>
+            <label style={{
               display: 'block',
-              fontSize: '0.85rem',
-              color: 'var(--text-gray)',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              color: 'var(--text-white)',
               marginBottom: '8px'
             }}>
               {t('email')}
@@ -175,31 +214,25 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
             <div style={{ position: 'relative' }}>
               <input
                 type="email"
-                className="form-input"
                 placeholder="admin@hrsdgdg.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 style={{
                   width: '100%',
-                  backgroundColor: 'rgba(7, 9, 12, 0.7)',
-                  border: '1px solid rgba(212, 175, 55, 0.25)',
-                  borderRadius: '8px',
-                  padding: '12px 14px',
-                  color: '#ffffff',
-                  fontSize: '0.95rem',
-                  boxSizing: 'border-box',
-                  outline: 'none'
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '25px' }}>
-            <label className="form-label" style={{
+          <div className="form-group" style={{ marginBottom: '22px' }}>
+            <label style={{
               display: 'block',
-              fontSize: '0.85rem',
-              color: 'var(--text-gray)',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              color: 'var(--text-white)',
               marginBottom: '8px'
             }}>
               {t('password')}
@@ -207,21 +240,15 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
             <div style={{ position: 'relative' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
-                className="form-input"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 style={{
                   width: '100%',
-                  backgroundColor: 'rgba(7, 9, 12, 0.7)',
-                  border: '1px solid rgba(212, 175, 55, 0.25)',
-                  borderRadius: '8px',
-                  padding: isRtl ? '12px 40px 12px 14px' : '12px 40px 12px 14px',
-                  color: '#ffffff',
-                  fontSize: '0.95rem',
-                  boxSizing: 'border-box',
-                  outline: 'none'
+                  padding: isRtl ? '12px 42px 12px 16px' : '12px 42px 12px 16px',
+                  boxSizing: 'border-box'
                 }}
               />
               <button
@@ -229,8 +256,8 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
                   position: 'absolute',
-                  right: isRtl ? 'auto' : '12px',
-                  left: isRtl ? '12px' : 'auto',
+                  right: isRtl ? 'auto' : '14px',
+                  left: isRtl ? '14px' : 'auto',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'none',
@@ -252,7 +279,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '22px',
+            marginBottom: '25px',
             fontSize: '0.84rem'
           }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-gray)', cursor: 'pointer' }}>
@@ -264,7 +291,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
               />
               <span>{lang === 'ar' ? 'البقاء متصلاً (جلسة 24 ساعة)' : 'Maintenir la session active (24h)'}</span>
             </label>
-            <span style={{ fontSize: '0.74rem', color: 'var(--admin-gold)', opacity: 0.85 }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--dark-gold)', opacity: 0.9, fontWeight: '600' }}>
               🛡️ {lang === 'ar' ? 'جلسة مشفرة' : 'Session sécurisée'}
             </span>
           </div>
@@ -273,24 +300,14 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
           <button
             type="submit"
             disabled={loading}
+            className="btn-gold"
             style={{
               width: '100%',
-              backgroundColor: 'var(--admin-gold)',
-              color: '#07090b',
-              border: 'none',
-              borderRadius: '8px',
               padding: '14px',
               fontSize: '1rem',
               fontWeight: '700',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              letterSpacing: '0.5px',
-              boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
-              transition: 'all 0.2s ease',
               opacity: loading ? 0.7 : 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px'
+              cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
             {loading ? (
@@ -306,26 +323,22 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
 
         {/* Demo Fast Access */}
         <div style={{
-          marginTop: '25px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          marginTop: '28px',
+          paddingTop: '22px',
+          borderTop: '1px solid var(--border-subtle)',
           textAlign: 'center'
         }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', display: 'block', marginBottom: '10px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', display: 'block', marginBottom: '12px' }}>
             {t('demoAccounts')}
           </span>
           <button
             type="button"
             onClick={handleFillDemo}
+            className="btn-outline-gold"
             style={{
-              backgroundColor: 'rgba(212, 175, 55, 0.08)',
-              border: '1px solid rgba(212, 175, 55, 0.25)',
-              color: 'var(--admin-gold)',
-              padding: '8px 16px',
+              padding: '8px 18px',
               borderRadius: '20px',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
+              fontSize: '0.82rem'
             }}
           >
             👑 {t('demoAdmin')}

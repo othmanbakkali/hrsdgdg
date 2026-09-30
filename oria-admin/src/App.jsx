@@ -40,6 +40,7 @@ function AdminLayout() {
   const { adminUser, logout, authFetch } = useAuth();
 
   const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('oria-admin-theme') || 'gold');
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('hrsdgdg-theme') || 'light');
 
   useEffect(() => {
     const tVals = themes[selectedTheme] || themes.gold;
@@ -48,6 +49,19 @@ function AdminLayout() {
     document.documentElement.style.setProperty('--border-gold', tVals.border);
     localStorage.setItem('oria-admin-theme', selectedTheme);
   }, [selectedTheme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themeMode);
+    document.body.setAttribute('data-theme', themeMode);
+    if (themeMode === 'light') {
+      document.body.classList.add('light-theme');
+      document.body.classList.remove('dark-theme');
+    } else {
+      document.body.classList.add('dark-theme');
+      document.body.classList.remove('light-theme');
+    }
+    localStorage.setItem('hrsdgdg-theme', themeMode);
+  }, [themeMode]);
   
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'validation', 'commissions', 'categories', 'auctions'
   const [stats, setStats] = useState({ totalSales: 0, totalCommissions: 0, totalMerchants: 0, totalClients: 0, totalProducts: 0, merchantsBreakdown: [] });
@@ -1255,19 +1269,12 @@ function AdminLayout() {
             {/* Light / Dark Mode Toggle */}
             <button
               type="button"
-              onClick={() => setAdminLightMode(!adminLightMode)}
-              style={{
-                padding: '6px 14px',
-                background: adminLightMode ? 'rgba(179,135,40,0.15)' : 'rgba(255,255,255,0.08)',
-                border: '1px solid var(--border-gold)',
-                borderRadius: '8px',
-                color: 'var(--admin-gold)',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
+              onClick={() => setThemeMode(prev => prev === 'light' ? 'dark' : 'light')}
+              className="theme-mode-btn"
+              title={themeMode === 'light' ? (lang === 'ar' ? 'تفعيل الوضع الليلي' : 'Passer en Mode Nuit') : (lang === 'ar' ? 'تفعيل الوضع النهاري' : 'Passer en Fond Clair')}
             >
-              {adminLightMode ? t('themeNight') : t('themeLight')}
+              <span>{themeMode === 'light' ? '🌙' : '☀️'}</span>
+              <span>{themeMode === 'light' ? (lang === 'ar' ? 'الوضع الليلي' : 'Mode Nuit') : (lang === 'ar' ? 'الوضع النهاري' : 'Fond Clair')}</span>
             </button>
 
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
