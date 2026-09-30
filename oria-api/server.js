@@ -1405,16 +1405,47 @@ app.get('/api/encheres/:id/bids', (req, res) => {
 });
 
 // Configurations
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
+  const defaultConfig = { commission_globale: 5, commission_categories: {}, commission_commercants: {} };
+  try {
+    if (isPostgresAvailable()) {
+      const pgRes = await query(`SELECT value FROM system_config WHERE key = 'platform_config'`);
+      if (pgRes && pgRes.rows && pgRes.rows.length > 0) {
+        const val = pgRes.rows[0].value;
+        return res.json({ ...defaultConfig, ...val });
+      }
+    }
+  } catch (err) {
+    console.error('Error reading config from PostgreSQL:', err.message);
+  }
   const db = readDB();
-  res.json(db.config);
+  res.json({ ...defaultConfig, ...(db.config || {}) });
 });
 
-app.put('/api/config', (req, res) => {
+app.put('/api/config', async (req, res) => {
+  const newConfig = {
+    commission_globale: parseInt(req.body.commission_globale, 10) || 5,
+    commission_categories: req.body.commission_categories || {},
+    commission_commercants: req.body.commission_commercants || {}
+  };
+
+  try {
+    if (isPostgresAvailable()) {
+      await query(`
+        INSERT INTO system_config (key, value, updated_at) 
+        VALUES ('platform_config', $1, CURRENT_TIMESTAMP)
+        ON CONFLICT (key) DO UPDATE 
+        SET value = $1, updated_at = CURRENT_TIMESTAMP
+      `, [JSON.stringify(newConfig)]);
+    }
+  } catch (err) {
+    console.error('Error writing config to PostgreSQL:', err.message);
+  }
+
   const db = readDB();
   db.config = {
-    ...db.config,
-    ...req.body
+    ...(db.config || {}),
+    ...newConfig
   };
   writeDB(db);
   res.json(db.config);

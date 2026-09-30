@@ -1064,7 +1064,7 @@ function AdminLayout() {
   };
 
   const handleSaveCommissionConfig = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     try {
       const res = await fetch(`${API_URL}/config`, {
         method: 'PUT',
@@ -1072,10 +1072,13 @@ function AdminLayout() {
         body: JSON.stringify(commissionConfig)
       });
       if (res.ok) {
-        triggerNotif(t('configSuccess'));
+        triggerNotif(t('commissionsSaved'));
+      } else {
+        triggerNotif(t('notifServerError'));
       }
     } catch (e) {
       console.error(e);
+      triggerNotif(t('notifServerError'));
     }
   };
 
@@ -1145,22 +1148,28 @@ function AdminLayout() {
   };
 
   const handleUpdateCategoryCommission = (catId, value) => {
+    const updated = { ...(commissionConfig.commission_categories || {}) };
+    if (value === '' || value === null || isNaN(value)) {
+      delete updated[catId];
+    } else {
+      updated[catId] = parseFloat(value);
+    }
     setCommissionConfig({
       ...commissionConfig,
-      commission_categories: {
-        ...commissionConfig.commission_categories,
-        [catId]: parseFloat(value) || 0
-      }
+      commission_categories: updated
     });
   };
 
   const handleUpdateMerchantCommission = (merchId, value) => {
+    const updated = { ...(commissionConfig.commission_commercants || {}) };
+    if (value === '' || value === null || isNaN(value)) {
+      delete updated[merchId];
+    } else {
+      updated[merchId] = parseFloat(value);
+    }
     setCommissionConfig({
       ...commissionConfig,
-      commission_commercants: {
-        ...commissionConfig.commission_commercants,
-        [merchId]: parseFloat(value) || 0
-      }
+      commission_commercants: updated
     });
   };
 
@@ -1406,81 +1415,198 @@ function AdminLayout() {
         )}
 
         {activeTab === 'commissions' && (
-          <form className="settings-panel" onSubmit={handleSaveCommissionConfig}>
-            <div className="settings-section">
-              <h3 style={{ color: 'var(--admin-gold)', marginBottom: '15px' }}>{t('globalCommissionRate')}</h3>
-              <div className="form-group" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                <input 
-                  type="range" 
-                  min="1" 
-                  max="25" 
-                  style={{ flexGrow: 1, accentColor: 'var(--admin-gold)' }}
-                  value={commissionConfig.commission_globale}
-                  onChange={(e) => setCommissionConfig({ ...commissionConfig, commission_globale: parseInt(e.target.value) })}
-                />
-                <span style={{ fontSize: '1.5rem', fontWeight: 'bold', minWidth: '60px', color: 'var(--admin-gold)' }}>
-                  {commissionConfig.commission_globale} %
-                </span>
+          <form className="commissions-container" onSubmit={handleSaveCommissionConfig}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '5px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display', margin: 0, color: 'var(--text-white)' }}>{t('commissionsTitle')}</h2>
+                <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: 'var(--text-gray)' }}>{t('commissionsSubtitle')}</p>
               </div>
+              <button type="submit" className="btn-gold" style={{ padding: '10px 22px' }}>
+                <span>💾</span>
+                <span>{t('save')}</span>
+              </button>
             </div>
 
-            <div className="settings-section">
-              <h3 style={{ color: 'var(--admin-gold)', marginBottom: '15px' }}>{t('categoryCommissions')}</h3>
-              {categories.map(cat => (
-                <div key={cat.id} className="form-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label className="form-label" style={{ margin: 0 }}>
-                    {lang === 'fr' ? cat.nom_fr : (lang === 'ar' ? cat.nom_ar : cat.nom_en)}
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Global Rate Card */}
+            <div className="commission-panel-card">
+              <div className="commission-panel-header">
+                <h3 className="commission-panel-title">
+                  <span>🏛️</span>
+                  <span>{t('globalCommissionRate')}</span>
+                </h3>
+              </div>
+              <div className="commission-panel-body">
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-gray)', marginBottom: '20px', lineHeight: 1.5 }}>
+                  {t('globalCommissionDesc')}
+                </p>
+
+                <div className="commission-global-box">
+                  <div className="commission-rate-display">
+                    <span className="commission-rate-number">{commissionConfig.commission_globale || 5}</span>
+                    <span className="commission-rate-unit">%</span>
+                  </div>
+
+                  <div className="commission-slider-control">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-gray)' }}>
+                      <span>1%</span>
+                      <strong style={{ color: 'var(--dark-gold)' }}>{commissionConfig.commission_globale || 5}%</strong>
+                      <span>25%</span>
+                    </div>
+
                     <input 
-                      type="number" 
-                      className="form-input" 
-                      style={{ width: '80px', padding: '6px' }}
-                      value={commissionConfig.commission_categories[cat.id] !== undefined ? commissionConfig.commission_categories[cat.id] : ''}
-                      placeholder={commissionConfig.commission_globale}
-                      onChange={(e) => handleUpdateCategoryCommission(cat.id, e.target.value)}
+                      type="range" 
+                      min="1" 
+                      max="25" 
+                      className="commission-slider"
+                      value={commissionConfig.commission_globale || 5}
+                      onChange={(e) => setCommissionConfig({ ...commissionConfig, commission_globale: parseInt(e.target.value, 10) || 5 })}
                     />
-                    <span>%</span>
+
+                    <div className="commission-presets">
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', fontWeight: 600 }}>{t('presetRates')}</span>
+                      {[5, 7, 8, 10, 12, 15].map(rate => (
+                        <button
+                          key={rate}
+                          type="button"
+                          className={`commission-preset-btn ${commissionConfig.commission_globale === rate ? 'active' : ''}`}
+                          onClick={() => setCommissionConfig({ ...commissionConfig, commission_globale: rate })}
+                        >
+                          {rate}%
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="settings-section">
-              <h3 style={{ color: 'var(--admin-gold)', marginBottom: '15px' }}>{t('merchantCommissions')}</h3>
-              <div className="form-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label" style={{ margin: 0 }}>Maison El Fassi</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input 
-                    type="number" 
-                    className="form-input" 
-                    style={{ width: '80px', padding: '6px' }}
-                    value={commissionConfig.commission_commercants['u_merchant1'] !== undefined ? commissionConfig.commission_commercants['u_merchant1'] : ''}
-                    placeholder={commissionConfig.commission_globale}
-                    onChange={(e) => handleUpdateMerchantCommission('u_merchant1', e.target.value)}
-                  />
-                  <span>%</span>
-                </div>
-              </div>
-              <div className="form-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label" style={{ margin: 0 }}>Maroc Chrono</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input 
-                    type="number" 
-                    className="form-input" 
-                    style={{ width: '80px', padding: '6px' }}
-                    value={commissionConfig.commission_commercants['u_merchant2'] !== undefined ? commissionConfig.commission_commercants['u_merchant2'] : ''}
-                    placeholder={commissionConfig.commission_globale}
-                    onChange={(e) => handleUpdateMerchantCommission('u_merchant2', e.target.value)}
-                  />
-                  <span>%</span>
-                </div>
               </div>
             </div>
 
-            <button type="submit" className="btn-gold" style={{ width: '100%' }}>
-              {t('saveConfig')}
-            </button>
+            {/* Category Commissions Card */}
+            <div className="commission-panel-card">
+              <div className="commission-panel-header">
+                <h3 className="commission-panel-title">
+                  <span>🏷️</span>
+                  <span>{t('categoryCommissions')}</span>
+                </h3>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+                  {categories.length} {t('categories')}
+                </span>
+              </div>
+              <div className="commission-panel-body">
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-gray)', marginBottom: '20px', lineHeight: 1.5 }}>
+                  {t('categoryCommissionsDesc')}
+                </p>
+
+                <div className="commission-categories-grid">
+                  {categories.map(cat => {
+                    const hasCustom = commissionConfig.commission_categories && commissionConfig.commission_categories[cat.id] !== undefined;
+                    const catVal = hasCustom ? commissionConfig.commission_categories[cat.id] : '';
+                    return (
+                      <div 
+                        key={cat.id} 
+                        className="commission-item-row"
+                        style={hasCustom ? { borderColor: 'var(--border-gold)', background: 'rgba(179, 135, 40, 0.08)' } : {}}
+                      >
+                        <div className="commission-item-label">
+                          <div>{lang === 'fr' ? cat.nom_fr : (lang === 'ar' ? cat.nom_ar : cat.nom_en)}</div>
+                          {hasCustom && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--dark-gold)', fontWeight: 600 }}>
+                              ✓ {t('customRate')}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="commission-input-wrapper">
+                          <input 
+                            type="number" 
+                            min="0"
+                            max="50"
+                            step="0.5"
+                            className="commission-input"
+                            value={catVal}
+                            placeholder={commissionConfig.commission_globale || 5}
+                            onChange={(e) => handleUpdateCategoryCommission(cat.id, e.target.value)}
+                          />
+                          <span className="commission-input-percent">%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Merchant Commissions Card */}
+            <div className="commission-panel-card">
+              <div className="commission-panel-header">
+                <h3 className="commission-panel-title">
+                  <span>🏪</span>
+                  <span>{t('merchantCommissions')}</span>
+                </h3>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+                  {users.filter(u => u.role === 'commercant').length} {t('activeMerchants')}
+                </span>
+              </div>
+              <div className="commission-panel-body">
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-gray)', marginBottom: '20px', lineHeight: 1.5 }}>
+                  {t('merchantCommissionsDesc')}
+                </p>
+
+                {users.filter(u => u.role === 'commercant').length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-gray)', fontSize: '0.9rem' }}>
+                    {t('noMerchantsFound')}
+                  </div>
+                ) : (
+                  <div className="commission-categories-grid">
+                    {users.filter(u => u.role === 'commercant').map(m => {
+                      const hasCustom = commissionConfig.commission_commercants && commissionConfig.commission_commercants[m.id] !== undefined;
+                      const merchVal = hasCustom ? commissionConfig.commission_commercants[m.id] : '';
+                      return (
+                        <div 
+                          key={m.id} 
+                          className="commission-item-row"
+                          style={hasCustom ? { borderColor: 'var(--border-gold)', background: 'rgba(179, 135, 40, 0.08)' } : {}}
+                        >
+                          <div className="commission-item-label">
+                            <div style={{ fontWeight: 700 }}>{m.shopName || m.nom}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
+                              {m.email} {m.city ? `• ${m.city}` : ''}
+                            </div>
+                            {hasCustom && (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--dark-gold)', fontWeight: 600 }}>
+                                ✓ {t('customRate')}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="commission-input-wrapper">
+                            <input 
+                              type="number" 
+                              min="0"
+                              max="50"
+                              step="0.5"
+                              className="commission-input"
+                              value={merchVal}
+                              placeholder={commissionConfig.commission_globale || 5}
+                              onChange={(e) => handleUpdateMerchantCommission(m.id, e.target.value)}
+                            />
+                            <span className="commission-input-percent">%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <button type="submit" className="btn-gold" style={{ padding: '12px 32px', fontSize: '0.95rem' }}>
+                <span>💾</span>
+                <span>{t('saveCommissions')}</span>
+              </button>
+            </div>
           </form>
         )}
 

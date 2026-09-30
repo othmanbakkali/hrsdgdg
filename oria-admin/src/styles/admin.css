@@ -938,3 +938,214 @@ textarea:focus {
   font-weight: 500;
 }
 
+/* ==========================================================================
+   COMMISSIONS MANAGEMENT
+   ========================================================================== */
+.commissions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1100px;
+}
+
+.commission-panel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+.commission-panel-card:hover {
+  border-color: var(--admin-gold);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.commission-panel-header {
+  padding: 22px 26px;
+  background: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.commission-panel-title {
+  font-family: var(--font-serif);
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: var(--text-white);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+[dir="rtl"] .commission-panel-title {
+  font-family: var(--font-arabic);
+}
+
+.commission-panel-body {
+  padding: 26px;
+}
+
+.commission-global-box {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+  padding: 24px 28px;
+  flex-wrap: wrap;
+}
+
+.commission-rate-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  padding: 12px 20px;
+  background: rgba(179, 135, 40, 0.12);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+}
+
+.commission-rate-number {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--dark-gold);
+  line-height: 1;
+}
+
+[data-theme="dark"] .commission-rate-number {
+  color: var(--light-gold);
+}
+
+.commission-rate-unit {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-gray);
+  margin-top: 4px;
+}
+
+.commission-slider-control {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 250px;
+}
+
+.commission-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-slate);
+  accent-color: var(--admin-gold);
+  cursor: pointer;
+  outline: none;
+}
+
+.commission-presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.commission-preset-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-gray);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.commission-preset-btn:hover,
+.commission-preset-btn.active {
+  background: var(--gold-gradient-btn);
+  color: #ffffff !important;
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+
+.commission-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.commission-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-smooth);
+  gap: 14px;
+}
+
+.commission-item-row:hover {
+  border-color: var(--border-gold);
+  background: rgba(179, 135, 40, 0.04);
+}
+
+.commission-item-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-white);
+  flex-grow: 1;
+}
+
+.commission-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  min-width: 95px;
+}
+
+.commission-input-wrapper:focus-within {
+  border-color: var(--admin-gold);
+  box-shadow: 0 0 0 3px rgba(179, 135, 40, 0.2);
+}
+
+.commission-input {
+  width: 55px;
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-white);
+  text-align: center;
+  outline: none;
+}
+
+.commission-input-percent {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--dark-gold);
+}
+
+[data-theme="dark"] .commission-input-percent {
+  color: var(--light-gold);
+}
+
+

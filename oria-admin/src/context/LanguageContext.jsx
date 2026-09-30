@@ -43,6 +43,23 @@ const translations = {
     saveConfig: "حفظ الإعدادات",
     configSuccess: "تم حفظ الإعدادات بنجاح!",
     
+    // Commissions Section
+    commissionsTitle: "إعداد وتخصيص العمولات",
+    commissionsSubtitle: "تحديد نسبة العمولة العامة للمنصة، وتخصيص نسب استثنائية حسب فئات المجوهرات أو الشركاء التجاريين.",
+    globalCommissionRate: "نسبة العمولة العامة للمنصة (%)",
+    globalCommissionDesc: "النسبة الافتراضية المطبقة تلقائياً على كافة مبيعات ومزادات المجوهرات في المنصة.",
+    categoryCommissions: "تخصيص العمولات حسب فئات المجوهرات",
+    categoryCommissionsDesc: "حدد نسبة عمولة خاصة لكل فئة مجوهرات (تتجاوز النسبة العامة للمنصة). اترك الحقل فارغاً لتطبيق النسبة العامة الافتراضية.",
+    merchantCommissions: "تخصيص العمولات للتجار والصاغة المعتمدين",
+    merchantCommissionsDesc: "تحديد نسبة عمولة تفضيلية أو خاصة لتاجر أو متجر محدد. اترك الحقل فارغاً لتطبيق النسبة العامة.",
+    defaultRatePlaceholder: "الافتراضي العام",
+    saveCommissions: "حفظ تعديلات العمولات",
+    commissionsSaved: "تم حفظ إعدادات وتخصيصات العمولات بنجاح !",
+    noMerchantsFound: "لا يوجد تجار مسجلون حالياً لتخصيص عمولاتهم.",
+    presetRates: "نسب شائعة :",
+    resetToGlobal: "الرجوع للنسبة العامة",
+    customRate: "نسبة مخصصة",
+    
     // Table Headers
     merchantsBreakdownTitle: "أداء المتاجر والتجار",
     shop: "المتجر",
@@ -234,6 +251,23 @@ const translations = {
     submitRejection: "Confirmer le refus",
     saveConfig: "Sauvegarder la configuration",
     configSuccess: "Configuration enregistrée avec succès !",
+    
+    // Commissions Section
+    commissionsTitle: "Configuration & Gestion des Commissions",
+    commissionsSubtitle: "Définissez le taux de commission global de la plateforme, avec des règles personnalisées par catégorie ou par commerçant.",
+    globalCommissionRate: "Taux de commission global de la plateforme (%)",
+    globalCommissionDesc: "Taux par défaut appliqué automatiquement sur toutes les ventes directes et adjudications d'enchères.",
+    categoryCommissions: "Commissions spécifiques par Catégorie de Bijoux",
+    categoryCommissionsDesc: "Fixez un pourcentage personnalisé par catégorie (remplace le taux global). Laissez vide pour appliquer le taux général.",
+    merchantCommissions: "Commissions personnalisées par Commerçant / Joaillier",
+    merchantCommissionsDesc: "Accordez des taux préférentiels ou spécifiques à certains joailliers partenaires. Laissez vide pour appliquer le taux général.",
+    defaultRatePlaceholder: "Taux par défaut",
+    saveCommissions: "Sauvegarder la configuration des commissions",
+    commissionsSaved: "Configuration des commissions enregistrée avec succès !",
+    noMerchantsFound: "Aucun commerçant partenaire enregistré pour le moment.",
+    presetRates: "Taux rapides :",
+    resetToGlobal: "Rétablir le taux global",
+    customRate: "Taux personnalisé",
     
     // Table Headers
     merchantsBreakdownTitle: "Performance par Commerçant",
