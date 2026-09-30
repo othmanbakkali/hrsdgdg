@@ -165,6 +165,17 @@ CREATE TABLE IF NOT EXISTS system_config (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 11. Sessions Table (User Authentication Sessions)
+CREATE TABLE IF NOT EXISTS sessions (
+    token VARCHAR(128) PRIMARY KEY,
+    user_id VARCHAR(64) REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(32) NOT NULL,
+    email VARCHAR(255),
+    nom VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_bijoux_category ON bijoux(category_id);
 CREATE INDEX IF NOT EXISTS idx_bijoux_commercant ON bijoux(commercant_id);
@@ -173,3 +184,6 @@ CREATE INDEX IF NOT EXISTS idx_bijoux_type_vente ON bijoux(type_vente);
 CREATE INDEX IF NOT EXISTS idx_bijoux_prix ON bijoux(prix);
 CREATE INDEX IF NOT EXISTS idx_encheres_statut ON encheres(statut);
 CREATE INDEX IF NOT EXISTS idx_commandes_client ON commandes(client_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+

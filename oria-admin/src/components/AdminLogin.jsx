@@ -9,6 +9,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -19,7 +20,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
     } catch (err) {
       setErrorMsg(err.message || 'Identifiants incorrects.');
     } finally {
@@ -244,6 +245,28 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+          </div>
+
+          {/* Session Persistence Checkbox */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '22px',
+            fontSize: '0.84rem'
+          }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-gray)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ accentColor: 'var(--admin-gold)', cursor: 'pointer', width: '16px', height: '16px' }}
+              />
+              <span>{lang === 'ar' ? 'البقاء متصلاً (جلسة 24 ساعة)' : 'Maintenir la session active (24h)'}</span>
+            </label>
+            <span style={{ fontSize: '0.74rem', color: 'var(--admin-gold)', opacity: 0.85 }}>
+              🛡️ {lang === 'ar' ? 'جلسة مشفرة' : 'Session sécurisée'}
+            </span>
           </div>
 
           {/* Submit Button */}

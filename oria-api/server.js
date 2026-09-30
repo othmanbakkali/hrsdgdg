@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { initPostgres, isPostgresAvailable, query } = require('./db/db');
 
@@ -19,10 +20,12 @@ const DB_PATH = path.join(__dirname, 'data', 'database.json');
 function readDB() {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
+    return parsed;
   } catch (error) {
     console.error('Error reading database file:', error);
-    return { users: [], categories: [], bijoux: [], encheres: [], offresEncheres: [], commandes: [], messages: [], config: {} };
+    return { users: [], categories: [], bijoux: [], encheres: [], offresEncheres: [], commandes: [], messages: [], config: {}, sessions: [] };
   }
 }
 
@@ -34,6 +37,92 @@ function writeDB(data) {
     console.error('Error writing database file:', error);
   }
 }
+
+// Session Management Helpers
+function createSession(user, expiresInMs = 24 * 60 * 60 * 1000) {
+  const db = readDB();
+  if (!Array.isArray(db.sessions)) {
+    db.sessions = [];
+  }
+  const now = Date.now();
+  // Filter out expired sessions
+  db.sessions = db.sessions.filter(s => s && s.expiresAt > now);
+
+  const token = 'sess_' + crypto.randomBytes(32).toString('hex');
+  const session = {
+    token,
+    userId: user.id,
+    email: user.email,
+    nom: user.nom,
+    role: user.role,
+    createdAt: new Date().toISOString(),
+    expiresAt: now + expiresInMs
+  };
+  db.sessions.push(session);
+  writeDB(db);
+  return session;
+}
+
+function getSession(token) {
+  if (!token) return null;
+  const db = readDB();
+  if (!Array.isArray(db.sessions)) return null;
+  const now = Date.now();
+  const session = db.sessions.find(s => s && s.token === token);
+  if (!session) return null;
+  if (session.expiresAt <= now) {
+    db.sessions = db.sessions.filter(s => s && s.token !== token);
+    writeDB(db);
+    return null;
+  }
+  return session;
+}
+
+function deleteSession(token) {
+  if (!token) return;
+  const db = readDB();
+  if (!Array.isArray(db.sessions)) return;
+  db.sessions = db.sessions.filter(s => s && s.token !== token);
+  writeDB(db);
+}
+
+// Helper: Parse HTTP Cookie Header
+function parseCookies(req) {
+  const list = {};
+  const rc = req.headers.cookie;
+  if (rc) {
+    rc.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      if (parts.length >= 2) {
+        list[parts[0].trim()] = decodeURIComponent(parts.slice(1).join('=').trim());
+      }
+    });
+  }
+  return list;
+}
+
+// Middleware: Require Admin Session
+function requireAdminSession(req, res, next) {
+  const cookies = parseCookies(req);
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer ')) 
+    ? authHeader.substring(7).trim() 
+    : (req.headers['x-session-token'] || cookies['oria_admin_session'] || req.query?.sessionToken);
+
+  if (!token) {
+    return res.status(401).json({ error: 'Accès non autorisé : session administrateur requise' });
+  }
+
+  const session = getSession(token);
+  if (!session || session.role !== 'admin') {
+    return res.status(403).json({ error: 'Accès refusé : privilèges administrateur requis' });
+  }
+
+  req.adminSession = session;
+  next();
+}
+
+
 
 // Uploads directory and static serving
 const UPLOADS_DIR = path.join(__dirname, 'data', 'uploads');
@@ -187,7 +276,7 @@ app.post('/api/translate', async (req, res) => {
 
 // Authentication
 app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
   const db = readDB();
   
   const normalizedEmail = (email || '').trim().toLowerCase();
@@ -204,7 +293,69 @@ app.post('/api/auth/login', (req, res) => {
   if (!user) {
     return res.status(401).json({ message: 'Identifiants incorrects' });
   }
-  res.json(user);
+
+  // Duration: 24h if rememberMe, otherwise 4h session
+  const duration = rememberMe ? 24 * 60 * 60 * 1000 : 4 * 60 * 60 * 1000;
+  const session = createSession(user, duration);
+
+  if (user.role === 'admin') {
+    const maxAgeSec = Math.floor(duration / 1000);
+    res.setHeader('Set-Cookie', `oria_admin_session=${session.token}; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}`);
+  }
+
+  const { mot_de_passe, ...safeUser } = user;
+  res.json({
+    ...safeUser,
+    sessionToken: session.token,
+    expiresAt: session.expiresAt
+  });
+});
+
+// Verify active session
+app.post('/api/auth/verify-session', (req, res) => {
+  const cookies = parseCookies(req);
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer ')) 
+    ? authHeader.substring(7).trim() 
+    : (req.headers['x-session-token'] || cookies['oria_admin_session'] || req.body?.token);
+
+  if (!token) {
+    return res.status(401).json({ valid: false, message: 'Aucun jeton de session fourni' });
+  }
+
+  const session = getSession(token);
+  if (!session) {
+    return res.status(401).json({ valid: false, message: 'Session expirée ou invalide' });
+  }
+
+  const db = readDB();
+  const user = db.users.find(u => u.id === session.userId);
+  if (!user) {
+    return res.status(401).json({ valid: false, message: 'Utilisateur introuvable' });
+  }
+
+  const { mot_de_passe, ...safeUser } = user;
+  res.json({
+    valid: true,
+    user: safeUser,
+    sessionToken: session.token,
+    expiresAt: session.expiresAt
+  });
+});
+
+// Invalidate session (Logout)
+app.post('/api/auth/logout', (req, res) => {
+  const cookies = parseCookies(req);
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer ')) 
+    ? authHeader.substring(7).trim() 
+    : (req.headers['x-session-token'] || cookies['oria_admin_session'] || req.body?.token);
+
+  if (token) {
+    deleteSession(token);
+  }
+  res.setHeader('Set-Cookie', 'oria_admin_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0');
+  res.json({ success: true, message: 'Session déconnectée avec succès' });
 });
 
 app.post('/api/auth/register', (req, res) => {
@@ -1306,7 +1457,7 @@ app.post('/api/messages', (req, res) => {
 });
 
 // Financial Stats and Admin Panel Analytics
-app.get('/api/stats/admin', (req, res) => {
+app.get('/api/stats/admin', requireAdminSession, (req, res) => {
   const db = readDB();
   
   const totalSales = db.commandes.reduce((acc, curr) => acc + curr.total, 0);
@@ -1734,7 +1885,7 @@ app.get('/api/gold-rates', (req, res) => {
 });
 
 // Admin: Update gold rate (18K) & record history
-app.post('/api/admin/gold-rates', (req, res) => {
+app.post('/api/admin/gold-rates', requireAdminSession, (req, res) => {
   const { price18k, price, price24k, source, note, updatedBy } = req.body;
   const rawPrice = price18k || price || price24k;
   const numPrice = parseFloat(rawPrice);
@@ -1795,7 +1946,7 @@ app.post('/api/admin/gold-rates', (req, res) => {
 });
 
 // Admin: Delete history record
-app.delete('/api/admin/gold-rates/history/:id', (req, res) => {
+app.delete('/api/admin/gold-rates/history/:id', requireAdminSession, (req, res) => {
   const { id } = req.params;
   const db = readDB();
 

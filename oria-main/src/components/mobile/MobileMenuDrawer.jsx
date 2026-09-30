@@ -321,6 +321,26 @@ export default function MobileMenuDrawer({
                   <span className="user-email">{user.email}</span>
                 </div>
                 <div className="user-actions-row">
+                  {user.role === 'admin' && (
+                    <a 
+                      href="/admin/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="user-quick-btn admin"
+                      style={{
+                        background: 'rgba(212, 175, 55, 0.2)',
+                        border: '1px solid var(--primary-gold)',
+                        color: 'var(--primary-gold)',
+                        textDecoration: 'none',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      👑 {isAr ? 'الإدارة' : 'Administration'}
+                    </a>
+                  )}
                   {onNavigate && (
                     <button 
                       className="user-quick-btn"

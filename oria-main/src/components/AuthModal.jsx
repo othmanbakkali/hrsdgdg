@@ -1041,6 +1041,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   <span className="demo-pill-icon">💎</span>
                   <span className="demo-pill-text">{lang === 'ar' ? 'خبير مجوهرات (بنسودة)' : 'Expert (Bennani)'}</span>
                 </button>
+                <button 
+                  type="button" 
+                  className="auth-demo-pill"
+                  onClick={() => setDemoAccount('admin@hrsdgdg.com', 'admin123')}
+                  style={{ borderColor: 'var(--primary-gold)', background: 'rgba(212, 175, 55, 0.12)' }}
+                >
+                  <span className="demo-pill-icon">👑</span>
+                  <span className="demo-pill-text">{lang === 'ar' ? 'المشرف (Admin)' : 'Admin HRSDGDG'}</span>
+                </button>
               </div>
             </div>
           </form>

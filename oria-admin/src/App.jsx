@@ -37,7 +37,7 @@ const themes = {
 
 function AdminLayout() {
   const { t, lang, setLang } = useLanguage();
-  const { adminUser, logout } = useAuth();
+  const { adminUser, logout, authFetch } = useAuth();
 
   const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('oria-admin-theme') || 'gold');
 
@@ -696,15 +696,15 @@ function AdminLayout() {
         subscriptionsRes,
         goldRes
       ] = await Promise.allSettled([
-        fetch(`${API_URL}/stats/admin`),
-        fetch(`${API_URL}/bijoux?status=Pending`),
-        fetch(`${API_URL}/categories`),
-        fetch(`${API_URL}/config`),
-        fetch(`${API_URL}/users`),
-        fetch(`${API_URL}/encheres`),
-        fetch(`${API_URL}/bijoux`),
-        fetch(`${API_URL}/subscriptions/all`),
-        fetch(`${API_URL}/gold-rates`)
+        authFetch(`${API_URL}/stats/admin`),
+        authFetch(`${API_URL}/bijoux?status=Pending`),
+        authFetch(`${API_URL}/categories`),
+        authFetch(`${API_URL}/config`),
+        authFetch(`${API_URL}/users`),
+        authFetch(`${API_URL}/encheres`),
+        authFetch(`${API_URL}/bijoux`),
+        authFetch(`${API_URL}/subscriptions/all`),
+        authFetch(`${API_URL}/gold-rates`)
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
@@ -874,7 +874,7 @@ function AdminLayout() {
 
     setIsUpdatingGold(true);
     try {
-      const res = await fetch(`${API_URL}/admin/gold-rates`, {
+      const res = await authFetch(`${API_URL}/admin/gold-rates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -904,7 +904,7 @@ function AdminLayout() {
   const handleDeleteGoldHistory = async (id) => {
     if (!window.confirm(lang === 'ar' ? 'هل أنت متأكد من حذف هذا السجل ؟' : 'Supprimer cette entrée d\'historique ?')) return;
     try {
-      const res = await fetch(`${API_URL}/admin/gold-rates/history/${id}`, {
+      const res = await authFetch(`${API_URL}/admin/gold-rates/history/${id}`, {
         method: 'DELETE'
       });
       if (res.ok) {

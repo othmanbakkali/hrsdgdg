@@ -477,6 +477,32 @@ function MainLayout() {
                         <span style={{ color: 'var(--text-gray)', fontSize: '0.75rem' }}>{user.email}</span>
                       </div>
 
+                      {user.role === 'admin' && (
+                        <a 
+                          href="/admin/" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onClick={() => setUserMenuOpen(false)}
+                          style={{
+                            padding: '8px 10px',
+                            background: 'rgba(212, 175, 55, 0.15)',
+                            border: '1px solid var(--primary-gold)',
+                            color: 'var(--primary-gold)',
+                            textAlign: lang === 'ar' ? 'right' : 'left',
+                            borderRadius: '4px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <span>👑</span>
+                          <span>{lang === 'ar' ? 'لوحة تحكم الإدارة' : 'Panneau d\'Administration'}</span>
+                        </a>
+                      )}
+
                       <button 
                         onClick={() => {
                           setActiveView('client-dashboard');
