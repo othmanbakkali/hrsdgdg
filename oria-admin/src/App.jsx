@@ -64,6 +64,7 @@ function AdminLayout() {
   }, [themeMode]);
   
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'validation', 'commissions', 'categories', 'auctions'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState({ totalSales: 0, totalCommissions: 0, totalMerchants: 0, totalClients: 0, totalProducts: 0, merchantsBreakdown: [] });
   const [pendingProducts, setPendingProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -1182,8 +1183,62 @@ function AdminLayout() {
 
   return (
     <div className="admin-container">
-      {/* Sidebar Navigation */}
-      <aside className="sidebar">
+      {/* Mobile Top Bar for Android & iPhone */}
+      <div className="mobile-top-bar">
+        <button 
+          type="button" 
+          className="mobile-menu-btn"
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Menu"
+        >
+          ☰
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <OriaLogo size={24} showText={false} />
+          <span style={{ fontFamily: 'Playfair Display', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-white)' }}>
+            HRSDGDG
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setThemeMode(prev => prev === 'light' ? 'dark' : 'light')}
+            className="mobile-menu-btn"
+            style={{ width: '36px', height: '36px', fontSize: '0.95rem' }}
+          >
+            {themeMode === 'light' ? '🌙' : '☀️'}
+          </button>
+          <select 
+            className="lang-select" 
+            style={{ padding: '6px 8px', fontSize: '0.78rem' }}
+            value={lang} 
+            onChange={(e) => setLang(e.target.value)}
+          >
+            <option value="ar">🇲🇦</option>
+            <option value="fr">🇫🇷</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Backdrop overlay for mobile drawer */}
+      <div 
+        className={`sidebar-overlay ${mobileMenuOpen ? 'active' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+
+      {/* Sidebar Navigation (Drawer on Mobile, Fixed on Desktop) */}
+      <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+        <button 
+          type="button" 
+          className="sidebar-close-btn"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-label="Fermer"
+        >
+          ✕
+        </button>
+
         <div className="logo-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '15px 10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '20px' }}>
           <OriaLogo size={36} subtitle="ADMINISTRATION" />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
@@ -1216,52 +1271,52 @@ function AdminLayout() {
         <nav>
           <ul className="nav-list">
             <li>
-              <span className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+              <span className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
                 📊 {t('dashboard')}
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'validation' ? 'active' : ''}`} onClick={() => setActiveTab('validation')}>
+              <span className={`nav-link ${activeTab === 'validation' ? 'active' : ''}`} onClick={() => { setActiveTab('validation'); setMobileMenuOpen(false); }}>
                 ⚖️ {t('validationQueue')} ({pendingProducts.length})
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
+              <span className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
                 💎 {t('products')} ({products.length})
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'commissions' ? 'active' : ''}`} onClick={() => setActiveTab('commissions')}>
+              <span className={`nav-link ${activeTab === 'commissions' ? 'active' : ''}`} onClick={() => { setActiveTab('commissions'); setMobileMenuOpen(false); }}>
                 💰 {t('commissions')}
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
+              <span className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setMobileMenuOpen(false); }}>
                 🗂️ {t('categories')}
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => setActiveTab('gold_rates')}>
+              <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => { setActiveTab('gold_rates'); setMobileMenuOpen(false); }}>
                 🥇 {t('goldRates')}
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+              <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
                 👥 {t('users')}
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'auctions' ? 'active' : ''}`} onClick={() => setActiveTab('auctions')}>
+              <span className={`nav-link ${activeTab === 'auctions' ? 'active' : ''}`} onClick={() => { setActiveTab('auctions'); setMobileMenuOpen(false); }}>
                 🔨 {t('auctions')} ({auctions.length})
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => setActiveTab('subscriptions')}>
+              <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => { setActiveTab('subscriptions'); setMobileMenuOpen(false); }}>
                 🌟 {t('subscriptions')} ({subscriptionsData?.merchants?.length || 0})
               </span>
             </li>
             <li>
-              <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => setActiveTab('roles')}>
+              <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setMobileMenuOpen(false); }}>
                 🛡️ {t('roles')}
               </span>
             </li>
@@ -3893,6 +3948,52 @@ function AdminLayout() {
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation Bar (iPhone & Android Native App Experience) */}
+      <nav className="mobile-bottom-nav">
+        <div 
+          className={`mobile-bottom-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        >
+          <span className="mobile-bottom-nav-icon">📊</span>
+          <span>{t('dashboard')}</span>
+        </div>
+
+        <div 
+          className={`mobile-bottom-nav-item ${activeTab === 'validation' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('validation'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        >
+          <span className="mobile-bottom-nav-icon">⚖️</span>
+          <span>{t('validationQueue')}</span>
+          {pendingProducts.length > 0 && (
+            <span className="mobile-bottom-nav-badge">{pendingProducts.length}</span>
+          )}
+        </div>
+
+        <div 
+          className={`mobile-bottom-nav-item ${activeTab === 'products' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('products'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        >
+          <span className="mobile-bottom-nav-icon">💎</span>
+          <span>{t('products')}</span>
+        </div>
+
+        <div 
+          className={`mobile-bottom-nav-item ${activeTab === 'commissions' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('commissions'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        >
+          <span className="mobile-bottom-nav-icon">💰</span>
+          <span>{t('commissions')}</span>
+        </div>
+
+        <div 
+          className={`mobile-bottom-nav-item ${mobileMenuOpen ? 'active' : ''}`}
+          onClick={() => setMobileMenuOpen(prev => !prev)}
+        >
+          <span className="mobile-bottom-nav-icon">☰</span>
+          <span>{t('menu')}</span>
+        </div>
+      </nav>
     </div>
   );
 }

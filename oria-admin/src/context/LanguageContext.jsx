@@ -23,6 +23,8 @@ const translations = {
     platformRevenues: "أرباح المنصة",
     activeMerchants: "التجار النشطون",
     activeClients: "الزبناء المسجلون",
+    menu: "القائمة",
+    more: "المزيد",
     
     // Actions
     save: "حفظ",
@@ -232,6 +234,8 @@ const translations = {
     platformRevenues: "Revenus Plateforme",
     activeMerchants: "Commerçants Actifs",
     activeClients: "Clients Enregistrés",
+    menu: "Menu",
+    more: "Plus",
     
     // Actions
     save: "Sauvegarder",
