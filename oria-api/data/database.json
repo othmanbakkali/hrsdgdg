@@ -131,15 +131,22 @@
     },
     {
       "id": "u_admin",
-      "email": "admin@jewelia.com",
-      "nom": "Sophia Bennani",
+      "email": "admin@hrsdgdg.com",
+      "nom": "Hakim Benchaib",
       "mot_de_passe": "admin123",
       "role": "admin"
     },
     {
       "id": "u_admin_oria",
       "email": "admin@oria.com",
-      "nom": "Sophia Bennani",
+      "nom": "Hakim Benchaib",
+      "mot_de_passe": "admin123",
+      "role": "admin"
+    },
+    {
+      "id": "u_admin_jewelia",
+      "email": "admin@jewelia.com",
+      "nom": "Hakim Benchaib",
       "mot_de_passe": "admin123",
       "role": "admin"
     },

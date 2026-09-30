@@ -1063,15 +1063,20 @@ function AdminLayout() {
     }
   };
 
-  const handleSaveCommissionConfig = async (e) => {
-    if (e) e.preventDefault();
+  const handleSaveCommissionConfig = async (e, customConfig) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const configToSave = customConfig || commissionConfig;
     try {
-      const res = await fetch(`${API_URL}/config`, {
+      const res = await authFetch(`${API_URL}/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(commissionConfig)
+        body: JSON.stringify(configToSave)
       });
-      if (res.ok) {
+      if (res && res.ok) {
+        const savedData = await res.json().catch(() => null);
+        if (savedData) {
+          setCommissionConfig(savedData);
+        }
         triggerNotif(t('commissionsSaved'));
       } else {
         triggerNotif(t('notifServerError'));
@@ -1442,34 +1447,51 @@ function AdminLayout() {
                 </p>
 
                 <div className="commission-global-box">
-                  <div className="commission-rate-display">
-                    <span className="commission-rate-number">{commissionConfig.commission_globale || 5}</span>
-                    <span className="commission-rate-unit">%</span>
+                  <div className="commission-rate-display" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input 
+                        type="number"
+                        min="1"
+                        max="50"
+                        step="0.5"
+                        className="commission-global-input"
+                        value={commissionConfig.commission_globale !== undefined ? commissionConfig.commission_globale : 5}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setCommissionConfig({ ...commissionConfig, commission_globale: isNaN(val) ? '' : val });
+                        }}
+                      />
+                      <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--dark-gold)' }}>%</span>
+                    </div>
+                    <span className="commission-rate-unit">{t('defaultRatePlaceholder')}</span>
                   </div>
 
                   <div className="commission-slider-control">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-gray)' }}>
-                      <span>1%</span>
-                      <strong style={{ color: 'var(--dark-gold)' }}>{commissionConfig.commission_globale || 5}%</strong>
-                      <span>25%</span>
+                    <div dir="ltr" style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '6px' }}>
+                        <span>1%</span>
+                        <strong style={{ color: 'var(--dark-gold)', fontSize: '1rem' }}>{commissionConfig.commission_globale || 5}%</strong>
+                        <span>30%</span>
+                      </div>
+
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="30" 
+                        step="0.5"
+                        className="commission-slider"
+                        value={commissionConfig.commission_globale || 5}
+                        onChange={(e) => setCommissionConfig({ ...commissionConfig, commission_globale: parseFloat(e.target.value) || 5 })}
+                      />
                     </div>
 
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="25" 
-                      className="commission-slider"
-                      value={commissionConfig.commission_globale || 5}
-                      onChange={(e) => setCommissionConfig({ ...commissionConfig, commission_globale: parseInt(e.target.value, 10) || 5 })}
-                    />
-
-                    <div className="commission-presets">
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', fontWeight: 600 }}>{t('presetRates')}</span>
-                      {[5, 7, 8, 10, 12, 15].map(rate => (
+                    <div className="commission-presets" style={{ marginTop: '10px' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-gray)', fontWeight: 600 }}>{t('presetRates')}</span>
+                      {[5, 7, 8, 10, 12, 15, 20].map(rate => (
                         <button
                           key={rate}
                           type="button"
-                          className={`commission-preset-btn ${commissionConfig.commission_globale === rate ? 'active' : ''}`}
+                          className={`commission-preset-btn ${Number(commissionConfig.commission_globale) === rate ? 'active' : ''}`}
                           onClick={() => setCommissionConfig({ ...commissionConfig, commission_globale: rate })}
                         >
                           {rate}%
@@ -1477,6 +1499,16 @@ function AdminLayout() {
                       ))}
                     </div>
                   </div>
+
+                  <button 
+                    type="button" 
+                    className="btn-gold" 
+                    style={{ padding: '12px 24px', fontSize: '0.9rem', alignSelf: 'center', whiteSpace: 'nowrap' }}
+                    onClick={(e) => handleSaveCommissionConfig(e)}
+                  >
+                    <span>💾</span>
+                    <span>{lang === 'ar' ? 'حفظ النسبة العامة' : 'Enregistrer ce taux'}</span>
+                  </button>
                 </div>
               </div>
             </div>

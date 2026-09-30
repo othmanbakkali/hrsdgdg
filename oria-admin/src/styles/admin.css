@@ -1148,4 +1148,28 @@ textarea:focus {
   color: var(--light-gold);
 }
 
+.commission-global-input {
+  width: 95px;
+  background: var(--bg-input);
+  border: 2px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--dark-gold);
+  text-align: center;
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+[data-theme="dark"] .commission-global-input {
+  color: var(--light-gold);
+}
+
+.commission-global-input:focus {
+  border-color: var(--admin-gold);
+  box-shadow: 0 0 0 4px rgba(179, 135, 40, 0.25);
+}
+
 

@@ -72,6 +72,8 @@ async function runMigration() {
         u.subscription ? JSON.stringify(u.subscription) : null
       ]);
     }
+    // Update any admin named Sophia Bennani to Hakim Benchaib
+    await client.query(`UPDATE users SET nom = 'Hakim Benchaib' WHERE role = 'admin' AND nom ILIKE '%bennani%'`);
 
     // 4. Migrate Categories
     console.log(`🏷️  Migrating ${db.categories?.length || 0} categories...`);
@@ -253,6 +255,16 @@ async function runMigration() {
         parseFloat(plan.commission_rate) || 8.0,
         JSON.stringify(plan.features || [])
       ]);
+    }
+
+    // 9. Migrate Platform Config
+    if (db.config) {
+      console.log('⚙️  Migrating platform configuration...');
+      await client.query(`
+        INSERT INTO system_config (key, value, updated_at)
+        VALUES ('platform_config', $1, CURRENT_TIMESTAMP)
+        ON CONFLICT (key) DO NOTHING
+      `, [JSON.stringify(db.config)]);
     }
 
     console.log('🎉 PostgreSQL database migration completed successfully!');
