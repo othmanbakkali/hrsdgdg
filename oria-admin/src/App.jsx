@@ -181,10 +181,11 @@ function AdminLayout() {
     }
     setRolePermissions(updated);
     localStorage.setItem('role_permissions', JSON.stringify(updated));
-    triggerNotif(`Permissions mises à jour pour le rôle ${roleKey}`);
+    triggerNotif(t('permUpdated'));
   };
 
   const handleResetPermissions = () => {
+    if (!window.confirm(t('resetPermissionsConfirm'))) return;
     const defaults = {
       admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products'],
       commercant: ['publish_listings', 'manage_orders', 'view_shop_analytics', 'chat_with_clients'],
@@ -192,7 +193,7 @@ function AdminLayout() {
     };
     setRolePermissions(defaults);
     localStorage.setItem('role_permissions', JSON.stringify(defaults));
-    triggerNotif('Permissions réinitialisées par défaut.');
+    triggerNotif(t('resetPermissionsSuccess'));
   };
 
   const handleQuickRoleChange = async (userId, newRole) => {
@@ -209,15 +210,15 @@ function AdminLayout() {
         })
       });
       if (res.ok) {
-        triggerNotif('Rôle utilisateur mis à jour avec succès !');
+        triggerNotif(t('notifRoleUpdated'));
         fetchData();
       } else {
-        const errData = await res.json();
-        triggerNotif(errData.message || 'Erreur lors de la mise à jour du rôle.');
+        const errData = await res.json().catch(() => ({}));
+        triggerNotif(errData.message || t('notifRoleError'));
       }
     } catch (err) {
       console.error(err);
-      triggerNotif('Erreur de connexion au serveur.');
+      triggerNotif(t('notifServerError'));
     }
   };
 
@@ -1688,67 +1689,117 @@ function AdminLayout() {
 
         {activeTab === 'roles' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-              <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>Configuration des Rôles & Autorisations</h2>
-              <button className="btn-outline-gold" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={handleResetPermissions}>
-                🔄 Réinitialiser les permissions
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display', margin: 0, color: 'var(--text-white)' }}>{t('rolesConfigTitle')}</h2>
+                <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: 'var(--text-gray)' }}>{t('rolesConfigSubtitle')}</p>
+              </div>
+              <button 
+                className="btn-outline-gold" 
+                style={{ padding: '9px 18px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }} 
+                onClick={handleResetPermissions}
+              >
+                <span>🔄</span>
+                <span>{t('resetPermissions')}</span>
               </button>
             </div>
 
             {/* Roles Matrix Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+            <div className="roles-grid">
               {[
-                { key: 'admin', title: 'Administrateur', icon: '🛡️', color: '#e74c3c', desc: 'Gestion globale de la plateforme, commissions et validations.' },
-                { key: 'commercant', title: 'Commerçant (Vendeur)', icon: '🏪', color: 'var(--admin-gold)', desc: 'Vente directe, enchères, gestion de boutique.' },
-                { key: 'client', title: 'Client', icon: '👥', color: '#3498db', desc: 'Achat direct, participation aux enchères, favoris.' }
+                { 
+                  key: 'admin', 
+                  titleKey: 'roleAdminTitle', 
+                  descKey: 'roleAdminDesc',
+                  icon: '🛡️', 
+                  color: 'var(--danger-red)', 
+                  badgeBg: 'var(--danger-bg)',
+                  badgeColor: 'var(--danger-red)',
+                  badgeBorder: 'var(--danger-border)'
+                },
+                { 
+                  key: 'commercant', 
+                  titleKey: 'roleMerchantTitle', 
+                  descKey: 'roleMerchantDesc',
+                  icon: '🏪', 
+                  color: 'var(--admin-gold)', 
+                  badgeBg: 'rgba(179, 135, 40, 0.12)',
+                  badgeColor: 'var(--dark-gold)',
+                  badgeBorder: 'var(--border-gold)'
+                },
+                { 
+                  key: 'client', 
+                  titleKey: 'roleClientTitle', 
+                  descKey: 'roleClientDesc',
+                  icon: '👥', 
+                  color: 'var(--info-cyan)', 
+                  badgeBg: 'var(--info-bg)',
+                  badgeColor: 'var(--info-cyan)',
+                  badgeBorder: 'var(--info-border)'
+                }
               ].map(roleItem => {
                 const roleCount = users.filter(u => u.role === roleItem.key).length;
                 const permissionsList = [
-                  { key: 'view_dashboard', label: 'Accès au Dashboard & Graphiques' },
-                  { key: 'moderate_auctions', label: 'Modération des Enchères' },
-                  { key: 'manage_commissions', label: 'Configuration des Commissions' },
-                  { key: 'manage_categories', label: 'Gestion des Catégories' },
-                  { key: 'manage_users', label: 'Gestion des Utilisateurs' },
-                  { key: 'manage_roles', label: 'Gestion des Rôles & Permissions' },
-                  { key: 'edit_products', label: 'Édition de tout le catalogue' },
-                  { key: 'create_products', label: 'Ajout direct d\'articles' }
+                  { key: 'view_dashboard', labelKey: 'perm_view_dashboard' },
+                  { key: 'moderate_auctions', labelKey: 'perm_moderate_auctions' },
+                  { key: 'manage_commissions', labelKey: 'perm_manage_commissions' },
+                  { key: 'manage_categories', labelKey: 'perm_manage_categories' },
+                  { key: 'manage_users', labelKey: 'perm_manage_users' },
+                  { key: 'manage_roles', labelKey: 'perm_manage_roles' },
+                  { key: 'edit_products', labelKey: 'perm_edit_products' },
+                  { key: 'create_products', labelKey: 'perm_create_products' }
                 ];
                 
                 return (
-                  <div key={roleItem.key} className="dashboard-card" style={{ borderTop: `4px solid ${roleItem.color}`, display: 'flex', flexDirection: 'column', height: '100%', padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                      <h3 style={{ fontSize: '1.2rem', color: roleItem.color, margin: 0, fontFamily: 'Playfair Display' }}>
-                        {roleItem.icon} {roleItem.title}
+                  <div key={roleItem.key} className="role-matrix-card" style={{ borderTop: `4px solid ${roleItem.color}` }}>
+                    <div className="role-matrix-header">
+                      <h3 className="role-matrix-title" style={{ color: roleItem.color }}>
+                        <span>{roleItem.icon}</span>
+                        <span>{t(roleItem.titleKey)}</span>
                       </h3>
-                      <span className="stat-badge" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>
-                        {roleCount} membres
+                      <span 
+                        className="role-member-badge" 
+                        style={{ 
+                          backgroundColor: roleItem.badgeBg, 
+                          color: roleItem.badgeColor,
+                          border: `1px solid ${roleItem.badgeBorder}`
+                        }}
+                      >
+                        {roleCount} {t('membersCount')}
                       </span>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '20px', lineHeight: '1.4' }}>
-                      {roleItem.desc}
-                    </p>
                     
-                    <h4 style={{ fontSize: '0.9rem', color: 'var(--admin-gold)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px', marginBottom: '12px' }}>
-                      Autorisations activées :
-                    </h4>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexGrow: 1 }}>
-                      {permissionsList.map(perm => {
-                        const isChecked = (rolePermissions[roleItem.key] || []).includes(perm.key);
-                        return (
-                          <label key={perm.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                            <input 
-                              type="checkbox" 
-                              checked={isChecked} 
-                              onChange={() => handleTogglePermission(roleItem.key, perm.key)} 
-                              style={{ accentColor: 'var(--admin-gold)' }}
-                            />
-                            <span style={{ color: isChecked ? 'white' : 'var(--text-gray)' }}>
-                              {perm.label}
-                            </span>
-                          </label>
-                        );
-                      })}
+                    <div className="role-matrix-body">
+                      <p className="role-matrix-desc">
+                        {t(roleItem.descKey)}
+                      </p>
+                      
+                      <h4 className="role-matrix-perm-title">
+                        <span>⚡</span>
+                        <span>{t('activePermissionsTitle')}</span>
+                      </h4>
+                      
+                      <div className="role-perm-list">
+                        {permissionsList.map(perm => {
+                          const isChecked = (rolePermissions[roleItem.key] || []).includes(perm.key);
+                          return (
+                            <label 
+                              key={perm.key} 
+                              className={`role-perm-item ${isChecked ? 'active' : 'inactive'}`}
+                            >
+                              <input 
+                                type="checkbox" 
+                                className="role-perm-checkbox"
+                                checked={isChecked} 
+                                onChange={() => handleTogglePermission(roleItem.key, perm.key)} 
+                              />
+                              <span className="role-perm-label">
+                                {t(perm.labelKey)}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 );
@@ -1757,9 +1808,9 @@ function AdminLayout() {
 
             {/* Quick Roles Assignment */}
             <div className="table-container" style={{ marginTop: '20px' }}>
-              <div style={{ padding: '20px', borderBottom: '1px solid rgba(212,175,55,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontFamily: 'Playfair Display' }}>Affectation Rapide des Rôles</h3>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>Total : {users.length} utilisateurs inscrits</span>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-gold)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontFamily: 'Playfair Display', color: 'var(--text-white)' }}>{t('quickRoleAssignTitle')}</h3>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>{t('totalRegisteredUsers')} <strong style={{ color: 'var(--dark-gold)' }}>{users.length}</strong></span>
               </div>
               
               <table className="admin-table">
@@ -1767,35 +1818,38 @@ function AdminLayout() {
                   <tr>
                     <th>{t('name')}</th>
                     <th>{t('email')}</th>
-                    <th>{lang === 'ar' ? 'الدور الحالي' : 'Rôle Actuel'}</th>
-                    <th>{lang === 'ar' ? 'الدور الجديد' : 'Nouveau Rôle'}</th>
+                    <th>{t('currentRole')}</th>
+                    <th>{t('newRole')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map(u => (
                     <tr key={u.id}>
                       <td>
-                        <strong style={{ color: 'white' }}>{u.nom}</strong>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>ID: {u.id}</div>
+                        <strong style={{ color: 'var(--text-white)', display: 'block', fontSize: '0.95rem' }}>{u.nom}</strong>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>ID: #{u.id}</div>
                       </td>
-                      <td>{u.email}</td>
+                      <td style={{ color: 'var(--text-gray)' }}>{u.email}</td>
                       <td>
                         <span style={{ 
-                          backgroundColor: u.role === 'admin' ? 'rgba(231, 76, 60, 0.15)' : (u.role === 'commercant' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(52, 152, 219, 0.15)'), 
-                          color: u.role === 'admin' ? '#e74c3c' : (u.role === 'commercant' ? 'var(--admin-gold)' : '#3498db'), 
-                          padding: '2px 8px', 
-                          borderRadius: '3px', 
-                          fontSize: '0.75rem', 
-                          textTransform: 'uppercase',
-                          fontWeight: 'bold'
+                          backgroundColor: u.role === 'admin' ? 'var(--danger-bg)' : (u.role === 'commercant' ? 'rgba(179, 135, 40, 0.12)' : 'var(--info-bg)'), 
+                          color: u.role === 'admin' ? 'var(--danger-red)' : (u.role === 'commercant' ? 'var(--dark-gold)' : 'var(--info-cyan)'), 
+                          border: `1px solid ${u.role === 'admin' ? 'var(--danger-border)' : (u.role === 'commercant' ? 'var(--border-gold)' : 'var(--info-border)')}`,
+                          padding: '4px 12px', 
+                          borderRadius: '20px', 
+                          fontSize: '0.78rem', 
+                          fontWeight: '700',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
                         }}>
-                          {u.role === 'admin' ? t('roleAdmin') : (u.role === 'commercant' ? t('roleMerchant') : t('roleClient'))}
+                          {u.role === 'admin' ? '🛡️ ' + t('roleAdmin') : (u.role === 'commercant' ? '🏪 ' + t('roleMerchant') : '👥 ' + t('roleClient'))}
                         </span>
                       </td>
                       <td>
                         <select 
                           className="form-input" 
-                          style={{ margin: 0, padding: '4px 10px', fontSize: '0.85rem', width: 'auto', display: 'inline-block' }}
+                          style={{ margin: 0, padding: '6px 14px', fontSize: '0.85rem', width: 'auto', display: 'inline-block', borderRadius: 'var(--radius-sm)' }}
                           value={u.role}
                           onChange={(e) => handleQuickRoleChange(u.id, e.target.value)}
                         >
