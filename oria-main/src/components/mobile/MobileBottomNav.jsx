@@ -4,17 +4,14 @@ import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function MobileBottomNav({
-  activeTab, // 'home', 'explore', 'sell', 'messages', 'account'
+  activeTab, // 'home', 'explore', 'cart', 'account'
   onChangeTab,
-  onOpenSell,
-  onOpenChat,
-  onOpenFinder,
-  unreadMessagesCount = 1
+  onOpenCart,
+  onOpenFinder
 }) {
   const { user } = useAuth();
   const { cartItems } = useCart();
   const { lang, t } = useLanguage();
-  const isAr = lang === 'ar';
   const cartCount = cartItems.length;
 
   return (
@@ -50,52 +47,37 @@ export default function MobileBottomNav({
         <span className="nav-text">{t('search')}</span>
       </button>
 
-      {/* 3. Central Big "+ Déposer" CTA Button (Avito Key Hallmark) */}
-      <div className="mobile-nav-sell-wrapper">
-        <button 
-          className="mobile-nav-sell-btn"
-          onClick={onOpenSell}
-          title={isAr ? "نشر إعلان أو إطلاق مزاد" : "Déposer une annonce ou lancer une enchère"}
-        >
-          <div className="sell-btn-inner">
-            <span className="sell-plus-icon">+</span>
-          </div>
-          <span className="sell-btn-label">{isAr ? 'بيع' : 'Vendre'}</span>
-        </button>
-      </div>
-
-      {/* 4. Messages / Chat */}
+      {/* 3. Panier / Cart */}
       <button 
-        className={`mobile-nav-item ${activeTab === 'messages' ? 'active' : ''}`}
+        className={`mobile-nav-item ${activeTab === 'cart' ? 'active' : ''}`}
         onClick={() => {
-          onChangeTab('messages');
-          if (onOpenChat) onOpenChat();
+          onChangeTab('cart');
+          if (onOpenCart) onOpenCart();
         }}
       >
         <span className="nav-icon-wrap" style={{ position: 'relative' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'messages' ? 'var(--primary-gold)' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'cart' ? 'var(--primary-gold)' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
           </svg>
-          {unreadMessagesCount > 0 && (
-            <span className="nav-badge-pill">{unreadMessagesCount}</span>
+          {cartCount > 0 && (
+            <span className="nav-badge-pill" style={{ background: '#ef4444' }}>{cartCount}</span>
           )}
         </span>
-        <span className="nav-text">{t('messages')}</span>
+        <span className="nav-text">{t('cart')}</span>
       </button>
 
-      {/* 5. Mon Compte */}
+      {/* 4. Mon Compte */}
       <button 
         className={`mobile-nav-item ${activeTab === 'account' ? 'active' : ''}`}
         onClick={() => onChangeTab('account')}
       >
-        <span className="nav-icon-wrap" style={{ position: 'relative' }}>
+        <span className="nav-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'account' ? 'var(--primary-gold)' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
-          {cartCount > 0 && (
-            <span className="nav-badge-pill" style={{ background: 'var(--primary-gold)' }}>{cartCount}</span>
-          )}
         </span>
         <span className="nav-text">{user ? (user.nom.split(' ')[0] || t('account')) : t('account')}</span>
       </button>

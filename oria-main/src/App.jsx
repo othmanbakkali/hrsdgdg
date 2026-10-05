@@ -239,10 +239,9 @@ function MainLayout() {
     } else if (tab === 'explore') {
       setActiveView('marketplace');
       setIsFinderOpen(true);
-    } else if (tab === 'sell') {
-      setIsSellModalOpen(true);
-    } else if (tab === 'messages') {
-      setIsChatDrawerOpen(true);
+    } else if (tab === 'cart') {
+      setIsCartOpen(true);
+      setCheckoutStep(1);
     } else if (tab === 'account') {
       if (!user) {
         setIsAuthModalOpen(true);
@@ -744,15 +743,16 @@ function MainLayout() {
         />
       </div>
 
-      {/* 3. MOBILE BOTTOM NAVIGATION BAR (Avito Style, Fixed at bottom) */}
+      {/* 3. MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom) */}
       <div className="show-on-mobile-only">
         <MobileBottomNav 
           activeTab={mobileNavTab}
           onChangeTab={handleMobileNavTabChange}
-          onOpenSell={() => setIsSellModalOpen(true)}
-          onOpenChat={() => setIsChatDrawerOpen(true)}
+          onOpenCart={() => {
+            setIsCartOpen(true);
+            setCheckoutStep(1);
+          }}
           onOpenFinder={() => setIsFinderOpen(true)}
-          unreadMessagesCount={1}
         />
       </div>
 
