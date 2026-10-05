@@ -3938,7 +3938,22 @@ function AdminLayout() {
               )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '15px' }}>
+            {/* 1. POIDS EN PREMIER SUIVI DU PRIX */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              <div className="form-group">
+                <label className="form-label">{t('weight')} (غ / g)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  min="0.1"
+                  placeholder="ex: 4.5"
+                  className="form-input" 
+                  value={productForm.gramme} 
+                  onChange={e => setProductForm({ ...productForm, gramme: e.target.value })} 
+                  required 
+                />
+              </div>
+
               {productForm.type_vente === 'enchere' ? (
                 <div className="form-group">
                   <label className="form-label">{t('startingPrice')} (MAD)</label>
@@ -3968,21 +3983,8 @@ function AdminLayout() {
               )}
             </div>
 
-            {/* Poids, Catégorie & Ville */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-              <div className="form-group">
-                <label className="form-label">{t('weight')}</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  min="0.1"
-                  placeholder="ex: 4.5"
-                  className="form-input" 
-                  value={productForm.gramme} 
-                  onChange={e => setProductForm({ ...productForm, gramme: e.target.value })} 
-                  required 
-                />
-              </div>
+            {/* 2. CATÉGORIE & LISTE DES VILLES */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
               <div className="form-group">
                 <label className="form-label">{t('category')}</label>
                 <select 
@@ -3999,27 +4001,52 @@ function AdminLayout() {
                   ))}
                 </select>
               </div>
+
               <div className="form-group">
                 <label className="form-label">{t('city')}</label>
-                <input 
-                  type="text" 
+                <select 
                   className="form-input" 
-                  placeholder="ex: Casablanca"
-                  value={productForm.city} 
+                  value={productForm.city || 'Casablanca'} 
                   onChange={e => setProductForm({ ...productForm, city: e.target.value })} 
                   required 
-                />
+                >
+                  {[
+                    { key: 'Casablanca', ar: 'الدار البيضاء (Casablanca)', fr: 'Casablanca' },
+                    { key: 'Rabat', ar: 'الرباط (Rabat)', fr: 'Rabat' },
+                    { key: 'Marrakech', ar: 'مراكش (Marrakech)', fr: 'Marrakech' },
+                    { key: 'Fès', ar: 'فاس (Fès)', fr: 'Fès' },
+                    { key: 'Tanger', ar: 'طنجة (Tanger)', fr: 'Tanger' },
+                    { key: 'Agadir', ar: 'أكادير (Agadir)', fr: 'Agadir' },
+                    { key: 'Meknès', ar: 'مكناس (Meknès)', fr: 'Meknès' },
+                    { key: 'Oujda', ar: 'وجدة (Oujda)', fr: 'Oujda' },
+                    { key: 'Tétouan', ar: 'تطوان (Tétouan)', fr: 'Tétouan' },
+                    { key: 'Essaouira', ar: 'الصويرة (Essaouira)', fr: 'Essaouira' },
+                    { key: 'El Jadida', ar: 'الجديدة (El Jadida)', fr: 'El Jadida' },
+                    { key: 'Nador', ar: 'الناظور (Nador)', fr: 'Nador' },
+                    { key: 'Safi', ar: 'آسفي (Safi)', fr: 'Safi' },
+                    { key: 'Kenitra', ar: 'القنيطرة (Kenitra)', fr: 'Kenitra' },
+                    { key: 'Mohammédia', ar: 'المحمدية (Mohammédia)', fr: 'Mohammédia' },
+                    { key: 'Béni Mellal', ar: 'بني ملال (Béni Mellal)', fr: 'Béni Mellal' },
+                    { key: 'Laâyoune', ar: 'العيون (Laâyoune)', fr: 'Laâyoune' },
+                    { key: 'Dakhla', ar: 'الداخلة (Dakhla)', fr: 'Dakhla' },
+                    { key: 'Salé', ar: 'سلا (Salé)', fr: 'Salé' },
+                    { key: 'Témara', ar: 'تمارة (Témara)', fr: 'Témara' }
+                  ].map(city => (
+                    <option key={city.key} value={city.key}>
+                      {lang === 'ar' ? city.ar : city.fr}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* État du bijou : Neuf, Remis à neuf, Occasion */}
+            {/* 3. ÉTAT DU BIJOU : Neuf & Bonne occasion uniquement */}
             <div className="form-group" style={{ marginBottom: '18px' }}>
               <label className="form-label">{lang === 'ar' ? 'حالة القطعة' : 'État du Bijou'}</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                 {[
                   { value: 'Neuf', fr: '✨ Neuf', ar: '✨ جديد' },
-                  { value: 'Remis à neuf', fr: '💎 Remis à neuf', ar: '💎 مجدد ومصقول' },
-                  { value: 'Occasion', fr: '🏷️ Occasion', ar: '🏷️ مستعمل ممتاز' }
+                  { value: 'Occasion', fr: '🏷️ Bonne occasion', ar: '🏷️ مستعمل بحالة ممتازة' }
                 ].map(item => {
                   const isActive = (productForm.etat || 'Neuf') === item.value;
                   return (

@@ -720,6 +720,19 @@ export default function MerchantDashboard({ onOpenSellModal }) {
             {newProduct.type_vente === 'AUCTION' ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                 <div>
+                  <label className="filter-label">Poids (g) *</label>
+                  <input 
+                    type="number"
+                    step="0.1"
+                    placeholder="4.5"
+                    value={newProduct.poids}
+                    onChange={e => setNewProduct({ ...newProduct, poids: e.target.value })}
+                    className="filter-select-control"
+                    required
+                  />
+                </div>
+
+                <div>
                   <label className="filter-label">Prix de Départ (DH) *</label>
                   <input 
                     type="number"
@@ -758,9 +771,11 @@ export default function MerchantDashboard({ onOpenSellModal }) {
                     <option value="Diamant">Diamant</option>
                   </select>
                 </div>
-
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                 <div>
-                  <label className="filter-label">Poids (g)</label>
+                  <label className="filter-label">Poids (g) *</label>
                   <input 
                     type="number"
                     step="0.1"
@@ -768,13 +783,12 @@ export default function MerchantDashboard({ onOpenSellModal }) {
                     value={newProduct.poids}
                     onChange={e => setNewProduct({ ...newProduct, poids: e.target.value })}
                     className="filter-select-control"
+                    required
                   />
                 </div>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+
                 <div>
-                  <label className="filter-label">Prix de Vente (DH)</label>
+                  <label className="filter-label">Prix de Vente (DH) *</label>
                   <input 
                     type="number"
                     required
@@ -797,18 +811,6 @@ export default function MerchantDashboard({ onOpenSellModal }) {
                     <option value="Platine">Platine</option>
                     <option value="Diamant">Diamant</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="filter-label">Poids (g)</label>
-                  <input 
-                    type="number"
-                    step="0.1"
-                    placeholder="4.5"
-                    value={newProduct.poids}
-                    onChange={e => setNewProduct({ ...newProduct, poids: e.target.value })}
-                    className="filter-select-control"
-                  />
                 </div>
               </div>
             )}
