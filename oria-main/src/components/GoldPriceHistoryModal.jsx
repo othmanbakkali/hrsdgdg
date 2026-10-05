@@ -16,6 +16,8 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [selectedRange, setSelectedRange] = useState('all'); // '7d', '30d', 'all'
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -31,6 +33,11 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
       .catch(err => console.error('Failed to fetch gold rates:', err))
       .finally(() => setIsLoading(false));
   }, [isOpen]);
+
+  // Reset pagination to page 1 on filter or data update
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedRange, goldData]);
 
   if (!isOpen) return null;
 
@@ -55,6 +62,18 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     }
     return fullHistoryList;
   }, [fullHistoryList, selectedRange]);
+
+  const reversedHistory = useMemo(() => {
+    return [...filteredHistory].reverse();
+  }, [filteredHistory]);
+
+  const totalPages = Math.max(1, Math.ceil(reversedHistory.length / itemsPerPage));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedItems = useMemo(() => {
+    const start = (validCurrentPage - 1) * itemsPerPage;
+    return reversedHistory.slice(start, start + itemsPerPage);
+  }, [reversedHistory, validCurrentPage, itemsPerPage]);
 
   const formatSource = (src) => {
     if (!src) return isAr ? 'سوق الذهب المغربي' : 'Marché Maroc';
@@ -721,17 +740,24 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
           </div>
         </div>
 
-        {/* History Table (18K) */}
+        {/* History Table with 5/5 Pagination */}
         <div style={{ marginBottom: '10px' }}>
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '0.96rem', color: '#fef3c7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>📜</span>
-            <span>{isAr ? 'سجل التغييرات والتواريخ (عيار 18)' : 'Historique Chronologique des Variations (18K)'}</span>
-          </h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <h4 style={{ margin: 0, fontSize: '0.96rem', color: '#fef3c7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>📜</span>
+              <span>{isAr ? 'سجل التغييرات والتواريخ (عيار 18)' : 'Historique Chronologique des Variations (18K)'}</span>
+            </h4>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              {isAr
+                ? `عرض ${reversedHistory.length > 0 ? (validCurrentPage - 1) * itemsPerPage + 1 : 0} - ${Math.min(validCurrentPage * itemsPerPage, reversedHistory.length)} من أصل ${reversedHistory.length}`
+                : `Affichage ${reversedHistory.length > 0 ? (validCurrentPage - 1) * itemsPerPage + 1 : 0} - ${Math.min(validCurrentPage * itemsPerPage, reversedHistory.length)} sur ${reversedHistory.length}`}
+            </span>
+          </div>
 
-          <div style={{ maxHeight: '180px', overflowY: 'auto', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: isRtl ? 'right' : 'left' }}>
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+                <tr style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
                   <th style={{ padding: '10px 14px' }}>{isAr ? 'التاريخ' : 'Date'}</th>
                   <th style={{ padding: '10px 14px' }}>{isAr ? 'السعر (د.م/غ)' : 'Prix 18K (DH/g)'}</th>
                   <th style={{ padding: '10px 14px' }}>{isAr ? 'التغير' : 'Variation'}</th>
@@ -740,11 +766,11 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                 </tr>
               </thead>
               <tbody>
-                {[...filteredHistory].reverse().map((item, idx) => (
+                {paginatedItems.map((item, idx) => (
                   <tr key={item.id || idx} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '9px 14px', color: '#cbd5e1', fontWeight: 600 }} dir="ltr">{item.date}</td>
-                    <td style={{ padding: '9px 14px', color: '#d4af37', fontWeight: 800, fontSize: '0.95rem' }} dir="ltr">{item.price18k || 1045} {isAr ? 'د.م' : 'DH'}</td>
-                    <td style={{ padding: '9px 14px' }}>
+                    <td style={{ padding: '10px 14px', color: '#cbd5e1', fontWeight: 600 }} dir="ltr">{item.date}</td>
+                    <td style={{ padding: '10px 14px', color: '#d4af37', fontWeight: 800, fontSize: '0.95rem' }} dir="ltr">{item.price18k || 1045} {isAr ? 'د.م' : 'DH'}</td>
+                    <td style={{ padding: '10px 14px' }}>
                       <span dir="ltr" style={{
                         display: 'inline-block',
                         padding: '2px 6px',
@@ -757,12 +783,99 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                         {item.change || '0.0%'}
                       </span>
                     </td>
-                    <td style={{ padding: '9px 14px', color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 500 }}>{formatSource(item.source)}</td>
-                    <td style={{ padding: '9px 14px', color: '#94a3b8', fontSize: '0.8rem' }}>{formatNote(item.note)}</td>
+                    <td style={{ padding: '10px 14px', color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 500 }}>{formatSource(item.source)}</td>
+                    <td style={{ padding: '10px 14px', color: '#94a3b8', fontSize: '0.8rem' }}>{formatNote(item.note)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {/* Pagination Controls Bar */}
+            {totalPages > 1 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={validCurrentPage === 1}
+                  style={{
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    background: validCurrentPage === 1 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.08)',
+                    color: validCurrentPage === 1 ? '#64748b' : '#fef3c7',
+                    borderRadius: '8px',
+                    padding: '5px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span>{isRtl ? '→' : '←'}</span>
+                  <span>{isAr ? 'السابق' : 'Précédent'}</span>
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        border: page === validCurrentPage ? '1.5px solid #d4af37' : '1px solid rgba(255, 255, 255, 0.08)',
+                        background: page === validCurrentPage ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : 'rgba(255, 255, 255, 0.04)',
+                        color: page === validCurrentPage ? '#000000' : '#cbd5e1',
+                        fontSize: '0.78rem',
+                        fontWeight: page === validCurrentPage ? 800 : 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={validCurrentPage === totalPages}
+                  style={{
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    background: validCurrentPage === totalPages ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.08)',
+                    color: validCurrentPage === totalPages ? '#64748b' : '#fef3c7',
+                    borderRadius: '8px',
+                    padding: '5px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span>{isAr ? 'التالي' : 'Suivant'}</span>
+                  <span>{isRtl ? '←' : '→'}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
