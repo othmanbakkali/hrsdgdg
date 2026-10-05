@@ -642,15 +642,22 @@ export default function ProductDetailModal({
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
               {!isAuction && (
-                <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
                   <button 
                     onClick={() => {
                       addToCart(product);
                     }}
                     className="btn-jewelia-primary"
-                    style={{ flex: 1.5, padding: '12px 18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    style={{
+                      padding: '12px 20px',
+                      borderRadius: '12px',
+                      fontSize: '0.92rem',
+                      fontWeight: '700',
+                      whiteSpace: 'nowrap',
+                      minHeight: '46px'
+                    }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                       <circle cx="9" cy="21" r="1"></circle>
@@ -667,106 +674,133 @@ export default function ProductDetailModal({
                       onClose();
                     }}
                     className="btn-jewelia-secondary"
-                    style={{ flex: 1, padding: '12px 16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    style={{
+                      borderColor: 'var(--primary-gold)',
+                      padding: '12px 20px',
+                      borderRadius: '12px',
+                      fontSize: '0.92rem',
+                      fontWeight: '700',
+                      whiteSpace: 'nowrap',
+                      minHeight: '46px',
+                      background: 'rgba(212, 175, 55, 0.08)',
+                      color: 'var(--text-dark)'
+                    }}
                   >
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, color: 'var(--primary-gold)' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--primary-gold)" style={{ flexShrink: 0 }}>
                       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
                     <span>{t('buyNow')}</span>
                   </button>
-                </>
+                </div>
               )}
 
-              <button 
-                onClick={() => {
-                  if (onOpenChatWithSeller) onOpenChatWithSeller(product);
-                  onClose();
-                }}
-                className="btn-jewelia-secondary"
-                style={{ borderColor: 'var(--primary-gold)', color: 'var(--primary-gold)', padding: '12px 16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                title={lang === 'ar' ? 'مراسلة الصائغ' : 'Discuter avec le vendeur'}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                </svg>
-                <span>{lang === 'ar' ? 'مراسلة' : 'Discuter'}</span>
-              </button>
+              {/* Communication & Quick Tools Row */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={() => {
+                    if (onOpenChatWithSeller) onOpenChatWithSeller(product);
+                    onClose();
+                  }}
+                  className="btn-jewelia-secondary"
+                  style={{
+                    flex: 1,
+                    minWidth: '110px',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    borderColor: 'var(--border-gold)',
+                    color: 'var(--text-dark)',
+                    minHeight: '42px',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title={lang === 'ar' ? 'مراسلة الصائغ' : 'Discuter avec le vendeur'}
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--primary-gold)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                  </svg>
+                  <span>{lang === 'ar' ? 'مراسلة' : 'Discuter'}</span>
+                </button>
 
-              <a 
-                href={`https://wa.me/212600000000?text=Bonjour, je suis intéressé par votre bijou : ${encodeURIComponent(displayTitle)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-jewelia-secondary"
-                style={{
-                  borderColor: '#25d366',
-                  color: '#15803d',
-                  background: 'rgba(37, 211, 102, 0.1)',
-                  padding: '12px 16px',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-                title={lang === 'ar' ? 'تواصل عبر واتساب' : 'Contacter sur WhatsApp'}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" style={{ flexShrink: 0 }}>
-                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
-                </svg>
-                <span>WhatsApp</span>
-              </a>
+                <a 
+                  href={`https://wa.me/212600000000?text=Bonjour, je suis intéressé par votre bijou : ${encodeURIComponent(displayTitle)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-jewelia-secondary"
+                  style={{
+                    flex: 1,
+                    minWidth: '115px',
+                    borderColor: '#25d366',
+                    color: '#15803d',
+                    background: 'rgba(37, 211, 102, 0.08)',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textDecoration: 'none',
+                    minHeight: '42px',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title={lang === 'ar' ? 'تواصل عبر واتساب' : 'Contacter sur WhatsApp'}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" style={{ flexShrink: 0 }}>
+                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
+                  </svg>
+                  <span>WhatsApp</span>
+                </a>
 
-              <button 
-                onClick={() => toggleFavorite(product.id)}
-                style={{
-                  width: '46px',
-                  height: '46px',
-                  minWidth: '46px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: isFavorited ? '1.5px solid #ef4444' : '1px solid var(--border-gold)',
-                  background: isFavorited ? '#fef2f2' : 'var(--bg-surface)',
-                  color: isFavorited ? '#ef4444' : 'var(--text-gray)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
-                }}
-                title={lang === 'ar' ? 'إضافة إلى المفضلة' : 'Favoris'}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill={isFavorited ? "#ef4444" : "none"} stroke={isFavorited ? "#ef4444" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-              </button>
+                <button 
+                  onClick={() => toggleFavorite(product.id)}
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    minWidth: '42px',
+                    borderRadius: '10px',
+                    border: isFavorited ? '1.5px solid #ef4444' : '1px solid var(--border-gold)',
+                    background: isFavorited ? '#fef2f2' : 'var(--bg-surface)',
+                    color: isFavorited ? '#ef4444' : 'var(--text-gray)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+                  }}
+                  title={lang === 'ar' ? 'إضافة إلى المفضلة' : 'Favoris'}
+                >
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill={isFavorited ? "#ef4444" : "none"} stroke={isFavorited ? "#ef4444" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
+                </button>
 
-              <button 
-                onClick={() => onAddToCompare(product)}
-                style={{
-                  width: '46px',
-                  height: '46px',
-                  minWidth: '46px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: isCompared ? '1.5px solid var(--primary-gold)' : '1px solid var(--border-gold)',
-                  background: isCompared ? 'rgba(212, 175, 55, 0.12)' : 'var(--bg-surface)',
-                  color: isCompared ? 'var(--primary-gold)' : 'var(--text-gray)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
-                }}
-                title={lang === 'ar' ? 'مقارنة القطعة' : 'Comparer'}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path>
-                  <path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path>
-                  <path d="M7 21h10"></path>
-                  <path d="M12 3v18"></path>
-                  <path d="M3 7h18"></path>
-                </svg>
-              </button>
+                <button 
+                  onClick={() => onAddToCompare(product)}
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    minWidth: '42px',
+                    borderRadius: '10px',
+                    border: isCompared ? '1.5px solid var(--primary-gold)' : '1px solid var(--border-gold)',
+                    background: isCompared ? 'rgba(212, 175, 55, 0.12)' : 'var(--bg-surface)',
+                    color: isCompared ? 'var(--primary-gold)' : 'var(--text-gray)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+                  }}
+                  title={lang === 'ar' ? 'مقارنة القطعة' : 'Comparer'}
+                >
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path>
+                    <path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path>
+                    <path d="M7 21h10"></path>
+                    <path d="M12 3v18"></path>
+                    <path d="M3 7h18"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
