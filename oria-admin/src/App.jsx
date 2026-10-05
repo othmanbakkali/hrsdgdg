@@ -122,6 +122,7 @@ function AdminLayout() {
   const [productSearch, setProductSearch] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState('All');
   const [productCategoryFilter, setProductCategoryFilter] = useState('All');
+  const [productsViewMode, setProductsViewMode] = useState(() => window.innerWidth <= 900 ? 'cards' : 'table');
 
   // User form modal state
   const [showUserModal, setShowUserModal] = useState(false);
@@ -2725,158 +2726,300 @@ function AdminLayout() {
 
         {activeTab === 'products' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>{t('productManagement')}</h2>
-                <button type="button" className="btn-approve" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={handleOpenAddProduct}>
-                  ➕ {t('addProduct')}
-                </button>
+            <div className="admin-section-header products-header-wrap">
+              <div className="products-title-actions">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>{t('productManagement')}</h2>
+                  <button type="button" className="btn-approve" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={handleOpenAddProduct}>
+                    ➕ {t('addProduct')}
+                  </button>
+                </div>
+
+                {/* View Switcher Toggle */}
+                <div className="view-mode-toggle-group">
+                  <button
+                    type="button"
+                    className={`view-mode-btn ${productsViewMode === 'cards' ? 'active' : ''}`}
+                    onClick={() => setProductsViewMode('cards')}
+                    title={lang === 'ar' ? 'عرض بالبطاقات' : 'Vue Cartes'}
+                  >
+                    🗂️ {lang === 'ar' ? 'بطاقات' : 'Cartes'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`view-mode-btn ${productsViewMode === 'table' ? 'active' : ''}`}
+                    onClick={() => setProductsViewMode('table')}
+                    title={lang === 'ar' ? 'عرض بالجدول' : 'Vue Tableau'}
+                  >
+                    📊 {lang === 'ar' ? 'جدول' : 'Tableau'}
+                  </button>
+                </div>
               </div>
               
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flexGrow: 1, justifyContent: 'flex-end' }}>
+              <div className="products-search-filters">
                 <input 
                   type="text" 
-                  className="form-input" 
-                  style={{ maxWidth: '300px', margin: 0 }}
+                  className="form-input search-input" 
                   placeholder={t('searchProduct')}
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                 />
                 
-                <select 
-                  className="form-input" 
-                  style={{ maxWidth: '200px', margin: 0, padding: '8px 12px' }}
-                  value={productStatusFilter}
-                  onChange={(e) => setProductStatusFilter(e.target.value)}
-                >
-                  <option value="All">{t('filterStatus')}: {t('allProducts')}</option>
-                  <option value="Validated">{t('statusApproved')}</option>
-                  <option value="Pending">{t('statusPending')}</option>
-                  <option value="Rejected">{t('statusRejected')}</option>
-                </select>
+                <div className="filters-dropdowns-row">
+                  <select 
+                    className="form-input filter-dropdown" 
+                    value={productStatusFilter}
+                    onChange={(e) => setProductStatusFilter(e.target.value)}
+                  >
+                    <option value="All">{t('filterStatus')}: {t('allProducts')}</option>
+                    <option value="Validated">{t('statusApproved')}</option>
+                    <option value="Pending">{t('statusPending')}</option>
+                    <option value="Rejected">{t('statusRejected')}</option>
+                  </select>
 
-                <select 
-                  className="form-input" 
-                  style={{ maxWidth: '200px', margin: 0, padding: '8px 12px' }}
-                  value={productCategoryFilter}
-                  onChange={(e) => setProductCategoryFilter(e.target.value)}
-                >
-                  <option value="All">{t('filterCategory')}: {t('categories')}</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {lang === 'fr' ? cat.nom_fr : (lang === 'ar' ? cat.nom_ar : cat.nom_en)}
-                    </option>
-                  ))}
-                </select>
+                  <select 
+                    className="form-input filter-dropdown" 
+                    value={productCategoryFilter}
+                    onChange={(e) => setProductCategoryFilter(e.target.value)}
+                  >
+                    <option value="All">{t('filterCategory')}: {t('categories')}</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {lang === 'fr' ? cat.nom_fr : (lang === 'ar' ? cat.nom_ar : cat.nom_en)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="table-container">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>{t('products')}</th>
-                    <th>{t('merchant')}</th>
-                    <th>{t('category')}</th>
-                    <th>{t('price')}</th>
-                    <th>{t('stock')}</th>
-                    <th>{t('status')}</th>
-                    <th>{t('action')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.filter(p => {
-                    const q = (productSearch || '').toLowerCase();
-                    const matchesSearch = !q ||
-                      (p.titre || '').toLowerCase().includes(q) ||
-                      (p.titre_fr || '').toLowerCase().includes(q) ||
-                      (p.titre_ar || '').toLowerCase().includes(q) ||
-                      (p.titre_en || '').toLowerCase().includes(q) ||
-                      (p.description || '').toLowerCase().includes(q) ||
-                      (p.description_fr || '').toLowerCase().includes(q) ||
-                      (p.description_ar || '').toLowerCase().includes(q) ||
-                      (p.description_en || '').toLowerCase().includes(q) ||
-                      (p.id || '').toLowerCase().includes(q);
-                    const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
-                    const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
-                    return matchesSearch && matchesStatus && matchesCategory;
-                  }).map(p => {
-                    const shop = users.find(u => u.id === p.commercant_id)?.shopName || (lang === 'ar' ? 'تاجر غير محدد' : 'Commerçant Inconnu');
-                    const category = categories.find(c => c.id === p.category_id);
-                    const catName = category ? (lang === 'ar' ? (category.nom_ar || category.nom_fr) : (category.nom_fr || category.nom_ar)) : (lang === 'ar' ? 'بدون فئة' : 'Sans Catégorie');
-                    const displayTitle = (lang === 'ar' && p.titre_ar) ? p.titre_ar : (p.titre_fr || p.titre);
-                    return (
-                      <tr key={p.id}>
-                        <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{p.id}</td>
-                        <td style={{ fontWeight: 'bold' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {p.images?.[0] && (
-                              <img src={p.images[0]} alt="" style={{ width: '42px', height: '42px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-gold)' }} />
-                            )}
-                            <div>
-                              <div>{displayTitle}</div>
-                              <div style={{ display: 'flex', gap: '4px', marginTop: '3px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: p.titre_ar ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: p.titre_ar ? '#27ae60' : 'var(--text-gray)' }}>AR</span>
-                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: (p.titre_fr || p.titre) ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: (p.titre_fr || p.titre) ? '#27ae60' : 'var(--text-gray)' }}>FR</span>
-                                <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', marginLeft: '4px' }}>• {p.purete} • {p.gramme}g • {p.city}</span>
+            {/* View Mode 1: Mobile Cards Grid */}
+            {productsViewMode === 'cards' && (
+              <div className="admin-product-cards-grid">
+                {products.filter(p => {
+                  const q = (productSearch || '').toLowerCase();
+                  const matchesSearch = !q ||
+                    (p.titre || '').toLowerCase().includes(q) ||
+                    (p.titre_fr || '').toLowerCase().includes(q) ||
+                    (p.titre_ar || '').toLowerCase().includes(q) ||
+                    (p.titre_en || '').toLowerCase().includes(q) ||
+                    (p.description || '').toLowerCase().includes(q) ||
+                    (p.description_fr || '').toLowerCase().includes(q) ||
+                    (p.description_ar || '').toLowerCase().includes(q) ||
+                    (p.description_en || '').toLowerCase().includes(q) ||
+                    (p.id || '').toLowerCase().includes(q);
+                  const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
+                  const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
+                  return matchesSearch && matchesStatus && matchesCategory;
+                }).map(p => {
+                  const shop = users.find(u => u.id === p.commercant_id)?.shopName || (lang === 'ar' ? 'تاجر غير محدد' : 'Commerçant Inconnu');
+                  const category = categories.find(c => c.id === p.category_id);
+                  const catName = category ? (lang === 'ar' ? (category.nom_ar || category.nom_fr) : (category.nom_fr || category.nom_ar)) : (lang === 'ar' ? 'بدون فئة' : 'Sans Catégorie');
+                  const displayTitle = (lang === 'ar' && p.titre_ar) ? p.titre_ar : (p.titre_fr || p.titre);
+                  return (
+                    <div key={p.id} className="admin-product-card-item">
+                      <div className="product-card-top">
+                        <div className="product-card-thumb-wrap">
+                          {p.images?.[0] ? (
+                            <img src={p.images[0]} alt="" className="product-card-thumb" />
+                          ) : (
+                            <div className="product-card-thumb-placeholder">💎</div>
+                          )}
+                        </div>
+                        <div className="product-card-header-info">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
+                            <h4 className="product-card-title">{displayTitle}</h4>
+                            <span style={{
+                              backgroundColor: p.statut === 'Validated' ? 'rgba(46, 204, 113, 0.15)' : (p.statut === 'Rejected' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(255, 165, 0, 0.15)'),
+                              color: p.statut === 'Validated' ? '#2ecc71' : (p.statut === 'Rejected' ? '#e74c3c' : '#ffa500'),
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: 'bold',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}>
+                              {p.statut === 'Validated' ? t('statusApproved') : (p.statut === 'Rejected' ? t('statusRejected') : t('statusPending'))}
+                            </span>
+                          </div>
+
+                          <div className="product-card-tags-row">
+                            <span className="product-card-tag cat-tag">🏷️ {catName}</span>
+                            <span className="product-card-tag id-tag">#{p.id}</span>
+                            {p.titre_ar && <span className="product-card-lang-tag active">AR</span>}
+                            {(p.titre_fr || p.titre) && <span className="product-card-lang-tag active">FR</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Specs & Details Grid */}
+                      <div className="product-card-details-grid">
+                        <div className="detail-item">
+                          <span className="detail-label">{t('price')} :</span>
+                          <strong className="detail-value price-val">{p.prix?.toLocaleString()} MAD</strong>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">{t('stock')} :</span>
+                          <span className={`detail-value ${p.stock <= 2 ? 'stock-low' : ''}`}>
+                            📦 {p.stock} {lang === 'ar' ? 'قطعة' : 'en stock'}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">{t('merchant')} :</span>
+                          <span className="detail-value text-truncate">🏪 {shop}</span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">{lang === 'ar' ? 'العيار والمدينة' : 'Détails'} :</span>
+                          <span className="detail-value">✨ {p.purete || '18k'} • {p.gramme}g • {p.city}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="product-card-actions">
+                        <button 
+                          type="button"
+                          className="btn-approve btn-card-action" 
+                          onClick={() => handleOpenEditProduct(p)}
+                        >
+                          ✏️ {t('edit')}
+                        </button>
+                        <button 
+                          type="button"
+                          className="btn-reject btn-card-action" 
+                          onClick={() => handleDeleteProduct(p.id)}
+                        >
+                          🗑️ {t('delete')}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {products.filter(p => {
+                  const q = (productSearch || '').toLowerCase();
+                  const matchesSearch = !q ||
+                    (p.titre || '').toLowerCase().includes(q) ||
+                    (p.id || '').toLowerCase().includes(q) ||
+                    (p.description || '').toLowerCase().includes(q);
+                  const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
+                  const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
+                  return matchesSearch && matchesStatus && matchesCategory;
+                }).length === 0 && (
+                  <div className="empty-products-card">
+                    {lang === 'ar' ? 'لم يتم العثور على أي معروضات.' : 'Aucun article trouvé.'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* View Mode 2: Classical Table */}
+            {productsViewMode === 'table' && (
+              <div className="table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>{t('products')}</th>
+                      <th>{t('merchant')}</th>
+                      <th>{t('category')}</th>
+                      <th>{t('price')}</th>
+                      <th>{t('stock')}</th>
+                      <th>{t('status')}</th>
+                      <th>{t('action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.filter(p => {
+                      const q = (productSearch || '').toLowerCase();
+                      const matchesSearch = !q ||
+                        (p.titre || '').toLowerCase().includes(q) ||
+                        (p.titre_fr || '').toLowerCase().includes(q) ||
+                        (p.titre_ar || '').toLowerCase().includes(q) ||
+                        (p.titre_en || '').toLowerCase().includes(q) ||
+                        (p.description || '').toLowerCase().includes(q) ||
+                        (p.description_fr || '').toLowerCase().includes(q) ||
+                        (p.description_ar || '').toLowerCase().includes(q) ||
+                        (p.description_en || '').toLowerCase().includes(q) ||
+                        (p.id || '').toLowerCase().includes(q);
+                      const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
+                      const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
+                      return matchesSearch && matchesStatus && matchesCategory;
+                    }).map(p => {
+                      const shop = users.find(u => u.id === p.commercant_id)?.shopName || (lang === 'ar' ? 'تاجر غير محدد' : 'Commerçant Inconnu');
+                      const category = categories.find(c => c.id === p.category_id);
+                      const catName = category ? (lang === 'ar' ? (category.nom_ar || category.nom_fr) : (category.nom_fr || category.nom_ar)) : (lang === 'ar' ? 'بدون فئة' : 'Sans Catégorie');
+                      const displayTitle = (lang === 'ar' && p.titre_ar) ? p.titre_ar : (p.titre_fr || p.titre);
+                      return (
+                        <tr key={p.id}>
+                          <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{p.id}</td>
+                          <td style={{ fontWeight: 'bold' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              {p.images?.[0] && (
+                                <img src={p.images[0]} alt="" style={{ width: '42px', height: '42px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-gold)' }} />
+                              )}
+                              <div>
+                                <div>{displayTitle}</div>
+                                <div style={{ display: 'flex', gap: '4px', marginTop: '3px', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: p.titre_ar ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: p.titre_ar ? '#27ae60' : 'var(--text-gray)' }}>AR</span>
+                                  <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: (p.titre_fr || p.titre) ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: (p.titre_fr || p.titre) ? '#27ae60' : 'var(--text-gray)' }}>FR</span>
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', marginLeft: '4px' }}>• {p.purete} • {p.gramme}g • {p.city}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>{shop}</td>
-                        <td>{catName}</td>
-                        <td style={{ color: 'var(--admin-gold)', fontWeight: 'bold' }}>{p.prix} MAD</td>
-                        <td>
-                          <span style={{
-                            color: p.stock <= 2 ? 'var(--danger-red)' : 'inherit',
-                            fontWeight: p.stock <= 2 ? 'bold' : 'normal'
-                          }}>
-                            {p.stock}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{
-                            backgroundColor: p.statut === 'Validated' ? 'rgba(46, 204, 113, 0.15)' : (p.statut === 'Rejected' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(255, 165, 0, 0.15)'),
-                            color: p.statut === 'Validated' ? '#2ecc71' : (p.statut === 'Rejected' ? '#e74c3c' : '#ffa500'),
-                            padding: '2px 8px',
-                            borderRadius: '3px',
-                            fontSize: '0.75rem',
-                            fontWeight: 'bold'
-                          }}>
-                            {p.statut === 'Validated' ? t('statusApproved') : (p.statut === 'Rejected' ? t('statusRejected') : t('statusPending'))}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className="btn-approve" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => handleOpenEditProduct(p)}>
-                              ✏️
-                            </button>
-                            <button className="btn-reject" style={{ padding: '6px 12px', fontSize: '0.75rem', margin: 0 }} onClick={() => handleDeleteProduct(p.id)}>
-                              🗑️
-                            </button>
-                          </div>
+                          </td>
+                          <td>{shop}</td>
+                          <td>{catName}</td>
+                          <td style={{ color: 'var(--admin-gold)', fontWeight: 'bold' }}>{p.prix} MAD</td>
+                          <td>
+                            <span style={{
+                              color: p.stock <= 2 ? 'var(--danger-red)' : 'inherit',
+                              fontWeight: p.stock <= 2 ? 'bold' : 'normal'
+                            }}>
+                              {p.stock}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{
+                              backgroundColor: p.statut === 'Validated' ? 'rgba(46, 204, 113, 0.15)' : (p.statut === 'Rejected' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(255, 165, 0, 0.15)'),
+                              color: p.statut === 'Validated' ? '#2ecc71' : (p.statut === 'Rejected' ? '#e74c3c' : '#ffa500'),
+                              padding: '2px 8px',
+                              borderRadius: '3px',
+                              fontSize: '0.75rem',
+                              fontWeight: 'bold'
+                            }}>
+                              {p.statut === 'Validated' ? t('statusApproved') : (p.statut === 'Rejected' ? t('statusRejected') : t('statusPending'))}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button className="btn-approve" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => handleOpenEditProduct(p)}>
+                                ✏️
+                              </button>
+                              <button className="btn-reject" style={{ padding: '6px 12px', fontSize: '0.75rem', margin: 0 }} onClick={() => handleDeleteProduct(p.id)}>
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {products.filter(p => {
+                      const matchesSearch = p.titre?.toLowerCase().includes(productSearch.toLowerCase()) || 
+                                            p.id?.toLowerCase().includes(productSearch.toLowerCase()) ||
+                                            p.description?.toLowerCase().includes(productSearch.toLowerCase());
+                      const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
+                      const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
+                      return matchesSearch && matchesStatus && matchesCategory;
+                    }).length === 0 && (
+                      <tr>
+                        <td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-gray)' }}>
+                          {lang === 'ar' ? 'لم يتم العثور على أي معروضات.' : 'Aucun article trouvé.'}
                         </td>
                       </tr>
-                    );
-                  })}
-                  {products.filter(p => {
-                    const matchesSearch = p.titre?.toLowerCase().includes(productSearch.toLowerCase()) || 
-                                          p.id?.toLowerCase().includes(productSearch.toLowerCase()) ||
-                                          p.description?.toLowerCase().includes(productSearch.toLowerCase());
-                    const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
-                    const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
-                    return matchesSearch && matchesStatus && matchesCategory;
-                  }).length === 0 && (
-                    <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-gray)' }}>
-                        {lang === 'ar' ? 'لم يتم العثور على أي معروضات.' : 'Aucun article trouvé.'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
