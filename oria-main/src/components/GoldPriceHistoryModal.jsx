@@ -39,8 +39,6 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     setCurrentPage(1);
   }, [selectedRange, goldData]);
 
-  if (!isOpen) return null;
-
   const currentPrice = goldData.currentPrice18k || 1045;
 
   const fullHistoryList = (goldData.history && goldData.history.length > 0)
@@ -256,6 +254,8 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
   };
 
   const activePoint = hoveredIndex !== null ? points[hoveredIndex] : points[points.length - 1];
+
+  if (!isOpen) return null;
 
   return (
     <div 
