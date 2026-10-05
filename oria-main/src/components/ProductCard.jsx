@@ -37,8 +37,21 @@ export default function ProductCard({
     productImages[2] || (productImages.length > 1 ? productImages[1] : 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=300&auto=format&fit=crop&q=80')
   ];
 
-  const sellerPhone = product.vendeur_phone || '+212661889900';
-  const sellerCleanPhone = sellerPhone.replace(/[^0-9]/g, '');
+  const formatWhatsAppPhone = (rawPhone) => {
+    let cleaned = (rawPhone || '').replace(/[^0-9]/g, '');
+    if (!cleaned) return '212661889900';
+    if (cleaned.startsWith('00212')) {
+      cleaned = cleaned.substring(2);
+    } else if (cleaned.startsWith('0') && cleaned.length >= 9) {
+      cleaned = '212' + cleaned.substring(1);
+    } else if (!cleaned.startsWith('212') && cleaned.length === 9) {
+      cleaned = '212' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const sellerPhone = product.vendeur_phone || product.telephone || product.phone || '';
+  const sellerCleanPhone = formatWhatsAppPhone(sellerPhone);
   const whatsappUrl = `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(lang === 'ar' ? `السلام عليكم، أنا مهتم بقطعة المجوهرات على HRSDGDG: ${displayTitle} (${product.prix?.toLocaleString()} درهم)` : `Bonjour, je suis intéressé par votre bijou sur HRSDGDG : ${displayTitle} (${product.prix?.toLocaleString()} DH)`)}`;
 
   // Specs text

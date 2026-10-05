@@ -128,6 +128,7 @@ export default function MerchantDashboard({ onOpenSellModal }) {
         images: [newProduct.images],
         commercant_id: user.id,
         vendeur_nom: user.shopName || user.nom,
+        vendeur_phone: user.phone || user.telephone || '',
         vendeur_type: 'bijouterie',
         statut: 'Validated'
       };

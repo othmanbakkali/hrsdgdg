@@ -410,6 +410,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
         disponibilite: isAuction ? 'enchere' : 'disponible',
         commercant_id: user ? user.id : 'u_particulier1',
         vendeur_nom: user ? (user.shopName || user.nom) : 'Particulier Vérifié',
+        vendeur_phone: user?.phone || user?.telephone || '',
         vendeur_type: user?.role === 'commercant' ? 'bijouterie' : 'particulier',
         statut: 'Validated'
       };

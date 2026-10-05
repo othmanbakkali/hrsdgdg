@@ -88,23 +88,43 @@ export default function MobileChatDrawer({
         </div>
 
         {/* Product mini Banner if attached */}
-        {targetProduct && (
-          <div className="chat-product-banner">
-            <img src={targetProduct.images[0]} alt={targetProduct.titre} className="chat-banner-thumb" />
-            <div className="chat-banner-info">
-              <strong className="chat-banner-title">{targetProduct.titre}</strong>
-              <span className="chat-banner-price">{targetProduct.prix.toLocaleString()} DH</span>
+        {targetProduct && (() => {
+          const formatWhatsAppPhone = (rawPhone) => {
+            let cleaned = (rawPhone || '').replace(/[^0-9]/g, '');
+            if (!cleaned) return '212661889900';
+            if (cleaned.startsWith('00212')) {
+              cleaned = cleaned.substring(2);
+            } else if (cleaned.startsWith('0') && cleaned.length >= 9) {
+              cleaned = '212' + cleaned.substring(1);
+            } else if (!cleaned.startsWith('212') && cleaned.length === 9) {
+              cleaned = '212' + cleaned;
+            }
+            return cleaned;
+          };
+
+          const sellerPhone = targetProduct.vendeur_phone || targetProduct.telephone || targetProduct.phone || '';
+          const cleanPhone = formatWhatsAppPhone(sellerPhone);
+          const targetTitle = targetProduct.titre_fr || targetProduct.titre || 'Bijou';
+          const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Bonjour, je vous contacte à propos du bijou: ${targetTitle} (${targetProduct.prix?.toLocaleString()} DH)`)}`;
+
+          return (
+            <div className="chat-product-banner">
+              <img src={targetProduct.images && targetProduct.images[0]} alt={targetTitle} className="chat-banner-thumb" />
+              <div className="chat-banner-info">
+                <strong className="chat-banner-title">{targetTitle}</strong>
+                <span className="chat-banner-price">{targetProduct.prix?.toLocaleString()} DH</span>
+              </div>
+              <a 
+                href={waUrl} 
+                target="_blank" 
+                rel="noreferrer"
+                className="chat-whatsapp-btn"
+              >
+                WhatsApp 💬
+              </a>
             </div>
-            <a 
-              href={`https://wa.me/212600000000?text=Bonjour, je vous contacte à propos du bijou: ${encodeURIComponent(targetProduct.titre)}`} 
-              target="_blank" 
-              rel="noreferrer"
-              className="chat-whatsapp-btn"
-            >
-              WhatsApp 💬
-            </a>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Messages List */}
         <div className="chat-messages-container">

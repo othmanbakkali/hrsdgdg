@@ -277,7 +277,7 @@ function AdminLayout() {
       account_status: initialStatus,
       block_reason: u.block_reason || '',
       shopName: u.shopName || '',
-      phone: u.phone || '',
+      phone: u.phone || u.telephone || '',
       address: u.address || '',
       city: u.city || '',
       numero_patente: u.numero_patente || '',
@@ -2030,10 +2030,16 @@ function AdminLayout() {
                         {u.role === 'commercant' ? (
                           <div style={{ fontSize: '0.8rem' }}>
                             <div>🏪 <strong>{u.shopName}</strong></div>
-                            <div>📞 {u.phone}</div>
-                            <div>📍 {u.address}, {u.city}</div>
+                            {(u.phone || u.telephone) && <div>📞 {u.phone || u.telephone}</div>}
+                            {(u.address || u.city) && <div>📍 {[u.address, u.city].filter(Boolean).join(', ')}</div>}
                           </div>
-                        ) : '-'}
+                        ) : (
+                          (u.phone || u.telephone) ? (
+                            <div style={{ fontSize: '0.8rem' }}>
+                              <div>📞 {u.phone || u.telephone}</div>
+                            </div>
+                          ) : '-'
+                        )}
                       </td>
                       <td>
                         {u.numero_patente ? (
@@ -3263,6 +3269,19 @@ function AdminLayout() {
                 />
               </div>
               <div className="form-group">
+                <label className="form-label">{t('phone') || (lang === 'ar' ? 'رقم الهاتف' : 'Téléphone')}</label>
+                <input 
+                  type="tel" 
+                  className="form-input" 
+                  value={userForm.phone} 
+                  onChange={e => setUserForm({ ...userForm, phone: e.target.value })} 
+                  placeholder={lang === 'ar' ? 'مثال: 0661234567' : 'Ex: 0661234567'}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              <div className="form-group">
                 <label className="form-label">{t('role')}</label>
                 <select 
                   className="form-input" 
@@ -3274,10 +3293,6 @@ function AdminLayout() {
                   <option value="admin">{t('roleAdmin')}</option>
                 </select>
               </div>
-            </div>
-
-            {/* Account Status & Block Reason */}
-            <div style={{ display: 'grid', gridTemplateColumns: userForm.account_status === 'bloque' ? '1fr 1fr' : '1fr', gap: '15px', marginBottom: '15px' }}>
               <div className="form-group">
                 <label className="form-label">{lang === 'ar' ? 'حالة الحساب والتفعيل' : 'Statut du Compte'}</label>
                 <select 
@@ -3290,23 +3305,24 @@ function AdminLayout() {
                   <option value="bloque">🔴 {lang === 'ar' ? 'محظور / معلق (Bloqué)' : 'Bloqué / Suspendu'}</option>
                 </select>
               </div>
-              {userForm.account_status === 'bloque' && (
-                <div className="form-group">
-                  <label className="form-label" style={{ color: '#ef4444' }}>{lang === 'ar' ? 'سبب ومبرر الحظر' : 'Motif du Blocage'}</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    placeholder={lang === 'ar' ? 'مثال: شكاية تلاعب أو عدم مطابقة الباتنت' : 'Ex: Réclamation client, non-conformité patente'} 
-                    value={userForm.block_reason || ''} 
-                    onChange={e => setUserForm({ ...userForm, block_reason: e.target.value })} 
-                  />
-                </div>
-              )}
             </div>
+
+            {userForm.account_status === 'bloque' && (
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label className="form-label" style={{ color: '#ef4444' }}>{lang === 'ar' ? 'سبب ومبرر الحظر' : 'Motif du Blocage'}</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder={lang === 'ar' ? 'مثال: شكاية تلاعب أو عدم مطابقة الباتنت' : 'Ex: Réclamation client, non-conformité patente'} 
+                  value={userForm.block_reason || ''} 
+                  onChange={e => setUserForm({ ...userForm, block_reason: e.target.value })} 
+                />
+              </div>
+            )}
 
             {userForm.role === 'commercant' && (
               <fieldset style={{ border: '1px solid var(--border-gold)', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
-                <legend style={{ color: 'var(--admin-gold)', padding: '0 8px', fontSize: '0.85rem' }}>{lang === 'ar' ? 'معلومات المتجر والتواصل' : 'Informations Boutique'}</legend>
+                <legend style={{ color: 'var(--admin-gold)', padding: '0 8px', fontSize: '0.85rem' }}>{lang === 'ar' ? 'معلومات المتجر والتجارة' : 'Informations Boutique'}</legend>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                   <div className="form-group">
                     <label className="form-label">{t('shopName')}</label>
@@ -3319,26 +3335,6 @@ function AdminLayout() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('phone')}</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={userForm.phone} 
-                      onChange={e => setUserForm({ ...userForm, phone: e.target.value })} 
-                    />
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                  <div className="form-group">
-                    <label className="form-label">{t('address')}</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={userForm.address} 
-                      onChange={e => setUserForm({ ...userForm, address: e.target.value })} 
-                    />
-                  </div>
-                  <div className="form-group">
                     <label className="form-label">{t('city')}</label>
                     <input 
                       type="text" 
@@ -3347,6 +3343,15 @@ function AdminLayout() {
                       onChange={e => setUserForm({ ...userForm, city: e.target.value })} 
                     />
                   </div>
+                </div>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                  <label className="form-label">{t('address')}</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={userForm.address} 
+                    onChange={e => setUserForm({ ...userForm, address: e.target.value })} 
+                  />
                 </div>
 
                 {/* Patente Details & Document */}

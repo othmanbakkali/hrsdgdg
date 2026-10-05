@@ -550,6 +550,8 @@ app.post('/api/users', (req, res) => {
     nom,
     mot_de_passe: mot_de_passe || 'password123',
     role: role || 'commercant',
+    phone: phone || '',
+    telephone: phone || '',
     is_professional: role === 'commercant' || true,
     numero_patente: numPatente,
     patente_document: savedDocUrl,
@@ -559,7 +561,6 @@ app.post('/api/users', (req, res) => {
 
   if (newUser.role === 'commercant') {
     newUser.shopName = shopName || nom;
-    newUser.phone = phone || '';
     newUser.address = address || '';
     newUser.city = city || '';
     newUser.seller_type = 'bijouterie';
@@ -648,7 +649,10 @@ app.put('/api/users/:id', (req, res) => {
   if (mot_de_passe) user.mot_de_passe = mot_de_passe;
   if (role) user.role = role;
   if (shopName) user.shopName = shopName;
-  if (phone) user.phone = phone;
+  if (phone !== undefined) {
+    user.phone = phone;
+    user.telephone = phone;
+  }
   if (address) user.address = address;
   if (city) user.city = city;
   
@@ -670,7 +674,10 @@ app.put('/api/users/:id', (req, res) => {
 
   if (user.role === 'commercant') {
     user.shopName = shopName || user.shopName || user.nom;
-    user.phone = phone || user.phone || '';
+    if (phone) {
+      user.phone = phone;
+      user.telephone = phone;
+    }
     user.address = address || user.address || '';
     user.city = city || user.city || '';
 
@@ -691,7 +698,6 @@ app.put('/api/users/:id', (req, res) => {
     }
   } else {
     delete user.shopName;
-    delete user.phone;
     delete user.address;
     delete user.city;
   }
@@ -948,7 +954,19 @@ app.get('/api/bijoux', (req, res) => {
     return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
   });
 
-  res.json(results);
+  const usersMap = new Map((db.users || []).map(u => [u.id, u]));
+  const enrichedResults = results.map(b => {
+    const seller = usersMap.get(b.commercant_id) || usersMap.get(b.vendeur_id);
+    const sellerPhone = b.vendeur_phone || b.telephone || seller?.phone || seller?.telephone || '';
+    const sellerNom = b.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
+    return {
+      ...b,
+      vendeur_phone: sellerPhone,
+      vendeur_nom: sellerNom
+    };
+  });
+
+  res.json(enrichedResults);
 });
 
 app.get('/api/bijoux/:id', (req, res) => {
@@ -956,9 +974,18 @@ app.get('/api/bijoux/:id', (req, res) => {
   const product = db.bijoux.find(b => b.id === req.params.id);
   if (!product) return res.status(404).json({ message: 'Bijou non trouvé' });
   
+  const seller = (db.users || []).find(u => u.id === product.commercant_id || u.id === product.vendeur_id);
+  const sellerPhone = product.vendeur_phone || product.telephone || seller?.phone || seller?.telephone || '';
+  const sellerNom = product.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
+
   // Attach reviews
   const reviews = (db.reviews || []).filter(r => r.bijou_id === product.id);
-  res.json({ ...product, customer_reviews: reviews });
+  res.json({ 
+    ...product, 
+    vendeur_phone: sellerPhone, 
+    vendeur_nom: sellerNom, 
+    customer_reviews: reviews 
+  });
 });
 
 app.post('/api/bijoux', (req, res) => {
@@ -1064,6 +1091,7 @@ app.post('/api/bijoux', (req, res) => {
     category_id: category_id || 'cat_rings',
     commercant_id: targetMerchantId,
     vendeur_nom: vendeur_nom || merchantUser?.shopName || merchantUser?.nom || 'Particulier Vérifié',
+    vendeur_phone: req.body.vendeur_phone || merchantUser?.phone || merchantUser?.telephone || '',
     vendeur_type: vendeur_type || (merchantUser?.role === 'commercant' ? 'bijouterie' : (isSecondHand ? 'particulier' : 'bijouterie')),
     vendeur_badge: vendeur_badge || (merchantUser?.subscription?.badge || '✓ Vendeur vérifié'),
     garantie: Boolean(garantie),

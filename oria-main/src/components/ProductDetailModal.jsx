@@ -28,6 +28,26 @@ export default function ProductDetailModal({
     ? product.description_ar 
     : (product?.description_fr || product?.description || '');
 
+  const formatWhatsAppPhone = (rawPhone) => {
+    let cleaned = (rawPhone || '').replace(/[^0-9]/g, '');
+    if (!cleaned) return '212661889900';
+    if (cleaned.startsWith('00212')) {
+      cleaned = cleaned.substring(2);
+    } else if (cleaned.startsWith('0') && cleaned.length >= 9) {
+      cleaned = '212' + cleaned.substring(1);
+    } else if (!cleaned.startsWith('212') && cleaned.length === 9) {
+      cleaned = '212' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const sellerPhone = product?.vendeur_phone || product?.telephone || product?.phone || '';
+  const sellerCleanPhone = formatWhatsAppPhone(sellerPhone);
+  const sellerWhatsAppMsg = lang === 'ar'
+    ? `السلام عليكم، أنا مهتم بهذه القطعة المعروضة على المنصة: ${displayTitle} (${product?.prix?.toLocaleString()} درهم)`
+    : `Bonjour, je suis intéressé par votre bijou : ${displayTitle} (${product?.prix?.toLocaleString()} DH)`;
+  const whatsappUrl = `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(sellerWhatsAppMsg)}`;
+
   const formatMaterial = (mat, purity) => {
     if (lang === 'ar') {
       let m = mat || '';
@@ -723,7 +743,7 @@ export default function ProductDetailModal({
                 </button>
 
                 <a 
-                  href={`https://wa.me/212600000000?text=Bonjour, je suis intéressé par votre bijou : ${encodeURIComponent(displayTitle)}`}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-jewelia-secondary"
