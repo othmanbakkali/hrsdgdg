@@ -365,8 +365,8 @@ export default function MobileFilterSheet({
               onChange={e => onChangeSortBy(e.target.value)}
               className="sheet-select-input"
             >
+              <option value="newest">{isAr ? '🕒 الأحدث أولاً (من الأحدث إلى الأقدم)' : '🕒 Plus récents d\'abord'}</option>
               <option value="popular">{isAr ? '⭐ الأكثر شعبية' : '⭐ Popularité & Favoris'}</option>
-              <option value="newest">{isAr ? '🕒 الأحدث أولاً' : '🕒 Plus récents d\'abord'}</option>
               <option value="price_asc">{isAr ? '💰 السعر: الأقل أولاً' : '💰 Prix croissant (Moins cher)'}</option>
               <option value="price_desc">{isAr ? '💎 السعر: الأعلى أولاً' : '💎 Prix décroissant (Luxe d\'abord)'}</option>
               <option value="rating">{isAr ? '🏆 أفضل تقييمات التجار' : '🏆 Meilleures notes vendeurs'}</option>

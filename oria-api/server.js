@@ -940,6 +940,14 @@ app.get('/api/bijoux', (req, res) => {
     results = results.filter(b => b.commercant_id === commercant);
   }
 
+  // Sort from newest to oldest (du récent vers le plus ancien)
+  results.sort((a, b) => {
+    const dateA = new Date(a.date_creation || a.created_at || 0).getTime();
+    const dateB = new Date(b.date_creation || b.created_at || 0).getTime();
+    if (dateB !== dateA) return dateB - dateA;
+    return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+  });
+
   res.json(results);
 });
 

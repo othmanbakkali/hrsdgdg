@@ -70,7 +70,7 @@ function MainLayout() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [dealsOnly, setDealsOnly] = useState(false);
   const [priceMax, setPriceMax] = useState(35000);
-  const [sortBy, setSortBy] = useState('popular'); // 'popular', 'price_asc', 'price_desc', 'rating', 'newest'
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' (default: recent to oldest), 'popular', 'price_asc', 'price_desc', 'rating'
 
   // Products Data
   const [allProducts, setAllProducts] = useState([]);

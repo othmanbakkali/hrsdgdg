@@ -43,7 +43,7 @@ export default function Marketplace({
   setDealsOnly,
   priceMax = 35000,
   setPriceMax,
-  sortBy = 'popular',
+  sortBy = 'newest',
   setSortBy,
   resetAllFilters
 }) {
@@ -185,13 +185,18 @@ export default function Marketplace({
     return true;
   });
 
-  // Sort products
+  // Sort products (Default: du plus récent vers le plus ancien)
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortBy === 'price_asc') return a.prix - b.prix;
     if (sortBy === 'price_desc') return b.prix - a.prix;
     if (sortBy === 'rating') return (b.note || 0) - (a.note || 0);
-    if (sortBy === 'newest') return new Date(b.date_creation || 0) - new Date(a.date_creation || 0);
-    return (b.favoris_count || 0) - (a.favoris_count || 0); // popular default
+    if (sortBy === 'popular') return (b.favoris_count || 0) - (a.favoris_count || 0);
+    
+    // 'newest' (default fallback: du récent au plus ancien)
+    const dateA = new Date(a.date_creation || a.created_at || 0).getTime();
+    const dateB = new Date(b.date_creation || b.created_at || 0).getTime();
+    if (dateB !== dateA) return dateB - dateA;
+    return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
   });
 
   // Mobile Pagination & On-Demand Loading State (10 items initially)
@@ -499,8 +504,8 @@ export default function Marketplace({
                 onChange={e => setSortBy(e.target.value)}
                 className="products-sort-select"
               >
-                <option value="popular">{lang === 'ar' ? '⭐ الأكثر شعبية' : '⭐ Popularité'}</option>
-                <option value="newest">{lang === 'ar' ? '🕒 الأحدث' : '🕒 Plus récents'}</option>
+                <option value="newest">{lang === 'ar' ? '🕒 الأحدث أولاً' : '🕒 Plus récents d\'abord'}</option>
+                <option value="popular">{lang === 'ar' ? '⭐ الأكثر شعبية' : '⭐ Popularité & Favoris'}</option>
                 <option value="price_asc">{lang === 'ar' ? '💰 السعر: تصاعدي' : '💰 Prix croissant'}</option>
                 <option value="price_desc">{lang === 'ar' ? '💎 السعر: تنازلي' : '💎 Prix décroissant'}</option>
                 <option value="rating">{lang === 'ar' ? '🏆 الأعلى تقييماً' : '🏆 Meilleures notes'}</option>
