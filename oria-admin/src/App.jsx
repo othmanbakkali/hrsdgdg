@@ -130,7 +130,6 @@ function AdminLayout() {
 
   // Subscriptions management state
   const [subscriptionsData, setSubscriptionsData] = useState(null);
-  const [adminLightMode, setAdminLightMode] = useState(() => localStorage.getItem('oria-admin-light-mode') !== 'false');
   const [editingPlanModal, setEditingPlanModal] = useState(null);
   const [merchantSubModal, setMerchantSubModal] = useState(null);
 
@@ -146,17 +145,6 @@ function AdminLayout() {
   const [goldSourceInput, setGoldSourceInput] = useState('');
   const [goldNoteInput, setGoldNoteInput] = useState('');
   const [isUpdatingGold, setIsUpdatingGold] = useState(false);
-
-  useEffect(() => {
-    if (adminLightMode) {
-      document.documentElement.setAttribute('data-theme', 'light');
-      document.body.classList.add('light-theme');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      document.body.classList.remove('light-theme');
-    }
-    localStorage.setItem('oria-admin-light-mode', adminLightMode);
-  }, [adminLightMode]);
 
   // Notification Banner
   const [notif, setNotif] = useState(null);
@@ -4307,20 +4295,20 @@ function AdminAppContent() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#07090b',
-        color: '#d4af37',
+        backgroundColor: 'var(--bg-slate, #f8f7f4)',
+        color: 'var(--admin-gold, #b38728)',
         fontFamily: 'Playfair Display, serif'
       }}>
         <div style={{
           width: '45px',
           height: '45px',
           borderRadius: '50%',
-          border: '3px solid rgba(212, 175, 55, 0.15)',
-          borderTopColor: '#d4af37',
+          border: '3px solid rgba(179, 135, 40, 0.2)',
+          borderTopColor: 'var(--admin-gold, #b38728)',
           animation: 'oriaSpin 0.9s linear infinite',
           marginBottom: '20px'
         }} />
-        <span style={{ letterSpacing: '3px', fontSize: '1rem', fontWeight: '600' }}>HRSDGDG ADMINISTRATION</span>
+        <span style={{ letterSpacing: '3px', fontSize: '1rem', fontWeight: '700', color: 'var(--text-white, #111827)' }}>HRSDGDG ADMINISTRATION</span>
         <style>{`
           @keyframes oriaSpin {
             to { transform: rotate(360deg); }
