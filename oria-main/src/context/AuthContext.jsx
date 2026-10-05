@@ -53,8 +53,12 @@ export const AuthProvider = ({ children }) => {
         throw new Error(err.message || 'Erreur d\'inscription');
       }
       const data = await res.json();
-      setUser(data);
-      localStorage.setItem('oria_user', JSON.stringify(data));
+      const createdUser = data.user || data;
+      // Only persist session if account is actively validated
+      if (createdUser.account_status === 'actif' || createdUser.is_active === true) {
+        setUser(createdUser);
+        localStorage.setItem('oria_user', JSON.stringify(createdUser));
+      }
       return data;
     } catch (error) {
       console.error(error);

@@ -28,6 +28,72 @@ export default function ProductDetailModal({
     ? product.description_ar 
     : (product?.description_fr || product?.description || '');
 
+  const formatMaterial = (mat, purity) => {
+    if (lang === 'ar') {
+      let m = mat || '';
+      const mLower = m.toLowerCase();
+      if (mLower.includes('or jaune')) m = 'ذهب أصفر';
+      else if (mLower.includes('or blanc')) m = 'ذهب أبيض';
+      else if (mLower.includes('or rose')) m = 'ذهب وردي';
+      else if (mLower.includes('or')) m = 'ذهب';
+      else if (mLower.includes('argent')) m = 'فضة';
+      else if (mLower.includes('platine')) m = 'بلاتين';
+      else if (mLower.includes('diamant')) m = 'ألماس';
+      const pure = purity || '18K';
+      const pureAr = pure.toLowerCase().includes('18') ? '18 قيراط' : pure.toLowerCase().includes('24') ? '24 قيراط' : pure.toLowerCase().includes('22') ? '22 قيراط' : pure;
+      return `${m} ${pureAr}`;
+    }
+    return `${mat || 'Or'} ${purity || '18K'}`;
+  };
+
+  const formatStone = (stone) => {
+    if (!stone || stone.toLowerCase() === 'aucune' || stone.toLowerCase() === 'none') {
+      return lang === 'ar' ? 'بدون' : 'Aucune';
+    }
+    if (lang === 'ar') {
+      const s = stone.toLowerCase();
+      if (s.includes('diamant')) return 'ألماس';
+      if (s.includes('émeraude') || s.includes('emeraude')) return 'زمرد';
+      if (s.includes('saphir')) return 'ياقوت أزرق';
+      if (s.includes('rubis')) return 'ياقوت أحمر';
+      if (s.includes('perle')) return 'لؤلؤ';
+      if (s.includes('zircon')) return 'زركون';
+      if (s.includes('précieuse') || s.includes('precieuse') || s.includes('pierre')) return 'أحجار كريمة';
+    }
+    return stone;
+  };
+
+  const formatSize = (taille) => {
+    if (!taille) return lang === 'ar' ? 'قياسي' : 'Standard';
+    if (lang === 'ar') {
+      const t = taille.toLowerCase();
+      if (t.includes('mesure') || t.includes('sur mesure')) return 'حسب المقاس';
+      if (t.includes('standard') || t.includes('unique')) return 'قياسي';
+    }
+    return taille;
+  };
+
+  const formatYear = (annee) => {
+    if (!annee || annee.toString().toLowerCase() === 'vintage') {
+      return lang === 'ar' ? 'كلاسيكي / قديم' : 'Vintage';
+    }
+    return annee;
+  };
+
+  const formatCondition = (etat) => {
+    if (!etat) return '';
+    if (lang === 'ar') {
+      const e = etat.toLowerCase();
+      if (e.includes('comme neuf')) return t('condLikeNew') || 'كالجديد تماماً';
+      if (e.includes('neuf')) return t('condNew') || 'جديد';
+      if (e.includes('excellent')) return t('condExcellent') || 'حالة ممتازة';
+      if (e.includes('très bon') || e.includes('tres bon')) return t('condVeryGood') || 'حالة جيدة جداً';
+      if (e.includes('bon')) return t('condGood') || 'حالة جيدة';
+      if (e.includes('restaur')) return t('condRestore') || 'يحتاج صيانة';
+    }
+    return etat;
+  };
+
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('details'); // 'details', 'reviews', 'look'
   const [newRating, setNewRating] = useState(5);
@@ -375,28 +441,7 @@ export default function ProductDetailModal({
               </div>
             )}
 
-            {/* Trust Badges */}
-            <div className="detail-trust-card">
-              <div className="detail-trust-title">
-                🛡️ GARANTIES & SÉCURITÉ JEWELIA
-              </div>
-              <ul className="detail-trust-list">
-                {isSecondHand ? (
-                  <>
-                    <li>✓ <strong>Authentification :</strong> Contrôlé par spectrométrie & gemmologue</li>
-                    <li>✓ <strong>Justificatifs :</strong> {product.certificat ? 'Certificat inclus' : 'Vérification garantie'} & facture</li>
-                    <li>✓ <strong>Protection :</strong> Droit de retour 14 jours & remise sécurisée</li>
-                  </>
-                ) : (
-                  <>
-                    <li>✓ <strong>Produit Neuf :</strong> Poinçon d'État officiel 18k / 24k</li>
-                    <li>✓ <strong>Garantie :</strong> Garantie joaillier 2 ans avec certificat</li>
-                    <li>✓ <strong>Écrin :</strong> Boîte et emballage cadeau de luxe offerts</li>
-                  </>
-                )}
-                <li>✓ <strong>Livraison :</strong> Expédition express blindée 24/48h assurée à 100%</li>
-              </ul>
-            </div>
+
           </div>
 
           {/* Right Column: Information & Actions */}
@@ -580,20 +625,20 @@ export default function ProductDetailModal({
 
             {/* Specs Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', fontSize: '0.84rem', border: '1px solid var(--border-subtle)' }}>
-              <div><span style={{ color: 'var(--text-gray)' }}>Matière :</span> <strong>{product.matiere} {product.purete || '18K'}</strong></div>
-              <div><span style={{ color: 'var(--text-gray)' }}>Poids :</span> <strong>{product.gramme || product.poids || 0} g</strong></div>
-              <div><span style={{ color: 'var(--text-gray)' }}>Pierre :</span> <strong>{product.pierre || 'Aucune'}</strong></div>
-              <div><span style={{ color: 'var(--text-gray)' }}>Taille :</span> <strong>{product.taille || 'Standard'}</strong></div>
+              <div><span style={{ color: 'var(--text-gray)' }}>{t('material')} :</span> <strong>{formatMaterial(product.matiere, product.purete)}</strong></div>
+              <div><span style={{ color: 'var(--text-gray)' }}>{t('weight')} :</span> <strong>{product.gramme || product.poids || 0} {t('grams')}</strong></div>
+              <div><span style={{ color: 'var(--text-gray)' }}>{t('stone')} :</span> <strong>{formatStone(product.pierre)}</strong></div>
+              <div><span style={{ color: 'var(--text-gray)' }}>{t('size')} :</span> <strong>{formatSize(product.taille)}</strong></div>
               {isSecondHand && (
                 <>
-                  <div><span style={{ color: 'var(--text-gray)' }}>Année :</span> <strong>{product.annee || 'Vintage'}</strong></div>
-                  <div><span style={{ color: 'var(--text-gray)' }}>État :</span> <strong style={{ color: '#059669' }}>{product.etat}</strong></div>
+                  <div><span style={{ color: 'var(--text-gray)' }}>{t('year')} :</span> <strong>{formatYear(product.annee)}</strong></div>
+                  <div><span style={{ color: 'var(--text-gray)' }}>{t('condition')} :</span> <strong style={{ color: '#059669' }}>{formatCondition(product.etat)}</strong></div>
                 </>
               )}
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
               {!isAuction && (
                 <>
                   <button 
@@ -601,9 +646,14 @@ export default function ProductDetailModal({
                       addToCart(product);
                     }}
                     className="btn-jewelia-primary"
-                    style={{ flex: 1.5, padding: '14px' }}
+                    style={{ flex: 1.5, padding: '12px 18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    🛒 {t('addToCart')}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <circle cx="9" cy="21" r="1"></circle>
+                      <circle cx="20" cy="21" r="1"></circle>
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span>{t('addToCart')}</span>
                   </button>
 
                   <button 
@@ -613,9 +663,12 @@ export default function ProductDetailModal({
                       onClose();
                     }}
                     className="btn-jewelia-secondary"
-                    style={{ flex: 1, padding: '14px' }}
+                    style={{ flex: 1, padding: '12px 16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    ⚡ {t('buyNow')}
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, color: 'var(--primary-gold)' }}>
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>{t('buyNow')}</span>
                   </button>
                 </>
               )}
@@ -626,10 +679,13 @@ export default function ProductDetailModal({
                   onClose();
                 }}
                 className="btn-jewelia-secondary"
-                style={{ borderColor: 'var(--primary-gold)', color: 'var(--primary-gold)', padding: '14px' }}
-                title="Discuter avec le vendeur"
+                style={{ borderColor: 'var(--primary-gold)', color: 'var(--primary-gold)', padding: '12px 16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                title={lang === 'ar' ? 'مراسلة الصائغ' : 'Discuter avec le vendeur'}
               >
-                💬 Discuter
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
+                <span>{lang === 'ar' ? 'مراسلة' : 'Discuter'}</span>
               </button>
 
               <a 
@@ -637,28 +693,75 @@ export default function ProductDetailModal({
                 target="_blank"
                 rel="noreferrer"
                 className="btn-jewelia-secondary"
-                style={{ borderColor: '#25d366', color: '#065f46', background: 'rgba(37, 211, 102, 0.12)', padding: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                title="Contacter sur WhatsApp"
+                style={{
+                  borderColor: '#25d366',
+                  color: '#15803d',
+                  background: 'rgba(37, 211, 102, 0.1)',
+                  padding: '12px 16px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                title={lang === 'ar' ? 'تواصل عبر واتساب' : 'Contacter sur WhatsApp'}
               >
-                <span>🟢</span> WhatsApp
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" style={{ flexShrink: 0 }}>
+                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
+                </svg>
+                <span>WhatsApp</span>
               </a>
 
               <button 
                 onClick={() => toggleFavorite(product.id)}
-                className={`card-favorite-btn ${isFavorited ? 'favorited' : ''}`}
-                style={{ position: 'static', width: '48px', height: '48px', borderRadius: 'var(--radius-sm)' }}
-                title="Favoris"
+                style={{
+                  width: '46px',
+                  height: '46px',
+                  minWidth: '46px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: isFavorited ? '1.5px solid #ef4444' : '1px solid var(--border-gold)',
+                  background: isFavorited ? '#fef2f2' : 'var(--bg-surface)',
+                  color: isFavorited ? '#ef4444' : 'var(--text-gray)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+                }}
+                title={lang === 'ar' ? 'إضافة إلى المفضلة' : 'Favoris'}
               >
-                ♥
+                <svg width="20" height="20" viewBox="0 0 24 24" fill={isFavorited ? "#ef4444" : "none"} stroke={isFavorited ? "#ef4444" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
               </button>
 
               <button 
                 onClick={() => onAddToCompare(product)}
-                className={`btn-card-compare ${isCompared ? 'active' : ''}`}
-                style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)' }}
-                title="Comparer"
+                style={{
+                  width: '46px',
+                  height: '46px',
+                  minWidth: '46px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: isCompared ? '1.5px solid var(--primary-gold)' : '1px solid var(--border-gold)',
+                  background: isCompared ? 'rgba(212, 175, 55, 0.12)' : 'var(--bg-surface)',
+                  color: isCompared ? 'var(--primary-gold)' : 'var(--text-gray)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+                }}
+                title={lang === 'ar' ? 'مقارنة القطعة' : 'Comparer'}
               >
-                ⚖️
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path>
+                  <path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path>
+                  <path d="M7 21h10"></path>
+                  <path d="M12 3v18"></path>
+                  <path d="M3 7h18"></path>
+                </svg>
               </button>
             </div>
           </div>
@@ -677,10 +780,18 @@ export default function ProductDetailModal({
                 fontSize: '0.95rem',
                 cursor: 'pointer',
                 borderBottom: activeTab === 'details' ? '2px solid var(--primary-gold)' : 'none',
-                paddingBottom: '8px'
+                paddingBottom: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
             >
-              💎 {t('completeLook')}
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 3h12l4 6-10 12L2 9z"></path>
+                <path d="M11 3L8 9l4 12 4-12-3-6"></path>
+                <path d="M2 9h20"></path>
+              </svg>
+              <span>{t('completeLook')}</span>
             </button>
             <button 
               onClick={() => setActiveTab('reviews')}
@@ -692,10 +803,16 @@ export default function ProductDetailModal({
                 fontSize: '0.95rem',
                 cursor: 'pointer',
                 borderBottom: activeTab === 'reviews' ? '2px solid var(--primary-gold)' : 'none',
-                paddingBottom: '8px'
+                paddingBottom: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
             >
-              ⭐ {t('customerReviews')} ({reviewsList.length})
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#eab308' }}>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <span>{t('customerReviews')} ({reviewsList.length})</span>
             </button>
           </div>
 
@@ -710,7 +827,9 @@ export default function ProductDetailModal({
                       alt="Current" 
                       style={{ width: '70px', height: '70px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--primary-gold)' }}
                     />
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', display: 'block', marginTop: '2px' }}>Votre bijou</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', display: 'block', marginTop: '2px' }}>
+                      {lang === 'ar' ? 'قطعتكم' : 'Votre bijou'}
+                    </span>
                   </div>
 
                   {complementaryItems.map((c, i) => (
@@ -748,7 +867,9 @@ export default function ProductDetailModal({
                   {t('leaveReview')}
                 </h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>Votre note :</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>
+                    {lang === 'ar' ? 'تقييمك :' : 'Votre note :'}
+                  </span>
                   {[1, 2, 3, 4, 5].map(star => (
                     <span 
                       key={star}
@@ -763,7 +884,7 @@ export default function ProductDetailModal({
                   <input 
                     type="text"
                     required
-                    placeholder="Partagez votre avis sur l'éclat, l'état ou la livraison..."
+                    placeholder={lang === 'ar' ? "شاركنا رأيك حول اللمعان، الجودة أو سرعة التوصيل..." : "Partagez votre avis sur l'éclat, l'état ou la livraison..."}
                     value={newComment}
                     onChange={e => setNewComment(e.target.value)}
                     className="filter-number-input"
@@ -781,7 +902,9 @@ export default function ProductDetailModal({
               {/* Reviews List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {reviewsList.length === 0 ? (
-                  <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem' }}>Soyez le premier à donner votre avis sur ce bijou.</p>
+                  <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem' }}>
+                    {lang === 'ar' ? 'كن أول من يقيّم هذه القطعة المميزة.' : 'Soyez le premier à donner votre avis sur ce bijou.'}
+                  </p>
                 ) : (
                   reviewsList.map((rev, i) => (
                     <div key={i} style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>

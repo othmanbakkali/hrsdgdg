@@ -442,6 +442,7 @@ export default function Marketplace({
               <option value="Moderne">{lang === 'ar' ? 'عصري وناعم' : 'Moderne & Épuré'}</option>
               <option value="Classique">{lang === 'ar' ? 'كلاسيكي أنيق' : 'Classique Chic'}</option>
               <option value="Traditionnel">{lang === 'ar' ? 'تقليدي مغربي' : 'Traditionnel Marocain'}</option>
+              <option value="Artisanal">{lang === 'ar' ? 'حرفي / صناعة يدوية' : 'Artisanal & Fait main'}</option>
               <option value="Vintage">{lang === 'ar' ? 'فينتاج وأثري' : 'Vintage & Ancien'}</option>
               <option value="Luxe">{lang === 'ar' ? 'مجوهرات فاخرة' : 'Haute Joaillerie'}</option>
               <option value="Minimaliste">{lang === 'ar' ? 'بسيط مينيست' : 'Minimaliste'}</option>

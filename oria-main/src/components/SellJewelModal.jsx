@@ -139,7 +139,9 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     { id: 'cat_earrings', ar: '👂 أقراط وحلق', fr: '👂 Boucles' },
     { id: 'cat_sets', ar: '💎 أطقم كاملة', fr: '💎 Parures' },
     { id: 'cat_men', ar: '⌚ ساعات ومجوهرات رجالية', fr: '⌚ Montres & Homme' },
-    { id: 'cat_boxes', ar: '🎁 هدايا وتحف', fr: '🎁 Coffrets' }
+    { id: 'cat_boxes', ar: '🎁 هدايا وتحف', fr: '🎁 Coffrets' },
+    { id: 'cat_traditional', ar: '👑 مجوهرات تقليدية', fr: '👑 Bijoux Traditionnels' },
+    { id: 'cat_artisanal', ar: '🏺 مجوهرات حرفية', fr: '🏺 Bijoux Artisanaux' }
   ];
 
   // Materials

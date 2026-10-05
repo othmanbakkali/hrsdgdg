@@ -126,7 +126,7 @@ function AdminLayout() {
   // User form modal state
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [userForm, setUserForm] = useState({ nom: '', email: '', mot_de_passe: '', role: 'client', shopName: '', phone: '', address: '', city: '' });
+  const [userForm, setUserForm] = useState({ nom: '', email: '', mot_de_passe: '', role: 'client', shopName: '', phone: '', address: '', city: '', numero_patente: '', patente_document: '', patente_filename: '' });
 
   // Subscriptions management state
   const [subscriptionsData, setSubscriptionsData] = useState(null);
@@ -228,6 +228,34 @@ function AdminLayout() {
     setTimeout(() => setNotif(null), 4000);
   };
 
+  const handleUpdateUserAccountStatus = async (userId, newStatus, reason = '') => {
+    try {
+      const res = await fetch(`${API_URL}/users/${userId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_status: newStatus,
+          block_reason: reason
+        })
+      });
+      if (res.ok) {
+        const msg = newStatus === 'actif' 
+          ? (lang === 'ar' ? 'تم تفعيل الحساب بنجاح ! ✓' : 'Compte activé avec succès ! ✓') 
+          : newStatus === 'bloque' 
+            ? (lang === 'ar' ? 'تم حظر الحساب بنجاح.' : 'Compte bloqué avec succès.') 
+            : (lang === 'ar' ? 'تم وضع الحساب قيد المراجعة والتدقيق.' : 'Compte mis en attente de vérification.');
+        triggerNotif(msg);
+        fetchData();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        triggerNotif(errData.message || (lang === 'ar' ? 'فشل تعديل حالة الحساب.' : 'Erreur lors de la mise à jour du statut.'));
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotif(lang === 'ar' ? 'خطأ في الاتصال بالخادم.' : 'Erreur de connexion avec le serveur.');
+    }
+  };
+
   const handleOpenAddUser = (initialRole = 'client') => {
     setEditingUser(null);
     setUserForm({
@@ -235,10 +263,15 @@ function AdminLayout() {
       email: '',
       mot_de_passe: '',
       role: initialRole,
+      account_status: 'actif',
+      block_reason: '',
       shopName: '',
       phone: '',
       address: '',
       city: 'Casablanca',
+      numero_patente: '',
+      patente_document: '',
+      patente_filename: '',
       plan_id: (subscriptionsData?.plans && subscriptionsData.plans[0]?.id) || 'plan_starter',
       billing_cycle: 'monthly'
     });
@@ -247,15 +280,21 @@ function AdminLayout() {
 
   const handleOpenEditUser = (u) => {
     setEditingUser(u);
+    const initialStatus = u.account_status || (u.is_blocked ? 'bloque' : (u.is_active === false ? 'en_attente' : 'actif'));
     setUserForm({
       nom: u.nom || '',
       email: u.email || '',
       mot_de_passe: u.mot_de_passe || '',
       role: u.role || 'client',
+      account_status: initialStatus,
+      block_reason: u.block_reason || '',
       shopName: u.shopName || '',
       phone: u.phone || '',
       address: u.address || '',
       city: u.city || '',
+      numero_patente: u.numero_patente || '',
+      patente_document: u.patente_document || '',
+      patente_filename: u.patente_filename || '',
       plan_id: u.subscription?.plan_id || 'plan_starter',
       billing_cycle: u.subscription?.billing_cycle || 'monthly'
     });
@@ -908,6 +947,27 @@ function AdminLayout() {
         fetchData();
       } else {
         triggerNotif(data.error || 'Erreur lors de la mise à jour');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotif('Erreur de communication avec le serveur.');
+    } finally {
+      setIsUpdatingGold(false);
+    }
+  };
+
+  const handleSyncRailwayGold = async () => {
+    setIsUpdatingGold(true);
+    try {
+      const res = await authFetch(`${API_URL}/admin/gold-rates/sync`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerNotif(lang === 'ar' ? 'تمت المزامنة بنجاح مع PrixOr (Railway) !' : data.message || 'Synchronisation réussie avec Railway !');
+        fetchData();
+      } else {
+        triggerNotif(data.error || 'Erreur lors de la synchronisation.');
       }
     } catch (err) {
       console.error(err);
@@ -1850,12 +1910,16 @@ function AdminLayout() {
                     <th>{t('name')}</th>
                     <th>{t('email')}</th>
                     <th>{t('role')}</th>
+                    <th>{lang === 'ar' ? 'حالة التفعيل والاعتماد' : 'Statut & Activation'}</th>
                     <th>{lang === 'ar' ? 'معلومات المتجر / الاتصال' : 'Info Boutique / Contact'}</th>
+                    <th>{lang === 'ar' ? 'رقم ووثيقة الباتنت' : 'Patente & Document'}</th>
                     <th>{t('action')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
+                  {users.map(u => {
+                    const status = u.account_status || (u.is_blocked ? 'bloque' : (u.is_active === false ? 'en_attente' : 'actif'));
+                    return (
                     <tr key={u.id}>
                       <td style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>{u.id}</td>
                       <td style={{ fontWeight: 'bold' }}>{u.nom}</td>
@@ -1874,6 +1938,107 @@ function AdminLayout() {
                         </span>
                       </td>
                       <td>
+                        {/* Account Status Badge & Quick Status Switch */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div>
+                            {status === 'bloque' ? (
+                              <span style={{
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                color: '#ef4444',
+                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                padding: '3px 10px',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                🔴 {lang === 'ar' ? 'محظور / معلق' : 'Bloqué'}
+                              </span>
+                            ) : status === 'en_attente' ? (
+                              <span style={{
+                                background: 'rgba(245, 158, 11, 0.15)',
+                                color: '#f59e0b',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                padding: '3px 10px',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                🟡 {lang === 'ar' ? 'قيد المراجعة' : 'En attente'}
+                              </span>
+                            ) : (
+                              <span style={{
+                                background: 'rgba(16, 185, 129, 0.15)',
+                                color: '#10b981',
+                                border: '1px solid rgba(16, 185, 129, 0.35)',
+                                padding: '3px 10px',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                🟢 {lang === 'ar' ? 'مفعل ونشط' : 'Actif'}
+                              </span>
+                            )}
+                          </div>
+
+                          {u.block_reason && status === 'bloque' && (
+                            <div style={{ fontSize: '0.72rem', color: '#f87171', fontStyle: 'italic', maxWidth: '160px' }}>
+                              ⚠️ {u.block_reason}
+                            </div>
+                          )}
+
+                          {/* Quick 1-click status triggers */}
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            {status !== 'actif' && (
+                              <button
+                                type="button"
+                                className="btn-approve"
+                                style={{ padding: '2px 8px', fontSize: '0.7rem', margin: 0 }}
+                                title={lang === 'ar' ? 'تفعيل واعتماد الحساب' : 'Activer et valider le compte'}
+                                onClick={() => handleUpdateUserAccountStatus(u.id, 'actif')}
+                              >
+                                ✅ {lang === 'ar' ? 'تفعيل' : 'Activer'}
+                              </button>
+                            )}
+                            {status !== 'bloque' && (
+                              <button
+                                type="button"
+                                className="btn-reject"
+                                style={{ padding: '2px 8px', fontSize: '0.7rem', margin: 0 }}
+                                title={lang === 'ar' ? 'حظر هذا الحساب' : 'Bloquer ce compte'}
+                                onClick={() => {
+                                  const reason = window.prompt(lang === 'ar' ? 'سبب حظر الحساب (شكاية، وثيقة غير مطابقة، إلخ) :' : 'Motif du blocage (réclamation, patente invalide, etc.) :');
+                                  if (reason !== null) {
+                                    handleUpdateUserAccountStatus(u.id, 'bloque', reason);
+                                  }
+                                }}
+                              >
+                                🚫 {lang === 'ar' ? 'حظر' : 'Bloquer'}
+                              </button>
+                            )}
+                            {status !== 'en_attente' && (
+                              <button
+                                type="button"
+                                className="btn-outline-gold"
+                                style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                                title={lang === 'ar' ? 'إعادة لوضع قيد المراجعة' : 'Mettre en attente'}
+                                onClick={() => handleUpdateUserAccountStatus(u.id, 'en_attente')}
+                              >
+                                ⏳
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
                         {u.role === 'commercant' ? (
                           <div style={{ fontSize: '0.8rem' }}>
                             <div>🏪 <strong>{u.shopName}</strong></div>
@@ -1881,6 +2046,38 @@ function AdminLayout() {
                             <div>📍 {u.address}, {u.city}</div>
                           </div>
                         ) : '-'}
+                      </td>
+                      <td>
+                        {u.numero_patente ? (
+                          <div style={{ fontSize: '0.8rem' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--admin-gold)' }}>🔢 {u.numero_patente}</div>
+                            {u.patente_document ? (
+                              <a
+                                href={`${API_URL.replace('/api', '')}${u.patente_document}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  color: '#38bdf8',
+                                  textDecoration: 'underline',
+                                  marginTop: '4px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600
+                                }}
+                              >
+                                📄 {u.patente_filename || (lang === 'ar' ? 'عرض / تحميل الباتنت' : 'Télécharger Patente')}
+                              </a>
+                            ) : (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                                {lang === 'ar' ? 'بدون وثيقة مرفقة' : 'Sans document'}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--text-gray)', fontSize: '0.75rem' }}>-</span>
+                        )}
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -1893,7 +2090,8 @@ function AdminLayout() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -2328,6 +2526,21 @@ function AdminLayout() {
                         <td>
                           <strong style={{ color: 'var(--text-white)' }}>{m.shopName}</strong>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{m.nom} • {m.email}</div>
+                          {m.numero_patente && (
+                            <div style={{ fontSize: '0.72rem', marginTop: '3px', color: 'var(--admin-gold)' }}>
+                              📜 Patente: <strong>{m.numero_patente}</strong>
+                              {m.patente_document && (
+                                <a 
+                                  href={`${API_URL.replace('/api', '')}${m.patente_document}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ marginLeft: '6px', color: '#38bdf8', textDecoration: 'underline' }}
+                                >
+                                  📄 {lang === 'ar' ? 'معاينة' : 'Voir'}
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td>
                           <span style={{
@@ -2725,14 +2938,39 @@ function AdminLayout() {
 
               {/* Info Card */}
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  {lang === 'ar' ? 'معلومات التحديث' : 'Dernière mise à jour'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', fontWeight: 700, textTransform: 'uppercase' }}>
+                    {lang === 'ar' ? 'معلومات التحديث' : 'Dernière mise à jour'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSyncRailwayGold}
+                    disabled={isUpdatingGold}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.05))',
+                      border: '1px solid var(--admin-gold)',
+                      color: 'var(--admin-gold)',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s'
+                    }}
+                    title="Synchroniser avec le backend PrixOr Railway"
+                  >
+                    <span>{isUpdatingGold ? '⏳' : '🔄'}</span>
+                    <span>{isUpdatingGold ? (lang === 'ar' ? 'جاري المزامنة...' : 'Synchronisation...') : (lang === 'ar' ? 'مزامنة مع PrixOr' : 'Synchroniser PrixOr')}</span>
+                  </button>
                 </div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-white)', marginBottom: '4px' }}>
                   {goldRatesData.lastUpdated ? new Date(goldRatesData.lastUpdated).toLocaleString(lang === 'ar' ? 'ar-MA' : 'fr-FR') : '20/09/2026'}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
-                  {lang === 'ar' ? `المسؤول: ${goldRatesData.updatedBy || 'Super-Admin'}` : `Modifié par: ${goldRatesData.updatedBy || 'Super-Admin'}`}
+                  {lang === 'ar' ? `المسؤول / المصدر: ${goldRatesData.updatedBy || 'Super-Admin'}` : `Source: ${goldRatesData.updatedBy || 'Super-Admin'}`}
                 </div>
               </div>
             </div>
@@ -3050,6 +3288,34 @@ function AdminLayout() {
               </div>
             </div>
 
+            {/* Account Status & Block Reason */}
+            <div style={{ display: 'grid', gridTemplateColumns: userForm.account_status === 'bloque' ? '1fr 1fr' : '1fr', gap: '15px', marginBottom: '15px' }}>
+              <div className="form-group">
+                <label className="form-label">{lang === 'ar' ? 'حالة الحساب والتفعيل' : 'Statut du Compte'}</label>
+                <select 
+                  className="form-input" 
+                  value={userForm.account_status || 'actif'} 
+                  onChange={e => setUserForm({ ...userForm, account_status: e.target.value })}
+                >
+                  <option value="actif">🟢 {lang === 'ar' ? 'مفعل ونشط (Actif)' : 'Actif'}</option>
+                  <option value="en_attente">🟡 {lang === 'ar' ? 'قيد المراجعة والاعتماد (En attente)' : 'En attente d\'activation'}</option>
+                  <option value="bloque">🔴 {lang === 'ar' ? 'محظور / معلق (Bloqué)' : 'Bloqué / Suspendu'}</option>
+                </select>
+              </div>
+              {userForm.account_status === 'bloque' && (
+                <div className="form-group">
+                  <label className="form-label" style={{ color: '#ef4444' }}>{lang === 'ar' ? 'سبب ومبرر الحظر' : 'Motif du Blocage'}</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    placeholder={lang === 'ar' ? 'مثال: شكاية تلاعب أو عدم مطابقة الباتنت' : 'Ex: Réclamation client, non-conformité patente'} 
+                    value={userForm.block_reason || ''} 
+                    onChange={e => setUserForm({ ...userForm, block_reason: e.target.value })} 
+                  />
+                </div>
+              )}
+            </div>
+
             {userForm.role === 'commercant' && (
               <fieldset style={{ border: '1px solid var(--border-gold)', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
                 <legend style={{ color: 'var(--admin-gold)', padding: '0 8px', fontSize: '0.85rem' }}>{lang === 'ar' ? 'معلومات المتجر والتواصل' : 'Informations Boutique'}</legend>
@@ -3093,6 +3359,37 @@ function AdminLayout() {
                       onChange={e => setUserForm({ ...userForm, city: e.target.value })} 
                     />
                   </div>
+                </div>
+
+                {/* Patente Details & Document */}
+                <div style={{ padding: '12px', background: 'rgba(212,175,55,0.06)', borderRadius: '6px', border: '1px solid rgba(212,175,55,0.2)', marginBottom: '15px' }}>
+                  <div className="form-group" style={{ marginBottom: (userForm.patente_document || editingUser?.patente_document) ? '10px' : 0 }}>
+                    <label className="form-label" style={{ fontWeight: 600, color: 'var(--admin-gold)' }}>
+                      📜 {lang === 'ar' ? 'رقم الباتنت (Patente Professionnelle)' : 'Numéro de Patente Professionnelle'}
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="Ex: 12345678"
+                      value={userForm.numero_patente || ''} 
+                      onChange={e => setUserForm({ ...userForm, numero_patente: e.target.value })} 
+                    />
+                  </div>
+                  {(userForm.patente_document || editingUser?.patente_document) && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '4px', border: '1px dashed rgba(212,175,55,0.3)', fontSize: '0.8rem' }}>
+                      <span style={{ color: 'var(--text-gray)' }}>
+                        📎 {lang === 'ar' ? 'ملف وثيقة الباتنت :' : 'Document Patente :'} <strong style={{ color: 'var(--text-white)' }}>{userForm.patente_filename || editingUser?.patente_filename || 'patente_doc'}</strong>
+                      </span>
+                      <a 
+                        href={`${API_URL.replace('/api', '')}${userForm.patente_document || editingUser?.patente_document}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#38bdf8', textDecoration: 'underline', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        📥 {lang === 'ar' ? 'معاينة / تحميل' : 'Voir / Télécharger'}
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Initial Subscription Plan */}

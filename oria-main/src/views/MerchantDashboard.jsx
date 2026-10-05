@@ -655,18 +655,31 @@ export default function MerchantDashboard({ onOpenSellModal }) {
               </div>
 
               <div>
-                <label className="filter-label">Catégorie</label>
+                <label className="filter-label">Catégorie / Type de bijou</label>
                 <select 
                   value={newProduct.category_id} 
                   onChange={e => setNewProduct({ ...newProduct, category_id: e.target.value })}
                   className="filter-select-control"
                 >
-                  <option value="cat_rings">💍 Bagues</option>
-                  <option value="cat_necklaces">📿 Colliers</option>
-                  <option value="cat_bracelets">🔗 Bracelets</option>
-                  <option value="cat_earrings">👂 Boucles d'oreilles</option>
-                  <option value="cat_sets">💎 Parures</option>
-                  <option value="cat_men">⌚ Bijoux Homme</option>
+                  {categories && categories.length > 0 ? (
+                    categories.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.icon || '💎'} {c.nom_fr || c.nom_ar || c.nom}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="cat_rings">💍 Bagues</option>
+                      <option value="cat_necklaces">📿 Colliers</option>
+                      <option value="cat_bracelets">🔗 Bracelets</option>
+                      <option value="cat_earrings">👂 Boucles d'oreilles</option>
+                      <option value="cat_sets">💎 Parures</option>
+                      <option value="cat_men">⌚ Bijoux Homme</option>
+                      <option value="cat_boxes">🎁 Coffrets & Cadeaux</option>
+                      <option value="cat_traditional">👑 Bijoux Traditionnels</option>
+                      <option value="cat_artisanal">🏺 Bijoux Artisanaux</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>

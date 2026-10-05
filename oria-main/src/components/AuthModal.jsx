@@ -9,7 +9,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   const { lang, isRtl } = useLanguage();
 
   const [tab, setTab] = useState(initialTab); // 'login' | 'register'
-  const [role, setRole] = useState('client'); // 'client' | 'commercant'
+  const [role, setRole] = useState('commercant'); // Inscription réservée aux professionnels
   const [showPassword, setShowPassword] = useState(false);
 
   // Sync tab if initialTab changes
@@ -21,11 +21,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Register extra fields
+  // Register extra fields (Professional Joaillier)
   const [nom, setNom] = useState('');
   const [shopName, setShopName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('Casablanca');
+  const [numeroPatente, setNumeroPatente] = useState('');
+  const [patenteDocBase64, setPatenteDocBase64] = useState('');
+  const [patenteDocName, setPatenteDocName] = useState('');
+  const [patenteDocSize, setPatenteDocSize] = useState('');
 
   // Subscription plan selection for merchants
   const [plans, setPlans] = useState([
@@ -81,11 +85,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       .catch(() => {});
   }, [isOpen]);
 
-  // Quick Assistance States
-  const [assistantOpen, setAssistantOpen] = useState(true);
-  const [assistantGuideTab, setAssistantGuideTab] = useState('role_guide'); // 'role_guide' | 'perks' | 'security'
+  // Terms & Conditions States
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsLangTab, setTermsLangTab] = useState(lang === 'ar' ? 'ar' : 'fr');
   const [copySuccessToast, setCopySuccessToast] = useState('');
-  const [quickFillNotice, setQuickFillNotice] = useState('');
+  const [registeredPendingSuccess, setRegisteredPendingSuccess] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -119,31 +124,31 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     setTimeout(() => setCopySuccessToast(''), 4000);
   };
 
-  // Express One-Click Demo Fill for ultra-fast creation testing
-  const handleQuickFill = (type) => {
-    setErrorMsg('');
-    const randomId = Math.floor(100 + Math.random() * 900);
-    if (type === 'client') {
-      setRole('client');
-      setNom('سلمى بنجلون');
-      setPhone('0661234567');
-      setEmail(`salma.bennani${randomId}@gmail.com`);
-      setCity('Casablanca');
-      setPassword('OriaClient2026!');
-      setQuickFillNotice(lang === 'ar' ? 'تمت التعبئة السريعة لبيانات زبون خاص بنجاح ✨' : 'Profil Client VIP pré-rempli avec succès ✨');
-    } else {
-      setRole('commercant');
-      setSelectedPlanId('plan_pro');
-      setBillingCycle('monthly');
-      setNom('الحاج عمر التازي');
-      setShopName('مجوهرات التازي الملكية فاس');
-      setPhone('0662987654');
-      setEmail(`tazi.or${randomId}@gmail.com`);
-      setCity('Fès');
-      setPassword('OriaGold2026!');
-      setQuickFillNotice(lang === 'ar' ? 'تمت التعبئة السريعة لبيانات صائغ معتمد بنجاح 🏪' : 'Profil Joaillier Agréé pré-rempli avec succès 🏪');
+  // Handle Patente File Upload (PDF, JPG, PNG, WEBP)
+  const handlePatenteFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg(lang === 'ar' ? 'حجم الملف كبير جداً (الحد الأقصى 10 ميغابايت).' : 'Le document est trop volumineux (max 10 Mo).');
+      return;
     }
-    setTimeout(() => setQuickFillNotice(''), 4000);
+
+    setPatenteDocName(file.name);
+    setPatenteDocSize((file.size / 1024).toFixed(1) + ' KB');
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setPatenteDocBase64(ev.target.result);
+      setErrorMsg('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePatenteDoc = () => {
+    setPatenteDocBase64('');
+    setPatenteDocName('');
+    setPatenteDocSize('');
   };
 
   const handleLoginSubmit = async (e) => {
@@ -167,11 +172,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
     // Quick validations
     if (!nom.trim()) {
-      setErrorMsg(lang === 'ar' ? 'يرجى إدخال الاسم الكامل.' : 'Veuillez saisir votre nom complet.');
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال اسم المسؤول / المدير.' : 'Veuillez saisir votre nom complet.');
       return;
     }
-    if (role === 'commercant' && !shopName.trim()) {
-      setErrorMsg(lang === 'ar' ? 'يرجى إدخال اسم المتجر أو الورشة.' : 'Veuillez saisir le nom de votre bijouterie.');
+    if (!shopName.trim()) {
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال اسم متجر المجوهرات أو الورشة.' : 'Veuillez saisir le nom de votre bijouterie / atelier.');
+      return;
+    }
+    if (!numeroPatente.trim()) {
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم الباتنت أو السجل التجاري.' : 'Veuillez saisir votre numéro de Patente ou Registre de Commerce (RC).');
+      return;
+    }
+    if (!patenteDocBase64) {
+      setErrorMsg(lang === 'ar' ? 'يرجى تحميل وثيقة الباتنت أو السجل التجاري لتفعيل حسابكم المهني.' : 'Veuillez joindre votre attestation de Patente (Image ou PDF).');
       return;
     }
     if (!email.trim() || !email.includes('@')) {
@@ -182,24 +195,30 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       setErrorMsg(lang === 'ar' ? 'كلمة المرور يجب أن تتكون من 6 أحرف على الأقل.' : 'Le mot de passe doit comporter au moins 6 caractères.');
       return;
     }
+    if (!acceptTerms) {
+      setErrorMsg(lang === 'ar' ? 'يرجى تأكيد الموافقة على شروط وأحكام استخدام التطبيق للمتابعة.' : 'Veuillez accepter les termes et conditions d\'utilisation pour finaliser votre inscription.');
+      return;
+    }
 
     setLoading(true);
     try {
-      await register({
+      const res = await register({
         email: email.trim(),
         mot_de_passe: password,
         nom: nom.trim(),
-        role,
-        shopName: role === 'commercant' ? shopName.trim() : undefined,
+        role: 'commercant',
+        shopName: shopName.trim(),
         phone: phone.trim(),
         city,
         address: city,
-        plan_id: role === 'commercant' ? selectedPlanId : undefined,
-        billing_cycle: role === 'commercant' ? billingCycle : undefined
+        numero_patente: numeroPatente.trim(),
+        patente_document: patenteDocBase64,
+        patente_filename: patenteDocName || `Patente_${numeroPatente.trim() || 'Pro'}.pdf`,
+        plan_id: selectedPlanId,
+        billing_cycle: billingCycle
       });
       setLoading(false);
-      onClose();
-      if (onAuthSuccess) onAuthSuccess('register');
+      setRegisteredPendingSuccess(true);
     } catch (err) {
       setLoading(false);
       setErrorMsg(err.message || (lang === 'ar' ? 'حدث خطأ أثناء إنشاء الحساب. قد يكون البريد مسجلاً بالفعل.' : 'Erreur lors de la création du compte.'));
@@ -225,42 +244,27 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   const labels = {
     fr: {
       loginTab: "Connexion",
-      registerTab: "Créer un compte",
+      registerTab: "Créer un compte Pro",
       welcomeBack: "Bienvenue sur HRSDGDG",
       welcomeDesc: "Accédez à votre coffre-fort, vos enchères privées et vos commandes.",
-      createAcc: "Création Rapide de Compte",
-      createDesc: "Inscrivez-vous en moins de 30 secondes pour accéder aux ventes privées et garanties or 18k.",
-      assistanceHeader: "✨ Assistance Rapide à l'Inscription",
-      assistanceSub: "Besoin d'aide pour choisir votre compte ou finaliser en direct ?",
-      toggleAssistanceHide: "Masquer l'aide",
-      toggleAssistanceShow: "Afficher l'aide rapide",
-      whatsappBtn: "Assistance Immédiate WhatsApp",
-      whatsappDesc: "Conseiller dédié disponible 7j/7 pour vous assister",
-      fastDemoTitle: "⚡ Remplissage Express (1 Clic) :",
-      fastDemoClient: "👤 Client Particulier VIP",
-      fastDemoMerchant: "🏪 Joaillier Agréé",
-      guideTab1: "Quel compte choisir ?",
-      guideTab2: "Avantages Immédiats",
-      guideTab3: "Garanties & Sécurité",
-      guideContent1Client: "👤 Client VIP : Achetez en direct, participez aux enchères exclusives et bénéficiez de la livraison sécurisée avec paiement à la livraison.",
-      guideContent1Merchant: "🏪 Joaillier Agréé : Exposez vos bijoux certifiés or 18k, touchez une clientèle nationale et développez votre vitrine digitale.",
-      guideContent2: "💎 Avantages : Certificat d'authenticité offert, accès aux ventes privées du vendredi, support prioritaire et garantie rachat.",
-      guideContent3: "🛡️ Sécurité : Données 100% cryptées, conformité CNDP, bijoux vérifiés par des maîtres joailliers agréés.",
-      emailLabel: "Adresse Email",
+      createAcc: "Espace Professionnel Agréé",
+      createDesc: "Inscription strictement réservée aux bijoutiers, artisans orfèvres et joailliers agréés.",
+      emailLabel: "Adresse Email Professionnelle",
       passLabel: "Mot de passe",
       generatePwd: "🔑 Générer un mot de passe fort",
-      nameLabel: "Nom & Prénom",
+      nameLabel: "Nom & Prénom du Gérant / Responsable",
       phoneLabel: "Numéro de Téléphone (WhatsApp)",
-      phoneHint: "Pour la confirmation de vos commandes et le suivi de livraison",
-      cityLabel: "Ville de Résidence",
-      roleLabel: "Choisissez votre type de compte",
-      roleClient: "Client Particulier VIP",
-      roleClientBadge: "Rapide : 15 secondes",
-      roleClientDesc: "Achetez, enchérissez et collectionnez des bijoux d'exception",
-      roleMerchant: "Joaillier / Boutique Agréée",
-      roleMerchantBadge: "Vitrine Certifiée",
-      roleMerchantDesc: "Vendez vos créations, certifiez et gérez votre vitrine digitale",
+      phoneHint: "Pour la validation du compte et le suivi commercial",
+      cityLabel: "Ville de l'Atelier / Boutique",
+      roleLabel: "Statut Professionnel",
+      proOnlyBannerTitle: "Espace Réservé aux Professionnels de la Joaillerie",
+      proOnlyBannerDesc: "L'inscription sur HRSDGDG est exclusivement réservée aux bijouteries, ateliers et orfèvres agréés munis d'un numéro de patente valide au Maroc.",
       shopLabel: "Nom de la Joaillerie / Atelier",
+      patenteNumberLabel: "Numéro de Patente / Registre de Commerce (RC)",
+      patenteDocLabel: "Attestation de Patente / Document Professionnel",
+      patenteDocHint: "Joindre une photo nette ou un PDF de votre patente (max 10 Mo)",
+      patenteUploadBtn: "Télécharger l'attestation de Patente 📄",
+      patenteUploadedSuccess: "Document joint avec succès ✓",
       subscriptionTitle: "Choix de votre Forfait Commerçant",
       subscriptionSubtitle: "Sélectionnez la formule adaptée à votre atelier ou bijouterie",
       monthlyBilling: "Facturation Mensuelle",
@@ -269,56 +273,48 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       freeBadge: "Gratuit",
       perMonth: "/mois",
       perYear: "/an",
+      termsAcceptPrefix: "J'accepte les ",
+      termsLinkText: "termes et conditions d'utilisation",
+      termsAcceptSuffix: " de l'application",
+      termsModalTitle: "Conditions Générales d'Utilisation (CGU)",
+      termsModalSubtitle: "Plateforme Numérique de Joaillerie HRSDGDG Maroc",
+      termsAcceptAndClose: "J'accepte les conditions",
+      termsCloseBtn: "Fermer",
       loginBtn: "Se Connecter à mon Espace",
-      registerBtn: "Créer mon Compte Privilège 💎",
+      registerBtn: "Créer mon Compte Professionnel Agréé 👑",
       demoAccounts: "Accès Rapide Démo :",
       clientDemo: "Client (Yassine)",
       merchantDemo: "Joaillier (El Fassi)",
       watchDemo: "Horloger (Maroc Chrono)",
-      trustSecurity: "Transactions 100% sécurisées • Or 18K Garanti • CNDP",
+      trustSecurity: "Transactions 100% sécurisées • Or 18K Garanti • Patente vérifiée",
       alreadyHaveAcc: "Vous avez déjà un compte ?",
-      dontHaveAcc: "Nouveau sur HRSDGDG ?",
+      dontHaveAcc: "Vous êtes artisan / bijoutier ?",
       switchLogin: "Se connecter",
-      switchRegister: "Créer un compte rapide"
+      switchRegister: "Créer un compte Pro"
     },
     ar: {
       loginTab: "تسجيل الدخول",
-      registerTab: "إنشاء حساب سريع",
+      registerTab: "حساب مهني جديد",
       welcomeBack: "مرحباً بكم في دار HRSDGDG",
       welcomeDesc: "ادخل إلى خزنتك ومزاداتك الحصرية وطلباتك بكل أمان.",
-      createAcc: "إنشاء حسابك المتميز في ثوانٍ",
-      createDesc: "سجل مجاناً في أقل من 30 ثانية واستمتع بالعروض والمزادات والذهب الموثق عيار 18k.",
-      assistanceHeader: "✨ المساعد الفوري لإنشاء الحساب",
-      assistanceSub: "هل تحتاج مساعدة سريعة لاختيار نوع الحساب أو إكمال التسجيل فورياً؟",
-      toggleAssistanceHide: "إخفاء المساعد",
-      toggleAssistanceShow: "عرض المساعد الفوري",
-      whatsappBtn: "مساعدة مباشرة عبر واتساب",
-      whatsappDesc: "تواصل الآن مع مستشار الدار لمساعدتك خطوة بخطوة 7/7 أيام",
-      fastDemoTitle: "⚡ تعبئة سريعة للتجربة الفورية (نقرة واحدة) :",
-      fastDemoClient: "👤 تجربة كزبون VIP",
-      fastDemoMerchant: "🏪 تجربة كصائغ معتمد",
-      guideTab1: "أي حساب أختار؟",
-      guideTab2: "المزايا الفورية",
-      guideTab3: "الضمان والأمان",
-      guideContent1Client: "👤 زبون خاص VIP : لشراء المجوهرات، المشاركة في المزادات الحية، والتوصيل المؤمن مع الدفع عند المعاينة والاستلام.",
-      guideContent1Merchant: "🏪 صائغ معتمد : للمحلات والصاغة المحترفين لعرض إبداعات الذهب عيار 18k وإدارة المتجر والطلبات.",
-      guideContent2: "💎 مزايا حصرية : شهادة أصالة رسمية لكل قطعة، دعوات لمبيعات الجمعة الخاصة، ومتابعة عبر واتساب.",
-      guideContent3: "🛡️ الأمان والسرية : حماية بياناتك وتشفيرها 100%، وتفتيش دقيق لعيار الذهب من خبراء معتمدين بالمغرب.",
-      emailLabel: "البريد الإلكتروني",
+      createAcc: "تسجيل الصاغة والمحلات المعتمدة",
+      createDesc: "التسجيل في المنصة مخصص حصرياً للمحترفين والصاغة المعتمدين لممارسة الصياغة بالمغرب.",
+      emailLabel: "البريد الإلكتروني المهني",
       passLabel: "كلمة المرور",
       generatePwd: "🔑 توليد كلمة مرور قوية",
-      nameLabel: "الاسم الكامل",
+      nameLabel: "الاسم الكامل للمسؤول / المدير",
       phoneLabel: "رقم الهاتف / واتساب",
-      phoneHint: "لتأكيد طلباتك وتتبع شحنات المجوهرات والمزادات",
-      cityLabel: "المدينة",
-      roleLabel: "نوع الحساب المطلوب",
-      roleClient: "زبون خاص VIP",
-      roleClientBadge: "فائق السرعة (15 ثانية)",
-      roleClientDesc: "تسوق، شارك في المزادات، واقتنِ أندر المجوهرات",
-      roleMerchant: "صائغ معتمد / متجر",
-      roleMerchantBadge: "متجر موثق وشارة الثقة",
-      roleMerchantDesc: "اعرض مجوهراتك وأدر مبيعاتك وعيار 18k بكل احترافية",
+      phoneHint: "لتأكيد الحساب ومتابعة مبيعات المجوهرات والمزادات",
+      cityLabel: "مدينة المتجر / الورشة",
+      roleLabel: "الصفة المهنية",
+      proOnlyBannerTitle: "مساحة حصرية للصاغة وتجار المجوهرات المعتمدين",
+      proOnlyBannerDesc: "التسجيل في المنصة مخصص حصرياً للمحلات والورشات والصاغة الحاصلين على رقم باتنت وسجل مهني معتمد بالمغرب.",
       shopLabel: "اسم متجر المجوهرات / الورشة",
+      patenteNumberLabel: "رقم الباتنت / السجل التجاري (RC)",
+      patenteDocLabel: "شهادة الباتنت / الوثيقة المهنية",
+      patenteDocHint: "أرفق صورة واضحة أو ملف PDF لوثيقة الباتنت (الحد الأقصى 10 ميغابايت)",
+      patenteUploadBtn: "تحميل وثيقة الباتنت 📄",
+      patenteUploadedSuccess: "تم إرفاق الوثيقة بنجاح ✓",
       subscriptionTitle: "اختر باقة الاشتراك لمتجرك",
       subscriptionSubtitle: "حدد الباقة المناسبة لحجم ونشاط ورشتك أو مجوهراتك",
       monthlyBilling: "اشتراك شهري",
@@ -327,75 +323,74 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       freeBadge: "مجاناً",
       perMonth: "/شهر",
       perYear: "/سنة",
+      termsAcceptPrefix: "أوافق على ",
+      termsLinkText: "شروط وأحكام استخدام التطبيق",
+      termsAcceptSuffix: "",
+      termsModalTitle: "شروط وأحكام استخدام المنصة (CGU)",
+      termsModalSubtitle: "المنصة الرسمية للصاغة وتجار المجوهرات بالمغرب",
+      termsAcceptAndClose: "أوافق على الشروط",
+      termsCloseBtn: "إغلاق",
       loginBtn: "تسجيل الدخول إلى حسابي",
-      registerBtn: "إنشاء حسابي المتميز في ثوانٍ 💎",
+      registerBtn: "تأكيد وإنشاء الحساب المهني 👑",
       demoAccounts: "دخول سريع للتجربة :",
       clientDemo: "زبون (ياسين)",
       merchantDemo: "صائغ (الفاسي)",
       watchDemo: "ساعات (ماروك كرونو)",
-      trustSecurity: "معاملات آمنة 100% • ذهب عيار 18k موثق • توصيل مؤمن",
+      trustSecurity: "معاملات آمنة 100% • ذهب عيار 18k موثق • باتنت معتمدة",
       alreadyHaveAcc: "لديك حساب بالفعل؟",
-      dontHaveAcc: "ليس لديك حساب بعد؟",
+      dontHaveAcc: "هل أنت صائغ / تاجر مجوهرات ؟",
       switchLogin: "تسجيل الدخول",
-      switchRegister: "إنشاء حساب جديد"
+      switchRegister: "حساب مهني جديد"
     },
     en: {
       loginTab: "Sign In",
-      registerTab: "Instant Register",
+      registerTab: "Pro Register",
       welcomeBack: "Welcome to HRSDGDG",
       welcomeDesc: "Access your private vault, live auctions, and orders.",
-      createAcc: "Fast Account Creation",
-      createDesc: "Register in under 30 seconds for private vaults, 18k gold guarantees & auctions.",
-      assistanceHeader: "✨ Fast Account Assistant",
-      assistanceSub: "Need instant guidance to choose your account or complete registration?",
-      toggleAssistanceHide: "Hide Assistant",
-      toggleAssistanceShow: "Show Quick Assistance",
-      whatsappBtn: "Instant WhatsApp Concierge",
-      whatsappDesc: "Dedicated advisor available 7/7 to guide you",
-      fastDemoTitle: "⚡ Express 1-Click Fill:",
-      fastDemoClient: "👤 VIP Client Profile",
-      fastDemoMerchant: "🏪 Certified Jeweller",
-      guideTab1: "Which Account?",
-      guideTab2: "Instant Perks",
-      guideTab3: "Trust & Safety",
-      guideContent1Client: "👤 VIP Client: Buy curated jewels, participate in private live auctions with secure Cash on Delivery.",
-      guideContent1Merchant: "🏪 Certified Jeweller: List 18k gold jewels, manage your digital storefront and verified orders.",
-      guideContent2: "💎 Instant Perks: Certificate of authenticity included, private sale invitations, VIP concierge support.",
-      guideContent3: "🛡️ Safety: 100% encrypted, verified gemmology checks, insured express delivery across Morocco.",
-      emailLabel: "Email Address",
+      createAcc: "Certified Jeweller Registration",
+      createDesc: "Registration is strictly reserved for certified jewelry boutiques and workshops.",
+      emailLabel: "Business Email Address",
       passLabel: "Password",
       generatePwd: "🔑 Generate Strong Password",
-      nameLabel: "Full Name",
+      nameLabel: "Full Name of Manager / Owner",
       phoneLabel: "Phone Number (WhatsApp)",
-      phoneHint: "For order delivery notifications and private auction alerts",
-      cityLabel: "City",
-      roleLabel: "Select Account Type",
-      roleClient: "VIP Private Client",
-      roleClientBadge: "Fast: 15 seconds",
-      roleClientDesc: "Shop luxury jewels and bid on certified auctions",
-      roleMerchant: "Certified Master Jeweller",
-      roleMerchantBadge: "Verified Store",
-      roleMerchantDesc: "Showcase your jewelry creations with verified badge",
+      phoneHint: "For account verification and commercial follow-up",
+      cityLabel: "Boutique / Workshop City",
+      roleLabel: "Professional Status",
+      proOnlyBannerTitle: "Exclusive Space for Certified Jewelers",
+      proOnlyBannerDesc: "Registration on HRSDGDG is strictly reserved for jewelry shops and certified artisans holding a valid tax business license (Patente) in Morocco.",
       shopLabel: "Jewelry Store / Workshop Name",
-      subscriptionTitle: "Choose your Merchant Plan",
-      subscriptionSubtitle: "Select the plan tailored to your jewelry boutique",
+      patenteNumberLabel: "Tax License Number / Commercial Register (RC)",
+      patenteDocLabel: "Tax License Document / Pro Certificate",
+      patenteDocHint: "Attach a clear photo or PDF of your business license (max 10 MB)",
+      patenteUploadBtn: "Upload Tax License Document 📄",
+      patenteUploadedSuccess: "Document attached successfully ✓",
+      subscriptionTitle: "Select your Merchant Plan",
+      subscriptionSubtitle: "Choose the package tailored to your workshop or jewelry salon",
       monthlyBilling: "Monthly Billing",
       annualBilling: "Annual Billing (-20% 🎁)",
       recommendedPlan: "⭐ Recommended",
       freeBadge: "Free",
       perMonth: "/mo",
       perYear: "/yr",
+      termsAcceptPrefix: "I accept the ",
+      termsLinkText: "Terms and Conditions of Use",
+      termsAcceptSuffix: " of the application",
+      termsModalTitle: "Terms & Conditions of Use",
+      termsModalSubtitle: "Official HRSDGDG Luxury Jewelry Platform Morocco",
+      termsAcceptAndClose: "I Accept the Terms",
+      termsCloseBtn: "Close",
       loginBtn: "Sign In to My Account",
-      registerBtn: "Create VIP Account 💎",
-      demoAccounts: "Quick Demo Logins:",
+      registerBtn: "Create My Certified Pro Account 👑",
+      demoAccounts: "Express Demo Access:",
       clientDemo: "Client (Yassine)",
       merchantDemo: "Jeweller (El Fassi)",
-      watchDemo: "Watches (Maroc Chrono)",
-      trustSecurity: "100% Secure • Certified 18K Gold • Insured Delivery",
-      alreadyHaveAcc: "Already registered?",
-      dontHaveAcc: "New to HRSDGDG?",
+      watchDemo: "Watchmaker (Maroc Chrono)",
+      trustSecurity: "100% Secure Transactions • 18K Gold Guaranteed • Verified Business License",
+      alreadyHaveAcc: "Already have an account?",
+      dontHaveAcc: "Are you an artisan / jeweller?",
       switchLogin: "Sign In",
-      switchRegister: "Create Account"
+      switchRegister: "Register Pro Account"
     }
   };
 
@@ -476,168 +471,128 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
             <span>{copySuccessToast}</span>
           </div>
         )}
-        {quickFillNotice && (
-          <div className="auth-toast-alert gold">
-            <span>✨</span>
-            <span>{quickFillNotice}</span>
-          </div>
-        )}
 
         {/* ========================================================
-            TAB 1: REGISTRATION (ENHANCED WITH FAST ASSISTANCE)
+            TAB 1: REGISTRATION (EXCLUSIVELY FOR PROFESSIONALS)
             ======================================================== */}
         {tab === 'register' ? (
-          <form onSubmit={handleRegisterSubmit} className="auth-form-body">
-            
-            {/* 1. ASSISTANCE RAPIDE SECTION (HIGHLIGHTED CONCIERGE HELPER) */}
-            <div className="auth-quick-assistance-card">
-              <div className="quick-assist-top-bar">
-                <div className="quick-assist-title-wrap">
-                  <span className="quick-assist-sparkle">✨</span>
-                  <div>
-                    <h3 className="quick-assist-heading">{t.assistanceHeader}</h3>
-                    <p className="quick-assist-subtext">{t.assistanceSub}</p>
-                  </div>
+          registeredPendingSuccess ? (
+            <div className="auth-pending-success-card animate-fade-in">
+              <div className="pending-badge-icon-wrap">
+                <span className="pending-big-icon">⏳</span>
+                <span className="pending-status-pill">
+                  {lang === 'ar' ? 'قيد المراجعة والاعتماد' : 'En attente d\'activation'}
+                </span>
+              </div>
+
+              <h3 className="pending-success-title">
+                {lang === 'ar' ? 'تم استلام طلب تسجيلكم بنجاح !' : 'Dossier d\'Inscription Reçu avec Succès !'}
+              </h3>
+              <p className="pending-success-subtitle">
+                {lang === 'ar' 
+                  ? 'تم تسجيل بياناتكم المهنية وسيتم تفعيل الحساب من طرف الإدارة بعد مراجعة وثيقة الباتنت.'
+                  : 'Votre compte professionnel a été créé et sera activé par un administrateur après validation de votre patente.'}
+              </p>
+
+              {/* Information Summary Box */}
+              <div className="pending-recap-box">
+                <div className="pending-recap-row">
+                  <span className="recap-label">{lang === 'ar' ? 'المتجر / الورشة :' : 'Joaillerie / Atelier :'}</span>
+                  <span className="recap-value gold-text">{shopName || 'Joaillerie Pro'}</span>
                 </div>
+                <div className="pending-recap-row">
+                  <span className="recap-label">{lang === 'ar' ? 'المسؤول :' : 'Gérant :'}</span>
+                  <span className="recap-value">{nom}</span>
+                </div>
+                <div className="pending-recap-row">
+                  <span className="recap-label">{lang === 'ar' ? 'البريد المهني :' : 'Email Professionnel :'}</span>
+                  <span className="recap-value">{email}</span>
+                </div>
+                <div className="pending-recap-row">
+                  <span className="recap-label">{lang === 'ar' ? 'رقم الباتنت / RC :' : 'Numéro de Patente / RC :'}</span>
+                  <span className="recap-value">{numeroPatente}</span>
+                </div>
+                {patenteDocName && (
+                  <div className="pending-recap-row">
+                    <span className="recap-label">{lang === 'ar' ? 'وثيقة الباتنت :' : 'Document Joint :'}</span>
+                    <span className="recap-value" style={{ color: '#10b981' }}>📄 {patenteDocName} ✓</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Security Admin Verification Notice */}
+              <div className="pending-security-notice">
+                <span className="notice-icon">🛡️</span>
+                <p>
+                  {lang === 'ar'
+                    ? 'طبقاً للضوابط القانونية والأمنية لتجارة وصياغة الذهب بالمغرب، يتم تفعيل الحسابات المهنية يدوياً من طرف إدارة HRSDGDG بعد التحقق من صحة الوثائق.'
+                    : 'Conformément aux normes de sécurité pour le commerce des métaux précieux au Maroc, tout nouveau compte doit être validé par un administrateur avant sa première connexion.'}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pending-actions-grid">
+                <a
+                  href={`https://wa.me/212661000000?text=${whatsappMessage}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pending-btn-whatsapp"
+                >
+                  <span>💬</span>
+                  <span>{lang === 'ar' ? 'تسريع التفعيل عبر واتساب' : 'Accélérer via WhatsApp'}</span>
+                </a>
                 <button
                   type="button"
-                  className="quick-assist-toggle-btn"
-                  onClick={() => setAssistantOpen(!assistantOpen)}
-                  aria-expanded={assistantOpen}
+                  className="pending-btn-login"
+                  onClick={() => {
+                    setRegisteredPendingSuccess(false);
+                    setTab('login');
+                    setErrorMsg('');
+                  }}
                 >
-                  {assistantOpen ? t.toggleAssistanceHide : t.toggleAssistanceShow}
+                  <span>🔑</span>
+                  <span>{lang === 'ar' ? 'الانتقال لتسجيل الدخول' : 'Aller à la connexion'}</span>
                 </button>
               </div>
-
-              {assistantOpen && (
-                <div className="quick-assist-expandable-content animate-slide-down">
-                  {/* Action 1: Direct WhatsApp Concierge Button */}
-                  <a 
-                    href={`https://wa.me/212661889900?text=${whatsappMessage}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="quick-assist-whatsapp-cta"
-                  >
-                    <div className="wa-cta-icon-box">💬</div>
-                    <div className="wa-cta-text-wrap">
-                      <div className="wa-cta-main">{t.whatsappBtn}</div>
-                      <div className="wa-cta-sub">{t.whatsappDesc}</div>
-                    </div>
-                    <div className="wa-cta-arrow">{isRtl ? '←' : '→'}</div>
-                  </a>
-
-                  {/* Action 2: 1-Click Express Fill (Instant registration fill for testing or speed) */}
-                  <div className="quick-fill-block">
-                    <span className="quick-fill-label">{t.fastDemoTitle}</span>
-                    <div className="quick-fill-buttons">
-                      <button
-                        type="button"
-                        className="quick-fill-chip client"
-                        onClick={() => handleQuickFill('client')}
-                        title="Remplir automatiquement les données d'un client"
-                      >
-                        <span>👤</span>
-                        <span>{t.fastDemoClient}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="quick-fill-chip merchant"
-                        onClick={() => handleQuickFill('merchant')}
-                        title="Remplir automatiquement les données d'un commerçant"
-                      >
-                        <span>🏪</span>
-                        <span>{t.fastDemoMerchant}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Action 3: Interactive Micro-Guide (Tabs) */}
-                  <div className="quick-guide-tabs">
-                    <button
-                      type="button"
-                      className={`guide-tab-btn ${assistantGuideTab === 'role_guide' ? 'active' : ''}`}
-                      onClick={() => setAssistantGuideTab('role_guide')}
-                    >
-                      {t.guideTab1}
-                    </button>
-                    <button
-                      type="button"
-                      className={`guide-tab-btn ${assistantGuideTab === 'perks' ? 'active' : ''}`}
-                      onClick={() => setAssistantGuideTab('perks')}
-                    >
-                      {t.guideTab2}
-                    </button>
-                    <button
-                      type="button"
-                      className={`guide-tab-btn ${assistantGuideTab === 'security' ? 'active' : ''}`}
-                      onClick={() => setAssistantGuideTab('security')}
-                    >
-                      {t.guideTab3}
-                    </button>
-                  </div>
-
-                  <div className="quick-guide-panel">
-                    {assistantGuideTab === 'role_guide' && (
-                      <div className="guide-panel-text">
-                        <p>{t.guideContent1Client}</p>
-                        <p style={{ marginTop: '6px' }}>{t.guideContent1Merchant}</p>
-                      </div>
-                    )}
-                    {assistantGuideTab === 'perks' && (
-                      <div className="guide-panel-text">
-                        <p>{t.guideContent2}</p>
-                      </div>
-                    )}
-                    {assistantGuideTab === 'security' && (
-                      <div className="guide-panel-text">
-                        <p>{t.guideContent3}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
-
-            {/* 2. ROLE SELECTOR (FAST 2-CARD SWITCH) */}
-            <div className="auth-field-group">
-              <label className="auth-field-label">
-                <span className="auth-label-icon">💎</span>
-                <span>{t.roleLabel}</span>
-              </label>
-              <div className="auth-role-cards-grid">
-                <div 
-                  className={`auth-role-card ${role === 'client' ? 'selected' : ''}`}
-                  onClick={() => setRole('client')}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="role-card-header">
-                    <span className="role-card-icon">👤</span>
-                    <span className="role-card-title">{t.roleClient}</span>
-                    <span className="role-badge-pill">{t.roleClientBadge}</span>
-                    <span className="role-card-radio">{role === 'client' ? '●' : '○'}</span>
+          ) : (
+          <form onSubmit={handleRegisterSubmit} className="auth-form-body">
+            
+            {/* 1. EXCLUSIVE PROFESSIONAL ACCESS BANNER */}
+            <div className="auth-field-group" style={{ marginBottom: '16px' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.16) 0%, rgba(184, 134, 11, 0.08) 100%)',
+                border: '1.5px solid var(--primary-gold)',
+                borderRadius: '12px',
+                padding: '16px 18px',
+                boxShadow: '0 4px 18px rgba(212, 175, 55, 0.12)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.3rem' }}>👑</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--primary-gold)' }}>
+                      {t.proOnlyBannerTitle}
+                    </span>
                   </div>
-                  <p className="role-card-desc">{t.roleClientDesc}</p>
+                  <span style={{
+                    background: '#10b981',
+                    color: '#fff',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+                  }}>
+                    {lang === 'ar' ? 'حصري للصاغة' : 'Réservé aux Pro'}
+                  </span>
                 </div>
-
-                <div 
-                  className={`auth-role-card ${role === 'commercant' ? 'selected' : ''}`}
-                  onClick={() => setRole('commercant')}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="role-card-header">
-                    <span className="role-card-icon">🏪</span>
-                    <span className="role-card-title">{t.roleMerchant}</span>
-                    <span className="role-badge-pill gold">{t.roleMerchantBadge}</span>
-                    <span className="role-card-radio">{role === 'commercant' ? '●' : '○'}</span>
-                  </div>
-                  <p className="role-card-desc">{t.roleMerchantDesc}</p>
-                </div>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-gray)', lineHeight: 1.45 }}>
+                  {t.proOnlyBannerDesc}
+                </p>
               </div>
             </div>
 
-            {/* 3. NAME INPUT */}
+            {/* 3. NAME INPUT (MANAGER / OWNER) */}
             <div className="auth-field-group">
               <label className="auth-field-label">
                 <span className="auth-label-icon">👤</span>
@@ -651,34 +606,134 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   className="auth-text-input" 
                   value={nom}
                   onChange={e => setNom(e.target.value)}
-                  placeholder={lang === 'ar' ? "مثال: ياسمين العلمي" : "Ex: Yassine Alami"}
+                  placeholder={lang === 'ar' ? "مثال: الحاج عمر التازي" : "Ex: Omar Tazi (Gérant)"}
                   autoComplete="name"
                 />
               </div>
             </div>
 
-            {/* 4. SHOP NAME (IF MERCHANT) */}
-            {role === 'commercant' && (
-              <div className="auth-field-group animate-slide-down">
-                <label className="auth-field-label">
-                  <span className="auth-label-icon">🏪</span>
-                  <span>{t.shopLabel}</span>
-                  <span className="auth-required-mark">*</span>
-                </label>
-                <div className="auth-input-container">
-                  <input 
-                    type="text" 
-                    required 
-                    className="auth-text-input" 
-                    value={shopName}
-                    onChange={e => setShopName(e.target.value)}
-                    placeholder={lang === 'ar' ? "مثال: مجوهرات الفاسي الملكية" : "Ex: Joaillerie Royale Fès"}
-                  />
-                </div>
+            {/* 4. SHOP NAME */}
+            <div className="auth-field-group animate-slide-down">
+              <label className="auth-field-label">
+                <span className="auth-label-icon">🏪</span>
+                <span>{t.shopLabel}</span>
+                <span className="auth-required-mark">*</span>
+              </label>
+              <div className="auth-input-container">
+                <input 
+                  type="text" 
+                  required 
+                  className="auth-text-input" 
+                  value={shopName}
+                  onChange={e => setShopName(e.target.value)}
+                  placeholder={lang === 'ar' ? "مثال: مجوهرات التازي الملكية" : "Ex: Joaillerie Royale Fès"}
+                />
               </div>
-            )}
+            </div>
 
-            {/* 4b. SUBSCRIPTION PLAN SELECTION (FOR MERCHANTS) */}
+            {/* 4b. NUMÉRO DE PATENTE & RC */}
+            <div className="auth-field-group animate-slide-down">
+              <label className="auth-field-label">
+                <span className="auth-label-icon">📜</span>
+                <span>{t.patenteNumberLabel}</span>
+                <span className="auth-required-mark">*</span>
+              </label>
+              <div className="auth-input-container">
+                <input 
+                  type="text" 
+                  required 
+                  className="auth-text-input" 
+                  value={numeroPatente}
+                  onChange={e => setNumeroPatente(e.target.value)}
+                  placeholder={lang === 'ar' ? "مثال: 40289134 (الباتنت أو السجل التجاري)" : "Ex: 40289134 (N° Patente ou RC)"}
+                />
+              </div>
+            </div>
+
+            {/* 4c. TÉLÉCHARGER LA PATENTE (DOCUMENT UPLOAD) */}
+            <div className="auth-field-group animate-slide-down">
+              <label className="auth-field-label">
+                <span className="auth-label-icon">📄</span>
+                <span>{t.patenteDocLabel}</span>
+                <span className="auth-required-mark">*</span>
+              </label>
+              
+              <div style={{
+                border: patenteDocBase64 ? '1.5px solid #10b981' : '1.5px dashed var(--border-gold)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '14px 18px',
+                background: patenteDocBase64 ? 'rgba(16, 185, 129, 0.07)' : 'rgba(212, 175, 55, 0.04)',
+                transition: 'all 0.2s',
+                textAlign: 'center'
+              }}>
+                {patenteDocBase64 ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: isRtl ? 'right' : 'left' }}>
+                      <span style={{ fontSize: '1.8rem' }}>📄</span>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#10b981' }}>
+                          {patenteDocName || (lang === 'ar' ? 'وثيقة الباتنت مرفقة' : 'Attestation de Patente jointe')}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
+                          {patenteDocSize || 'Document vérifié'} • {t.patenteUploadedSuccess}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemovePatenteDoc}
+                      style={{
+                        background: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        fontWeight: 700
+                      }}
+                    >
+                      {lang === 'ar' ? 'إلغاء وتغيير' : 'Changer'}
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      id="patente-upload-input"
+                      accept=".pdf,image/png,image/jpeg,image/webp,image/jpg"
+                      style={{ display: 'none' }}
+                      onChange={handlePatenteFileChange}
+                    />
+                    <label
+                      htmlFor="patente-upload-input"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'linear-gradient(135deg, var(--primary-gold), #b8860b)',
+                        color: '#fff',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        fontSize: '0.88rem',
+                        boxShadow: '0 2px 10px rgba(184, 134, 11, 0.25)',
+                        marginBottom: '6px'
+                      }}
+                    >
+                      <span>📎</span>
+                      <span>{t.patenteUploadBtn}</span>
+                    </label>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                      {t.patenteDocHint}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 4d. SUBSCRIPTION PLAN SELECTION */}
             {role === 'commercant' && (
               <div className="auth-subscription-selection-section animate-slide-down">
                 <div className="auth-sub-header">
@@ -895,24 +950,79 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
               )}
             </div>
 
-            {/* SUBMIT BUTTON */}
-            <button 
-              type="submit" 
-              className="auth-primary-submit-btn" 
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="auth-loading-spinner-wrapper">
-                  <span className="auth-spinner" />
-                  <span>{lang === 'ar' ? 'جاري إنشاء الحساب...' : 'Création du compte...'}</span>
+            {/* TERMS & CONDITIONS ACCEPTANCE CHECKBOX */}
+            <div className="auth-terms-group">
+              <label className="auth-terms-checkbox-label">
+                <input 
+                  type="checkbox"
+                  className="auth-terms-checkbox"
+                  checked={acceptTerms}
+                  onChange={e => setAcceptTerms(e.target.checked)}
+                  required
+                />
+                <span className="auth-terms-text">
+                  {lang === 'ar' ? (
+                    <>
+                      {t.termsAcceptPrefix}
+                      <button
+                        type="button"
+                        className="auth-terms-link-btn"
+                        onClick={() => { setTermsLangTab('ar'); setShowTermsModal(true); }}
+                      >
+                        {t.termsLinkText}
+                      </button>
+                      {t.termsAcceptSuffix}
+                    </>
+                  ) : (
+                    <>
+                      {t.termsAcceptPrefix}
+                      <button
+                        type="button"
+                        className="auth-terms-link-btn"
+                        onClick={() => { setTermsLangTab(lang === 'en' ? 'en' : 'fr'); setShowTermsModal(true); }}
+                      >
+                        {t.termsLinkText}
+                      </button>
+                      {t.termsAcceptSuffix}
+                    </>
+                  )}
+                  <span className="auth-required-mark">*</span>
                 </span>
-              ) : (
-                <>
-                  <span>👑</span>
-                  <span>{t.registerBtn}</span>
-                </>
+              </label>
+            </div>
+
+            {/* SUBMIT BUTTON (LOCKED UNTIL TERMS ACCEPTED) */}
+            <div className="auth-submit-btn-wrapper">
+              <button 
+                type="submit" 
+                className={`auth-primary-submit-btn ${!acceptTerms ? 'btn-disabled-locked' : 'btn-enabled-active'}`} 
+                disabled={!acceptTerms || loading}
+                title={!acceptTerms ? (lang === 'ar' ? 'يرجى الموافقة على شروط الاستخدام لتفعيل زر إنشاء الحساب' : 'Veuillez cocher l\'acceptation des conditions d\'utilisation pour activer le bouton') : ''}
+              >
+                {loading ? (
+                  <span className="auth-loading-spinner-wrapper">
+                    <span className="auth-spinner" />
+                    <span>{lang === 'ar' ? 'جاري إنشاء الحساب...' : 'Création du compte...'}</span>
+                  </span>
+                ) : (
+                  <>
+                    <span>{acceptTerms ? '👑' : '🔒'}</span>
+                    <span>{t.registerBtn}</span>
+                  </>
+                )}
+              </button>
+
+              {!acceptTerms && (
+                <div className="auth-terms-locked-hint">
+                  <span className="locked-hint-icon">⚠️</span>
+                  <span>
+                    {lang === 'ar' 
+                      ? 'يجب تأكيد الموافقة على شروط وأحكام الاستخدام أعلاه لتفعيل زر إنشاء الحساب'
+                      : 'Veuillez cocher la case d\'acceptation des conditions d\'utilisation pour débloquer la création de compte.'}
+                  </span>
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Quick Switch to Login */}
             <div className="auth-bottom-switch-link">
@@ -926,6 +1036,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
               </button>
             </div>
           </form>
+          )
         ) : (
           /* ========================================================
              TAB 2: LOGIN FORM
@@ -1061,6 +1172,169 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
           <span className="trust-text">{t.trustSecurity}</span>
         </div>
       </div>
+
+      {/* ========================================================
+          TERMS & CONDITIONS MODAL (BILINGUAL FR / AR)
+          ======================================================== */}
+      {showTermsModal && (
+        <div className="terms-modal-overlay animate-fade-in" onClick={() => setShowTermsModal(false)}>
+          <div 
+            className="terms-modal-card animate-scale-up" 
+            onClick={e => e.stopPropagation()}
+            style={{ direction: termsLangTab === 'ar' ? 'rtl' : 'ltr' }}
+          >
+            {/* Modal Header */}
+            <div className="terms-modal-header">
+              <div className="terms-modal-title-wrap">
+                <span className="terms-modal-icon">📜</span>
+                <div>
+                  <h3 className="terms-modal-title">
+                    {termsLangTab === 'ar' ? 'شروط وأحكام استخدام المنصة' : 'Conditions Générales d\'Utilisation'}
+                  </h3>
+                  <p className="terms-modal-subtitle">
+                    {termsLangTab === 'ar' ? 'منصة HRSDGDG الرسمية لتجار وصاغة المجوهرات بالمغرب' : 'Plateforme Numérique Joaillerie & Bijouterie au Maroc'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="terms-modal-close-btn"
+                onClick={() => setShowTermsModal(false)}
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Language Switch Tabs inside Terms Modal */}
+            <div className="terms-lang-toggle-bar">
+              <button
+                type="button"
+                className={`terms-lang-pill ${termsLangTab === 'fr' ? 'active' : ''}`}
+                onClick={() => setTermsLangTab('fr')}
+              >
+                🇫🇷 Français
+              </button>
+              <button
+                type="button"
+                className={`terms-lang-pill ${termsLangTab === 'ar' ? 'active' : ''}`}
+                onClick={() => setTermsLangTab('ar')}
+              >
+                🇲🇦 العربية
+              </button>
+            </div>
+
+            {/* Scrollable Terms Body */}
+            <div className="terms-modal-body-scroll">
+              {termsLangTab === 'ar' ? (
+                <div className="terms-content-ar">
+                  <div className="terms-preamble">
+                    <strong>ديباجة تمهيدية :</strong> تُحدد هذه الشروط والأحكام القواعد الملزمة لإنشاء الحسابات واستخدام خدمات منصة <strong>HRSDGDG</strong> الرقمية المخصصة حصرياً للمحترفين والصاغة المعتمدين لممارسة تجارة وصياغة المعادن الثمينة بالمملكة المغربية.
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">المادة 1 : الأهلية والتسجيل الحصري للمهنيين</h4>
+                    <p>يقتصر إنشاء حساب Commerçant / صائغ معتمد على أصحاب المحلات، الورشات، والمؤسسات الحاصلة على رقم باتنت مهني وسجل تجاري (RC) ساري المفعول بالمغرب وفقاً للقوانين المنظمة لمهنة الصياغة.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">المادة 2 : ضمان أصالة الذهب عيار 18 قيراط والدمغة القانونية</h4>
+                    <p>يلتزم الصائغ المسجل بأن تكون كافة المجوهرات والمعروضات مصنوعة من الذهب القانوني عيار 18 قيراط (750 بالألف)، ومدموغة بالدمغة الرسمية لمكتب الضمانة المغربي وبدمغة الصانع، وتتحمل المؤسسة العارضة المسؤولية القانونية التامة في حالة ثبوت أي مخالفة للعيار.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">المادة 3 : التحقق من وثيقة الباتنت والسجل التجاري</h4>
+                    <p>يقر المستخدم بأن جميع الوثائق المرفوعة (شهادة الباتنت، السجل التجاري، والبيانات التعريفية) صحيحة وحديثة. تحتفظ إدارة المنصة بحق التحقق من صحة الوثائق مع الجهات المختصة ورفض أو تعليق أي حساب غير مستوفٍ للشروط.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">المادة 4 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات</h4>
+                    <p>يلتزم الصائغ بالدقة المتناهية في ذكر الأوزان الصافية بالغرام، نوع الأحجار الكريمة، والمواصفات الفنية، وتسليم القطع للمشتري مطابقة للصور والوصف المنشور، والالتزام بإتمام المزادات المنتهية لصالح الفائزين.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">المادة 5 : باقات الاشتراكات والعمولات</h4>
+                    <p>يخضع عرض المجوهرات لباقات الاشتراك المختارة وتحدد كل باقة الحد الأقصى للمنتجات ونسب العمولة المستحقة للمنصة عن كل عملية بيع مؤكدة.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">المادة 6 : حماية المعطيات والسرية المهنية (قانون 09-08)</h4>
+                    <p>تلتزم المنصة بحماية وسرية البيانات والمعاملات التجارية الخاصة بالصاغة والمشتركين طبقاً لأحكام القانون المغربي رقم 09-08 المتعلق بحماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي (CNDP).</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">المادة 7 : الجزاءات وإنهاء الحساب</h4>
+                    <p>يحق لإدارة المنصة إيقاف أو فسخ حساب أي عضو بصورة فورية ونهائية في حال الإخلال بشروط الأمان، التلاعب بالأسعار أو العيارات، أو الإخلال بتسليم الطلبات.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="terms-content-fr">
+                  <div className="terms-preamble">
+                    <strong>Préambule :</strong> Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès, l'inscription et l'exploitation des services de la plateforme numérique <strong>HRSDGDG</strong>, exclusivement réservée aux professionnels de la bijouterie et joaillerie au Royaume du Maroc.
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">Article 1 : Éligibilité & Inscription Réservée aux Professionnels</h4>
+                    <p>La création d'un compte commerçant / atelier est strictement réservée aux personnes physiques ou morales exerçant légalement le métier de bijoutier-joaillier au Maroc, détentrices d'une patente professionnelle active et d'un Registre de Commerce (RC) valide.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">Article 2 : Garantie de Titre Or 18K & Poinçons Légaux</h4>
+                    <p>Tous les bijoux et ouvrages mis en vente ou en enchères doivent être obligatoirement en or titré 18 carats (750‰) et revêtus des poinçons légaux conformes aux dispositions de l'Administration des Douanes et Impôts Indirects (Bureau de Garantie). Toute défaillance de titre engage la responsabilité civile et pénale exclusive du vendeur.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">Article 3 : Vérification de la Patente et Conformité Documentaire</h4>
+                    <p>L'adhérent garantit l'authenticité de l'attestation de patente et des pièces administratives téléversées. L'administration de HRSDGDG se réserve le droit d'auditer ces pièces et de suspendre tout compte dont les justificatifs s'avèrent non conformes.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">Article 4 : Exactitude des Descriptions, Poids et Enchères</h4>
+                    <p>Le professionnel s'engage à fournir des descriptions rigoureusement exactes (poids net en grammes, pureté, pierres serties) et à livrer des pièces strictement identiques aux photos et caractéristiques publiées, ainsi qu'à honorer l'ensemble des adjudications d'enchères.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">Article 5 : Forfaits, Quotas & Commissions</h4>
+                    <p>L'utilisation de la plateforme est régie par les formules d'abonnements souscrites. Les quotas de dépôts de bijoux et les commissions sur ventes sont appliqués conformément à la grille tarifaire en vigueur.</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">Article 6 : Protection des Données Personnelles (Loi 09-08)</h4>
+                    <p>Les données collectées font l'objet d'un traitement hautement sécurisé et chiffré, dans le strict respect de la Loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel (CNDP).</p>
+                  </div>
+
+                  <div className="terms-article-item">
+                    <h4 className="terms-article-title">Article 7 : Sanctions, Suspension & Résiliation</h4>
+                    <p>Tout manquement aux présentes conditions, tentative de fraude, fausse déclaration sur le titre d'or ou refus d'honorer une vente conclue entraîne la suspension immédiate et irrévocable du compte professionnel.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="terms-modal-footer">
+              <button 
+                type="button" 
+                className="terms-btn-secondary"
+                onClick={() => setShowTermsModal(false)}
+              >
+                {termsLangTab === 'ar' ? 'إغلاق' : 'Fermer'}
+              </button>
+              <button 
+                type="button" 
+                className="terms-btn-primary-gold"
+                onClick={() => {
+                  setAcceptTerms(true);
+                  setShowTermsModal(false);
+                }}
+              >
+                <span>✓</span>
+                <span>{termsLangTab === 'ar' ? 'أوافق على جميع الشروط' : 'J\'accepte les conditions'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -215,6 +215,13 @@
       "nom_ar": "مجوهرات تقليدية",
       "nom_en": "Traditional Jewelry",
       "icon": "👑"
+    },
+    {
+      "id": "cat_artisanal",
+      "nom_fr": "Bijoux Artisanaux",
+      "nom_ar": "مجوهرات تقليدية وحرفية",
+      "nom_en": "Artisanal Jewelry",
+      "icon": "🏺"
     }
   ],
   "bijoux": [
@@ -867,7 +874,7 @@
       "etat": "Neuf",
       "annee": 2026,
       "nombre_proprietaires": 0,
-      "style": "Moderne",
+      "style": "Artisanal",
       "occasion": "Quotidien chic",
       "pour_qui": "Femme",
       "images": [
@@ -876,7 +883,7 @@
       "disponibilite": "immediat",
       "city": "Fès",
       "stock": 1,
-      "category_id": "cat_bracelets",
+      "category_id": "cat_artisanal",
       "commercant_id": "u_merchant1",
       "vendeur_nom": "Maison Royale Casablanca",
       "vendeur_type": "bijouterie",
@@ -1734,43 +1741,1355 @@
     }
   ],
   "goldRates": {
-    "currentPrice18k": 1045,
+    "currentPrice18k": 1035,
     "carat": "18K",
     "unit": "MAD/g",
-    "lastUpdated": "2026-09-20T21:46:00Z",
-    "updatedBy": "Super-Admin",
+    "lastUpdated": "2026-10-04T12:50:45.393Z",
+    "updatedBy": "PrixOr Railway (dllal)",
     "history": [
       {
-        "id": "gh_1",
-        "date": "2026-09-15 09:30",
-        "price18k": 1010,
+        "id": "gh_railway_1",
+        "date": "2026-05-16 00:19",
+        "price18k": 1080,
+        "change": "0.0%",
+        "source": "Fixation Officielle Maroc",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_2",
+        "date": "2026-05-16 01:22",
+        "price18k": 1077,
+        "change": "-0.3%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_3",
+        "date": "2026-05-16 01:33",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_4",
+        "date": "2026-05-16 01:34",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_5",
+        "date": "2026-05-16 01:35",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_6",
+        "date": "2026-05-16 01:37",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_7",
+        "date": "2026-05-16 01:38",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_8",
+        "date": "2026-05-16 01:38",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_9",
+        "date": "2026-05-16 01:40",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_10",
+        "date": "2026-05-16 01:41",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_11",
+        "date": "2026-05-16 01:41",
+        "price18k": 1077,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_12",
+        "date": "2026-05-16 14:51",
+        "price18k": 1070,
+        "change": "-0.6%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_13",
+        "date": "2026-05-16 18:45",
+        "price18k": 1070,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_14",
+        "date": "2026-05-17 15:12",
+        "price18k": 1060,
+        "change": "-0.9%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_15",
+        "date": "2026-05-18 12:17",
+        "price18k": 1055,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_16",
+        "date": "2026-05-18 12:18",
+        "price18k": 1055,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_17",
+        "date": "2026-05-19 14:07",
+        "price18k": 1050,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_18",
+        "date": "2026-05-20 15:25",
+        "price18k": 1045,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_19",
+        "date": "2026-05-20 17:01",
+        "price18k": 1045,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_20",
+        "date": "2026-05-21 00:21",
+        "price18k": 1045,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_21",
+        "date": "2026-05-21 06:12",
+        "price18k": 1045,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_22",
+        "date": "2026-05-21 14:10",
+        "price18k": 1050,
         "change": "+0.5%",
-        "source": "تحديد الدار البيضاء",
-        "note": "السعر الصباحي الافتتاحي"
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
       },
       {
-        "id": "gh_2",
-        "date": "2026-09-17 14:15",
+        "id": "gh_railway_23",
+        "date": "2026-05-23 14:56",
+        "price18k": 1050,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_24",
+        "date": "2026-05-24 14:24",
+        "price18k": 1050,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_25",
+        "date": "2026-06-08 14:56",
         "price18k": 1025,
+        "change": "-2.4%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_26",
+        "date": "2026-06-09 14:49",
+        "price18k": 1020,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_27",
+        "date": "2026-06-10 15:11",
+        "price18k": 1000,
+        "change": "-2.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_28",
+        "date": "2026-06-11 15:01",
+        "price18k": 980,
+        "change": "-2.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_29",
+        "date": "2026-06-13 14:45",
+        "price18k": 995,
         "change": "+1.5%",
-        "source": "السوق الوطني للذهب",
-        "note": "طلب متزايد على الصياغة"
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
       },
       {
-        "id": "gh_3",
-        "date": "2026-09-19 11:00",
-        "price18k": 1038,
+        "id": "gh_railway_30",
+        "date": "2026-06-14 14:40",
+        "price18k": 1005,
+        "change": "+1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_31",
+        "date": "2026-06-15 14:55",
+        "price18k": 1035,
+        "change": "+3.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_32",
+        "date": "2026-06-17 15:26",
+        "price18k": 1035,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_33",
+        "date": "2026-06-18 15:17",
+        "price18k": 1025,
+        "change": "-1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_34",
+        "date": "2026-06-20 15:23",
+        "price18k": 1015,
+        "change": "-1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_35",
+        "date": "2026-06-21 15:02",
+        "price18k": 1010,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_36",
+        "date": "2026-06-21 15:04",
+        "price18k": 1010,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_37",
+        "date": "2026-06-22 14:46",
+        "price18k": 1015,
+        "change": "+0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_38",
+        "date": "2026-06-23 14:58",
+        "price18k": 1005,
+        "change": "-1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_39",
+        "date": "2026-06-24 15:22",
+        "price18k": 1000,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_40",
+        "date": "2026-06-25 15:20",
+        "price18k": 988,
+        "change": "-1.2%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_41",
+        "date": "2026-06-27 15:11",
+        "price18k": 1000,
+        "change": "+1.2%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_42",
+        "date": "2026-06-28 15:37",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_43",
+        "date": "2026-06-28 15:38",
+        "price18k": 1010,
+        "change": "+1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_44",
+        "date": "2026-06-28 15:38",
+        "price18k": 1010,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_45",
+        "date": "2026-06-29 12:41",
+        "price18k": 1011,
+        "change": "+0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_46",
+        "date": "2026-06-29 12:41",
+        "price18k": 1010,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_47",
+        "date": "2026-06-29 16:01",
+        "price18k": 1000,
+        "change": "-1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_48",
+        "date": "2026-06-30 15:09",
+        "price18k": 995,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_49",
+        "date": "2026-07-01 15:41",
+        "price18k": 1000,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_50",
+        "date": "2026-07-02 15:19",
+        "price18k": 1005,
+        "change": "+0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_51",
+        "date": "2026-07-02 15:24",
+        "price18k": 1006,
+        "change": "+0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_52",
+        "date": "2026-07-02 15:25",
+        "price18k": 1005,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_53",
+        "date": "2026-07-02 15:25",
+        "price18k": 1005,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_54",
+        "date": "2026-07-04 15:08",
+        "price18k": 1020,
+        "change": "+1.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_55",
+        "date": "2026-07-04 15:08",
+        "price18k": 1020,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_56",
+        "date": "2026-07-04 15:08",
+        "price18k": 1020,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_57",
+        "date": "2026-07-05 15:24",
+        "price18k": 1018,
+        "change": "-0.2%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_58",
+        "date": "2026-07-05 15:24",
+        "price18k": 1018,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_59",
+        "date": "2026-07-06 16:00",
+        "price18k": 1015,
+        "change": "-0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_60",
+        "date": "2026-07-06 16:00",
+        "price18k": 1015,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_61",
+        "date": "2026-07-07 16:11",
+        "price18k": 1015,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_62",
+        "date": "2026-07-07 16:11",
+        "price18k": 1010,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_63",
+        "date": "2026-07-07 16:11",
+        "price18k": 1010,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_64",
+        "date": "2026-07-07 16:12",
+        "price18k": 1010,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_65",
+        "date": "2026-07-07 16:12",
+        "price18k": 1010,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_66",
+        "date": "2026-07-07 16:12",
+        "price18k": 1010,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_67",
+        "date": "2026-07-08 15:02",
+        "price18k": 1010,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_68",
+        "date": "2026-07-08 15:02",
+        "price18k": 1000,
+        "change": "-1.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_69",
+        "date": "2026-07-08 15:02",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_70",
+        "date": "2026-07-08 15:02",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_71",
+        "date": "2026-07-08 15:07",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_72",
+        "date": "2026-07-08 15:08",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_73",
+        "date": "2026-07-09 15:24",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_74",
+        "date": "2026-07-09 16:19",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_75",
+        "date": "2026-07-11 13:49",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_76",
+        "date": "2026-07-11 13:49",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_77",
+        "date": "2026-07-11 13:49",
+        "price18k": 1000,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_78",
+        "date": "2026-07-12 15:42",
+        "price18k": 995,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_79",
+        "date": "2026-07-12 15:42",
+        "price18k": 995,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_80",
+        "date": "2026-07-13 14:56",
+        "price18k": 990,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_81",
+        "date": "2026-07-13 14:56",
+        "price18k": 990,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_82",
+        "date": "2026-07-14 15:00",
+        "price18k": 990,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_83",
+        "date": "2026-07-14 15:01",
+        "price18k": 990,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_84",
+        "date": "2026-07-15 14:42",
+        "price18k": 985,
+        "change": "-0.5%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_85",
+        "date": "2026-07-16 15:40",
+        "price18k": 980,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_86",
+        "date": "2026-07-16 15:40",
+        "price18k": 980,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_87",
+        "date": "2026-07-18 16:03",
+        "price18k": 976,
+        "change": "-0.4%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_88",
+        "date": "2026-07-18 16:03",
+        "price18k": 976,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_89",
+        "date": "2026-07-18 16:03",
+        "price18k": 976,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_90",
+        "date": "2026-07-19 14:06",
+        "price18k": 975,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_91",
+        "date": "2026-07-19 14:06",
+        "price18k": 975,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_92",
+        "date": "2026-07-20 14:13",
+        "price18k": 975,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_93",
+        "date": "2026-07-20 14:13",
+        "price18k": 975,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_94",
+        "date": "2026-07-20 14:13",
+        "price18k": 975,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_95",
+        "date": "2026-07-20 14:13",
+        "price18k": 975,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_96",
+        "date": "2026-07-20 14:13",
+        "price18k": 975,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_97",
+        "date": "2026-07-21 14:34",
+        "price18k": 985,
+        "change": "+1.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_98",
+        "date": "2026-07-21 14:34",
+        "price18k": 985,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_99",
+        "date": "2026-07-22 14:59",
+        "price18k": 990,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_100",
+        "date": "2026-07-22 14:59",
+        "price18k": 990,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_101",
+        "date": "2026-07-22 14:59",
+        "price18k": 990,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_102",
+        "date": "2026-07-23 14:44",
+        "price18k": 990,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_103",
+        "date": "2026-07-23 14:44",
+        "price18k": 990,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_104",
+        "date": "2026-07-25 14:36",
+        "price18k": 985,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_105",
+        "date": "2026-07-26 14:52",
+        "price18k": 985,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_106",
+        "date": "2026-07-27 14:37",
+        "price18k": 990,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_107",
+        "date": "2026-07-28 14:25",
+        "price18k": 985,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_108",
+        "date": "2026-07-29 16:06",
+        "price18k": 985,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_109",
+        "date": "2026-07-30 15:13",
+        "price18k": 988,
+        "change": "+0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_110",
+        "date": "2026-08-01 15:00",
+        "price18k": 985,
+        "change": "-0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_111",
+        "date": "2026-08-01 15:31",
+        "price18k": 985,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_112",
+        "date": "2026-08-02 16:12",
+        "price18k": 985,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_113",
+        "date": "2026-08-03 14:44",
+        "price18k": 985,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_114",
+        "date": "2026-08-04 19:21",
+        "price18k": 987,
+        "change": "+0.2%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_115",
+        "date": "2026-08-05 15:25",
+        "price18k": 1000,
         "change": "+1.3%",
-        "source": "بورصة الذهب المعتمدة",
-        "note": "اتجاه تصاعدي في السوق"
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
       },
       {
-        "id": "gh_4",
-        "date": "2026-09-20 21:45",
+        "id": "gh_railway_116",
+        "date": "2026-08-05 19:46",
+        "price18k": 1010,
+        "change": "+1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_117",
+        "date": "2026-08-06 16:56",
+        "price18k": 1016,
+        "change": "+0.6%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_118",
+        "date": "2026-08-08 15:05",
+        "price18k": 1035,
+        "change": "+1.9%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_119",
+        "date": "2026-08-09 16:12",
+        "price18k": 1035,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_120",
+        "date": "2026-08-09 16:15",
+        "price18k": 1035,
+        "change": "0.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_121",
+        "date": "2026-08-10 15:11",
+        "price18k": 1035,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_122",
+        "date": "2026-08-11 15:11",
+        "price18k": 1040,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_123",
+        "date": "2026-08-11 15:11",
+        "price18k": 1040,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_124",
+        "date": "2026-08-12 14:37",
+        "price18k": 1045,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_125",
+        "date": "2026-08-13 14:44",
+        "price18k": 1045,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_126",
+        "date": "2026-08-15 16:32",
+        "price18k": 1045,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_127",
+        "date": "2026-08-16 15:12",
+        "price18k": 1044,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_128",
+        "date": "2026-08-17 15:18",
+        "price18k": 1045,
+        "change": "+0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_129",
+        "date": "2026-08-18 14:27",
+        "price18k": 1044,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_130",
+        "date": "2026-08-19 15:20",
+        "price18k": 1050,
+        "change": "+0.6%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_131",
+        "date": "2026-08-19 18:06",
+        "price18k": 1060,
+        "change": "+1.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_132",
+        "date": "2026-08-20 15:36",
+        "price18k": 1055,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_133",
+        "date": "2026-08-22 14:45",
+        "price18k": 1085,
+        "change": "+2.8%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_134",
+        "date": "2026-08-23 16:15",
+        "price18k": 1090,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_135",
+        "date": "2026-08-24 14:11",
+        "price18k": 1095,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_136",
+        "date": "2026-08-24 17:06",
+        "price18k": 1095,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_137",
+        "date": "2026-08-24 17:06",
+        "price18k": 1115,
+        "change": "+1.8%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_138",
+        "date": "2026-08-31 15:36",
+        "price18k": 1070,
+        "change": "-4.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_139",
+        "date": "2026-09-01 14:51",
+        "price18k": 1040,
+        "change": "-2.8%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_140",
+        "date": "2026-09-02 15:11",
+        "price18k": 1050,
+        "change": "+1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_141",
+        "date": "2026-09-02 15:25",
+        "price18k": 1060,
+        "change": "+1.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_142",
+        "date": "2026-09-03 15:08",
+        "price18k": 1085,
+        "change": "+2.4%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_143",
+        "date": "2026-09-05 15:01",
+        "price18k": 1073,
+        "change": "-1.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_144",
+        "date": "2026-09-06 14:53",
+        "price18k": 1070,
+        "change": "-0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_145",
+        "date": "2026-09-07 14:27",
+        "price18k": 1065,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_146",
+        "date": "2026-09-07 14:27",
+        "price18k": 1065,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_147",
+        "date": "2026-09-08 15:08",
+        "price18k": 1065,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_148",
+        "date": "2026-09-09 14:09",
+        "price18k": 1060,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_149",
+        "date": "2026-09-10 14:47",
+        "price18k": 1055,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_150",
+        "date": "2026-09-12 14:44",
+        "price18k": 1050,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_151",
+        "date": "2026-09-13 15:05",
+        "price18k": 1047,
+        "change": "-0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_152",
+        "date": "2026-09-14 15:00",
+        "price18k": 1038,
+        "change": "-0.9%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_153",
+        "date": "2026-09-15 15:07",
+        "price18k": 1038,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_154",
+        "date": "2026-09-16 14:57",
         "price18k": 1045,
         "change": "+0.7%",
-        "source": "السعر الرسمي للإغلاق",
-        "note": "السعر الرسمي المعتمد اليوم"
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_155",
+        "date": "2026-09-17 14:28",
+        "price18k": 1045,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_156",
+        "date": "2026-09-19 13:58",
+        "price18k": 1045,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_157",
+        "date": "2026-09-21 14:58",
+        "price18k": 1043,
+        "change": "-0.2%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_158",
+        "date": "2026-09-21 15:00",
+        "price18k": 1043,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_159",
+        "date": "2026-09-22 14:03",
+        "price18k": 1043,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_160",
+        "date": "2026-09-23 14:07",
+        "price18k": 1040,
+        "change": "-0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_161",
+        "date": "2026-09-24 14:32",
+        "price18k": 1035,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_162",
+        "date": "2026-09-26 14:54",
+        "price18k": 1030,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_163",
+        "date": "2026-09-28 15:21",
+        "price18k": 1025,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_164",
+        "date": "2026-09-29 14:23",
+        "price18k": 1025,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_165",
+        "date": "2026-09-30 15:03",
+        "price18k": 1030,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_166",
+        "date": "2026-10-01 17:17",
+        "price18k": 1030,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_167",
+        "date": "2026-10-03 14:39",
+        "price18k": 1030,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_168",
+        "date": "2026-10-04 13:50",
+        "price18k": 1035,
+        "change": "+0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
       }
     ]
   }

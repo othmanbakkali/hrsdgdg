@@ -75,6 +75,8 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
       if (answers.style) {
         if (product.style && product.style.toLowerCase().includes(answers.style.toLowerCase())) {
           score += 1;
+        } else if (answers.style === 'Artisanal' && (product.category_id === 'cat_artisanal' || (product.titre || '').toLowerCase().includes('artisan') || (product.description || '').toLowerCase().includes('artisan') || (product.style || '').toLowerCase() === 'traditionnel')) {
+          score += 1;
         }
       }
 
@@ -234,6 +236,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                 { id: 'Élégant', label: isAr ? 'أنيق وراقٍ' : 'Élégant & Chic', desc: isAr ? 'فخامة كلاسيكية دائمة' : 'Raffinement intemporel' },
                 { id: 'Moderne', label: isAr ? 'عصري وجذاب' : 'Moderne & Tendance', desc: isAr ? 'خطوط وتصاميم معاصرة' : 'Lignes épurées' },
                 { id: 'Traditionnel', label: isAr ? 'تقليدي أصيل' : 'Traditionnel', desc: isAr ? 'صناعة وصياغة مغربية' : 'Artisanal marocain' },
+                { id: 'Artisanal', label: isAr ? 'حرفي / يدوي' : 'Bijoux Artisanaux', desc: isAr ? 'نقش وصياغة يدوية' : 'Créations artisanales' },
                 { id: 'Vintage', label: isAr ? 'فينتاج / نادر' : 'Vintage / Rétro', desc: isAr ? 'قطع أثرية فريدة' : 'Pièces d\'époque uniques' },
                 { id: 'Minimaliste', label: isAr ? 'بسيط وهادئ' : 'Minimaliste', desc: isAr ? 'ناعم ومناسب لليومي' : 'Discret et quotidien' }
               ].map(opt => (

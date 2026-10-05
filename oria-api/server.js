@@ -154,6 +154,32 @@ function processImages(images) {
   });
 }
 
+function processDocument(doc, prefix = 'patente') {
+  if (!doc || typeof doc !== 'string') return '';
+  if (doc.startsWith('/uploads/') || doc.startsWith('http')) return doc;
+  if (doc.startsWith('data:')) {
+    try {
+      const matches = doc.match(/^data:([a-zA-Z0-9/+-]+);base64,(.+)$/);
+      if (matches) {
+        const mime = matches[1].toLowerCase();
+        let ext = 'pdf';
+        if (mime.includes('png')) ext = 'png';
+        else if (mime.includes('jpeg') || mime.includes('jpg')) ext = 'jpg';
+        else if (mime.includes('webp')) ext = 'webp';
+        else if (mime.includes('pdf')) ext = 'pdf';
+
+        const buffer = Buffer.from(matches[2], 'base64');
+        const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${ext}`;
+        fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+        return `/uploads/${filename}`;
+      }
+    } catch (err) {
+      console.error('Failed to save document:', err.message);
+    }
+  }
+  return doc;
+}
+
 // In-memory translation cache to optimize performance
 const translationCache = new Map();
 
@@ -294,6 +320,25 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ message: 'Identifiants incorrects' });
   }
 
+  // Account status validation (Admin accounts always bypass)
+  if (user.role !== 'admin') {
+    const status = user.account_status || (user.is_active === false ? 'en_attente' : 'actif');
+    if (status === 'bloque' || user.is_blocked) {
+      return res.status(403).json({
+        blocked: true,
+        message: user.block_reason
+          ? `Compte bloqué par l'administration : ${user.block_reason}`
+          : 'Votre compte a été bloqué suite à une réclamation ou non-conformité. Veuillez contacter le support.'
+      });
+    }
+    if (status === 'en_attente' || user.is_active === false) {
+      return res.status(403).json({
+        pending: true,
+        message: 'Votre compte professionnel est en cours de validation par un administrateur après vérification de votre patente.'
+      });
+    }
+  }
+
   // Duration: 24h if rememberMe, otherwise 4h session
   const duration = rememberMe ? 24 * 60 * 60 * 1000 : 4 * 60 * 60 * 1000;
   const session = createSession(user, duration);
@@ -359,78 +404,105 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 app.post('/api/auth/register', (req, res) => {
-  const { email, nom, mot_de_passe, role, shopName, phone, address, city, plan_id, billing_cycle } = req.body;
+  const { 
+    email, 
+    nom, 
+    mot_de_passe, 
+    shopName, 
+    phone, 
+    address, 
+    city, 
+    plan_id, 
+    billing_cycle,
+    numero_patente,
+    numeroPatente,
+    patente_document,
+    patenteDocument,
+    patente_filename,
+    patenteFileName
+  } = req.body;
   const db = readDB();
   
   if (db.users.some(u => u.email === email)) {
     return res.status(400).json({ message: 'Cet email est déjà enregistré' });
   }
 
+  const rawDoc = patente_document || patenteDocument || '';
+  const savedDocUrl = processDocument(rawDoc, 'patente');
+  const numPatente = (numero_patente || numeroPatente || '').trim();
+
   const newUser = {
     id: 'u_' + Math.random().toString(36).substr(2, 9),
     email,
     nom,
     mot_de_passe,
-    role,
+    role: 'commercant', // Inscription strictement réservée aux professionnels
+    is_professional: true,
+    shopName: shopName || nom,
     phone: phone || '',
     telephone: phone || '',
     city: city || 'Casablanca',
     ville: city || 'Casablanca',
     address: address || city || '',
+    seller_type: 'bijouterie',
+    numero_patente: numPatente,
+    patente_document: savedDocUrl,
+    patente_filename: patente_filename || patenteFileName || (numPatente ? `Patente_${numPatente}` : 'Patente_Officielle.pdf'),
+    account_status: 'en_attente', // Tout compte créé doit être activé par un administrateur
+    is_active: false,
+    is_blocked: false,
+    block_reason: '',
+    verification_status: 'en_attente_validation',
+    created_at: new Date().toISOString(),
+    badges: ['Professionnel Agréé', 'Patente Déposée'],
     favoris: []
   };
 
-  if (role === 'commercant') {
-    newUser.shopName = shopName || nom;
-    newUser.seller_type = 'bijouterie';
-    newUser.badges = ['Vendeur vérifié'];
+  // Setup initial subscription
+  const plans = db.subscription_plans || [];
+  const selectedPlan = plans.find(p => p.id === plan_id) || plans.find(p => p.id === 'plan_pro') || plans[0] || {
+    id: 'plan_starter',
+    name: 'Pass Essentiel',
+    price_monthly: 0,
+    price_annual: 0,
+    max_products: 5,
+    commission_rate: 8
+  };
 
-    // Setup initial subscription
-    const plans = db.subscription_plans || [];
-    const selectedPlan = plans.find(p => p.id === plan_id) || plans.find(p => p.id === 'plan_starter') || plans[0] || {
-      id: 'plan_starter',
-      name: 'Pass Essentiel',
-      price_monthly: 0,
-      price_annual: 0,
-      max_products: 5,
-      commission_rate: 8
-    };
+  const cycle = billing_cycle === 'annual' ? 'annual' : 'monthly';
+  const price = cycle === 'annual' ? Number(selectedPlan.price_annual || 0) : Number(selectedPlan.price_monthly || 0);
+  const durationDays = cycle === 'annual' ? 365 : 30;
+  const now = new Date();
+  const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-    const cycle = billing_cycle === 'annual' ? 'annual' : 'monthly';
-    const price = cycle === 'annual' ? Number(selectedPlan.price_annual || 0) : Number(selectedPlan.price_monthly || 0);
-    const durationDays = cycle === 'annual' ? 365 : 30;
-    const now = new Date();
-    const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+  newUser.subscription = {
+    plan_id: selectedPlan.id,
+    plan_name: selectedPlan.name,
+    billing_cycle: cycle,
+    price: price,
+    status: 'active',
+    start_date: now.toISOString(),
+    end_date: endDate.toISOString(),
+    auto_renew: true,
+    max_products: Number(selectedPlan.max_products || 5),
+    commission_rate: Number(selectedPlan.commission_rate || 8)
+  };
 
-    newUser.subscription = {
+  // If paid plan, generate invoice in history
+  if (price > 0) {
+    if (!db.subscriptions_history) db.subscriptions_history = [];
+    db.subscriptions_history.unshift({
+      id: 'sub_tx_' + Math.random().toString(36).substr(2, 9),
+      merchant_id: newUser.id,
+      merchant_name: newUser.shopName,
       plan_id: selectedPlan.id,
       plan_name: selectedPlan.name,
+      amount: price,
       billing_cycle: cycle,
-      price: price,
-      status: 'active',
-      start_date: now.toISOString(),
-      end_date: endDate.toISOString(),
-      auto_renew: true,
-      max_products: Number(selectedPlan.max_products || 5),
-      commission_rate: Number(selectedPlan.commission_rate || 8)
-    };
-
-    // If paid plan, generate invoice in history
-    if (price > 0) {
-      if (!db.subscriptions_history) db.subscriptions_history = [];
-      db.subscriptions_history.unshift({
-        id: 'sub_tx_' + Math.random().toString(36).substr(2, 9),
-        merchant_id: newUser.id,
-        merchant_name: newUser.shopName,
-        plan_id: selectedPlan.id,
-        plan_name: selectedPlan.name,
-        amount: price,
-        billing_cycle: cycle,
-        status: 'Paid',
-        date: now.toISOString(),
-        invoice_number: `INV-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
-      });
-    }
+      status: 'Paid',
+      date: now.toISOString(),
+      invoice_number: `INV-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+    });
   }
 
   db.users.push(newUser);
@@ -445,19 +517,43 @@ app.get('/api/users', (req, res) => {
 });
 
 app.post('/api/users', (req, res) => {
-  const { email, nom, mot_de_passe, role, shopName, phone, address, city, plan_id, billing_cycle } = req.body;
+  const { 
+    email, 
+    nom, 
+    mot_de_passe, 
+    role, 
+    shopName, 
+    phone, 
+    address, 
+    city, 
+    plan_id, 
+    billing_cycle,
+    numero_patente,
+    numeroPatente,
+    patente_document,
+    patenteDocument,
+    patente_filename
+  } = req.body;
   const db = readDB();
   
   if (db.users.some(u => u.email === email)) {
     return res.status(400).json({ message: 'Cet email est déjà enregistré' });
   }
 
+  const rawDoc = patente_document || patenteDocument || '';
+  const savedDocUrl = processDocument(rawDoc, 'patente');
+  const numPatente = (numero_patente || numeroPatente || '').trim();
+
   const newUser = {
     id: 'u_' + Math.random().toString(36).substr(2, 9),
     email,
     nom,
     mot_de_passe: mot_de_passe || 'password123',
-    role: role || 'client',
+    role: role || 'commercant',
+    is_professional: role === 'commercant' || true,
+    numero_patente: numPatente,
+    patente_document: savedDocUrl,
+    patente_filename: patente_filename || (numPatente ? `Patente_${numPatente}` : 'Patente_Officielle.pdf'),
     favoris: []
   };
 
@@ -522,13 +618,49 @@ app.post('/api/users', (req, res) => {
 });
 
 app.put('/api/users/:id', (req, res) => {
-  const { email, nom, mot_de_passe, role, shopName, phone, address, city, plan_id, billing_cycle } = req.body;
+  const { 
+    email, 
+    nom, 
+    mot_de_passe, 
+    role, 
+    shopName, 
+    phone, 
+    address, 
+    city, 
+    plan_id, 
+    billing_cycle,
+    numero_patente,
+    numeroPatente,
+    patente_document,
+    patenteDocument,
+    patente_filename
+  } = req.body;
   const db = readDB();
   const user = db.users.find(u => u.id === req.params.id);
   if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
 
   if (email && email !== user.email && db.users.some(u => u.email === email)) {
     return res.status(400).json({ message: 'Cet email est déjà enregistré' });
+  }
+
+  if (email) user.email = email;
+  if (nom) user.nom = nom;
+  if (mot_de_passe) user.mot_de_passe = mot_de_passe;
+  if (role) user.role = role;
+  if (shopName) user.shopName = shopName;
+  if (phone) user.phone = phone;
+  if (address) user.address = address;
+  if (city) user.city = city;
+  
+  if (numero_patente !== undefined || numeroPatente !== undefined) {
+    user.numero_patente = (numero_patente || numeroPatente || '').trim();
+  }
+  if (patente_document !== undefined || patenteDocument !== undefined) {
+    const rawDoc = patente_document || patenteDocument || '';
+    user.patente_document = processDocument(rawDoc, 'patente');
+  }
+  if (patente_filename !== undefined) {
+    user.patente_filename = patente_filename;
   }
 
   user.email = email || user.email;
@@ -564,8 +696,58 @@ app.put('/api/users/:id', (req, res) => {
     delete user.city;
   }
 
+  // Account status & blocking handling
+  if (req.body.account_status !== undefined) {
+    user.account_status = req.body.account_status;
+    user.is_active = req.body.account_status === 'actif';
+    if (req.body.account_status === 'bloque') {
+      user.is_blocked = true;
+      user.block_reason = req.body.block_reason || user.block_reason || 'Bloqué suite à une réclamation';
+    } else {
+      user.is_blocked = false;
+      if (req.body.account_status === 'actif') {
+        user.verification_status = 'verifie';
+      }
+    }
+  }
+  if (req.body.block_reason !== undefined) {
+    user.block_reason = req.body.block_reason;
+  }
+  if (req.body.is_active !== undefined) {
+    user.is_active = Boolean(req.body.is_active);
+    user.account_status = user.is_active ? 'actif' : (user.account_status || 'en_attente');
+  }
+
   writeDB(db);
   res.json(user);
+});
+
+// Dedicated Account Status & Block/Activate Endpoint
+app.put('/api/users/:id/status', (req, res) => {
+  const { status, account_status, block_reason, reason } = req.body;
+  const db = readDB();
+  const user = db.users.find(u => u.id === req.params.id);
+  if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
+
+  const targetStatus = account_status || status || 'actif';
+  user.account_status = targetStatus;
+  user.is_active = targetStatus === 'actif';
+
+  if (targetStatus === 'bloque') {
+    user.is_blocked = true;
+    user.block_reason = block_reason || reason || 'Compte bloqué suite à une réclamation ou non-conformité';
+  } else if (targetStatus === 'actif') {
+    user.is_blocked = false;
+    user.block_reason = '';
+    user.verification_status = 'verifie';
+  } else {
+    user.is_blocked = false;
+    user.account_status = 'en_attente';
+    user.verification_status = 'en_attente_validation';
+  }
+
+  writeDB(db);
+  res.json({ success: true, message: `Statut du compte mis à jour: ${targetStatus}`, user });
 });
 
 app.delete('/api/users/:id', (req, res) => {
@@ -1996,6 +2178,26 @@ app.delete('/api/admin/gold-rates/history/:id', requireAdminSession, (req, res) 
   res.json({ success: true, message: 'Entrée supprimée avec succès', history: db.goldRates.history });
 });
 
+// Sync with external PrixOr Railway backend
+const { syncGoldRates } = require('./scripts/syncGoldRates');
+app.post(['/api/gold-rates/sync', '/api/admin/gold-rates/sync'], async (req, res) => {
+  try {
+    const result = await syncGoldRates();
+    if (result.success) {
+      const db = readDB();
+      res.json({
+        success: true,
+        message: `Synchronisation réussie avec Railway : ${result.currentPrice18k} MAD/g (${result.historyCount} entrées)`,
+        goldRates: db.goldRates
+      });
+    } else {
+      res.status(500).json({ error: result.error || 'Erreur lors de la synchronisation' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Static Files & Production SPA Serving with PWA headers
 const mainDistPath = path.join(__dirname, '..', 'oria-main', 'dist');
 const adminDistPath = path.join(__dirname, '..', 'oria-admin', 'dist');
@@ -2043,4 +2245,10 @@ app.listen(PORT, HOST, () => {
     console.log(`- Admin Dashboard: http://localhost:${PORT}/admin/`);
   }
   console.log(`- REST API: http://localhost:${PORT}/api/`);
+
+  // Initial Sync from Railway + Periodic 15-min sync
+  syncGoldRates().catch(e => console.error('[GoldSync] Initial sync error:', e.message));
+  setInterval(() => {
+    syncGoldRates().catch(e => console.error('[GoldSync] Periodic sync error:', e.message));
+  }, 15 * 60 * 1000);
 });

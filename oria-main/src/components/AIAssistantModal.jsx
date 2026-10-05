@@ -50,6 +50,7 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
         if ((lower.includes('bague') || lower.includes('خاتم')) && p.category_id !== 'cat_rings') matchesKey = false;
         if ((lower.includes('collier') || lower.includes('قلادة') || lower.includes('عقد')) && p.category_id !== 'cat_necklaces') matchesKey = false;
         if ((lower.includes('bracelet') || lower.includes('سوار') || lower.includes('دملج')) && p.category_id !== 'cat_bracelets') matchesKey = false;
+        if ((lower.includes('artisanal') || lower.includes('artisanale') || lower.includes('حرفي') || lower.includes('صناعة يدوية') || lower.includes('artisanat')) && p.category_id !== 'cat_artisanal' && (p.style || '').toLowerCase() !== 'artisanal' && (p.style || '').toLowerCase() !== 'traditionnel') matchesKey = false;
 
         return matchesKey && p.prix <= maxBudget;
       }).slice(0, 4);
