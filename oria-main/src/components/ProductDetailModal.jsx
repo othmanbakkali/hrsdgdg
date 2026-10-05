@@ -453,33 +453,35 @@ export default function ProductDetailModal({
                   className="universe-badge"
                   style={{ position: 'static', padding: '6px 14px', fontSize: '0.82rem', background: '#ef4444', color: '#fff', fontWeight: 800 }}
                 >
-                  🔨 ENCHÈRE EN DIRECT
+                  {lang === 'ar' ? '🔨 مزاد علني مباشر' : '🔨 ENCHÈRE EN DIRECT'}
                 </span>
               ) : (
                 <span 
                   className={`universe-badge ${isSecondHand ? 'second-hand' : 'first-hand'}`}
                   style={{ position: 'static', padding: '6px 14px', fontSize: '0.78rem' }}
                 >
-                  {isSecondHand ? '♻️ SECONDE MAIN' : '✨ PREMIÈRE MAIN'}
+                  {isSecondHand 
+                    ? (lang === 'ar' ? '♻️ مجوهرات مستعملة (فرصة)' : '♻️ SECONDE MAIN') 
+                    : (lang === 'ar' ? '✨ مجوهرات جديدة' : '✨ PREMIÈRE MAIN')}
                 </span>
               )}
 
               {isAuction && timeLeftText && (
                 <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#dc2626', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.25)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span className="gold-pulse-indicator" style={{ background: '#ef4444' }} />
-                  ⏱️ Fin dans : {timeLeftText}
+                  {lang === 'ar' ? `⏱️ ينتهي بعد : ${timeLeftText}` : `⏱️ Fin dans : ${timeLeftText}`}
                 </span>
               )}
 
               {isSecondHand && !isAuction && (
                 <span className="chip-tag condition-badge">
-                  ♻️ {product.etat || 'Excellent état'}
+                  ♻️ {formatCondition(product.etat) || (lang === 'ar' ? 'حالة ممتازة' : 'Excellent état')}
                 </span>
               )}
 
               {product.authentifie === 'Vérifié' && (
                 <span className="chip-tag verified-badge">
-                  ✓ Bijou vérifié
+                  {lang === 'ar' ? '✓ مجوهرات موثقة ومفحوصة' : '✓ Bijou vérifié'}
                 </span>
               )}
             </div>
@@ -490,15 +492,17 @@ export default function ProductDetailModal({
             </h1>
 
             {/* Rating & Seller */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.86rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.86rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span className="star-icon">⭐</span>
                 <strong>{product.note || 4.9}</strong>
-                <span style={{ color: 'var(--text-gray)' }}>({product.nombre_avis || reviewsList.length} avis)</span>
+                <span style={{ color: 'var(--text-gray)' }}>
+                  {lang === 'ar' ? `(${product.nombre_avis || reviewsList.length} تقييم)` : `(${product.nombre_avis || reviewsList.length} avis)`}
+                </span>
               </div>
               <span style={{ color: 'var(--text-gray)' }}>•</span>
               <div style={{ color: 'var(--text-gray)' }}>
-                Vendu par : <strong style={{ color: 'var(--primary-gold)' }}>{product.vendeur_nom || 'Maison Joaillerie'}</strong>
+                {lang === 'ar' ? 'البائع والمصدر :' : 'Vendu par :'} <strong style={{ color: 'var(--primary-gold)' }}>{product.vendeur_nom || (lang === 'ar' ? 'دار المجوهرات' : 'Maison Joaillerie')}</strong>
               </div>
             </div>
 
@@ -514,19 +518,19 @@ export default function ProductDetailModal({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>
-                      Offre Actuelle la plus Haute
+                      {lang === 'ar' ? 'أعلى عرض حالي' : 'Offre Actuelle la plus Haute'}
                     </span>
                     <span style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)' }}>
-                      {(auctionInfo?.highestBid || product.prix).toLocaleString()} <small style={{ fontSize: '1rem' }}>DH</small>
+                      {(auctionInfo?.highestBid || product.prix).toLocaleString()} <small style={{ fontSize: '1rem' }}>{lang === 'ar' ? 'د.م' : 'DH'}</small>
                     </span>
                   </div>
 
-                  <div style={{ textAlign: 'right' }}>
+                  <div style={{ textAlign: isRtl ? 'left' : 'right' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', display: 'block' }}>
-                      Prix de départ : <strong>{(auctionInfo?.prix_depart || product.prix).toLocaleString()} DH</strong>
+                      {lang === 'ar' ? 'سعر الافتتاح :' : 'Prix de départ :'} <strong>{(auctionInfo?.prix_depart || product.prix).toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}</strong>
                     </span>
                     <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>
-                      🔥 {auctionInfo?.bidsCount || 0} enchère{(auctionInfo?.bidsCount || 0) > 1 ? 's' : ''} déposée{(auctionInfo?.bidsCount || 0) > 1 ? 's' : ''}
+                      🔥 {lang === 'ar' ? `${auctionInfo?.bidsCount || 0} مزايدة مسجلة` : `${auctionInfo?.bidsCount || 0} enchère${(auctionInfo?.bidsCount || 0) > 1 ? 's' : ''} déposée${(auctionInfo?.bidsCount || 0) > 1 ? 's' : ''}`}
                     </span>
                   </div>
                 </div>
@@ -534,7 +538,7 @@ export default function ProductDetailModal({
                 {/* Interactive Bidding Form */}
                 <form onSubmit={handlePlaceBid} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-dark)' }}>
-                    Votre Enchère (Palier minimal +{(auctionInfo?.increment_min || 50)} DH) :
+                    {lang === 'ar' ? `مزايدتكم (الحد الأدنى للزيادة +${auctionInfo?.increment_min || 50} د.م) :` : `Votre Enchère (Palier minimal +${auctionInfo?.increment_min || 50} DH) :`}
                   </label>
 
                   {/* Quick increment pills */}
@@ -558,7 +562,7 @@ export default function ProductDetailModal({
                             cursor: 'pointer'
                           }}
                         >
-                          +{inc} DH ({target.toLocaleString()} DH)
+                          +{inc} {lang === 'ar' ? 'د.م' : 'DH'} ({target.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'})
                         </button>
                       );
                     })}
@@ -570,7 +574,7 @@ export default function ProductDetailModal({
                       value={bidAmount}
                       onChange={e => setBidAmount(e.target.value)}
                       required
-                      placeholder="Ex: 7500"
+                      placeholder={lang === 'ar' ? "مثال: 7500" : "Ex: 7500"}
                       className="filter-select-control"
                       style={{ fontSize: '1.05rem', fontWeight: 700, borderColor: 'var(--primary-gold)' }}
                     />
@@ -580,7 +584,7 @@ export default function ProductDetailModal({
                       className="btn-jewelia-primary"
                       style={{ padding: '10px 22px', whiteSpace: 'nowrap', fontWeight: 800 }}
                     >
-                      {isBidding ? 'Envoi...' : '🔨 Enchérir'}
+                      {isBidding ? (lang === 'ar' ? 'جاري الإرسال...' : 'Envoi...') : (lang === 'ar' ? '🔨 تقديم المزايدة' : '🔨 Enchérir')}
                     </button>
                   </div>
 

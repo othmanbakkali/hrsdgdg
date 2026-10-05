@@ -849,8 +849,10 @@ function MainLayout() {
                       {firstHandCartItems.length > 0 && (
                         <div className="cart-universe-group">
                           <div className="cart-universe-header first">
-                            <span>✨ PREMIÈRE MAIN (Neuf)</span>
-                            <span style={{ fontSize: '0.75rem' }}>{firstHandCartItems.length} article(s)</span>
+                            <span>{lang === 'ar' ? '✨ مجوهرات جديدة (يد أولى)' : '✨ PREMIÈRE MAIN (Neuf)'}</span>
+                            <span style={{ fontSize: '0.75rem' }}>
+                              {lang === 'ar' ? `${firstHandCartItems.length} قطعة` : `${firstHandCartItems.length} article(s)`}
+                            </span>
                           </div>
 
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -862,11 +864,15 @@ function MainLayout() {
                                   <img src={imgUrl} alt={item.titre} className="cart-item-img" />
                                   <div className="cart-item-details">
                                     <div>
-                                      <strong className="cart-item-title">{item.titre}</strong>
-                                      <span className="cart-item-seller">Vendu par {item.vendeur_nom || 'Bijouterie'}</span>
+                                      <strong className="cart-item-title">
+                                        {(lang === 'ar' && item.titre_ar) ? item.titre_ar : (item.titre_fr || item.titre)}
+                                      </strong>
+                                      <span className="cart-item-seller">
+                                        {lang === 'ar' ? `البائع : ${item.vendeur_nom || 'دار المجوهرات'}` : `Vendu par ${item.vendeur_nom || 'Bijouterie'}`}
+                                      </span>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                                      <span className="cart-item-price">{item.prix ? item.prix.toLocaleString() : '0'} DH</span>
+                                      <span className="cart-item-price">{item.prix ? item.prix.toLocaleString() : '0'} {lang === 'ar' ? 'د.م' : 'DH'}</span>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <button 
                                           type="button"
@@ -907,8 +913,10 @@ function MainLayout() {
                       {secondHandCartItems.length > 0 && (
                         <div className="cart-universe-group" style={{ marginTop: '14px' }}>
                           <div className="cart-universe-header second">
-                            <span>♻️ SECONDE MAIN (Occasion Authentifiée)</span>
-                            <span style={{ fontSize: '0.75rem' }}>{secondHandCartItems.length} article(s)</span>
+                            <span>{lang === 'ar' ? '♻️ مجوهرات مستعملة (موثقة ومفحوصة)' : '♻️ SECONDE MAIN (Occasion Authentifiée)'}</span>
+                            <span style={{ fontSize: '0.75rem' }}>
+                              {lang === 'ar' ? `${secondHandCartItems.length} قطعة` : `${secondHandCartItems.length} article(s)`}
+                            </span>
                           </div>
 
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -920,11 +928,15 @@ function MainLayout() {
                                   <img src={imgUrl} alt={item.titre} className="cart-item-img" />
                                   <div className="cart-item-details">
                                     <div>
-                                      <strong className="cart-item-title">{item.titre}</strong>
-                                      <span className="cart-item-seller" style={{ color: '#10b981' }}>🛡️ Vendeur Particulier vérifié</span>
+                                      <strong className="cart-item-title">
+                                        {(lang === 'ar' && item.titre_ar) ? item.titre_ar : (item.titre_fr || item.titre)}
+                                      </strong>
+                                      <span className="cart-item-seller" style={{ color: '#10b981' }}>
+                                        {lang === 'ar' ? '🛡️ بائع موثق ومفحوص' : '🛡️ Vendeur Particulier vérifié'}
+                                      </span>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                                      <span className="cart-item-price" style={{ color: '#10b981' }}>{item.prix ? item.prix.toLocaleString() : '0'} DH</span>
+                                      <span className="cart-item-price" style={{ color: '#10b981' }}>{item.prix ? item.prix.toLocaleString() : '0'} {lang === 'ar' ? 'د.م' : 'DH'}</span>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <button 
                                           type="button"
