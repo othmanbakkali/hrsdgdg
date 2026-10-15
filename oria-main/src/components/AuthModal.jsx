@@ -31,6 +31,22 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   const [patenteDocName, setPatenteDocName] = useState('');
   const [patenteDocSize, setPatenteDocSize] = useState('');
 
+  // Helper to normalize Moroccan phone numbers to +212XXXXXXXXX
+  const formatMoroccanInternationalPhone = (raw) => {
+    if (!raw) return '';
+    let cleaned = String(raw).replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('00212')) {
+      cleaned = '+212' + cleaned.substring(5);
+    } else if (cleaned.startsWith('212')) {
+      cleaned = '+' + cleaned;
+    } else if (cleaned.startsWith('0') && cleaned.length >= 10) {
+      cleaned = '+212' + cleaned.substring(1);
+    } else if (!cleaned.startsWith('+212') && cleaned.length === 9) {
+      cleaned = '+212' + cleaned;
+    }
+    return cleaned;
+  };
+
   // Subscription plan selection for merchants
   const [plans, setPlans] = useState([
     {
@@ -485,39 +501,26 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 </span>
               </div>
 
-              <h3 className="pending-success-title">
-                {lang === 'ar' ? 'تم استلام طلب تسجيلكم بنجاح !' : 'Dossier d\'Inscription Reçu avec Succès !'}
+              <h3 className="pending-success-title" style={{ color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', fontSize: '1.3rem', margin: '10px 0' }}>
+                {lang === 'ar' ? 'طلبكم في طور المعالجة.' : 'Votre demande est en cours de traitement.'}
               </h3>
-              <p className="pending-success-subtitle">
+              <p className="pending-success-subtitle" style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '16px' }}>
                 {lang === 'ar' 
-                  ? 'تم تسجيل بياناتكم المهنية وسيتم تفعيل الحساب من طرف الإدارة بعد مراجعة وثيقة الباتنت.'
-                  : 'Votre compte professionnel a été créé et sera activé par un administrateur après validation de votre patente.'}
+                  ? 'تم تسجيل طلبكم بنجاح وجارٍ مراجعته وتفعيله من قِبل الإدارة.'
+                  : 'Votre demande a bien été enregistrée par nos services et est actuellement en cours de traitement.'}
               </p>
 
-              {/* Information Summary Box */}
-              <div className="pending-recap-box">
-                <div className="pending-recap-row">
-                  <span className="recap-label">{lang === 'ar' ? 'المتجر / الورشة :' : 'Joaillerie / Atelier :'}</span>
-                  <span className="recap-value gold-text">{shopName || 'Joaillerie Pro'}</span>
+              {/* Information Summary Box (Only displays Moroccan international phone number, hides email & never exposes password) */}
+              <div className="pending-recap-box" style={{ background: 'rgba(212, 175, 55, 0.08)', border: '1px solid var(--border-gold)', borderRadius: '12px', padding: '18px', margin: '16px 0', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.84rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                  {lang === 'ar' ? 'رقم الهاتف المعتمد للمتابعة' : 'Numéro de contact enregistré'}
                 </div>
-                <div className="pending-recap-row">
-                  <span className="recap-label">{lang === 'ar' ? 'المسؤول :' : 'Gérant :'}</span>
-                  <span className="recap-value">{nom}</span>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-gold)', letterSpacing: '1px', fontFamily: 'monospace' }}>
+                  {lang === 'ar' ? 'الهاتف : ' : 'Téléphone : '} {formatMoroccanInternationalPhone(phone) || '+212669286543'}
                 </div>
-                <div className="pending-recap-row">
-                  <span className="recap-label">{lang === 'ar' ? 'البريد المهني :' : 'Email Professionnel :'}</span>
-                  <span className="recap-value">{email}</span>
+                <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#10b981', fontWeight: 600 }}>
+                  ✓ {lang === 'ar' ? 'تم تأكيد التنسيق الدولي المغربي (+212)' : 'Format international marocain validé'}
                 </div>
-                <div className="pending-recap-row">
-                  <span className="recap-label">{lang === 'ar' ? 'رقم الباتنت / RC :' : 'Numéro de Patente / RC :'}</span>
-                  <span className="recap-value">{numeroPatente}</span>
-                </div>
-                {patenteDocName && (
-                  <div className="pending-recap-row">
-                    <span className="recap-label">{lang === 'ar' ? 'وثيقة الباتنت :' : 'Document Joint :'}</span>
-                    <span className="recap-value" style={{ color: '#10b981' }}>📄 {patenteDocName} ✓</span>
-                  </div>
-                )}
               </div>
 
               {/* Security Admin Verification Notice */}
@@ -733,82 +736,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
               </div>
             </div>
 
-            {/* 4d. SUBSCRIPTION PLAN SELECTION */}
-            {role === 'commercant' && (
-              <div className="auth-subscription-selection-section animate-slide-down">
-                <div className="auth-sub-header">
-                  <div className="auth-sub-title-wrap">
-                    <span className="auth-sub-icon">💎</span>
-                    <div>
-                      <div className="auth-sub-title">{t.subscriptionTitle}</div>
-                      <div className="auth-sub-desc">{t.subscriptionSubtitle}</div>
-                    </div>
-                  </div>
-                  {/* Billing Cycle Toggle */}
-                  <div className="auth-cycle-toggle-pills">
-                    <button
-                      type="button"
-                      className={`cycle-pill ${billingCycle === 'monthly' ? 'active' : ''}`}
-                      onClick={() => setBillingCycle('monthly')}
-                    >
-                      {t.monthlyBilling}
-                    </button>
-                    <button
-                      type="button"
-                      className={`cycle-pill ${billingCycle === 'annual' ? 'active' : ''}`}
-                      onClick={() => setBillingCycle('annual')}
-                    >
-                      {t.annualBilling}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="auth-sub-plans-grid">
-                  {plans.map(p => {
-                    const isSelected = selectedPlanId === p.id;
-                    const price = billingCycle === 'annual' ? p.price_annual : p.price_monthly;
-                    const name = lang === 'ar' ? (p.name_ar || p.name) : (p.name_fr || p.name);
-                    return (
-                      <div
-                        key={p.id}
-                        className={`auth-plan-option-card ${isSelected ? 'selected' : ''} ${p.popular ? 'popular' : ''}`}
-                        onClick={() => setSelectedPlanId(p.id)}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        {p.popular && (
-                          <div className="auth-plan-badge-top">
-                            {t.recommendedPlan}
-                          </div>
-                        )}
-                        <div className="auth-plan-card-top">
-                          <span className="auth-plan-name">{name}</span>
-                          <span className="auth-plan-radio">{isSelected ? '●' : '○'}</span>
-                        </div>
-                        <div className="auth-plan-price-row">
-                          <span className="auth-plan-price-amount">
-                            {price === 0 ? (lang === 'ar' ? 'مجاناً' : '0 MAD') : `${price.toLocaleString()} MAD`}
-                          </span>
-                          <span className="auth-plan-price-period">
-                            {billingCycle === 'annual' ? t.perYear : t.perMonth}
-                          </span>
-                        </div>
-                        <div className="auth-plan-features-mini">
-                          <div className="auth-plan-feat-item">
-                            <span>📦</span>
-                            <span>{p.max_products > 1000 ? (lang === 'ar' ? 'معروضات غير محدودة' : 'Illimité') : `${p.max_products} ${lang === 'ar' ? 'معروضات' : 'bijoux'}`}</span>
-                          </div>
-                          <div className="auth-plan-feat-item">
-                            <span>⚡</span>
-                            <span>{lang === 'ar' ? `عمولة ${p.commission_rate}%` : `Commission ${p.commission_rate}%`}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* 5. PHONE & CITY WITH SMART MOROCCAN SHORTCUTS */}
             <div className="auth-two-col-grid">

@@ -86,6 +86,57 @@ function deleteSession(token) {
   writeDB(db);
 }
 
+// Helper: Normalize Moroccan phone numbers to standard international format (+212XXXXXXXXX)
+function normalizeMoroccanPhone(raw) {
+  if (!raw || typeof raw !== 'string') return '';
+  let cleaned = raw.replace(/[^\d+]/g, '');
+  if (cleaned.startsWith('00212')) {
+    cleaned = '+212' + cleaned.substring(5);
+  } else if (cleaned.startsWith('212')) {
+    cleaned = '+' + cleaned;
+  } else if (cleaned.startsWith('0') && cleaned.length >= 10) {
+    cleaned = '+212' + cleaned.substring(1);
+  } else if (!cleaned.startsWith('+212') && cleaned.length === 9) {
+    cleaned = '+212' + cleaned;
+  }
+  return cleaned;
+}
+
+// Server-side automatic 12-hour sold items archival task (runs on boot & recurring timer)
+function checkAndArchiveExpiredSoldItems() {
+  try {
+    const db = readDB();
+    const now = Date.now();
+    const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+    let modified = false;
+
+    (db.bijoux || []).forEach(b => {
+      if ((b.etat === 'Vendu' || b.disponibilite === 'vendu') && b.sold_at) {
+        const soldTime = new Date(b.sold_at).getTime();
+        if (now - soldTime >= TWELVE_HOURS_MS) {
+          if (!b.is_publicly_hidden || b.disponibilite !== 'archive_vendu') {
+            b.is_publicly_hidden = true;
+            b.disponibilite = 'archive_vendu';
+            b.archived_at = new Date().toISOString();
+            modified = true;
+          }
+        }
+      }
+    });
+
+    if (modified) {
+      writeDB(db);
+      console.log('⏰ [Auto-Archive 12h] Sold items expired and archived from public catalog.');
+    }
+  } catch (err) {
+    console.error('Error in checkAndArchiveExpiredSoldItems:', err.message);
+  }
+}
+
+// Initialize 12-hour archival task immediately & schedule every 5 minutes
+checkAndArchiveExpiredSoldItems();
+setInterval(checkAndArchiveExpiredSoldItems, 5 * 60 * 1000);
+
 // Helper: Parse HTTP Cookie Header
 function parseCookies(req) {
   const list = {};
@@ -946,6 +997,25 @@ app.get('/api/bijoux', (req, res) => {
     results = results.filter(b => b.commercant_id === commercant);
   }
 
+  // 12-hour visibility filter for sold items in public catalog
+  const now = Date.now();
+  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+  const isInternalOrSeller = !!commercant || req.query.includeSold === 'true' || req.query.adminView === 'true';
+
+  if (!isInternalOrSeller) {
+    results = results.filter(b => {
+      // If manually archived or marked as hidden
+      if (b.is_publicly_hidden) return false;
+      // If sold, check if 12h deadline has expired
+      if (b.etat === 'Vendu' || b.disponibilite === 'vendu' || b.disponibilite === 'archive_vendu') {
+        if (!b.sold_at) return true; // Keep visible as Vendu if sold_at not set yet
+        const soldTime = new Date(b.sold_at).getTime();
+        return (now - soldTime) < TWELVE_HOURS_MS;
+      }
+      return true;
+    });
+  }
+
   // Sort from newest to oldest (du récent vers le plus ancien)
   results.sort((a, b) => {
     const dateA = new Date(a.date_creation || a.created_at || 0).getTime();
@@ -961,6 +1031,7 @@ app.get('/api/bijoux', (req, res) => {
     const sellerNom = b.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
     return {
       ...b,
+      gramme: b.gramme !== undefined ? b.gramme : (b.poids !== undefined ? b.poids : null),
       vendeur_phone: sellerPhone,
       vendeur_nom: sellerNom
     };
@@ -974,6 +1045,21 @@ app.get('/api/bijoux/:id', (req, res) => {
   const product = db.bijoux.find(b => b.id === req.params.id);
   if (!product) return res.status(404).json({ message: 'Bijou non trouvé' });
   
+  const now = Date.now();
+  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+  const isSold = product.etat === 'Vendu' || product.disponibilite === 'vendu' || product.disponibilite === 'archive_vendu';
+  const isExpired = isSold && product.sold_at && (now - new Date(product.sold_at).getTime() >= TWELVE_HOURS_MS);
+
+  if (isExpired && req.query.adminView !== 'true') {
+    return res.status(410).json({ 
+      error: 'Article Vendu', 
+      message: 'Cet article a été vendu et archivé du catalogue public.',
+      isSold: true,
+      sold_at: product.sold_at,
+      product: { ...product, is_archived_sold: true, etat: 'Vendu' }
+    });
+  }
+
   const seller = (db.users || []).find(u => u.id === product.commercant_id || u.id === product.vendeur_id);
   const sellerPhone = product.vendeur_phone || product.telephone || seller?.phone || seller?.telephone || '';
   const sellerNom = product.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
@@ -981,11 +1067,119 @@ app.get('/api/bijoux/:id', (req, res) => {
   // Attach reviews
   const reviews = (db.reviews || []).filter(r => r.bijou_id === product.id);
   res.json({ 
-    ...product, 
+    ...product,
+    gramme: product.gramme !== undefined ? product.gramme : (product.poids !== undefined ? product.poids : null),
     vendeur_phone: sellerPhone, 
     vendeur_nom: sellerNom, 
     customer_reviews: reviews 
   });
+});
+
+// Sale confirmation endpoint (immediately switches state to 'Vendu', records sold_at, prevents double-sale)
+app.post('/api/bijoux/:id/vendre', (req, res) => {
+  const { id } = req.params;
+  const db = readDB();
+  const bijou = (db.bijoux || []).find(b => b.id === id);
+
+  if (!bijou) {
+    return res.status(404).json({ error: 'Bijou introuvable' });
+  }
+
+  // Anti-double-sale check
+  if (bijou.etat === 'Vendu' || bijou.disponibilite === 'vendu' || bijou.disponibilite === 'archive_vendu') {
+    return res.status(409).json({ 
+      error: 'Article déjà vendu', 
+      message: `Cet article a déjà été vendu le ${new Date(bijou.sold_at || Date.now()).toLocaleString('fr-FR')}. Impossible de le revendre.`,
+      sold_at: bijou.sold_at,
+      etat: 'Vendu'
+    });
+  }
+
+  const now = new Date();
+  const transactionId = req.body.transaction_id || `TRX-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+  const soldPrice = parseFloat(req.body.prix) || bijou.prix;
+  const buyerNom = req.body.buyer_nom || req.body.client_nom || 'Client Direct';
+  const buyerPhone = normalizeMoroccanPhone(req.body.buyer_phone || req.body.client_telephone || '');
+
+  bijou.etat = 'Vendu';
+  bijou.disponibilite = 'vendu';
+  bijou.stock = 0;
+  bijou.sold_at = now.toISOString();
+  bijou.sold_price = soldPrice;
+  bijou.transaction_id = transactionId;
+  bijou.buyer_nom = buyerNom;
+  bijou.buyer_phone = buyerPhone;
+
+  // Add to sales_history for audit and admin tracking
+  if (!Array.isArray(db.sales_history)) {
+    db.sales_history = [];
+  }
+  const saleRecord = {
+    id: `sale_${Date.now()}`,
+    transaction_id: transactionId,
+    bijou_id: bijou.id,
+    titre: bijou.titre,
+    reference: bijou.id,
+    vendeur_id: bijou.commercant_id || 'u_merchant1',
+    vendeur_nom: bijou.vendeur_nom || 'Vendeur Certifié',
+    prix_vente: soldPrice,
+    gramme: bijou.gramme || bijou.poids || 0,
+    date_vente: now.toISOString(),
+    etat: 'Vendu',
+    buyer_nom: buyerNom,
+    buyer_phone: buyerPhone
+  };
+  db.sales_history.unshift(saleRecord);
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: 'Vente confirmée avec succès. L\'état de l\'article est désormais "Vendu" et restera visible 12 heures dans le catalogue public avant masquage automatique.',
+    bijou,
+    saleRecord
+  });
+});
+
+// Sales history endpoint for administrative and tracking purposes
+app.get('/api/sales-history', (req, res) => {
+  const db = readDB();
+  const { merchant_id } = req.query;
+  
+  const historyMap = new Map();
+
+  (db.sales_history || []).forEach(s => {
+    historyMap.set(`${s.bijou_id}_${s.date_vente || s.transaction_id}`, s);
+  });
+
+  (db.bijoux || []).filter(b => b.etat === 'Vendu' || b.sold_at).forEach(b => {
+    const key = `${b.id}_${b.sold_at || 'sale'}`;
+    if (!historyMap.has(key)) {
+      historyMap.set(key, {
+        id: `sale_${b.id}`,
+        transaction_id: b.transaction_id || b.sold_order_id || `TRX-${b.id}`,
+        bijou_id: b.id,
+        titre: b.titre,
+        reference: b.id,
+        vendeur_id: b.commercant_id,
+        vendeur_nom: b.vendeur_nom || 'Vendeur Certifié',
+        prix_vente: b.sold_price || b.prix,
+        gramme: b.gramme || b.poids || 0,
+        date_vente: b.sold_at || b.date_creation,
+        etat: 'Vendu',
+        buyer_nom: b.buyer_nom || 'Client Marketplace',
+        buyer_phone: b.buyer_phone || ''
+      });
+    }
+  });
+
+  let allSales = Array.from(historyMap.values());
+  if (merchant_id) {
+    allSales = allSales.filter(s => s.vendeur_id === merchant_id);
+  }
+
+  allSales.sort((a, b) => new Date(b.date_vente || 0).getTime() - new Date(a.date_vente || 0).getTime());
+  res.json(allSales);
 });
 
 app.post('/api/bijoux', (req, res) => {
@@ -1255,16 +1449,26 @@ app.post('/api/users/:userId/favorites', (req, res) => {
   res.json(user.favoris);
 });
 
-// Orders & Commissions
+// Orders & Commissions (with atomic double-sale prevention and sold_at tracking)
 app.post('/api/commandes', (req, res) => {
-  const { client_id, client_nom, client_telephone, client_adresse, client_ville, mode_paiement, items } = req.body;
+  const { client_id, client_nom, client_adresse, client_ville, mode_paiement, items } = req.body;
+  const client_telephone = normalizeMoroccanPhone(req.body.client_telephone || '');
   const db = readDB();
 
-  // 1. Verify availability of items
+  // 1. Strict anti-double-sale verification
   for (let item of items) {
     const bijou = db.bijoux.find(b => b.id === item.bijou_id);
-    if (!bijou || bijou.stock < item.quantite || bijou.statut !== 'Validated') {
-      return res.status(400).json({ message: `Le bijou '${item.titre}' n'est pas disponible dans le stock requis.` });
+    if (!bijou) {
+      return res.status(404).json({ error: 'Bijou introuvable', message: `Le bijou '${item.titre}' est introuvable.` });
+    }
+    if (bijou.etat === 'Vendu' || bijou.disponibilite === 'vendu' || bijou.disponibilite === 'archive_vendu' || (bijou.stock !== undefined && bijou.stock < item.quantite)) {
+      return res.status(409).json({ 
+        error: 'Article déjà vendu', 
+        message: `L'article "${bijou.titre}" (Réf: ${bijou.id}) a déjà été vendu et n'est plus disponible.` 
+      });
+    }
+    if (bijou.statut !== 'Validated') {
+      return res.status(400).json({ message: `Le bijou '${item.titre}' n'est pas encore validé.` });
     }
   }
 
@@ -1275,6 +1479,12 @@ app.post('/api/commandes', (req, res) => {
 
   let totalOrderAmount = 0;
   let totalCommissionAmount = 0;
+  const now = new Date();
+  const orderNumber = `JW-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+
+  if (!Array.isArray(db.sales_history)) {
+    db.sales_history = [];
+  }
 
   const processedItems = items.map(item => {
     const bijou = db.bijoux.find(b => b.id === item.bijou_id);
@@ -1293,11 +1503,36 @@ app.post('/api/commandes', (req, res) => {
     totalOrderAmount += itemTotal;
     totalCommissionAmount += itemCommission;
 
-    // Deduct stock
-    bijou.stock -= item.quantite;
+    // Deduct stock and switch to Vendu
+    bijou.stock = (bijou.stock || 1) - item.quantite;
     if (bijou.stock <= 0) {
-      bijou.disponibilite = 'rupture';
+      bijou.stock = 0;
+      bijou.etat = 'Vendu';
+      bijou.disponibilite = 'vendu';
+      bijou.sold_at = now.toISOString();
+      bijou.sold_order_id = orderNumber;
+      bijou.transaction_id = orderNumber;
+      bijou.sold_price = bijou.prix;
+      bijou.buyer_nom = client_nom;
+      bijou.buyer_phone = client_telephone;
     }
+
+    // Record in sales history
+    db.sales_history.unshift({
+      id: `sale_${orderNumber}_${bijou.id}`,
+      transaction_id: orderNumber,
+      bijou_id: bijou.id,
+      titre: bijou.titre,
+      reference: bijou.id,
+      vendeur_id: bijou.commercant_id,
+      vendeur_nom: bijou.vendeur_nom || 'Vendeur Certifié',
+      prix_vente: bijou.prix,
+      gramme: bijou.gramme || bijou.poids || 0,
+      date_vente: now.toISOString(),
+      etat: 'Vendu',
+      buyer_nom: client_nom,
+      buyer_phone: client_telephone
+    });
 
     return {
       bijou_id: item.bijou_id,
@@ -1311,9 +1546,6 @@ app.post('/api/commandes', (req, res) => {
       commission_amount: itemCommission
     };
   });
-
-  const now = new Date();
-  const orderNumber = `JW-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
 
   const newOrder = {
     id: orderNumber,
@@ -1331,7 +1563,7 @@ app.post('/api/commandes', (req, res) => {
     tracking_steps: [
       { title: 'Commande confirmée', date: now.toLocaleString('fr-FR'), done: true },
       { title: 'Préparation & Contrôle Qualité', date: 'En cours', done: true },
-      { title: 'Expédition Sécurisée', date: 'Prévue sous 24h', done: false },
+      { title: 'Expédition Sécurisée', date: 'Prise en charge logistique', done: false },
       { title: 'Livraison', date: 'En attente', done: false }
     ]
   };
@@ -2108,89 +2340,115 @@ app.put('/api/subscriptions/:merchantId/status', (req, res) => {
 // GOLD RATES & HISTORY API (EXCLUSIVE OR 18K)
 // ==========================================
 
-// Public: Get current gold rate (18K) and history
+// Public: Get current precious metals rates (Or 18K & Argent 925) and history
 app.get('/api/gold-rates', (req, res) => {
   const db = readDB();
   const goldRates = db.goldRates || {
     currentPrice18k: 1045,
+    currentPriceSilver: 14.50,
     carat: '18K',
     unit: 'MAD/g',
+    silverUnit: 'MAD/g',
     lastUpdated: new Date().toISOString(),
     updatedBy: 'Admin',
     history: []
   };
 
   const currentPrice18k = Number(goldRates.currentPrice18k) || 1045;
+  const currentPriceSilver = Number(goldRates.currentPriceSilver) || 14.50;
 
   res.json({
     success: true,
     currentPrice18k,
+    currentPriceSilver,
     carat: '18K',
     unit: goldRates.unit || 'MAD/g',
+    silverUnit: goldRates.silverUnit || 'MAD/g',
     lastUpdated: goldRates.lastUpdated,
     updatedBy: goldRates.updatedBy || 'Administration',
     history: goldRates.history || []
   });
 });
 
-// Admin: Update gold rate (18K) & record history
+// Admin: Update rates (Or 18K & Argent 925) & record history
 app.post('/api/admin/gold-rates', requireAdminSession, (req, res) => {
-  const { price18k, price, price24k, source, note, updatedBy } = req.body;
-  const rawPrice = price18k || price || price24k;
-  const numPrice = parseFloat(rawPrice);
-
-  if (!numPrice || isNaN(numPrice) || numPrice <= 0) {
-    return res.status(400).json({ error: 'Le prix de l\'or 18K doit être un nombre positif valide (ex: 1045).' });
-  }
-
+  const { price18k, price, price24k, priceSilver, source, note, updatedBy } = req.body;
   const db = readDB();
   if (!db.goldRates) {
     db.goldRates = {
       currentPrice18k: 1045,
+      currentPriceSilver: 14.50,
       carat: '18K',
       unit: 'MAD/g',
+      silverUnit: 'MAD/g',
       lastUpdated: new Date().toISOString(),
       updatedBy: 'Admin',
       history: []
     };
   }
 
-  const oldPrice = Number(db.goldRates.currentPrice18k) || numPrice;
-  const diff = numPrice - oldPrice;
-  const pct = oldPrice > 0 ? ((diff / oldPrice) * 100).toFixed(1) : '0.0';
-  const changeStr = diff > 0 ? `+${pct}%` : (diff < 0 ? `${pct}%` : '0.0%');
-
   const now = new Date();
   const dateFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-  const newHistoryEntry = {
-    id: `gh_${Date.now()}`,
-    date: dateFormatted,
-    price18k: numPrice,
-    change: changeStr,
-    source: source ? source.trim() : 'Fixation Officielle Maroc',
-    note: note ? note.trim() : ''
-  };
+  let updatedRates = {};
 
-  db.goldRates.currentPrice18k = numPrice;
-  db.goldRates.carat = '18K';
+  // Handle Silver (Argent) update
+  if (priceSilver !== undefined && priceSilver !== null && priceSilver !== '') {
+    const numSilver = parseFloat(priceSilver);
+    if (isNaN(numSilver) || numSilver <= 0) {
+      return res.status(400).json({ error: 'Le prix de l\'argent doit être un nombre positif valide (ex: 14.50).' });
+    }
+    db.goldRates.currentPriceSilver = numSilver;
+    db.goldRates.silverUnit = 'MAD/g';
+    updatedRates.currentPriceSilver = numSilver;
+  }
+
+  // Handle Gold (Or 18K) update
+  const rawGoldPrice = price18k || price || price24k;
+  if (rawGoldPrice !== undefined && rawGoldPrice !== null && rawGoldPrice !== '') {
+    const numPrice = parseFloat(rawGoldPrice);
+    if (isNaN(numPrice) || numPrice <= 0) {
+      return res.status(400).json({ error: 'Le prix de l\'or 18K doit être un nombre positif valide (ex: 1045).' });
+    }
+
+    const oldPrice = Number(db.goldRates.currentPrice18k) || numPrice;
+    const diff = numPrice - oldPrice;
+    const pct = oldPrice > 0 ? ((diff / oldPrice) * 100).toFixed(1) : '0.0';
+    const changeStr = diff > 0 ? `+${pct}%` : (diff < 0 ? `${pct}%` : '0.0%');
+
+    const newHistoryEntry = {
+      id: `gh_${Date.now()}`,
+      date: dateFormatted,
+      price18k: numPrice,
+      priceSilver: db.goldRates.currentPriceSilver || 14.50,
+      change: changeStr,
+      source: source ? source.trim() : 'Fixation Officielle Maroc',
+      note: note ? note.trim() : ''
+    };
+
+    db.goldRates.currentPrice18k = numPrice;
+    db.goldRates.carat = '18K';
+
+    if (!Array.isArray(db.goldRates.history)) {
+      db.goldRates.history = [];
+    }
+    db.goldRates.history.push(newHistoryEntry);
+    updatedRates.newEntry = newHistoryEntry;
+  }
+
   db.goldRates.lastUpdated = now.toISOString();
   db.goldRates.updatedBy = updatedBy || 'Super-Admin';
-  
-  if (!Array.isArray(db.goldRates.history)) {
-    db.goldRates.history = [];
-  }
-  db.goldRates.history.push(newHistoryEntry);
 
   writeDB(db);
 
   res.json({
     success: true,
-    message: 'Cours de l\'or 18K mis à jour avec succès',
-    currentPrice18k: numPrice,
+    message: 'Cours des métaux précieux mis à jour avec succès',
+    currentPrice18k: db.goldRates.currentPrice18k,
+    currentPriceSilver: db.goldRates.currentPriceSilver,
     carat: '18K',
     history: db.goldRates.history,
-    newEntry: newHistoryEntry
+    ...updatedRates
   });
 });
 

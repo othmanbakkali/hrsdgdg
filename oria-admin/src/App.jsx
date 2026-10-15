@@ -143,9 +143,12 @@ function AdminLayout() {
     updatedBy: ''
   });
   const [goldPriceInput, setGoldPriceInput] = useState('1045');
+  const [silverPriceInput, setSilverPriceInput] = useState('14.50');
   const [goldSourceInput, setGoldSourceInput] = useState('');
   const [goldNoteInput, setGoldNoteInput] = useState('');
   const [isUpdatingGold, setIsUpdatingGold] = useState(false);
+  const [salesHistory, setSalesHistory] = useState([]);
+  const [salesSearchTerm, setSalesSearchTerm] = useState('');
 
   // Notification Banner
   const [notif, setNotif] = useState(null);
@@ -738,7 +741,8 @@ function AdminLayout() {
         auctionsRes,
         allBijouxRes,
         subscriptionsRes,
-        goldRes
+        goldRes,
+        salesRes
       ] = await Promise.allSettled([
         authFetch(`${API_URL}/stats/admin`),
         authFetch(`${API_URL}/bijoux?status=Pending`),
@@ -746,9 +750,10 @@ function AdminLayout() {
         authFetch(`${API_URL}/config`),
         authFetch(`${API_URL}/users`),
         authFetch(`${API_URL}/encheres`),
-        authFetch(`${API_URL}/bijoux`),
+        authFetch(`${API_URL}/bijoux?includeSold=true`),
         authFetch(`${API_URL}/subscriptions/all`),
-        authFetch(`${API_URL}/gold-rates`)
+        authFetch(`${API_URL}/gold-rates`),
+        authFetch(`${API_URL}/sales-history`)
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
@@ -815,8 +820,18 @@ function AdminLayout() {
             if (!goldPriceInput || goldPriceInput === '1045') {
               setGoldPriceInput(String(goldData.currentPrice18k || 1045));
             }
+            if (!silverPriceInput || silverPriceInput === '14.50') {
+              setSilverPriceInput(String(goldData.currentPriceSilver || 14.50));
+            }
           }
         } catch (e) { console.error('Gold rates parse error', e); }
+      }
+
+      if (salesRes && salesRes.status === 'fulfilled' && salesRes.value.ok) {
+        try {
+          const salesData = await salesRes.value.json();
+          setSalesHistory(Array.isArray(salesData) ? salesData : (salesData.sales || []));
+        } catch (e) { console.error('Sales parse error', e); }
       }
 
     } catch (error) {
@@ -911,8 +926,13 @@ function AdminLayout() {
   const handleUpdateGoldRate = async (e) => {
     e.preventDefault();
     const val = parseFloat(goldPriceInput);
+    const valSilver = parseFloat(silverPriceInput);
     if (!val || isNaN(val) || val <= 0) {
-      triggerNotif('Veuillez saisir un prix valide (ex: 1045)');
+      triggerNotif('Veuillez saisir un prix valide pour l\'Or 18K (ex: 1045)');
+      return;
+    }
+    if (!valSilver || isNaN(valSilver) || valSilver <= 0) {
+      triggerNotif('Veuillez saisir un prix valide pour l\'Argent 925 (ex: 14.50)');
       return;
     }
 
@@ -923,6 +943,7 @@ function AdminLayout() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           price18k: val,
+          priceSilver: valSilver,
           source: goldSourceInput.trim() || (lang === 'ar' ? 'السعر الرسمي المحدد - المغرب' : 'Fixation Officielle Maroc'),
           note: goldNoteInput.trim() || (lang === 'ar' ? 'تحديث دوري معتمد' : 'Mise à jour régulière'),
           updatedBy: adminUser?.nom || 'Super-Admin'
@@ -930,7 +951,7 @@ function AdminLayout() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        triggerNotif(lang === 'ar' ? 'تم تحديث سعر الذهب عيار 18 بنجاح !' : 'Cours de l\'or 18K mis à jour avec succès !');
+        triggerNotif(lang === 'ar' ? 'تم تحديث أسعار الذهب والفضة بنجاح !' : 'Cours de l\'or 18K et de l\'argent 925 mis à jour avec succès !');
         setGoldSourceInput('');
         setGoldNoteInput('');
         fetchData();
@@ -1350,6 +1371,11 @@ function AdminLayout() {
               </span>
             </li>
             <li>
+              <span className={`nav-link ${activeTab === 'sales_history' ? 'active' : ''}`} onClick={() => { setActiveTab('sales_history'); setMobileMenuOpen(false); }}>
+                📜 {lang === 'ar' ? 'سجل المبيعات' : 'Historique des Ventes'} ({salesHistory.length})
+              </span>
+            </li>
+            <li>
               <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
                 👥 {t('users')}
               </span>
@@ -1382,7 +1408,11 @@ function AdminLayout() {
       <main className="main-content">
         {/* Header */}
         <header className="admin-header">
-          <h1>{activeTab === 'subscriptions' ? t('subscriptionsTitle') : t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))}</h1>
+          <h1>{
+            activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل المبيعات والصفقات المكتملة' : '📜 Historique Général des Ventes') :
+            activeTab === 'subscriptions' ? t('subscriptionsTitle') : 
+            t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))
+          }</h1>
           
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             {/* Light / Dark Mode Toggle */}
@@ -3073,6 +3103,20 @@ function AdminLayout() {
                 </div>
               </div>
 
+              {/* Silver 925 Card */}
+              <div style={{ background: 'var(--bg-card)', border: '2px solid #63b3ed', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 24px rgba(99,179,237,0.15)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: '-10px', right: lang === 'ar' ? 'auto' : '-10px', left: lang === 'ar' ? '-10px' : 'auto', fontSize: '4rem', opacity: 0.08, pointerEvents: 'none' }}>🥈</div>
+                <div style={{ fontSize: '0.85rem', color: '#63b3ed', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                  {lang === 'ar' ? 'فضة عيار 925 (المعيار الرسمي)' : 'Argent 925 (Standard Maroc)'}
+                </div>
+                <div style={{ fontSize: '2.8rem', fontWeight: 900, color: 'var(--text-white)', lineHeight: 1.1, marginBottom: '8px' }}>
+                  {goldRatesData.currentPriceSilver || 14.50} <span style={{ fontSize: '1.2rem', color: '#63b3ed', fontWeight: 700 }}>MAD / g</span>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#10b981', fontWeight: 700 }}>
+                  ▲ {lang === 'ar' ? 'السعر الحالي المعتمد بالمنصة' : 'Cotation officielle active'}
+                </div>
+              </div>
+
               {/* Info Card */}
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -3140,6 +3184,32 @@ function AdminLayout() {
                       border: '1px solid var(--border-gold)',
                       borderRadius: '8px',
                       color: 'var(--text-white)',
+                      fontSize: '1.2rem',
+                      fontWeight: 800
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: '#90cdf4' }}>
+                    {lang === 'ar' ? 'سعر غرام الفضة 925 (د.م/غ) *' : 'Prix de l\'Argent 925 (MAD/g) *'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max="1000"
+                    required
+                    value={silverPriceInput}
+                    onChange={(e) => setSilverPriceInput(e.target.value)}
+                    placeholder="14.50"
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      background: 'rgba(0,0,0,0.2)',
+                      border: '1px solid #63b3ed',
+                      borderRadius: '8px',
+                      color: '#bee3f8',
                       fontSize: '1.2rem',
                       fontWeight: 800
                     }}
@@ -3321,6 +3391,225 @@ function AdminLayout() {
                     <tr>
                       <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-gray)' }}>
                         {lang === 'ar' ? 'لا يوجد سجل تغييرات سابق.' : 'Aucun historique enregistré pour le moment.'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Sales History Management Section */}
+        {activeTab === 'sales_history' && (
+          <div>
+            {/* Header & Subtitle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display', margin: '0 0 6px 0', fontSize: '1.8rem', color: 'var(--admin-gold)' }}>
+                  {lang === 'ar' ? '📜 سجل مبيعات منصة ياز (YAZ)' : '📜 Traçabilité & Historique des Ventes Marketplace'}
+                </h2>
+                <p style={{ color: 'var(--text-gray)', margin: 0, fontSize: '0.88rem' }}>
+                  {lang === 'ar'
+                    ? 'متابعة شاملة لجميع الصفقات المكتملة، بيانات المشترين، والقطع المباعة مع تطبيق قاعدة الأرشفة التلقائية بعد 12 ساعة.'
+                    : 'Registre d\'audit des transactions conclues, traçabilité des pièces vendues et application de la règle d\'archivage 12h.'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(212, 175, 55, 0.1)',
+                  color: 'var(--admin-gold)',
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  border: '1px solid rgba(212, 175, 55, 0.3)'
+                }}>
+                  ⏱️ {lang === 'ar' ? 'مدة العرض بعد البيع: 12 ساعة' : 'Visibilité post-vente : 12h'}
+                </span>
+                <button
+                  type="button"
+                  onClick={fetchData}
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-white)',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 600
+                  }}
+                >
+                  🔄 {lang === 'ar' ? 'تحديث' : 'Actualiser'}
+                </button>
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '6px' }}>
+                  {lang === 'ar' ? 'إجمالي القطع المباعة' : 'Total Ventes Conclues'}
+                </div>
+                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ef4444' }}>
+                  {salesHistory.length} <span style={{ fontSize: '1rem', color: 'var(--text-white)', fontWeight: 600 }}>{lang === 'ar' ? 'قطعة' : 'articles'}</span>
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '6px' }}>
+                  {lang === 'ar' ? 'حجم المعاملات المكتملة' : 'Volume d\'Affaires Ventes'}
+                </div>
+                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--admin-gold)' }}>
+                  {salesHistory.reduce((acc, curr) => acc + (Number(curr.prix_vente) || 0), 0).toLocaleString()} <span style={{ fontSize: '1rem', color: 'var(--text-white)', fontWeight: 600 }}>MAD</span>
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '6px' }}>
+                  {lang === 'ar' ? 'متوسط سعر البيع' : 'Panier Moyen Vente'}
+                </div>
+                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#10b981' }}>
+                  {salesHistory.length > 0
+                    ? Math.round(salesHistory.reduce((acc, curr) => acc + (Number(curr.prix_vente) || 0), 0) / salesHistory.length).toLocaleString()
+                    : 0} <span style={{ fontSize: '1rem', color: 'var(--text-white)', fontWeight: 600 }}>MAD</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Search and Filters */}
+            <div style={{ marginBottom: '16px' }}>
+              <input
+                type="text"
+                placeholder={lang === 'ar' ? 'بحث برقم المعاملة، اسم المقال، الصائغ أو المشتري...' : 'Rechercher par référence, nom d\'article, vendeur ou transaction...'}
+                value={salesSearchTerm}
+                onChange={(e) => setSalesSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  maxWidth: '480px',
+                  padding: '10px 14px',
+                  background: 'rgba(0,0,0,0.2)',
+                  border: '1px solid var(--border-gold)',
+                  borderRadius: '8px',
+                  color: 'var(--text-white)',
+                  fontSize: '0.9rem'
+                }}
+              />
+            </div>
+
+            {/* Sales Table */}
+            <div style={{ overflowX: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: lang === 'ar' ? 'right' : 'left' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(212,175,55,0.08)', borderBottom: '1px solid var(--border-gold)' }}>
+                    <th style={{ padding: '14px 16px', color: 'var(--admin-gold)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      {lang === 'ar' ? 'المعاملة / التاريخ' : 'Transaction / Date'}
+                    </th>
+                    <th style={{ padding: '14px 16px', color: 'var(--admin-gold)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      {lang === 'ar' ? 'القطعة / المقال' : 'Article / Titre'}
+                    </th>
+                    <th style={{ padding: '14px 16px', color: 'var(--admin-gold)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      {lang === 'ar' ? 'الصائغ / البائع' : 'Vendeur / Atelier'}
+                    </th>
+                    <th style={{ padding: '14px 16px', color: 'var(--admin-gold)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      {lang === 'ar' ? 'الوزن (غرام)' : 'Grammage'}
+                    </th>
+                    <th style={{ padding: '14px 16px', color: 'var(--admin-gold)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      {lang === 'ar' ? 'سعر البيع' : 'Prix de Vente'}
+                    </th>
+                    <th style={{ padding: '14px 16px', color: 'var(--admin-gold)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      {lang === 'ar' ? 'المشتري' : 'Acheteur'}
+                    </th>
+                    <th style={{ padding: '14px 16px', color: 'var(--admin-gold)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      {lang === 'ar' ? 'الحالة' : 'Statut'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {salesHistory
+                    .filter(sale => {
+                      if (!salesSearchTerm) return true;
+                      const term = salesSearchTerm.toLowerCase();
+                      return (
+                        (sale.transaction_id && sale.transaction_id.toLowerCase().includes(term)) ||
+                        (sale.titre && sale.titre.toLowerCase().includes(term)) ||
+                        (sale.vendeur_nom && sale.vendeur_nom.toLowerCase().includes(term)) ||
+                        (sale.buyer_nom && sale.buyer_nom.toLowerCase().includes(term)) ||
+                        (sale.reference && sale.reference.toLowerCase().includes(term))
+                      );
+                    })
+                    .map((sale) => {
+                      const saleDate = sale.date_vente ? new Date(sale.date_vente) : null;
+                      const formattedDate = saleDate && !isNaN(saleDate.getTime())
+                        ? saleDate.toLocaleString(lang === 'ar' ? 'ar-MA' : 'fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                        : '-';
+                      const isRecent12h = saleDate && ((Date.now() - saleDate.getTime()) < 12 * 60 * 60 * 1000);
+
+                      return (
+                        <tr key={sale.id || sale.transaction_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '14px 16px' }}>
+                            <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--admin-gold)', fontWeight: 700 }}>
+                              {sale.transaction_id || `TRX-${sale.bijou_id}`}
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                              📅 {formattedDate}
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--text-white)', fontSize: '0.92rem' }}>
+                              {sale.titre}
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                              Réf: {sale.reference || sale.bijou_id}
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 16px', color: 'var(--text-white)', fontSize: '0.88rem' }}>
+                            🏛️ {sale.vendeur_nom || 'Vendeur Certifié'}
+                          </td>
+                          <td style={{ padding: '14px 16px', color: 'var(--text-white)', fontWeight: 700, fontSize: '0.92rem' }}>
+                            ⚖️ {sale.gramme ? `${sale.gramme} g` : '-'}
+                          </td>
+                          <td style={{ padding: '14px 16px', color: '#10b981', fontWeight: 800, fontSize: '1.05rem' }}>
+                            {Number(sale.prix_vente || 0).toLocaleString()} MAD
+                          </td>
+                          <td style={{ padding: '14px 16px', color: 'var(--text-gray)', fontSize: '0.85rem' }}>
+                            👤 {sale.buyer_nom || 'Client Marketplace'}
+                            {sale.buyer_phone && <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#63b3ed' }}>{sale.buyer_phone}</div>}
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '4px 10px',
+                              borderRadius: '20px',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239, 68, 68, 0.3)'
+                            }}>
+                              🏷️ {lang === 'ar' ? 'تم البيع' : 'Vendu'}
+                            </span>
+                            <div style={{ fontSize: '0.72rem', color: isRecent12h ? '#10b981' : 'var(--text-gray)', marginTop: '4px' }}>
+                              {isRecent12h
+                                ? (lang === 'ar' ? '🟢 معروض بالمنصة (نافذة 12س)' : '🟢 Visible catalogue (fenêtre 12h)')
+                                : (lang === 'ar' ? '🔒 مؤرشف تلقائياً' : '🔒 Archivé automatiquement')}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                  {salesHistory.length === 0 && (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-gray)' }}>
+                        {lang === 'ar' ? 'لا توجد مبيعات مسجلة في السجل حتى الآن.' : 'Aucune vente enregistrée dans l\'historique pour le moment.'}
                       </td>
                     </tr>
                   )}

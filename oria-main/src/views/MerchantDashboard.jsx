@@ -8,20 +8,12 @@ export default function MerchantDashboard({ onOpenSellModal }) {
   const { t } = useLanguage();
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('listings'); // 'listings', 'orders', 'add-product', 'subscription', 'verifications'
+  const [activeTab, setActiveTab] = useState('listings'); // 'listings', 'orders', 'add-product', 'sales-history', 'verifications'
   const [stats, setStats] = useState({ totalSales: 0, totalCommission: 0, netEarnings: 0, itemsSold: 0 });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
-
-  // Subscription state
-  const [subscriptionData, setSubscriptionData] = useState(null);
-  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'annual'
-  const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [isSubscribing, setIsSubscribing] = useState(false);
-  const [subscriptionFeedback, setSubscriptionFeedback] = useState(null);
+  const [salesHistory, setSalesHistory] = useState([]);
 
   // New product form
   const [newProduct, setNewProduct] = useState({
@@ -40,13 +32,20 @@ export default function MerchantDashboard({ onOpenSellModal }) {
     etat: 'Neuf',
     annee: '2026',
     city: user?.city || 'Casablanca',
-    stock: '2',
+    adresse: '',
+    stock: '1',
     category_id: 'cat_rings',
     images: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80',
     facture: true,
     certificat: true,
     boite: true,
-    garantie: true
+    garantie: true,
+    composants_poids: {
+      collier: '',
+      bracelet: '',
+      bague: '',
+      boucles: ''
+    }
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +60,7 @@ export default function MerchantDashboard({ onOpenSellModal }) {
         setStats(statData);
       }
 
-      // Products
+      // Products (include merchant's products even if sold)
       const prodRes = await fetch(`${API_URL}/bijoux?commercant=${user.id}`);
       if (prodRes.ok) {
         const prodData = await prodRes.json();
@@ -82,11 +81,11 @@ export default function MerchantDashboard({ onOpenSellModal }) {
         setOrders(ordData);
       }
 
-      // Subscription & Quotas
-      const subRes = await fetch(`${API_URL}/merchants/${user.id}/subscription`);
-      if (subRes.ok) {
-        const subData = await subRes.json();
-        setSubscriptionData(subData);
+      // Sales History (for administrative & merchant tracking)
+      const salesRes = await fetch(`${API_URL}/sales-history?vendeur_id=${user.id}`);
+      if (salesRes.ok) {
+        const salesData = await salesRes.json();
+        setSalesHistory(salesData);
       }
     } catch (err) {
       console.error('Error fetching merchant data:', err);
@@ -104,27 +103,34 @@ export default function MerchantDashboard({ onOpenSellModal }) {
     const effectivePrice = newProduct.type_vente === 'AUCTION' ? newProduct.prix_depart : newProduct.prix;
     if (!newProduct.titre || !effectivePrice) return;
 
-    // Check quota before submitting
-    const quotaMax = subscriptionData?.metrics?.max_slots || 50;
-    const currentCount = products.length;
-    if (currentCount >= quotaMax) {
-      alert(`⚠️ Quota atteint (${currentCount}/${quotaMax} bijoux). Veuillez mettre à niveau votre abonnement pour ajouter plus de bijoux.`);
-      setActiveTab('subscription');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const isAuction = newProduct.type_vente === 'AUCTION';
+      
+      // Clean up parure components weight if provided
+      let cleanComposants = null;
+      if (newProduct.category_id === 'cat_sets' && newProduct.composants_poids) {
+        cleanComposants = {};
+        for (const [key, val] of Object.entries(newProduct.composants_poids)) {
+          if (val && parseFloat(val) > 0) {
+            cleanComposants[key] = parseFloat(val);
+          }
+        }
+        if (Object.keys(cleanComposants).length === 0) cleanComposants = null;
+      }
+
       const payload = {
         ...newProduct,
         prix: parseFloat(effectivePrice),
         ancien_prix: newProduct.ancien_prix ? parseFloat(newProduct.ancien_prix) : null,
-        poids: parseFloat(newProduct.poids || 3),
-        gramme: parseFloat(newProduct.poids || 3),
+        poids: parseFloat(newProduct.poids || 0),
+        gramme: parseFloat(newProduct.poids || 0),
+        composants_poids: cleanComposants,
         type_vente: isAuction ? 'SECOND_HAND' : newProduct.type_vente,
         disponibilite: isAuction ? 'enchere' : 'disponible',
         stock: parseInt(newProduct.stock || 1),
+        city: newProduct.city || user.city || 'Casablanca',
+        adresse: newProduct.adresse || '',
         images: [newProduct.images],
         commercant_id: user.id,
         vendeur_nom: user.shopName || user.nom,
@@ -165,12 +171,7 @@ export default function MerchantDashboard({ onOpenSellModal }) {
         setIsSubmitting(false);
       } else {
         const errData = await res.json();
-        if (errData.error === 'QUOTA_EXCEEDED') {
-          alert(`⚠️ ${errData.message}`);
-          setActiveTab('subscription');
-        } else {
-          alert(errData.message || 'Erreur lors de la publication du bijou.');
-        }
+        alert(errData.message || 'Erreur lors de la publication du bijou.');
         setIsSubmitting(false);
       }
     } catch (err) {
@@ -179,58 +180,27 @@ export default function MerchantDashboard({ onOpenSellModal }) {
     }
   };
 
-  const handleSubscribePlan = async (plan) => {
-    if (!user) return;
-    setIsSubscribing(true);
+  const handleMarkAsSold = async (productId) => {
+    if (!confirm('Confirmer le passage de cet article à l\'état « Vendu » ?\n\nConformément aux règles YAZ, l\'article restera visible avec le badge "Vendu" pendant 12 heures avant masquage automatique du catalogue public.')) return;
     try {
-      const res = await fetch(`${API_URL}/merchants/${user.id}/subscribe`, {
+      const res = await fetch(`${API_URL}/bijoux/${productId}/vendre`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plan_id: plan.id,
-          billing_cycle: billingCycle
+          client_phone: 'Vente directe boutique',
+          canal: 'Direct'
         })
       });
-
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        setSubscriptionFeedback({
-          type: 'success',
-          message: data.message || `Félicitations ! Votre abonnement au ${plan.name} est activé.`
-        });
+        alert('✓ Vente confirmée ! L\'article est maintenant marqué comme "Vendu". Il sera masqué automatiquement après 12 heures.');
         fetchMerchantData();
-        setShowUpgradeModal(false);
-        setTimeout(() => setSubscriptionFeedback(null), 5000);
       } else {
-        const errorData = await res.json();
-        setSubscriptionFeedback({
-          type: 'error',
-          message: errorData.message || 'Une erreur est survenue lors de la souscription.'
-        });
+        alert(data.message || 'Impossible de marquer cet article comme vendu.');
       }
     } catch (err) {
-      console.error(err);
-      setSubscriptionFeedback({
-        type: 'error',
-        message: 'Erreur de connexion au serveur.'
-      });
-    } finally {
-      setIsSubscribing(false);
-    }
-  };
-
-  const handleCancelAutoRenew = async () => {
-    if (!confirm('Désactiver le renouvellement automatique de votre forfait ?')) return;
-    try {
-      const res = await fetch(`${API_URL}/merchants/${user.id}/cancel-subscription`, {
-        method: 'POST'
-      });
-      if (res.ok) {
-        fetchMerchantData();
-        alert('Renouvellement automatique désactivé.');
-      }
-    } catch (err) {
-      console.error(err);
+      console.error('Error marking as sold:', err);
+      alert('Erreur réseau lors de la validation de la vente.');
     }
   };
 
@@ -378,40 +348,19 @@ export default function MerchantDashboard({ onOpenSellModal }) {
               ✓ Vendeur Agréé
             </span>
 
-            {/* Current Subscription Badge in Header */}
-            <span 
-              onClick={() => setActiveTab('subscription')}
-              style={{
-                padding: '4px 14px',
-                borderRadius: 'var(--radius-full)',
-                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(179, 135, 40, 0.28) 100%)',
-                color: 'var(--primary-gold)',
-                fontSize: '0.8rem',
-                fontWeight: 800,
-                border: '1px solid var(--border-gold)',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              title="Cliquer pour gérer votre forfait"
-            >
-              <span>👑 {currentPlan.name || 'Pass Essentiel'}</span>
-              <span style={{ opacity: 0.8, fontSize: '0.75rem' }}>({metrics.used_slots}/{metrics.max_slots > 1000 ? '∞' : metrics.max_slots} bijoux)</span>
-            </span>
           </div>
           <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-            Espace Vendeur Professionnel • Gestion du catalogue, commandes clients et forfait d'abonnement
+            Espace Vendeur Professionnel • Gestion du catalogue, commandes clients et traçabilité des ventes
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button 
-            onClick={() => setActiveTab('subscription')}
+            onClick={() => setActiveTab('sales-history')}
             className="btn-jewelia-secondary"
             style={{ padding: '10px 20px', fontSize: '0.88rem' }}
           >
-            🌟 Mon Forfait & Quota
+            📜 Historique des Ventes
           </button>
 
           <button 
@@ -429,30 +378,31 @@ export default function MerchantDashboard({ onOpenSellModal }) {
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Ventes Totales</span>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.totalSales?.toLocaleString()} DH
+            {stats.totalSales?.toLocaleString()} MAD
           </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--success-green)', fontWeight: 600 }}>+14% de croissance</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--success-green)', fontWeight: 600 }}>Volume commercial réalisé</span>
         </div>
 
+        {/* INDICATEUR ARGENT (REVENUS NETS REELS DB) */}
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Revenus Nets Vendeur</span>
-          <h3 style={{ fontSize: '1.75rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.netEarnings?.toLocaleString()} DH
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Argent (Revenus Nets)</span>
+          <h3 style={{ fontSize: '1.75rem', color: '#10b981', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
+            {stats.netEarnings?.toLocaleString()} MAD
           </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Taux commission : <strong style={{ color: 'var(--primary-gold)' }}>{metrics.commission_rate}%</strong></span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Solde net disponible • Vendeur vérifié</span>
         </div>
 
+        {/* ARTICLES VENDUS & TRACABILITE */}
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Quota Catalogue</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>{metrics.used_slots} / {metrics.max_slots > 1000 ? 'Illimité' : metrics.max_slots}</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Articles Vendus</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>✓ Actif</span>
           </div>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {metrics.remaining_slots > 1000 ? '∞' : metrics.remaining_slots} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>places libres</span>
+            {salesHistory.length} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>transactions</span>
           </h3>
-          {/* Progress bar */}
-          <div style={{ width: '100%', height: '6px', background: 'rgba(0,0,0,0.08)', borderRadius: '4px', overflow: 'hidden', marginTop: '6px' }}>
-            <div style={{ width: `${metrics.usage_percentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--primary-gold), #10b981)', borderRadius: '4px' }} />
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '6px' }}>
+            Articles conservés en historique après 12h
           </div>
         </div>
 
@@ -471,7 +421,7 @@ export default function MerchantDashboard({ onOpenSellModal }) {
           { id: 'listings', label: '💎 Mes Produits en Ligne', count: products.length },
           { id: 'orders', label: '📦 Commandes Reçues', count: orders.length },
           { id: 'add-product', label: '➕ Déposer un Bijou', count: null },
-          { id: 'subscription', label: '🌟 Mon Abonnement & Forfaits', count: null, highlight: true },
+          { id: 'sales-history', label: '📜 Historique des Ventes', count: salesHistory.length, highlight: true },
           { id: 'verifications', label: '🛡️ Certifications & Preuves', count: products.filter(p => p.type_vente === 'SECOND_HAND').length }
         ].map(tab => (
           <button
@@ -514,17 +464,35 @@ export default function MerchantDashboard({ onOpenSellModal }) {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '22px' }}>
-              {products.map(p => (
-                <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <ProductCard product={p} />
-                  <button 
-                    onClick={() => handleDeleteProduct(p.id)}
-                    style={{ padding: '8px 12px', background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s ease' }}
-                  >
-                    🗑️ Retirer de la vitrine
-                  </button>
-                </div>
-              ))}
+              {products.map(p => {
+                const isSold = p.etat === 'Vendu';
+                return (
+                  <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <ProductCard product={p} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      {isSold ? (
+                        <div style={{ padding: '8px 10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          ✓ Vendu {p.sold_at ? `(${new Date(p.sold_at).toLocaleDateString('fr-FR')})` : ''}
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => handleMarkAsSold(p.id)}
+                          style={{ padding: '8px 10px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#fff', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
+                          title="Marquer l'article comme vendu (conservé 12h en catalogue puis masqué)"
+                        >
+                          🏷️ Marquer Vendu
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleDeleteProduct(p.id)}
+                        style={{ padding: '8px 10px', background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
+                      >
+                        🗑️ Retirer
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -587,55 +555,6 @@ export default function MerchantDashboard({ onOpenSellModal }) {
       {/* TAB 3: ADD PRODUCT */}
       {activeTab === 'add-product' && (
         <div style={{ maxWidth: '820px', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '32px', boxShadow: 'var(--shadow-card)' }}>
-          {/* Quota Check Banner */}
-          {metrics.used_slots >= metrics.max_slots ? (
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(212,175,55,0.15) 100%)',
-              border: '1px solid #ef4444',
-              borderRadius: 'var(--radius-md)',
-              padding: '24px',
-              textAlign: 'center',
-              marginBottom: '24px'
-            }}>
-              <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '8px' }}>⚠️</span>
-              <h3 style={{ fontSize: '1.3rem', color: '#dc2626', marginBottom: '8px' }}>
-                Quota de dépôt atteint ({metrics.used_slots}/{metrics.max_slots} bijoux)
-              </h3>
-              <p style={{ color: 'var(--text-gray)', fontSize: '0.92rem', maxWidth: '560px', margin: '0 auto 18px' }}>
-                Votre forfait actuel <strong>{currentPlan.name}</strong> a atteint sa limite maximale. Mettez à niveau votre abonnement pour continuer à déposer de nouveaux bijoux et réduire vos commissions.
-              </p>
-              <button 
-                onClick={() => setActiveTab('subscription')} 
-                className="btn-jewelia-primary"
-                style={{ padding: '12px 28px' }}
-              >
-                🚀 Mettre à niveau mon abonnement
-              </button>
-            </div>
-          ) : (
-            <div style={{
-              background: 'rgba(179, 135, 40, 0.08)',
-              border: '1px solid var(--border-gold)',
-              borderRadius: 'var(--radius-md)',
-              padding: '12px 18px',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', color: 'var(--text-white)' }}>
-                <span>✨</span>
-                <span>Forfait <strong>{currentPlan.name}</strong> : il vous reste <strong style={{ color: 'var(--primary-gold)' }}>{metrics.remaining_slots} dépôts</strong> disponibles.</span>
-              </div>
-              <button 
-                onClick={() => setActiveTab('subscription')}
-                style={{ background: 'none', border: 'none', color: 'var(--primary-gold)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Changer de forfait →
-              </button>
-            </div>
-          )}
-
           <h3 style={{ fontSize: '1.35rem', color: 'var(--primary-gold)', marginBottom: '20px', fontFamily: 'var(--font-serif)' }}>
             Ajouter un Nouveau Bijou ou Lancer une Enchère
           </h3>
@@ -721,7 +640,7 @@ export default function MerchantDashboard({ onOpenSellModal }) {
             {newProduct.type_vente === 'AUCTION' ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                 <div>
-                  <label className="filter-label">Poids (g) *</label>
+                  <label className="filter-label">Grammage (g) *</label>
                   <input 
                     type="number"
                     step="0.1"
@@ -776,7 +695,7 @@ export default function MerchantDashboard({ onOpenSellModal }) {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                 <div>
-                  <label className="filter-label">Poids (g) *</label>
+                  <label className="filter-label">Grammage (g) *</label>
                   <input 
                     type="number"
                     step="0.1"
@@ -816,6 +735,112 @@ export default function MerchantDashboard({ onOpenSellModal }) {
               </div>
             )}
 
+            {/* DÉTAIL DU GRAMMAGE POUR LES PARURES */}
+            {newProduct.category_id === 'cat_sets' && (
+              <div style={{ background: 'rgba(212, 175, 55, 0.05)', border: '1px dashed var(--border-gold)', borderRadius: 'var(--radius-sm)', padding: '16px' }}>
+                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--primary-gold)', marginBottom: '4px' }}>
+                  💎 Grammage par composant de la parure (Optionnel)
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginBottom: '12px' }}>
+                  Enregistrez le poids individuel des éléments pour une transparence totale envers les acheteurs.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Collier (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 14.5"
+                      value={newProduct.composants_poids?.collier || ''}
+                      onChange={e => setNewProduct({
+                        ...newProduct,
+                        composants_poids: { ...newProduct.composants_poids, collier: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Bracelet (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 8.2"
+                      value={newProduct.composants_poids?.bracelet || ''}
+                      onChange={e => setNewProduct({
+                        ...newProduct,
+                        composants_poids: { ...newProduct.composants_poids, bracelet: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Bague (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 4.1"
+                      value={newProduct.composants_poids?.bague || ''}
+                      onChange={e => setNewProduct({
+                        ...newProduct,
+                        composants_poids: { ...newProduct.composants_poids, bague: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Boucles (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 5.0"
+                      value={newProduct.composants_poids?.boucles || ''}
+                      onChange={e => setNewProduct({
+                        ...newProduct,
+                        composants_poids: { ...newProduct.composants_poids, boucles: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* REGROUPEMENT VILLE & LOCALISATION */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+              <div>
+                <label className="filter-label">📍 Ville de l'Atelier / Boutique *</label>
+                <select 
+                  value={newProduct.city} 
+                  onChange={e => setNewProduct({ ...newProduct, city: e.target.value })}
+                  className="filter-select-control"
+                >
+                  <option value="Casablanca">Casablanca (الدار البيضاء)</option>
+                  <option value="Rabat">Rabat (الرباط)</option>
+                  <option value="Marrakech">Marrakech (مراكش)</option>
+                  <option value="Fès">Fès (فاس)</option>
+                  <option value="Tanger">Tanger (طنجة)</option>
+                  <option value="Agadir">Agadir (أكادير)</option>
+                  <option value="Meknès">Meknès (مكناس)</option>
+                  <option value="Oujda">Oujda (وجدة)</option>
+                  <option value="Tétouan">Tétouan (تطوان)</option>
+                  <option value="Kenitra">Kénitra (القنيطرة)</option>
+                  <option value="Essaouira">Essaouira (الصويرة)</option>
+                  <option value="Autre">Autre Ville (مدينة أخرى)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="filter-label">🏢 Quartier / Emplacement</label>
+                <input 
+                  type="text"
+                  placeholder="Ex: Kissariat El Korra, Maarif"
+                  value={newProduct.adresse}
+                  onChange={e => setNewProduct({ ...newProduct, adresse: e.target.value })}
+                  className="filter-select-control"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="filter-label">URL de la photo principale</label>
               <input 
@@ -829,9 +854,9 @@ export default function MerchantDashboard({ onOpenSellModal }) {
 
             <button 
               type="submit" 
-              disabled={isSubmitting || metrics.used_slots >= metrics.max_slots} 
+              disabled={isSubmitting} 
               className="btn-jewelia-primary" 
-              style={{ marginTop: '10px', opacity: (metrics.used_slots >= metrics.max_slots) ? 0.6 : 1 }}
+              style={{ marginTop: '10px' }}
             >
               {isSubmitting ? 'Publication en cours...' : '✨ Déposer & Publier le bijou'}
             </button>
@@ -839,337 +864,87 @@ export default function MerchantDashboard({ onOpenSellModal }) {
         </div>
       )}
 
-      {/* TAB 4: SUBSCRIPTIONS & PLANS MANAGEMENT */}
-      {activeTab === 'subscription' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
-          {/* Active Plan Overview Card */}
-          <div style={{
-            background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-elevated) 100%)',
-            border: '2px solid var(--border-gold)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '32px',
-            boxShadow: 'var(--shadow-card-hover)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px', marginBottom: '24px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '1.8rem' }}>👑</span>
-                  <h3 style={{ fontSize: '1.6rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)' }}>
-                    {subscriptionData?.subscription?.plan_name || 'Pass Essentiel'}
-                  </h3>
-                  <span style={{
-                    padding: '3px 10px',
-                    borderRadius: '12px',
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    color: '#059669',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    border: '1px solid rgba(16, 185, 129, 0.3)'
-                  }}>
-                    ● ACTIF
-                  </span>
-                </div>
-                <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-                  Cycle : <strong style={{ color: 'var(--text-white)' }}>{subscriptionData?.subscription?.billing_cycle === 'annual' ? 'Facturation Annuelle' : 'Facturation Mensuelle'}</strong> • Renouvellement : <strong style={{ color: 'var(--text-white)' }}>{subscriptionData?.subscription?.end_date ? new Date(subscriptionData.subscription.end_date).toLocaleDateString('fr-FR') : 'Automatique'}</strong>
-                </p>
+      {/* TAB 4: HISTORIQUE DES VENTES & TRACABILITE */}
+      {activeTab === 'sales-history' && (
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '28px', boxShadow: 'var(--shadow-card)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '22px' }}>
+            <div>
+              <div className="hero-pill-badge" style={{ background: 'rgba(212, 175, 55, 0.15)', borderColor: 'var(--primary-gold)', color: 'var(--primary-gold)', marginBottom: '8px' }}>
+                📜 REGISTRE COMMERCIAL DES VENTES
               </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', display: 'block', textTransform: 'uppercase' }}>Commission Vendeur</span>
-                  <strong style={{ fontSize: '1.4rem', color: 'var(--primary-gold)' }}>{metrics.commission_rate}%</strong>
-                </div>
-                {subscriptionData?.subscription?.auto_renew && (
-                  <button 
-                    onClick={handleCancelAutoRenew}
-                    style={{ padding: '8px 14px', background: 'none', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-gray)', fontSize: '0.78rem', cursor: 'pointer' }}
-                  >
-                    Désactiver auto-renouvellement
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Quota meter gauge */}
-            <div style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-white)' }}>
-                  Consommation de votre quota de dépôt
-                </span>
-                <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--primary-gold)' }}>
-                  {metrics.used_slots} / {metrics.max_slots > 1000 ? 'Illimité' : metrics.max_slots} bijoux ({metrics.usage_percentage}%)
-                </span>
-              </div>
-              <div style={{ width: '100%', height: '10px', background: 'rgba(0,0,0,0.08)', borderRadius: '6px', overflow: 'hidden' }}>
-                <div style={{
-                  width: `${metrics.usage_percentage}%`,
-                  height: '100%',
-                  background: metrics.usage_percentage > 90 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #b38728, #10b981)',
-                  borderRadius: '6px',
-                  transition: 'width 0.5s ease'
-                }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-gray)' }}>
-                <span>{metrics.used_slots} bijoux en ligne</span>
-                <span>{metrics.remaining_slots > 1000 ? 'Emplacements illimités' : `${metrics.remaining_slots} dépôts restants`}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing Plans Selection Grid */}
-          <div>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <span className="hero-pill-badge" style={{ marginBottom: '10px' }}>
-                FORFAITS JOAILLIERS & COMMERÇANTS
-              </span>
-              <h2 style={{ fontSize: '2rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginBottom: '8px' }}>
-                Choisissez la Formule Adaptée à votre Maison
-              </h2>
-              <p style={{ color: 'var(--text-gray)', fontSize: '0.95rem', maxWidth: '600px', margin: '0 auto 20px' }}>
-                Déposez davantage de bijoux, réduisez vos commissions et bénéficiez de services de conciergerie VIP exclusifs.
+              <h3 style={{ fontSize: '1.4rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', margin: 0 }}>
+                Historique des Ventes & Transactions
+              </h3>
+              <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', margin: '4px 0 0' }}>
+                Traçabilité des articles vendus. Conformément aux règles YAZ, les pièces vendues restent enregistrées ici pour l'historique vendeur.
               </p>
-
-              {/* Monthly / Annual Toggle Switch */}
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-gold)',
-                borderRadius: 'var(--radius-full)',
-                padding: '4px',
-                gap: '4px',
-                boxShadow: 'var(--shadow-card)'
-              }}>
-                <button
-                  onClick={() => setBillingCycle('monthly')}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: 'var(--radius-full)',
-                    border: 'none',
-                    background: billingCycle === 'monthly' ? 'var(--primary-gold)' : 'transparent',
-                    color: billingCycle === 'monthly' ? '#fff' : 'var(--text-gray)',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  Facturation Mensuelle
-                </button>
-                <button
-                  onClick={() => setBillingCycle('annual')}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: 'var(--radius-full)',
-                    border: 'none',
-                    background: billingCycle === 'annual' ? 'var(--primary-gold)' : 'transparent',
-                    color: billingCycle === 'annual' ? '#fff' : 'var(--text-gray)',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <span>Facturation Annuelle</span>
-                  <span style={{ padding: '2px 6px', background: '#10b981', color: '#fff', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800 }}>-20%</span>
-                </button>
-              </div>
             </div>
-
-            {/* Plans Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '26px' }}>
-              {availablePlans.map(plan => {
-                const isCurrent = subscriptionData?.subscription?.plan_id === plan.id;
-                const price = billingCycle === 'annual' ? plan.price_annual : plan.price_monthly;
-                const perMonth = billingCycle === 'annual' ? Math.round(plan.price_annual / 12) : plan.price_monthly;
-
-                return (
-                  <div
-                    key={plan.id}
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: isCurrent ? '2px solid var(--primary-gold)' : (plan.popular ? '2px solid var(--primary-gold)' : '1px solid var(--border-gold)'),
-                      borderRadius: 'var(--radius-lg)',
-                      padding: '32px 28px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      position: 'relative',
-                      boxShadow: isCurrent || plan.popular ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
-                      transform: plan.popular ? 'scale(1.02)' : 'none'
-                    }}
-                  >
-                    {plan.popular && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '-12px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        background: 'linear-gradient(135deg, #d4af37, #996515)',
-                        color: '#fff',
-                        padding: '4px 16px',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: '0.72rem',
-                        fontWeight: 800,
-                        letterSpacing: '1px',
-                        boxShadow: '0 4px 12px rgba(212, 175, 55, 0.4)'
-                      }}>
-                        ⭐ PLUS POPULAIRE
-                      </div>
-                    )}
-
-                    {isCurrent && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '16px',
-                        right: '16px',
-                        background: 'rgba(16, 185, 129, 0.15)',
-                        color: '#059669',
-                        padding: '3px 10px',
-                        borderRadius: '12px',
-                        fontSize: '0.75rem',
-                        fontWeight: 800,
-                        border: '1px solid #10b981'
-                      }}>
-                        ✓ Votre Forfait
-                      </div>
-                    )}
-
-                    <div>
-                      <h3 style={{ fontSize: '1.4rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginBottom: '4px' }}>
-                        {plan.name}
-                      </h3>
-                      <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', minHeight: '38px', marginBottom: '20px' }}>
-                        {plan.tagline}
-                      </p>
-
-                      <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border-subtle)' }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                          <span style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)' }}>
-                            {perMonth.toLocaleString()}
-                          </span>
-                          <span style={{ fontSize: '1rem', color: 'var(--text-white)', fontWeight: 700 }}>DH</span>
-                          <span style={{ color: 'var(--text-gray)', fontSize: '0.82rem' }}>/ mois</span>
-                        </div>
-                        {billingCycle === 'annual' && plan.price_annual > 0 && (
-                          <span style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 600 }}>
-                            Facturé {plan.price_annual.toLocaleString()} DH / an (-20% inclus)
-                          </span>
-                        )}
-                        {plan.price_monthly === 0 && (
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
-                            Sans engagement ni frais récurrents
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Key specs highlight */}
-                      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                        <div style={{ flex: 1, background: 'rgba(179, 135, 40, 0.06)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block', textTransform: 'uppercase' }}>Dépôts Max</span>
-                          <strong style={{ fontSize: '0.95rem', color: 'var(--primary-gold)' }}>
-                            {plan.max_products > 1000 ? 'Illimités' : `${plan.max_products} bijoux`}
-                          </strong>
-                        </div>
-                        <div style={{ flex: 1, background: 'rgba(179, 135, 40, 0.06)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block', textTransform: 'uppercase' }}>Commission</span>
-                          <strong style={{ fontSize: '0.95rem', color: 'var(--primary-gold)' }}>
-                            {plan.commission_rate}%
-                          </strong>
-                        </div>
-                      </div>
-
-                      {/* Features checklist */}
-                      <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {plan.features.map((feat, idx) => (
-                          <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.86rem', color: 'var(--text-light-gray)' }}>
-                            <span style={{ color: '#059669', fontWeight: 'bold' }}>✓</span>
-                            <span>{feat}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <button
-                      disabled={isCurrent || isSubscribing}
-                      onClick={() => {
-                        setSelectedPlanForUpgrade(plan);
-                        setShowUpgradeModal(true);
-                      }}
-                      className={isCurrent ? 'btn-jewelia-secondary' : 'btn-jewelia-primary'}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        fontSize: '0.9rem',
-                        cursor: isCurrent ? 'default' : 'pointer',
-                        opacity: isCurrent ? 0.7 : 1
-                      }}
-                    >
-                      {isCurrent ? 'Forfait Actif' : `Choisir ${plan.name}`}
-                    </button>
-                  </div>
-                );
-              })}
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase' }}>Volume Vendu Total</span>
+              <div style={{ fontSize: '1.6rem', color: 'var(--primary-gold)', fontWeight: 800 }}>
+                {salesHistory.reduce((sum, s) => sum + (Number(s.prix_vente) || 0), 0).toLocaleString()} MAD
+              </div>
             </div>
           </div>
 
-          {/* Invoices & Billing History */}
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '28px', boxShadow: 'var(--shadow-card)' }}>
-            <h3 style={{ fontSize: '1.25rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginBottom: '16px' }}>
-              📜 Historique des Factures & Reçus d'Abonnement
-            </h3>
-
-            {(subscriptionData?.invoices || []).length === 0 ? (
-              <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem' }}>Aucune facture enregistrée.</p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-gold)', textAlign: 'left', color: 'var(--text-gray)' }}>
-                      <th style={{ padding: '10px 14px' }}>N° Facture</th>
-                      <th style={{ padding: '10px 14px' }}>Date</th>
-                      <th style={{ padding: '10px 14px' }}>Forfait</th>
-                      <th style={{ padding: '10px 14px' }}>Cycle</th>
-                      <th style={{ padding: '10px 14px' }}>Montant</th>
-                      <th style={{ padding: '10px 14px' }}>Statut</th>
-                      <th style={{ padding: '10px 14px' }}>Reçu</th>
+          {salesHistory.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '50px 20px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-gold)' }}>
+              <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '10px' }}>📦</span>
+              <h4 style={{ color: 'var(--text-white)', fontSize: '1.1rem', marginBottom: '6px' }}>Aucune vente enregistrée</h4>
+              <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem' }}>
+                Lorsqu'un article est vendu ou marqué comme vendu, ses informations complètes (référence, prix, date et heure) sont archivées ici.
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-gold)', textAlign: 'left', color: 'var(--text-gray)' }}>
+                    <th style={{ padding: '12px 14px' }}>Réf. Article</th>
+                    <th style={{ padding: '12px 14px' }}>Nom de l'article</th>
+                    <th style={{ padding: '12px 14px' }}>Vendeur</th>
+                    <th style={{ padding: '12px 14px' }}>Prix de Vente</th>
+                    <th style={{ padding: '12px 14px' }}>Date & Heure</th>
+                    <th style={{ padding: '12px 14px' }}>État</th>
+                    <th style={{ padding: '12px 14px' }}>N° Transaction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {salesHistory.map((s, idx) => (
+                    <tr key={s.id || idx} style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-white)' }}>
+                      <td style={{ padding: '12px 14px', fontFamily: 'monospace', color: 'var(--primary-gold)', fontWeight: 700 }}>
+                        {s.reference || s.article_id || 'YAZ-ART'}
+                      </td>
+                      <td style={{ padding: '12px 14px', fontWeight: 600 }}>
+                        {s.titre || s.article_nom}
+                      </td>
+                      <td style={{ padding: '12px 14px', color: 'var(--text-gray)' }}>
+                        {s.vendeur_nom || 'Atelier YAZ'}
+                      </td>
+                      <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--primary-gold)' }}>
+                        {(Number(s.prix_vente) || 0).toLocaleString()} MAD
+                      </td>
+                      <td style={{ padding: '12px 14px', color: 'var(--text-gray)', fontSize: '0.82rem' }}>
+                        {s.sold_at ? new Date(s.sold_at).toLocaleString('fr-FR') : 'Confirmé'}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <span style={{ padding: '3px 10px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontSize: '0.75rem', fontWeight: 800, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                          ✓ Vendu
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 14px', fontFamily: 'monospace', color: 'var(--text-gray)', fontSize: '0.78rem' }}>
+                        {s.transaction_id || `TRX-${s.id || idx}`}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {subscriptionData.invoices.map(inv => (
-                      <tr key={inv.id} style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-white)' }}>
-                        <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.invoice_number}</td>
-                        <td style={{ padding: '12px 14px', color: 'var(--text-gray)' }}>{new Date(inv.date).toLocaleDateString('fr-FR')}</td>
-                        <td style={{ padding: '12px 14px', color: 'var(--primary-gold)', fontWeight: 600 }}>{inv.plan_name}</td>
-                        <td style={{ padding: '12px 14px' }}>{inv.billing_cycle === 'annual' ? 'Annuel' : 'Mensuel'}</td>
-                        <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.amount?.toLocaleString()} DH</td>
-                        <td style={{ padding: '12px 14px' }}>
-                          <span style={{ padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#059669', fontSize: '0.75rem', fontWeight: 700 }}>
-                            {inv.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 14px' }}>
-                          <button
-                            onClick={() => setSelectedInvoice(inv)}
-                            style={{ padding: '4px 10px', background: 'none', border: '1px solid var(--border-gold)', borderRadius: '4px', color: 'var(--primary-gold)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
-                          >
-                            📄 Voir Reçu
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
+
+
 
       {/* TAB 5: AUTHENTIFICATION */}
       {activeTab === 'verifications' && (
@@ -1199,116 +974,6 @@ export default function MerchantDashboard({ onOpenSellModal }) {
                 </span>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* UPGRADE CONFIRMATION MODAL */}
-      {showUpgradeModal && selectedPlanForUpgrade && (
-        <div className="jewelia-modal-backdrop" onClick={() => setShowUpgradeModal(false)}>
-          <div className="jewelia-modal-content" style={{ maxWidth: '540px', padding: '32px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '6px' }}>👑</span>
-              <h3 style={{ fontSize: '1.5rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)' }}>
-                Confirmer votre Abonnement
-              </h3>
-              <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-                Vous allez souscrire au <strong>{selectedPlanForUpgrade.name}</strong>
-              </p>
-            </div>
-
-            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '18px', marginBottom: '22px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Formule :</span>
-                <strong style={{ color: 'var(--text-white)' }}>{selectedPlanForUpgrade.name}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Périodicité :</span>
-                <strong style={{ color: 'var(--text-white)' }}>{billingCycle === 'annual' ? 'Annuelle (-20%)' : 'Mensuelle'}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Limite de bijoux :</span>
-                <strong style={{ color: 'var(--primary-gold)' }}>{selectedPlanForUpgrade.max_products > 1000 ? 'Illimités' : `${selectedPlanForUpgrade.max_products} pièces`}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Taux de commission :</span>
-                <strong style={{ color: '#059669' }}>{selectedPlanForUpgrade.commission_rate}%</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)', fontSize: '1.1rem' }}>
-                <span>Montant à régler :</span>
-                <strong style={{ color: 'var(--primary-gold)' }}>
-                  {(billingCycle === 'annual' ? selectedPlanForUpgrade.price_annual : selectedPlanForUpgrade.price_monthly).toLocaleString()} DH
-                </strong>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                onClick={() => setShowUpgradeModal(false)}
-                className="btn-jewelia-secondary" 
-                style={{ flex: 1, padding: '10px' }}
-              >
-                Annuler
-              </button>
-              <button 
-                disabled={isSubscribing}
-                onClick={() => handleSubscribePlan(selectedPlanForUpgrade)}
-                className="btn-jewelia-primary" 
-                style={{ flex: 1, padding: '10px' }}
-              >
-                {isSubscribing ? 'Activation...' : 'Valider & Activer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* INVOICE DETAIL RECEIPT MODAL */}
-      {selectedInvoice && (
-        <div className="jewelia-modal-backdrop" onClick={() => setSelectedInvoice(null)}>
-          <div className="jewelia-modal-content" style={{ maxWidth: '520px', padding: '36px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ borderBottom: '2px solid var(--border-gold)', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ fontSize: '1.4rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)' }}>HRSDGDG JEWELIA</h3>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>Facture Pro Forma Marchand</span>
-              </div>
-              <span style={{ fontWeight: 800, color: 'var(--text-white)' }}>{selectedInvoice.invoice_number}</span>
-            </div>
-
-            <div style={{ fontSize: '0.88rem', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Boutique :</span>
-                <strong>{selectedInvoice.merchant_name}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Date d'émission :</span>
-                <span>{new Date(selectedInvoice.date).toLocaleDateString('fr-FR')}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Prestation :</span>
-                <strong style={{ color: 'var(--primary-gold)' }}>Abonnement {selectedInvoice.plan_name}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-gray)' }}>Cycle :</span>
-                <span>{selectedInvoice.billing_cycle === 'annual' ? 'Annuel' : 'Mensuel'}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-gray)' }}>État du paiement :</span>
-                <span style={{ color: '#059669', fontWeight: 800 }}>✓ {selectedInvoice.status}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)', fontSize: '1.15rem' }}>
-                <span>Total Net Payé :</span>
-                <strong style={{ color: 'var(--primary-gold)' }}>{selectedInvoice.amount?.toLocaleString()} DH</strong>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setSelectedInvoice(null)}
-              className="btn-jewelia-primary"
-              style={{ width: '100%', padding: '10px' }}
-            >
-              Fermer le Reçu
-            </button>
           </div>
         </div>
       )}

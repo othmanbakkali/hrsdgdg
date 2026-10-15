@@ -43,10 +43,98 @@ export default function ProductDetailModal({
 
   const sellerPhone = product?.vendeur_phone || product?.telephone || product?.phone || '';
   const sellerCleanPhone = formatWhatsAppPhone(sellerPhone);
+  const hasValidSellerPhone = Boolean(sellerCleanPhone && sellerCleanPhone.length >= 11);
+
+  const realGramme = product?.gramme !== undefined && product?.gramme !== null && product?.gramme !== '' 
+    ? product.gramme 
+    : (product?.poids !== undefined && product?.poids !== null && product?.poids !== '' ? product.poids : null);
+  const grammageDisplay = realGramme ? `${realGramme} g` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné');
+  const cityDisplay = product?.city || (lang === 'ar' ? 'الدار البيضاء' : 'Casablanca');
+
+  const productUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/?product=${product?.id}` 
+    : `https://hrsdgdg.ma/?product=${product?.id}`;
+
   const sellerWhatsAppMsg = lang === 'ar'
-    ? `السلام عليكم، أنا مهتم بهذه القطعة المعروضة على المنصة: ${displayTitle} (${product?.prix?.toLocaleString()} درهم)`
-    : `Bonjour, je suis intéressé par votre bijou : ${displayTitle} (${product?.prix?.toLocaleString()} DH)`;
-  const whatsappUrl = `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(sellerWhatsAppMsg)}`;
+    ? `السلام عليكم، أرغب في الحصول على معلومات حول هذه القطعة.
+
+القطعة : ${displayTitle}
+المرجع : ${product?.id}
+السعر : ${product?.prix ? product.prix.toLocaleString() : 'N/A'} MAD
+الوزن : ${grammageDisplay}
+المدينة : ${cityDisplay}
+رابط القطعة : ${productUrl}
+
+هل هذه القطعة لا تزال متوفرة ؟
+
+شكراً.`
+    : `Bonjour, je souhaite avoir des informations sur cet article.
+
+Article : ${displayTitle}
+Référence : ${product?.id}
+Prix : ${product?.prix ? product.prix.toLocaleString() : 'N/A'} MAD
+Grammage : ${grammageDisplay}
+Ville : ${cityDisplay}
+Lien du produit : ${productUrl}
+
+Cet article est-il toujours disponible ?
+
+Merci.`;
+
+  const whatsappUrl = hasValidSellerPhone 
+    ? `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(sellerWhatsAppMsg)}`
+    : '#';
+
+  const isSold = product?.etat === 'Vendu' || product?.disponibilite === 'vendu' || product?.disponibilite === 'archive_vendu';
+
+  // Real photo sharing handler (Req 10)
+  const handleShareProductPhoto = async () => {
+    const mainPhotoUrl = galleryImages[activeImageIndex] || galleryImages[0];
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        let sharedWithFile = false;
+        try {
+          const response = await fetch(mainPhotoUrl, { mode: 'cors' });
+          if (response.ok) {
+            const blob = await response.blob();
+            const file = new File([blob], `bijou_${product?.id || 'photo'}.jpg`, { type: blob.type || 'image/jpeg' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                title: displayTitle,
+                text: sellerWhatsAppMsg,
+                url: productUrl,
+                files: [file]
+              });
+              sharedWithFile = true;
+            }
+          }
+        } catch {
+          sharedWithFile = false;
+        }
+
+        if (!sharedWithFile) {
+          await navigator.share({
+            title: displayTitle,
+            text: `${sellerWhatsAppMsg}\n\nPhoto du bijou : ${mainPhotoUrl}`,
+            url: productUrl
+          });
+        }
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('Native share error, fallback to wa.me:', err.message);
+        } else {
+          return;
+        }
+      }
+    }
+
+    const photoShareMsg = `${sellerWhatsAppMsg}\n\nPhoto haute définition : ${mainPhotoUrl}`;
+    const fallbackUrl = hasValidSellerPhone 
+      ? `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(photoShareMsg)}`
+      : `https://wa.me/?text=${encodeURIComponent(photoShareMsg)}`;
+    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const formatMaterial = (mat, purity) => {
     if (lang === 'ar') {
@@ -642,6 +730,14 @@ export default function ProductDetailModal({
               </div>
             )}
 
+            {/* Sold Banner if already sold */}
+            {isSold && (
+              <div style={{ padding: '10px 14px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '10px', color: '#dc2626', fontWeight: 700, fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <span>🏷️</span>
+                <span>{lang === 'ar' ? 'هذه القطعة تم بيعها. تم تغيير حالتها إلى "مباع" وتظل مرئية لمدة 12 ساعة في الكتالوج.' : 'Cet article a été vendu. Il est marqué "Vendu" et restera consultable 12h avant masquage automatique.'}</span>
+              </div>
+            )}
+
             {/* Description */}
             <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', lineHeight: 1.5 }}>
               {displayDesc}
@@ -650,20 +746,42 @@ export default function ProductDetailModal({
             {/* Specs Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', fontSize: '0.84rem', border: '1px solid var(--border-subtle)' }}>
               <div><span style={{ color: 'var(--text-gray)' }}>{t('material')} :</span> <strong>{formatMaterial(product.matiere, product.purete)}</strong></div>
-              <div><span style={{ color: 'var(--text-gray)' }}>{t('weight')} :</span> <strong>{product.gramme || product.poids || 0} {t('grams')}</strong></div>
+              <div>
+                <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'الوزن (غرام)' : 'Grammage'} :</span>{' '}
+                <strong style={{ color: 'var(--primary-gold)' }}>
+                  {product.gramme || product.poids ? `${product.gramme || product.poids} g` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
+                </strong>
+              </div>
               <div><span style={{ color: 'var(--text-gray)' }}>{t('stone')} :</span> <strong>{formatStone(product.pierre)}</strong></div>
               <div><span style={{ color: 'var(--text-gray)' }}>{t('size')} :</span> <strong>{formatSize(product.taille)}</strong></div>
-              {isSecondHand && (
-                <>
-                  <div><span style={{ color: 'var(--text-gray)' }}>{t('year')} :</span> <strong>{formatYear(product.annee)}</strong></div>
-                  <div><span style={{ color: 'var(--text-gray)' }}>{t('condition')} :</span> <strong style={{ color: '#059669' }}>{formatCondition(product.etat)}</strong></div>
-                </>
-              )}
+              <div><span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'المدينة' : 'Ville'} :</span> <strong>{cityDisplay}</strong></div>
+              <div>
+                <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'الحالة' : 'État'} :</span>{' '}
+                <strong style={{ color: isSold ? '#dc2626' : '#059669' }}>
+                  {isSold ? (lang === 'ar' ? 'تم البيع' : 'Vendu') : formatCondition(product.etat)}
+                </strong>
+              </div>
             </div>
+
+            {/* Parure Component Weights breakdown if available */}
+            {product.composants_poids && typeof product.composants_poids === 'object' && Object.keys(product.composants_poids).length > 0 && (
+              <div style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(212, 175, 55, 0.06)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem' }}>
+                <span style={{ fontWeight: 700, color: 'var(--primary-gold)', display: 'block', marginBottom: '4px' }}>
+                  💎 {lang === 'ar' ? 'تفصيل أوزان عناصر الطقم / البارور :' : 'Détail du grammage par élément de la parure :'}
+                </span>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {Object.entries(product.composants_poids).map(([comp, weight]) => (
+                    <span key={comp} style={{ color: 'var(--text-dark)' }}>
+                      • <strong>{comp} :</strong> {weight} g
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
-              {!isAuction && (
+              {!isAuction && !isSold && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
                   <button 
                     onClick={() => {
@@ -714,60 +832,80 @@ export default function ProductDetailModal({
                 </div>
               )}
 
-              {/* Communication & Quick Tools Row */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <button 
-                  onClick={() => {
-                    if (onOpenChatWithSeller) onOpenChatWithSeller(product);
-                    onClose();
-                  }}
-                  className="btn-jewelia-secondary"
-                  style={{
-                    flex: 1,
-                    minWidth: '110px',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    fontSize: '0.85rem',
-                    fontWeight: '600',
-                    borderColor: 'var(--border-gold)',
-                    color: 'var(--text-dark)',
-                    minHeight: '42px',
-                    whiteSpace: 'nowrap'
-                  }}
-                  title={lang === 'ar' ? 'مراسلة الصائغ' : 'Discuter avec le vendeur'}
-                >
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--primary-gold)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                  </svg>
-                  <span>{lang === 'ar' ? 'مراسلة' : 'Discuter'}</span>
-                </button>
+              {/* If Sold, show clear non-clickable notification */}
+              {isSold && (
+                <div style={{ padding: '12px', textAlign: 'center', background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '12px', color: '#64748b', fontWeight: 700, fontSize: '0.92rem' }}>
+                  🔒 {lang === 'ar' ? 'هذه القطعة مباعة وغير قابلة لإعادة البيع' : 'Cet article est vendu et n\'est plus disponible à l\'achat'}
+                </div>
+              )}
 
+              {/* WhatsApp Button & Photo Sharing Row */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <a 
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={e => {
+                    if (isSold) {
+                      e.preventDefault();
+                      alert(lang === 'ar' ? 'هذه القطعة تم بيعها بالفعل.' : 'Cet article a déjà été vendu.');
+                    } else if (!hasValidSellerPhone) {
+                      e.preventDefault();
+                      alert(lang === 'ar' ? 'رقم هاتف البائع غير متوفر حالياً.' : 'Le numéro WhatsApp de ce vendeur n\'est pas encore renseigné.');
+                    }
+                  }}
                   className="btn-jewelia-secondary"
                   style={{
-                    flex: 1,
-                    minWidth: '115px',
+                    flex: 2,
+                    minWidth: '200px',
                     borderColor: '#25d366',
-                    color: '#15803d',
-                    background: 'rgba(37, 211, 102, 0.08)',
+                    color: '#ffffff',
+                    background: hasValidSellerPhone && !isSold ? 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)' : '#94a3b8',
+                    padding: '10px 16px',
+                    borderRadius: '10px',
+                    fontSize: '0.88rem',
+                    fontWeight: '700',
+                    textDecoration: 'none',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: hasValidSellerPhone && !isSold ? 'pointer' : 'not-allowed',
+                    boxShadow: hasValidSellerPhone && !isSold ? '0 3px 12px rgba(37, 211, 102, 0.3)' : 'none'
+                  }}
+                  title={hasValidSellerPhone ? (lang === 'ar' ? 'تواصل مع البائع عبر واتساب' : 'Contacter le vendeur sur WhatsApp') : 'Numéro indisponible'}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff" style={{ flexShrink: 0 }}>
+                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
+                  </svg>
+                  <span>{lang === 'ar' ? 'تواصل مع البائع عبر واتساب' : 'Contacter le vendeur sur WhatsApp'}</span>
+                </a>
+
+                {/* Photo Sharing Button (Req 10) */}
+                <button
+                  type="button"
+                  onClick={handleShareProductPhoto}
+                  className="btn-jewelia-secondary"
+                  style={{
                     padding: '10px 14px',
                     borderRadius: '10px',
                     fontSize: '0.85rem',
-                    fontWeight: '600',
-                    textDecoration: 'none',
-                    minHeight: '42px',
-                    whiteSpace: 'nowrap'
+                    fontWeight: '700',
+                    borderColor: 'var(--primary-gold)',
+                    background: 'rgba(212, 175, 55, 0.08)',
+                    color: 'var(--primary-gold)',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
                   }}
-                  title={lang === 'ar' ? 'تواصل عبر واتساب' : 'Contacter sur WhatsApp'}
+                  title={lang === 'ar' ? 'مشاركة صورة ورابط القطعة' : 'Partager la photo du bijou'}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" style={{ flexShrink: 0 }}>
-                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
-                  </svg>
-                  <span>WhatsApp</span>
-                </a>
+                  <span>📸</span>
+                  <span>{lang === 'ar' ? 'مشاركة الصورة' : 'Partager la photo'}</span>
+                </button>
 
                 <button 
                   onClick={() => toggleFavorite(product.id)}

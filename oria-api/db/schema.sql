@@ -176,14 +176,55 @@ CREATE TABLE IF NOT EXISTS sessions (
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+-- 12. Gold & Precious Metals Rates Table
+CREATE TABLE IF NOT EXISTS gold_rates (
+    id VARCHAR(64) PRIMARY KEY DEFAULT 'current_rates',
+    current_price_18k NUMERIC(10, 2) NOT NULL DEFAULT 1045.00,
+    current_price_silver NUMERIC(10, 2) NOT NULL DEFAULT 14.50,
+    carat VARCHAR(32) DEFAULT '18K',
+    unit VARCHAR(32) DEFAULT 'MAD/g',
+    silver_unit VARCHAR(32) DEFAULT 'MAD/g',
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(100) DEFAULT 'Admin',
+    history JSONB DEFAULT '[]'::jsonb
+);
+
+-- 13. Sales History Table (Administrative & tracking)
+CREATE TABLE IF NOT EXISTS sales_history (
+    id VARCHAR(64) PRIMARY KEY,
+    transaction_id VARCHAR(64),
+    bijou_id VARCHAR(64) REFERENCES bijoux(id) ON DELETE SET NULL,
+    titre VARCHAR(255) NOT NULL,
+    reference VARCHAR(64),
+    vendeur_id VARCHAR(64),
+    vendeur_nom VARCHAR(255),
+    prix_vente NUMERIC(12, 2) NOT NULL,
+    gramme NUMERIC(8, 2) DEFAULT 0,
+    date_vente TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    etat VARCHAR(64) DEFAULT 'Vendu',
+    buyer_nom VARCHAR(255),
+    buyer_phone VARCHAR(64)
+);
+
+-- Upgrade existing bijoux table with sold tracking & parure weight fields if not exist
+ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS sold_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(64);
+ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS is_publicly_hidden BOOLEAN DEFAULT false;
+ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS composants_poids JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS elements_grammage JSONB DEFAULT '[]'::jsonb;
+
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_bijoux_category ON bijoux(category_id);
 CREATE INDEX IF NOT EXISTS idx_bijoux_commercant ON bijoux(commercant_id);
 CREATE INDEX IF NOT EXISTS idx_bijoux_statut ON bijoux(statut);
 CREATE INDEX IF NOT EXISTS idx_bijoux_type_vente ON bijoux(type_vente);
 CREATE INDEX IF NOT EXISTS idx_bijoux_prix ON bijoux(prix);
+CREATE INDEX IF NOT EXISTS idx_bijoux_etat ON bijoux(etat);
+CREATE INDEX IF NOT EXISTS idx_bijoux_sold_at ON bijoux(sold_at);
 CREATE INDEX IF NOT EXISTS idx_encheres_statut ON encheres(statut);
 CREATE INDEX IF NOT EXISTS idx_commandes_client ON commandes(client_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sales_history_date ON sales_history(date_vente);
+CREATE INDEX IF NOT EXISTS idx_sales_history_vendeur ON sales_history(vendeur_id);
 

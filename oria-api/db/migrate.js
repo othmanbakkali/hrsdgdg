@@ -34,6 +34,11 @@ async function runMigration() {
       ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS description_fr TEXT;
       ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS description_ar TEXT;
       ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS description_en TEXT;
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS sold_at TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(64);
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS is_publicly_hidden BOOLEAN DEFAULT false;
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS composants_poids JSONB DEFAULT '{}'::jsonb;
+      ALTER TABLE bijoux ADD COLUMN IF NOT EXISTS elements_grammage JSONB DEFAULT '[]'::jsonb;
       ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS name_fr VARCHAR(100);
       ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS name_ar VARCHAR(100);
       ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS name_en VARCHAR(100);

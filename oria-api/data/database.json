@@ -324,7 +324,7 @@
       "why_this_item": [
         "Pièce signature très recherchée pour les cadeaux d'anniversaire",
         "Or 18 carats garanti avec poinçon de maître",
-        "Livraison sous 24h avec écrin de luxe et certificat"
+        "Livraison sécurisée avec écrin de luxe et certificat"
       ],
       "look_complementary_ids": [
         "b_1",
@@ -1742,8 +1742,10 @@
   ],
   "goldRates": {
     "currentPrice18k": 1035,
+    "currentPriceSilver": 14.50,
     "carat": "18K",
     "unit": "MAD/g",
+    "silverUnit": "MAD/g",
     "lastUpdated": "2026-10-04T12:50:45.393Z",
     "updatedBy": "PrixOr Railway (dllal)",
     "history": [

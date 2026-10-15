@@ -22,11 +22,13 @@ export default function LiveGoldTicker() {
       .then(data => {
         if (data && data.success && data.currentPrice18k) {
           const p18 = data.currentPrice18k;
+          const pSilver = data.currentPriceSilver || 14.50;
           setRates(prev => ({
             ...prev,
             gold18k: p18,
             gold21k: Math.round(p18 * (21 / 18)),
             gold24k: Math.round(p18 * (24 / 18)),
+            silver925: pSilver,
             variation: (data.history && data.history.length > 0 && data.history[data.history.length - 1].change) || '+0.7%'
           }));
         }

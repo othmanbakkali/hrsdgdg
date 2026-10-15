@@ -7,6 +7,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
   const isAr = lang === 'ar';
 
   const [price18k, setPrice18k] = useState(1045);
+  const [priceSilver, setPriceSilver] = useState(14.50);
   const [change, setChange] = useState('+0.7%');
 
   const [currentDateObj, setCurrentDateObj] = useState(() => new Date());
@@ -15,8 +16,9 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
     fetch(`${API_URL}/gold-rates`)
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.currentPrice18k) {
-          setPrice18k(data.currentPrice18k);
+        if (data.success) {
+          if (data.currentPrice18k) setPrice18k(data.currentPrice18k);
+          if (data.currentPriceSilver) setPriceSilver(data.currentPriceSilver);
           if (data.history && data.history.length > 0) {
             setChange(data.history[data.history.length - 1].change || '+0.7%');
           }
@@ -265,6 +267,22 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               {isAr ? 'درهم/غرام' : 'MAD/gramme'}
             </span>
           </div>
+          {/* Indicateur Argent 925 */}
+          <div style={{
+            marginTop: '4px',
+            fontSize: '0.8rem',
+            color: '#cbd5e1',
+            background: 'rgba(255, 255, 255, 0.06)',
+            padding: '2px 10px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <span>🪙 {isAr ? 'فضة 925 :' : 'Argent 925 :'}</span>
+            <strong style={{ color: '#e2e8f0' }}>{priceSilver} {isAr ? 'د.م/غ' : 'MAD/g'}</strong>
+          </div>
         </div>
 
         {/* Right: Trend badge & Interactive button */}
@@ -286,7 +304,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
             border: '1px solid rgba(16, 185, 129, 0.3)',
             color: '#10b981'
           }}>
-            ▲ {change} {isAr ? 'اليوم' : '24h'}
+            ▲ {change} {isAr ? 'اليوم' : 'Aujourd\'hui'}
           </span>
 
           <button
