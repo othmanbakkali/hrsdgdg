@@ -303,7 +303,7 @@ export default function ClientDashboard({ onSelectProduct, onOpenSellModal }) {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px' }}>
               {myListings.map(item => (
                 <ProductCard 
                   key={item.id} 
@@ -325,7 +325,7 @@ export default function ClientDashboard({ onSelectProduct, onOpenSellModal }) {
               <p style={{ color: 'var(--text-gray)' }}>Aucun bijou dans vos favoris pour le moment.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px' }}>
               {favorites.map(item => (
                 <ProductCard 
                   key={item.id} 

@@ -55,6 +55,8 @@ export default function Marketplace({
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mobileViewMode, setMobileViewMode] = useState('list'); // 'list' (1 article per line, Amazon/Temu mobile style) or 'grid' (2 columns)
+  const [showDesktopFilters, setShowDesktopFilters] = useState(true);
+  const [gridDensity, setGridDensity] = useState('compact'); // 'compact' (dense: more items) or 'standard'
 
   const fetchData = async () => {
     try {
@@ -300,7 +302,7 @@ export default function Marketplace({
           <div className="trust-icon">⚡</div>
           <div className="trust-text">
             <strong>{lang === 'ar' ? 'توصيل لجميع مدن المغرب' : 'Livraison au Maroc'}</strong>
-            <span>{lang === 'ar' ? 'شحن سري وسريع خلال 24/48 ساعة' : 'Expédition discrète 24/48h'}</span>
+            <span>{lang === 'ar' ? 'شحن سري ومضمون لجميع المدن' : 'Expédition discrète et soignée'}</span>
           </div>
         </div>
       </div>
@@ -331,8 +333,9 @@ export default function Marketplace({
       </div>
 
       {/* 3. MARKETPLACE CATALOGUE PRINCIPAL */}
-      <div className="marketplace-layout">
+      <div className={`marketplace-layout ${!showDesktopFilters ? 'filters-collapsed' : ''}`}>
         {/* Desktop Sidebar Filters */}
+        {showDesktopFilters && (
         <aside className="filters-panel hide-on-mobile">
           <div className="filters-panel-header">
             <div className="filters-header-title">
@@ -483,6 +486,7 @@ export default function Marketplace({
             </label>
           </div>
         </aside>
+        )}
 
         {/* Products Grid & Mobile Feed */}
         <main style={{ width: '100%' }}>
@@ -497,7 +501,74 @@ export default function Marketplace({
               {saleUniverse === 'AUCTION' && <span className="universe-tag-first" style={{ background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}> • {lang === 'ar' ? '🔨 مزادات مباشرة' : '🔨 Enchères en Direct'}</span>}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setShowDesktopFilters(prev => !prev)}
+                className="hide-on-mobile"
+                style={{
+                  background: showDesktopFilters ? 'rgba(212, 175, 55, 0.12)' : 'var(--bg-surface)',
+                  border: '1px solid var(--border-gold)',
+                  borderRadius: '8px',
+                  padding: '6px 12px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--primary-gold)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s ease'
+                }}
+                title={showDesktopFilters ? (lang === 'ar' ? 'إخفاء الفلاتر لتوسيع العرض' : 'Masquer les filtres pour agrandir la grille') : (lang === 'ar' ? 'إظهار الفلاتر' : 'Afficher les filtres')}
+              >
+                <span>🎛️</span>
+                <span>{showDesktopFilters ? (lang === 'ar' ? 'إخفاء الفلاتر' : 'Masquer filtres') : (lang === 'ar' ? 'إظهار الفلاتر' : 'Afficher filtres')}</span>
+              </button>
+
+              <div className="density-toggle-group hide-on-mobile" style={{ display: 'inline-flex', background: 'var(--bg-surface)', border: '1px solid var(--border-gold)', borderRadius: '8px', overflow: 'hidden' }}>
+                <button
+                  type="button"
+                  onClick={() => setGridDensity('compact')}
+                  style={{
+                    background: gridDensity === 'compact' ? 'var(--primary-gold)' : 'transparent',
+                    color: gridDensity === 'compact' ? '#ffffff' : 'var(--text-gray)',
+                    border: 'none',
+                    padding: '5px 10px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title={lang === 'ar' ? 'عرض مكثف (المزيد من القطع في كل صف)' : 'Grille compacte (plus d\'articles par ligne)'}
+                >
+                  <span>⊞</span>
+                  <span>{lang === 'ar' ? 'مكثف' : 'Compact'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGridDensity('standard')}
+                  style={{
+                    background: gridDensity === 'standard' ? 'var(--primary-gold)' : 'transparent',
+                    color: gridDensity === 'standard' ? '#ffffff' : 'var(--text-gray)',
+                    border: 'none',
+                    padding: '5px 10px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title={lang === 'ar' ? 'عرض كلاسيكي' : 'Grille standard'}
+                >
+                  <span>⊟</span>
+                  <span>{lang === 'ar' ? 'عادي' : 'Standard'}</span>
+                </button>
+              </div>
+
               <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }} className="hide-on-mobile">{lang === 'ar' ? 'ترتيب حسب :' : 'Trier par :'}</span>
               <select 
                 value={sortBy}
@@ -672,8 +743,8 @@ export default function Marketplace({
                 </div>
               )}
 
-              {/* DESKTOP GRID (Avito Morocco Multi-Photo White Card Layout) */}
-              <div className="products-grid hide-on-mobile">
+              {/* DESKTOP GRID (High-Density Multi-Article Luxury Grid) */}
+              <div className={`products-grid density-${gridDensity} hide-on-mobile`}>
                 {sortedProducts.map(product => (
                   <ProductCard 
                     key={product.id}

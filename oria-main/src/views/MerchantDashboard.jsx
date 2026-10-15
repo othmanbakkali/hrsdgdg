@@ -463,7 +463,7 @@ export default function MerchantDashboard({ onOpenSellModal }) {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '22px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px' }}>
               {products.map(p => {
                 const isSold = p.etat === 'Vendu';
                 return (

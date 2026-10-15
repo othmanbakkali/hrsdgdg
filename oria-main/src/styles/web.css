@@ -460,9 +460,9 @@
 
 /* 4. Desktop Marketplace Container & Categories */
 .marketplace-container {
-  max-width: 1440px;
+  max-width: 1640px;
   margin: 0 auto;
-  padding: 20px 30px 60px;
+  padding: 14px 20px 48px;
   position: relative;
 }
 
@@ -669,16 +669,21 @@
 /* 6. Marketplace Main Layout & Filter Sidebar */
 .marketplace-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 28px;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
   align-items: start;
+  transition: grid-template-columns 0.25s ease;
+}
+
+.marketplace-layout.filters-collapsed {
+  grid-template-columns: 1fr;
 }
 
 .filters-panel {
   background: var(--bg-surface);
   border: 1px solid var(--border-gold);
   border-radius: var(--radius-lg);
-  padding: 22px;
+  padding: 16px;
   position: sticky;
   top: 90px;
   max-height: calc(100vh - 110px);
@@ -857,9 +862,11 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-gold);
   border-radius: var(--radius-md);
-  padding: 14px 20px;
-  margin-bottom: 24px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
   box-shadow: var(--shadow-sm);
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .products-count-text {
@@ -899,8 +906,18 @@
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  gap: 14px;
+}
+
+.products-grid.density-compact {
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 12px;
+}
+
+.products-grid.density-standard {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
 }
 
 /* ==========================================================================

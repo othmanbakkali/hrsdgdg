@@ -1039,7 +1039,7 @@
    5. MOBILE PRODUCT FEED & 2-COLUMN GRID
    -------------------------------------------------------------------------- */
 .mobile-avito-products-container {
-  padding: 10px 10px 85px;
+  padding: 8px 8px 85px;
   width: 100%;
 }
 
@@ -1047,13 +1047,13 @@
 .mobile-avito-products-container:not(.mode-grid) {
   display: flex !important;
   flex-direction: column !important;
-  gap: 12px !important;
+  gap: 10px !important;
 }
 
 .mobile-avito-products-container.mode-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
-  gap: 10px !important;
+  gap: 8px !important;
 }
 
 /* Compact Card inside 2-Col Mobile Grid */
