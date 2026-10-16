@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
 
         if (res.ok) {
           const data = await res.json();
-          if (data.valid && data.user && data.user.role === 'admin') {
+          if (data.valid && data.user && (data.user.role === 'admin' || data.user.role === 'commercant')) {
             setAdminUser(data.user);
             setSessionToken(storedSession.sessionToken);
             setLoading(false);
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.warn('Admin session backend check network error:', err.message);
         // Fallback gracefully on temporary network issues if cached session is still valid
-        if (storedSession.user && storedSession.user.role === 'admin') {
+        if (storedSession.user && (storedSession.user.role === 'admin' || storedSession.user.role === 'commercant')) {
           setAdminUser(storedSession.user);
           setSessionToken(storedSession.sessionToken);
           setLoading(false);
@@ -111,8 +111,8 @@ export const AuthProvider = ({ children }) => {
       }
 
       const userData = await res.json();
-      if (userData.role !== 'admin') {
-        throw new Error("Accès refusé : Ce compte ne possède pas les privilèges d'administrateur.");
+      if (userData.role !== 'admin' && userData.role !== 'commercant') {
+        throw new Error("Accès refusé : Cet espace est réservé aux administrateurs et commerçants partenaires.");
       }
 
       const sessionObj = {

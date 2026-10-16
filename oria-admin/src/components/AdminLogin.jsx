@@ -52,6 +52,12 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
     setErrorMsg('');
   };
 
+  const handleFillDemoMerchant = () => {
+    setEmail('vintage@jewelia.com');
+    setPassword('merchant123');
+    setErrorMsg('');
+  };
+
   const isLight = themeMode === 'light';
 
   return (
@@ -158,7 +164,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
         {/* Logo & Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ display: 'inline-block', marginBottom: '16px' }}>
-            <OriaLogo size={44} subtitle="ADMINISTRATION" />
+            <OriaLogo size={44} subtitle="ADMINISTRATION & PRO" />
           </div>
           <h2 style={{
             fontSize: '1.45rem',
@@ -168,14 +174,14 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
             fontFamily: 'var(--font-serif)',
             letterSpacing: '0.4px'
           }}>
-            {t('adminLoginTitle')}
+            {lang === 'ar' ? 'بوابة الإدارة وفضاء التجار' : "Portail d'Administration & Espace Marchand"}
           </h2>
           <p style={{
             fontSize: '0.88rem',
             color: 'var(--text-gray)',
             margin: 0
           }}>
-            {t('adminLoginSubtitle')}
+            {lang === 'ar' ? 'دخول آمن ومشفر لإدارة المنصة والتجار المعتمدين' : 'Accès sécurisé pour l\'administration et les commerçants partenaires'}
           </p>
         </div>
 
@@ -331,18 +337,32 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
           <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', display: 'block', marginBottom: '12px' }}>
             {t('demoAccounts')}
           </span>
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="btn-outline-gold"
-            style={{
-              padding: '8px 18px',
-              borderRadius: '20px',
-              fontSize: '0.82rem'
-            }}
-          >
-            👑 {t('demoAdmin')}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleFillDemo}
+              className="btn-outline-gold"
+              style={{
+                padding: '7px 14px',
+                borderRadius: '20px',
+                fontSize: '0.8rem'
+              }}
+            >
+              👑 {t('demoAdmin')}
+            </button>
+            <button
+              type="button"
+              onClick={handleFillDemoMerchant}
+              className="btn-outline-gold"
+              style={{
+                padding: '7px 14px',
+                borderRadius: '20px',
+                fontSize: '0.8rem'
+              }}
+            >
+              🏪 {lang === 'ar' ? 'تاجر (Karim Bennani)' : 'Commerçant (Karim Bennani)'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

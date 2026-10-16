@@ -64,8 +64,15 @@ function AdminLayout() {
     localStorage.setItem('hrsdgdg-theme', themeMode);
   }, [themeMode]);
   
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'validation', 'commissions', 'categories', 'auctions'
+  const isMerchant = adminUser?.role === 'commercant';
+  const [activeTab, setActiveTab] = useState(() => (adminUser?.role === 'commercant' ? 'products' : 'dashboard'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (isMerchant && activeTab !== 'products' && activeTab !== 'sales_history' && activeTab !== 'gold_rates') {
+      setActiveTab('products');
+    }
+  }, [isMerchant, activeTab]);
   const [stats, setStats] = useState({ totalSales: 0, totalCommissions: 0, totalMerchants: 0, totalClients: 0, totalProducts: 0, merchantsBreakdown: [] });
   const [pendingProducts, setPendingProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -165,6 +172,9 @@ function AdminLayout() {
     };
   });
 
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+  const [permissionsDirty, setPermissionsDirty] = useState(false);
+
   const handleTogglePermission = (roleKey, permissionKey) => {
     const updated = { ...rolePermissions };
     const currentList = updated[roleKey] || [];
@@ -174,20 +184,61 @@ function AdminLayout() {
       updated[roleKey] = [...currentList, permissionKey];
     }
     setRolePermissions(updated);
+    setPermissionsDirty(true);
     localStorage.setItem('role_permissions', JSON.stringify(updated));
     triggerNotif(t('permUpdated'));
   };
 
-  const handleResetPermissions = () => {
+  const handleResetPermissions = async () => {
     if (!window.confirm(t('resetPermissionsConfirm'))) return;
     const defaults = {
       admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products'],
-      commercant: ['publish_listings', 'manage_orders', 'view_shop_analytics', 'chat_with_clients'],
+      commercant: ['publish_listings', 'edit_products', 'create_products', 'view_shop_analytics', 'manage_orders', 'chat_with_clients'],
       client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
     };
     setRolePermissions(defaults);
+    setPermissionsDirty(true);
     localStorage.setItem('role_permissions', JSON.stringify(defaults));
+    try {
+      await authFetch(`${API_URL}/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...commissionConfig,
+          role_permissions: defaults
+        })
+      });
+      setPermissionsDirty(false);
+    } catch (e) {
+      console.error(e);
+    }
     triggerNotif(t('resetPermissionsSuccess'));
+  };
+
+  const handleSavePermissions = async () => {
+    setIsSavingPermissions(true);
+    try {
+      const res = await authFetch(`${API_URL}/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...commissionConfig,
+          role_permissions: rolePermissions
+        })
+      });
+      if (res.ok) {
+        setPermissionsDirty(false);
+        localStorage.setItem('role_permissions', JSON.stringify(rolePermissions));
+        triggerNotif(t('savePermissionsSuccess') || 'Permissions sauvegardées avec succès sur le serveur !');
+      } else {
+        triggerNotif('Erreur lors de la sauvegarde des permissions.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotif('Erreur de connexion au serveur.');
+    } finally {
+      setIsSavingPermissions(false);
+    }
   };
 
   const handleQuickRoleChange = async (userId, newRole) => {
@@ -381,7 +432,7 @@ function AdminLayout() {
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
     setProductLangTab('fr');
-    const defaultMerchant = adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin';
+    const defaultMerchant = isMerchant ? adminUser?.id : (adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin');
     const defaultCategory = categories[0]?.id || '';
     setProductForm({
       titre: '',
@@ -399,6 +450,7 @@ function AdminLayout() {
       stock: 1,
       category_id: defaultCategory,
       commercant_id: defaultMerchant,
+      vendeur_nom: isMerchant ? (adminUser?.shopName || adminUser?.nom) : '',
       statut: 'Validated',
       etat: 'Neuf',
       type_vente: 'direct',
@@ -678,13 +730,14 @@ function AdminLayout() {
     const method = editingProduct ? 'PUT' : 'POST';
 
     // Prepare body with fallback synchronization
-    const defaultMerchant = adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin';
+    const defaultMerchant = isMerchant ? adminUser?.id : (adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin');
     const bodyData = { 
       ...productForm,
-      purete: '18k',
+      purete: productForm.purete || '18k',
       stock: 1,
       statut: productForm.statut || (editingProduct ? editingProduct.statut : 'Validated'),
-      commercant_id: productForm.commercant_id || defaultMerchant,
+      commercant_id: isMerchant ? adminUser.id : (productForm.commercant_id || defaultMerchant),
+      vendeur_nom: isMerchant ? (adminUser?.shopName || adminUser?.nom) : (productForm.vendeur_nom || ''),
       etat: productForm.etat || 'Neuf',
       titre: productForm.titre_fr || productForm.titre || productForm.titre_en || productForm.titre_ar || '',
       titre_fr: productForm.titre_fr || productForm.titre || '',
@@ -772,6 +825,7 @@ function AdminLayout() {
 
   const fetchData = async () => {
     try {
+      const isMerchantUser = adminUser?.role === 'commercant';
       const [
         statsRes,
         pendingRes,
@@ -784,75 +838,80 @@ function AdminLayout() {
         goldRes,
         salesRes
       ] = await Promise.allSettled([
-        authFetch(`${API_URL}/stats/admin`),
-        authFetch(`${API_URL}/bijoux?status=Pending`),
+        isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/stats/admin`),
+        isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/bijoux?status=Pending`),
         authFetch(`${API_URL}/categories`),
         authFetch(`${API_URL}/config`),
-        authFetch(`${API_URL}/users`),
-        authFetch(`${API_URL}/encheres`),
+        isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/users`),
+        isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/encheres`),
         authFetch(`${API_URL}/bijoux?includeSold=true`),
-        authFetch(`${API_URL}/subscriptions/all`),
+        isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/subscriptions/all`),
         authFetch(`${API_URL}/gold-rates`),
-        authFetch(`${API_URL}/sales-history`)
+        authFetch(isMerchantUser && adminUser?.id ? `${API_URL}/sales-history?merchant_id=${adminUser.id}` : `${API_URL}/sales-history`)
       ]);
 
-      if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
+      if (statsRes.status === 'fulfilled' && statsRes.value && statsRes.value.ok) {
         try {
           const statsData = await statsRes.value.json();
           setStats(statsData);
         } catch (e) { console.error('Stats parse error', e); }
       }
 
-      if (pendingRes.status === 'fulfilled' && pendingRes.value.ok) {
+      if (pendingRes.status === 'fulfilled' && pendingRes.value && pendingRes.value.ok) {
         try {
           const pendingData = await pendingRes.value.json();
           setPendingProducts(Array.isArray(pendingData) ? pendingData : []);
         } catch (e) { console.error('Pending parse error', e); }
       }
 
-      if (catRes.status === 'fulfilled' && catRes.value.ok) {
+      if (catRes.status === 'fulfilled' && catRes.value && catRes.value.ok) {
         try {
           const catData = await catRes.value.json();
           setCategories(Array.isArray(catData) ? catData : []);
         } catch (e) { console.error('Categories parse error', e); }
       }
 
-      if (configRes.status === 'fulfilled' && configRes.value.ok) {
+      if (configRes.status === 'fulfilled' && configRes.value && configRes.value.ok) {
         try {
           const configData = await configRes.value.json();
           setCommissionConfig(configData);
+          if (configData.role_permissions && typeof configData.role_permissions === 'object') {
+            setRolePermissions(configData.role_permissions);
+            localStorage.setItem('role_permissions', JSON.stringify(configData.role_permissions));
+          }
         } catch (e) { console.error('Config parse error', e); }
       }
 
-      if (usersRes.status === 'fulfilled' && usersRes.value.ok) {
+      if (usersRes.status === 'fulfilled' && usersRes.value && usersRes.value.ok) {
         try {
           const usersData = await usersRes.value.json();
           setUsers(Array.isArray(usersData) ? usersData : []);
         } catch (e) { console.error('Users parse error', e); }
       }
 
-      if (auctionsRes.status === 'fulfilled' && auctionsRes.value.ok) {
+      if (auctionsRes.status === 'fulfilled' && auctionsRes.value && auctionsRes.value.ok) {
         try {
           const auctionsData = await auctionsRes.value.json();
           setAuctions(Array.isArray(auctionsData) ? auctionsData : []);
         } catch (e) { console.error('Auctions parse error', e); }
       }
 
-      if (allBijouxRes.status === 'fulfilled' && allBijouxRes.value.ok) {
+      if (allBijouxRes.status === 'fulfilled' && allBijouxRes.value && allBijouxRes.value.ok) {
         try {
           const allBijouxData = await allBijouxRes.value.json();
-          setProducts(Array.isArray(allBijouxData) ? allBijouxData : []);
+          const list = Array.isArray(allBijouxData) ? allBijouxData : [];
+          setProducts(isMerchantUser && adminUser?.id ? list.filter(b => b.commercant_id === adminUser.id) : list);
         } catch (e) { console.error('Products parse error', e); }
       }
 
-      if (subscriptionsRes.status === 'fulfilled' && subscriptionsRes.value.ok) {
+      if (subscriptionsRes.status === 'fulfilled' && subscriptionsRes.value && subscriptionsRes.value.ok) {
         try {
           const subData = await subscriptionsRes.value.json();
           setSubscriptionsData(subData);
         } catch (e) { console.error('Subscriptions parse error', e); }
       }
 
-      if (goldRes.status === 'fulfilled' && goldRes.value.ok) {
+      if (goldRes.status === 'fulfilled' && goldRes.value && goldRes.value.ok) {
         try {
           const goldData = await goldRes.value.json();
           if (goldData.success) {
@@ -867,10 +926,14 @@ function AdminLayout() {
         } catch (e) { console.error('Gold rates parse error', e); }
       }
 
-      if (salesRes && salesRes.status === 'fulfilled' && salesRes.value.ok) {
+      if (salesRes && salesRes.status === 'fulfilled' && salesRes.value && salesRes.value.ok) {
         try {
           const salesData = await salesRes.value.json();
-          setSalesHistory(Array.isArray(salesData) ? salesData : (salesData.sales || []));
+          let list = Array.isArray(salesData) ? salesData : (salesData.sales || []);
+          if (isMerchantUser && adminUser?.id) {
+            list = list.filter(s => s.vendeur_id === adminUser.id);
+          }
+          setSalesHistory(list);
         } catch (e) { console.error('Sales parse error', e); }
       }
 
@@ -1350,10 +1413,10 @@ function AdminLayout() {
         </button>
 
         <div className="logo-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '15px 10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '20px' }}>
-          <OriaLogo size={36} subtitle="ADMINISTRATION" />
+          <OriaLogo size={36} subtitle={isMerchant ? (lang === 'ar' ? 'فضاء التاجر والصائغ' : 'ESPACE MARCHAND') : 'ADMINISTRATION'} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'rgba(212, 175, 55, 0.08)', padding: '3px 10px', borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
-              Super-Admin • {adminUser?.nom || 'Admin'}
+            <div style={{ fontSize: '0.78rem', color: isMerchant ? 'var(--admin-gold)' : 'var(--text-gray)', background: isMerchant ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.08)', padding: '3px 10px', borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: isMerchant ? 700 : 500 }}>
+              {isMerchant ? `🏪 ${adminUser?.shopName || adminUser?.nom || 'Commerçant'}` : `Super-Admin • ${adminUser?.nom || 'Admin'}`}
             </div>
             <button
               type="button"
@@ -1380,31 +1443,42 @@ function AdminLayout() {
 
         <nav>
           <ul className="nav-list">
-            <li>
-              <span className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
-                📊 {t('dashboard')}
-              </span>
-            </li>
-            <li>
-              <span className={`nav-link ${activeTab === 'validation' ? 'active' : ''}`} onClick={() => { setActiveTab('validation'); setMobileMenuOpen(false); }}>
-                ⚖️ {t('validationQueue')} ({pendingProducts.length})
-              </span>
-            </li>
+            {!isMerchant && (
+              <>
+                <li>
+                  <span className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
+                    📊 {t('dashboard')}
+                  </span>
+                </li>
+                <li>
+                  <span className={`nav-link ${activeTab === 'validation' ? 'active' : ''}`} onClick={() => { setActiveTab('validation'); setMobileMenuOpen(false); }}>
+                    ⚖️ {t('validationQueue')} ({pendingProducts.length})
+                  </span>
+                </li>
+              </>
+            )}
+
             <li>
               <span className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
-                💎 {t('products')} ({products.length})
+                💎 {isMerchant ? (lang === 'ar' ? 'مجوهراتي ومقالاتي' : 'Mes Bijoux & Articles') : t('products')} ({products.length})
               </span>
             </li>
-            <li>
-              <span className={`nav-link ${activeTab === 'commissions' ? 'active' : ''}`} onClick={() => { setActiveTab('commissions'); setMobileMenuOpen(false); }}>
-                💰 {t('commissions')}
-              </span>
-            </li>
-            <li>
-              <span className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setMobileMenuOpen(false); }}>
-                🗂️ {t('categories')}
-              </span>
-            </li>
+
+            {!isMerchant && (
+              <>
+                <li>
+                  <span className={`nav-link ${activeTab === 'commissions' ? 'active' : ''}`} onClick={() => { setActiveTab('commissions'); setMobileMenuOpen(false); }}>
+                    💰 {t('commissions')}
+                  </span>
+                </li>
+                <li>
+                  <span className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setMobileMenuOpen(false); }}>
+                    🗂️ {t('categories')}
+                  </span>
+                </li>
+              </>
+            )}
+
             <li>
               <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => { setActiveTab('gold_rates'); setMobileMenuOpen(false); }}>
                 🥇 {t('goldRates')}
@@ -1412,29 +1486,35 @@ function AdminLayout() {
             </li>
             <li>
               <span className={`nav-link ${activeTab === 'sales_history' ? 'active' : ''}`} onClick={() => { setActiveTab('sales_history'); setMobileMenuOpen(false); }}>
-                📜 {lang === 'ar' ? 'سجل المبيعات' : 'Historique des Ventes'} ({salesHistory.length})
+                📜 {isMerchant ? (lang === 'ar' ? 'سجل مبيعاتي' : 'Mes Ventes & Commandes') : (lang === 'ar' ? 'سجل المبيعات' : 'Historique des Ventes')} ({salesHistory.length})
               </span>
             </li>
-            <li>
-              <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
-                👥 {t('users')}
-              </span>
-            </li>
-            <li>
-              <span className={`nav-link ${activeTab === 'auctions' ? 'active' : ''}`} onClick={() => { setActiveTab('auctions'); setMobileMenuOpen(false); }}>
-                🔨 {t('auctions')} ({auctions.length})
-              </span>
-            </li>
-            <li>
-              <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => { setActiveTab('subscriptions'); setMobileMenuOpen(false); }}>
-                🌟 {t('subscriptions')} ({subscriptionsData?.merchants?.length || 0})
-              </span>
-            </li>
-            <li>
-              <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setMobileMenuOpen(false); }}>
-                🛡️ {t('roles')}
-              </span>
-            </li>
+
+            {!isMerchant && (
+              <>
+                <li>
+                  <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
+                    👥 {t('users')}
+                  </span>
+                </li>
+                <li>
+                  <span className={`nav-link ${activeTab === 'auctions' ? 'active' : ''}`} onClick={() => { setActiveTab('auctions'); setMobileMenuOpen(false); }}>
+                    🔨 {t('auctions')} ({auctions.length})
+                  </span>
+                </li>
+                <li>
+                  <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => { setActiveTab('subscriptions'); setMobileMenuOpen(false); }}>
+                    🌟 {t('subscriptions')} ({subscriptionsData?.merchants?.length || 0})
+                  </span>
+                </li>
+                <li>
+                  <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setMobileMenuOpen(false); }}>
+                    🛡️ {t('roles')}
+                  </span>
+                </li>
+              </>
+            )}
+
             <li style={{ marginTop: '25px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '12px' }}>
               <span className="nav-link" onClick={logout} style={{ color: '#ff6b6b', cursor: 'pointer' }}>
                 🚪 {t('logout')}
@@ -1449,9 +1529,15 @@ function AdminLayout() {
         {/* Header */}
         <header className="admin-header">
           <h1>{
-            activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل المبيعات والصفقات المكتملة' : '📜 Historique Général des Ventes') :
-            activeTab === 'subscriptions' ? t('subscriptionsTitle') : 
-            t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))
+            isMerchant ? (
+              activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل مبيعاتي والطلبات' : '📜 Mes Ventes & Commandes') :
+              activeTab === 'gold_rates' ? (lang === 'ar' ? '🥇 أسعار الذهب والفضة الحية' : "🥇 Cours de l'Or & Argent") :
+              (lang === 'ar' ? '💎 إدارة ونشر مجوهراتي ومقالاتي' : '💎 Gestion & Publication de Mes Bijoux')
+            ) : (
+              activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل المبيعات والصفقات المكتملة' : '📜 Historique Général des Ventes') :
+              activeTab === 'subscriptions' ? t('subscriptionsTitle') : 
+              t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))
+            )
           }</h1>
           
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
@@ -1984,17 +2070,35 @@ function AdminLayout() {
                       <td style={{ fontWeight: 'bold' }}>{u.nom}</td>
                       <td>{u.email}</td>
                       <td>
-                        <span style={{ 
-                          backgroundColor: u.role === 'admin' ? 'rgba(231, 76, 60, 0.15)' : (u.role === 'commercant' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(52, 152, 219, 0.15)'), 
-                          color: u.role === 'admin' ? '#e74c3c' : (u.role === 'commercant' ? 'var(--admin-gold)' : '#3498db'), 
-                          padding: '2px 8px', 
-                          borderRadius: '3px', 
-                          fontSize: '0.75rem', 
-                          textTransform: 'uppercase',
-                          fontWeight: 'bold'
-                        }}>
-                          {u.role === 'admin' ? t('roleAdmin') : (u.role === 'commercant' ? t('roleMerchant') : t('roleClient'))}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '135px' }}>
+                          <select 
+                            className="form-input" 
+                            style={{ 
+                              margin: 0, 
+                              padding: '5px 8px', 
+                              fontSize: '0.78rem', 
+                              fontWeight: '700',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              backgroundColor: u.role === 'admin' ? 'rgba(239, 68, 68, 0.15)' : (u.role === 'commercant' ? 'rgba(212, 175, 55, 0.18)' : 'rgba(59, 130, 246, 0.15)'),
+                              color: u.role === 'admin' ? '#ef4444' : (u.role === 'commercant' ? 'var(--admin-gold)' : '#3b82f6'),
+                              border: `1px solid ${u.role === 'admin' ? 'rgba(239, 68, 68, 0.4)' : (u.role === 'commercant' ? 'var(--admin-gold)' : 'rgba(59, 130, 246, 0.4)')}`
+                            }}
+                            value={u.role || 'client'}
+                            onChange={(e) => handleQuickRoleChange(u.id, e.target.value)}
+                            title={lang === 'ar' ? 'تعديل وتغيير دور وصلاحيات المستخدم' : 'Modifier le rôle et privilèges'}
+                          >
+                            <option value="client" style={{ background: '#1e293b', color: '#fff' }}>
+                              👥 {t('roleClient')}
+                            </option>
+                            <option value="commercant" style={{ background: '#1e293b', color: '#fff' }}>
+                              🏪 {t('roleMerchant')}
+                            </option>
+                            <option value="admin" style={{ background: '#1e293b', color: '#fff' }}>
+                              🛡️ {t('roleAdmin')}
+                            </option>
+                          </select>
+                        </div>
                       </td>
                       <td>
                         {/* Account Status Badge & Quick Status Switch */}
@@ -2220,15 +2324,69 @@ function AdminLayout() {
                 <h2 style={{ fontFamily: 'Playfair Display', margin: 0, color: 'var(--text-white)' }}>{t('rolesConfigTitle')}</h2>
                 <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: 'var(--text-gray)' }}>{t('rolesConfigSubtitle')}</p>
               </div>
-              <button 
-                className="btn-outline-gold" 
-                style={{ padding: '9px 18px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }} 
-                onClick={handleResetPermissions}
-              >
-                <span>🔄</span>
-                <span>{t('resetPermissions')}</span>
-              </button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button 
+                  className="btn-outline-gold" 
+                  style={{ padding: '9px 18px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }} 
+                  onClick={handleResetPermissions}
+                >
+                  <span>🔄</span>
+                  <span>{t('resetPermissions')}</span>
+                </button>
+                <button 
+                  className="btn-gold" 
+                  style={{ 
+                    padding: '9px 24px', 
+                    fontSize: '0.88rem', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    cursor: 'pointer', 
+                    borderRadius: 'var(--radius-sm)', 
+                    fontWeight: 700, 
+                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)' 
+                  }} 
+                  onClick={handleSavePermissions}
+                  disabled={isSavingPermissions}
+                >
+                  <span>💾</span>
+                  <span>{isSavingPermissions ? (lang === 'ar' ? 'جارٍ الحفظ...' : 'Enregistrement...') : (t('savePermissions') || (lang === 'ar' ? 'حفظ الصلاحيات والتراخيص' : 'Sauvegarder les permissions'))}</span>
+                </button>
+              </div>
             </div>
+
+            {/* Alert banner if unsaved edits */}
+            {permissionsDirty && (
+              <div style={{
+                background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.08) 100%)',
+                border: '1px solid var(--admin-gold)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 20px',
+                marginBottom: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-white)' }}>
+                    {lang === 'ar' ? 'تنبيه: قمت بتعديل الصلاحيات ! اضغط على زر الحفظ لتطبيقها على المنصة.' : 'Des modifications de permissions ont été apportées. Cliquez sur "Sauvegarder" pour les appliquer au système.'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn-gold"
+                  style={{ padding: '7px 18px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+                  onClick={handleSavePermissions}
+                  disabled={isSavingPermissions}
+                >
+                  <span>💾</span>
+                  <span>{isSavingPermissions ? (lang === 'ar' ? 'جارٍ الحفظ...' : 'Enregistrement...') : (lang === 'ar' ? 'حفظ الصلاحيات الآن' : 'Sauvegarder maintenant')}</span>
+                </button>
+              </div>
+            )}
 
             {/* Roles Matrix Grid */}
             <div className="roles-grid">
@@ -2325,6 +2483,19 @@ function AdminLayout() {
                             </label>
                           );
                         })}
+                      </div>
+
+                      <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          className="btn-gold"
+                          style={{ padding: '7px 16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+                          onClick={handleSavePermissions}
+                          disabled={isSavingPermissions}
+                        >
+                          <span>💾</span>
+                          <span>{lang === 'ar' ? 'حفظ الصلاحيات' : 'Enregistrer'}</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -2846,12 +3017,50 @@ function AdminLayout() {
 
         {activeTab === 'products' && (
           <div>
+            {isMerchant && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(179, 135, 40, 0.06) 100%)',
+                border: '1px solid var(--border-gold)',
+                borderRadius: 'var(--radius-md)',
+                padding: '18px 24px',
+                marginBottom: '22px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '14px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--admin-gold)', fontFamily: 'Playfair Display' }}>
+                    👋 {lang === 'ar' ? `مرحباً بك، ${adminUser?.shopName || adminUser?.nom}` : `Bienvenue, ${adminUser?.shopName || adminUser?.nom}`}
+                  </h3>
+                  <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: 'var(--text-gray)' }}>
+                    {lang === 'ar' 
+                      ? 'هذا الفضاء مخصص لإيداع ونشر مجوهراتك في المنصة. يمكنك إضافة منتجات جديدة وتتبع حالتها ومبيعاتها مباشرة.' 
+                      : 'Cet espace vous permet de déposer et publier vos créations sur la plateforme, gérer votre catalogue et suivre vos ventes en temps réel.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-gold"
+                  style={{ padding: '10px 22px', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
+                  onClick={handleOpenAddProduct}
+                >
+                  <span>✨</span>
+                  <span>{lang === 'ar' ? 'إيداع مجوهرات جديدة' : 'Déposer un bijou'}</span>
+                </button>
+              </div>
+            )}
+
             <div className="admin-section-header products-header-wrap">
               <div className="products-title-actions">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>{t('productManagement')}</h2>
+                  <h2 style={{ fontFamily: 'Playfair Display', margin: 0 }}>
+                    {isMerchant ? (lang === 'ar' ? '💎 مجوهراتي ومقالاتي' : '💎 Mes Bijoux & Articles') : t('productManagement')}
+                  </h2>
                   <button type="button" className="btn-approve" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={handleOpenAddProduct}>
-                    ➕ {t('addProduct')}
+                    ➕ {isMerchant ? (lang === 'ar' ? 'إيداع مجوهرات جديدة' : 'Déposer un bijou') : t('addProduct')}
                   </button>
                 </div>
 
@@ -2930,7 +3139,8 @@ function AdminLayout() {
                     (p.id || '').toLowerCase().includes(q);
                   const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
                   const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
-                  return matchesSearch && matchesStatus && matchesCategory;
+                  const matchesMerchant = !isMerchant || p.commercant_id === adminUser?.id;
+                  return matchesSearch && matchesStatus && matchesCategory && matchesMerchant;
                 }).map(p => {
                   const shop = users.find(u => u.id === p.commercant_id)?.shopName || (lang === 'ar' ? 'تاجر غير محدد' : 'Commerçant Inconnu');
                   const category = categories.find(c => c.id === p.category_id);
@@ -3062,7 +3272,8 @@ function AdminLayout() {
                         (p.id || '').toLowerCase().includes(q);
                       const matchesStatus = productStatusFilter === 'All' || p.statut === productStatusFilter;
                       const matchesCategory = productCategoryFilter === 'All' || p.category_id === productCategoryFilter;
-                      return matchesSearch && matchesStatus && matchesCategory;
+                      const matchesMerchant = !isMerchant || p.commercant_id === adminUser?.id;
+                      return matchesSearch && matchesStatus && matchesCategory && matchesMerchant;
                     }).map(p => {
                       const shop = users.find(u => u.id === p.commercant_id)?.shopName || (lang === 'ar' ? 'تاجر غير محدد' : 'Commerçant Inconnu');
                       const category = categories.find(c => c.id === p.category_id);
@@ -4807,40 +5018,62 @@ function AdminLayout() {
 
       {/* Mobile Bottom Navigation Bar (iPhone & Android Native App Experience) */}
       <nav className="mobile-bottom-nav">
-        <div 
-          className={`mobile-bottom-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-        >
-          <span className="mobile-bottom-nav-icon">📊</span>
-          <span>{t('dashboard')}</span>
-        </div>
+        {!isMerchant ? (
+          <>
+            <div 
+              className={`mobile-bottom-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            >
+              <span className="mobile-bottom-nav-icon">📊</span>
+              <span>{t('dashboard')}</span>
+            </div>
 
-        <div 
-          className={`mobile-bottom-nav-item ${activeTab === 'validation' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('validation'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-        >
-          <span className="mobile-bottom-nav-icon">⚖️</span>
-          <span>{t('validationQueue')}</span>
-          {pendingProducts.length > 0 && (
-            <span className="mobile-bottom-nav-badge">{pendingProducts.length}</span>
-          )}
-        </div>
+            <div 
+              className={`mobile-bottom-nav-item ${activeTab === 'validation' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('validation'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            >
+              <span className="mobile-bottom-nav-icon">⚖️</span>
+              <span>{t('validationQueue')}</span>
+              {pendingProducts.length > 0 && (
+                <span className="mobile-bottom-nav-badge">{pendingProducts.length}</span>
+              )}
+            </div>
+          </>
+        ) : (
+          <div 
+            className={`mobile-bottom-nav-item ${activeTab === 'sales_history' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('sales_history'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          >
+            <span className="mobile-bottom-nav-icon">📜</span>
+            <span>{lang === 'ar' ? 'مبيعاتي' : 'Ventes'}</span>
+          </div>
+        )}
 
         <div 
           className={`mobile-bottom-nav-item ${activeTab === 'products' ? 'active' : ''}`}
           onClick={() => { setActiveTab('products'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
         >
           <span className="mobile-bottom-nav-icon">💎</span>
-          <span>{t('products')}</span>
+          <span>{isMerchant ? (lang === 'ar' ? 'مجوهراتي' : 'Articles') : t('products')}</span>
         </div>
 
-        <div 
-          className={`mobile-bottom-nav-item ${activeTab === 'commissions' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('commissions'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-        >
-          <span className="mobile-bottom-nav-icon">💰</span>
-          <span>{t('commissions')}</span>
-        </div>
+        {!isMerchant ? (
+          <div 
+            className={`mobile-bottom-nav-item ${activeTab === 'commissions' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('commissions'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          >
+            <span className="mobile-bottom-nav-icon">💰</span>
+            <span>{t('commissions')}</span>
+          </div>
+        ) : (
+          <div 
+            className={`mobile-bottom-nav-item ${activeTab === 'gold_rates' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('gold_rates'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          >
+            <span className="mobile-bottom-nav-icon">🥇</span>
+            <span>{t('goldRates')}</span>
+          </div>
+        )}
 
         <div 
           className={`mobile-bottom-nav-item ${mobileMenuOpen ? 'active' : ''}`}

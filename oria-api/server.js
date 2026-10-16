@@ -436,7 +436,7 @@ app.post('/api/auth/login', (req, res) => {
   const session = createSession(user, duration, db);
   writeDB(db);
 
-  if (user.role === 'admin') {
+  if (user.role === 'admin' || user.role === 'commercant') {
     const maxAgeSec = Math.floor(duration / 1000);
     res.setHeader('Set-Cookie', `oria_admin_session=${session.token}; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}`);
   }
@@ -2013,7 +2013,12 @@ app.get('/api/encheres/:id/bids', (req, res) => {
 
 // Configurations
 app.get('/api/config', async (req, res) => {
-  const defaultConfig = { commission_globale: 5, commission_categories: {}, commission_commercants: {} };
+  const defaultPermissions = {
+    admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products'],
+    commercant: ['publish_listings', 'edit_products', 'create_products', 'view_shop_analytics', 'manage_orders', 'chat_with_clients'],
+    client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
+  };
+  const defaultConfig = { commission_globale: 5, commission_categories: {}, commission_commercants: {}, role_permissions: defaultPermissions };
   try {
     if (isPostgresAvailable) {
       const pgRes = await query(`SELECT value FROM system_config WHERE key = 'platform_config'`);
@@ -2030,11 +2035,18 @@ app.get('/api/config', async (req, res) => {
 });
 
 app.put('/api/config', async (req, res) => {
+  const db = readDB();
+  const existingConfig = db.config || {};
   const newConfig = {
-    commission_globale: parseInt(req.body.commission_globale, 10) || 5,
-    commission_categories: req.body.commission_categories || {},
-    commission_commercants: req.body.commission_commercants || {}
+    ...existingConfig,
+    commission_globale: req.body.commission_globale !== undefined ? (parseInt(req.body.commission_globale, 10) || 5) : (existingConfig.commission_globale || 5),
+    commission_categories: req.body.commission_categories || existingConfig.commission_categories || {},
+    commission_commercants: req.body.commission_commercants || existingConfig.commission_commercants || {}
   };
+
+  if (req.body.role_permissions) {
+    newConfig.role_permissions = req.body.role_permissions;
+  }
 
   try {
     if (isPostgresAvailable) {
@@ -2049,11 +2061,7 @@ app.put('/api/config', async (req, res) => {
     console.error('Error writing config to PostgreSQL:', err.message);
   }
 
-  const db = readDB();
-  db.config = {
-    ...(db.config || {}),
-    ...newConfig
-  };
+  db.config = newConfig;
   writeDB(db);
   res.json(db.config);
 });

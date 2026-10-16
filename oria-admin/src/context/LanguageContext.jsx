@@ -129,6 +129,14 @@ const translations = {
     currentRole: "الدور الحالي",
     newRole: "تغيير الدور",
     permUpdated: "تم تحديث الصلاحية بنجاح !",
+    savePermissions: "حفظ وتثبيت الصلاحيات",
+    savePermissionsSuccess: "تم حفظ الصلاحيات والتراخيص بنجاح في النظام !",
+    merchantSpace: "فضاء التاجر والصائغ",
+    merchantCatalogTitle: "مجوهراتي ومقالاتي",
+    merchantSalesTitle: "سجل مبيعاتي",
+    welcomeMerchant: "مرحباً بك في فضاء النشر الخاص بك",
+    depositJewel: "إضافة مجوهرات جديدة",
+    changeUserRole: "تعديل الدور والصلاحية",
     
     // Auctions
     bids: "العروض والمزايدات",
@@ -340,6 +348,14 @@ const translations = {
     currentRole: "Rôle Actuel",
     newRole: "Nouveau Rôle",
     permUpdated: "Permission mise à jour !",
+    savePermissions: "Sauvegarder les permissions",
+    savePermissionsSuccess: "Permissions enregistrées avec succès sur le serveur !",
+    merchantSpace: "Espace Commerçant & Publication",
+    merchantCatalogTitle: "Mes Bijoux & Articles",
+    merchantSalesTitle: "Mes Ventes",
+    welcomeMerchant: "Bienvenue dans votre espace commerçant",
+    depositJewel: "Déposer un bijou",
+    changeUserRole: "Modifier le rôle",
     
     // Auctions
     bids: "Offres",
