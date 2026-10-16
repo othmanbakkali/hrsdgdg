@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { API_URL } from '../config/api';
+import SilverIcon from './SilverIcon';
 
 export default function LiveGoldTicker() {
   const { lang, isRtl } = useLanguage();
@@ -50,7 +51,7 @@ export default function LiveGoldTicker() {
       gold18: "Or 18K (750‰)",
       gold21: "Or 21K (875‰)",
       gold24: "Or 24K Pur (999‰)",
-      silver: "Argent 925",
+      silver: "Argent 1000",
       calcBtn: "Calculateur d'Or",
       calcTitle: "Estimer la valeur de votre or",
       calcDesc: "Calculez la valeur instantanée selon le cours officiel du jour au Maroc.",
@@ -64,7 +65,7 @@ export default function LiveGoldTicker() {
       gold18: "ذهب 18 قيراط (750‰)",
       gold21: "ذهب 21 قيراط (875‰)",
       gold24: "ذهب 24 قيراط نقي (999‰)",
-      silver: "فضة 925",
+      silver: "فضة 1000",
       calcBtn: "حاسبة الذهب",
       calcTitle: "تقدير قيمة الذهب الخاص بك",
       calcDesc: "احسب القيمة الفورية حسب سعر السوق الرسمي اليوم في المغرب.",
@@ -78,7 +79,7 @@ export default function LiveGoldTicker() {
       gold18: "18K Gold (750‰)",
       gold21: "21K Gold (875‰)",
       gold24: "24K Pure Gold (999‰)",
-      silver: "Silver 925",
+      silver: "Silver 1000",
       calcBtn: "Gold Calculator",
       calcTitle: "Estimate Your Gold Value",
       calcDesc: "Instant value calculation based on today's official Moroccan market spot prices.",
@@ -122,7 +123,10 @@ export default function LiveGoldTicker() {
           <span className="ticker-divider">•</span>
 
           <div className="ticker-item">
-            <span className="ticker-metal">🪙 {t.silver} :</span>
+            <span className="ticker-metal" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <SilverIcon size={15} />
+              {t.silver} :
+            </span>
             <span className="ticker-price">{rates.silver925.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'MAD/g'}</span>
           </div>
         </div>
@@ -171,6 +175,15 @@ export default function LiveGoldTicker() {
                     onClick={() => setCalcKarat('24k')}
                   >
                     24K • {rates.gold24k} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`karat-pill ${calcKarat === 'silver' ? 'active' : ''}`}
+                    onClick={() => setCalcKarat('silver')}
+                    style={{ borderColor: calcKarat === 'silver' ? '#cbd5e1' : undefined }}
+                  >
+                    <SilverIcon size={13} style={{ verticalAlign: 'middle', marginInlineEnd: '4px' }} />
+                    {lang === 'ar' ? 'فضة 1000' : 'Argent 1000'} • {rates.silver925.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
                   </button>
                 </div>
               </div>

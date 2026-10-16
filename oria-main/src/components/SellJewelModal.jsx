@@ -149,7 +149,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     { id: 'Or Jaune', ar: '🟡 ذهب أصفر', fr: '🟡 Or Jaune' },
     { id: 'Or Blanc', ar: '⚪ ذهب أبيض', fr: '⚪ Or Blanc' },
     { id: 'Or Rose', ar: '🌸 ذهب وردي', fr: '🌸 Or Rose' },
-    { id: 'Argent', ar: '🪙 فضة 925', fr: '🪙 Argent 925' },
+    { id: 'Argent', ar: '▫️ فضة 1000', fr: '▫️ Argent 1000' },
     { id: 'Platine', ar: '✨ بلاتين', fr: '✨ Platine' }
   ];
 
@@ -158,7 +158,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     { id: '18k', ar: '⭐ عيار 18k (المغربي الرسمي)', fr: '⭐ 18 Carats (750‰)' },
     { id: '21k', ar: '⭐⭐ عيار 21k (875‰)', fr: '⭐⭐ 21 Carats (875‰)' },
     { id: '24k', ar: '👑 عيار 24k (ذهب خالص 999‰)', fr: '👑 24 Carats (Pur 999‰)' },
-    { id: '925', ar: '🥈 فضة خالصة 925', fr: '🥈 Argent Massif 925' }
+    { id: '1000', ar: '▫️ فضة خالصة 1000', fr: '▫️ Argent Massif 1000' }
   ];
 
   // Gemstones

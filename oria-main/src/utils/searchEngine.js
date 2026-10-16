@@ -71,7 +71,7 @@ const SYNONYM_GROUPS = [
   // Diamant
   ['diamant', 'diamants', 'diamond', 'الماس', 'ماس', 'brillant'],
   // Argent
-  ['argent', 'silver', 'فضة', 'فضه', 'نقرة', 'نقره', '925'],
+  ['argent', 'silver', 'فضة', 'فضه', 'نقرة', 'نقره', '1000', '925'],
   // Perles
   ['perle', 'perles', 'لؤلؤ', 'جوهر'],
   // Pierres précieuses

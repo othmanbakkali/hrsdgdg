@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { API_URL } from '../config/api';
+import SilverIcon from './SilverIcon';
 
 export default function GoldPriceCard({ onOpenHistoryModal }) {
   const { lang, isRtl } = useLanguage();
@@ -267,7 +268,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               {isAr ? 'د.م/غ' : 'MAD/gramme'}
             </span>
           </div>
-          {/* Indicateur Argent 925 */}
+          {/* Indicateur Argent 1000 */}
           <div style={{
             marginTop: '4px',
             fontSize: '0.8rem',
@@ -280,7 +281,10 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
             alignItems: 'center',
             gap: '6px'
           }}>
-            <span>🪙 {isAr ? 'فضة 925 :' : 'Argent 925 :'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <SilverIcon size={15} />
+              {isAr ? 'فضة 1000 :' : 'Argent 1000 :'}
+            </span>
             <strong style={{ color: '#e2e8f0' }}>{priceSilver} {isAr ? 'د.م/غ' : 'MAD/g'}</strong>
           </div>
         </div>

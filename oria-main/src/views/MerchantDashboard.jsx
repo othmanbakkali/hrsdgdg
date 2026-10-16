@@ -698,7 +698,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     className="filter-select-control"
                   >
                     <option value="Or">Or 18K (750‰)</option>
-                    <option value="Argent">Argent 925</option>
+                    <option value="Argent">Argent 1000</option>
                     <option value="Platine">Platine</option>
                     <option value="Diamant">Diamant</option>
                   </select>
@@ -739,7 +739,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     className="filter-select-control"
                   >
                     <option value="Or">Or 18K (750‰)</option>
-                    <option value="Argent">Argent 925</option>
+                    <option value="Argent">Argent 1000</option>
                     <option value="Platine">Platine</option>
                     <option value="Diamant">Diamant</option>
                   </select>

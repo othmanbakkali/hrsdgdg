@@ -3,6 +3,7 @@ import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import OriaLogo from './components/OriaLogo';
 import AdminLogin from './components/AdminLogin';
+import SilverIcon from './components/SilverIcon';
 import './styles/admin.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -971,7 +972,7 @@ function AdminLayout() {
       return;
     }
     if (!valSilver || isNaN(valSilver) || valSilver <= 0) {
-      triggerNotif('Veuillez saisir un prix valide pour l\'Argent 925 (ex: 14.50)');
+      triggerNotif('Veuillez saisir un prix valide pour l\'Argent 1000 (ex: 14.50)');
       return;
     }
 
@@ -990,7 +991,7 @@ function AdminLayout() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        triggerNotif(lang === 'ar' ? 'تم تحديث أسعار الذهب والفضة بنجاح !' : 'Cours de l\'or 18K et de l\'argent 925 mis à jour avec succès !');
+        triggerNotif(lang === 'ar' ? 'تم تحديث أسعار الذهب والفضة بنجاح !' : 'Cours de l\'or 18K et de l\'argent 1000 mis à jour avec succès !');
         setGoldSourceInput('');
         setGoldNoteInput('');
         fetchData();
@@ -3192,14 +3193,17 @@ function AdminLayout() {
                 </div>
               </div>
 
-              {/* Silver 925 Card */}
-              <div style={{ background: 'var(--bg-card)', border: '2px solid #63b3ed', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 24px rgba(99,179,237,0.15)', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: '-10px', right: lang === 'ar' ? 'auto' : '-10px', left: lang === 'ar' ? '-10px' : 'auto', fontSize: '4rem', opacity: 0.08, pointerEvents: 'none' }}>🥈</div>
-                <div style={{ fontSize: '0.85rem', color: '#63b3ed', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                  {lang === 'ar' ? 'فضة عيار 925 (المعيار الرسمي)' : 'Argent 925 (Standard Maroc)'}
+              {/* Silver 1000 Card */}
+              <div style={{ background: 'var(--bg-card)', border: '2px solid #cbd5e1', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 24px rgba(203,213,225,0.15)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: '-10px', right: lang === 'ar' ? 'auto' : '-10px', left: lang === 'ar' ? '-10px' : 'auto', opacity: 0.1, pointerEvents: 'none' }}>
+                  <SilverIcon size={80} />
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <SilverIcon size={20} />
+                  <span>{lang === 'ar' ? 'فضة عيار 1000 (المعيار الرسمي)' : 'Argent 1000 (Standard Maroc)'}</span>
                 </div>
                 <div style={{ fontSize: '2.8rem', fontWeight: 900, color: 'var(--text-white)', lineHeight: 1.1, marginBottom: '8px' }}>
-                  {goldRatesData.currentPriceSilver || 14.50} <span style={{ fontSize: '1.2rem', color: '#63b3ed', fontWeight: 700 }}>MAD / g</span>
+                  {goldRatesData.currentPriceSilver || 14.50} <span style={{ fontSize: '1.2rem', color: '#cbd5e1', fontWeight: 700 }}>MAD / g</span>
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#10b981', fontWeight: 700 }}>
                   ▲ {lang === 'ar' ? 'السعر الحالي المعتمد بالمنصة' : 'Cotation officielle active'}
@@ -3280,8 +3284,9 @@ function AdminLayout() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: '#90cdf4' }}>
-                    {lang === 'ar' ? 'سعر غرام الفضة 925 (د.م/غ) *' : 'Prix de l\'Argent 925 (MAD/g) *'}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: '#e2e8f0' }}>
+                    <SilverIcon size={16} />
+                    <span>{lang === 'ar' ? 'سعر غرام الفضة 1000 (د.م/غ) *' : 'Prix de l\'Argent 1000 (MAD/g) *'}</span>
                   </label>
                   <input
                     type="number"
@@ -3296,9 +3301,9 @@ function AdminLayout() {
                       width: '100%',
                       padding: '12px 14px',
                       background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid #63b3ed',
+                      border: '1px solid #cbd5e1',
                       borderRadius: '8px',
-                      color: '#bee3f8',
+                      color: '#f8fafc',
                       fontSize: '1.2rem',
                       fontWeight: 800
                     }}

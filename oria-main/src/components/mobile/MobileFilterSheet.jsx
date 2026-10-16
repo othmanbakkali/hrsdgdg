@@ -228,7 +228,7 @@ export default function MobileFilterSheet({
               {[
                 { id: 'ALL', label: isAr ? 'جميع المعادن' : 'Toutes les matières' },
                 { id: 'Or', label: isAr ? '🥇 ذهب 18 قيراط (750‰)' : '🥇 Or 18K (750‰)' },
-                { id: 'Argent', label: isAr ? '🥈 فضة 925' : '🥈 Argent 925' },
+                { id: 'Argent', label: isAr ? '▫️ فضة 1000' : '▫️ Argent 1000' },
                 { id: 'Diamant', label: isAr ? '💠 ألماس وأحجار كريمة' : '💠 Diamants' },
                 { id: 'Plaqué or', label: isAr ? '✨ مطلي بالذهب' : '✨ Plaqué or' }
               ].map(mat => (

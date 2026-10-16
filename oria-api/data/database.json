@@ -639,13 +639,13 @@
     },
     {
       "id": "b_8",
-      "titre": "Bracelet Gourmette Homme Argent 925 Massif Italien",
-      "description": "Maille cubaine imposante en argent massif poinçonné 925 fabriqué en Italie, fermoir boîte à cliquet.",
+      "titre": "Bracelet Gourmette Homme Argent 1000 Massif Italien",
+      "description": "Maille cubaine imposante en argent massif poinçonné 1000 fabriqué en Italie, fermoir boîte à cliquet.",
       "prix": 850,
       "ancien_prix": 1100,
       "type_vente": "FIRST_HAND",
       "matiere": "Argent",
-      "purete": "925",
+      "purete": "1000",
       "poids": 26,
       "gramme": 26,
       "pierre": "Aucune",
@@ -679,7 +679,7 @@
       "rejectionReason": "",
       "date_creation": "2026-06-02T10:00:00Z",
       "why_this_item": [
-        "Argent 925 garanti inoxydable et hypoallergénique",
+        "Argent 1000 garanti inoxydable et hypoallergénique",
         "Idéal pour un cadeau masculin moderne à petit budget",
         "Gravure personnalisée disponible sur demande"
       ],
@@ -687,12 +687,12 @@
         "b_7",
         "b_2"
       ],
-      "titre_fr": "Bracelet Gourmette Homme Argent 925 Massif Italien",
-      "titre_ar": "سوار فضة إيطالية 925 صلبة للرجال",
-      "titre_en": "Men's Cuban Curb Bracelet Solid 925 Italian Silver",
-      "description_fr": "Maille cubaine imposante en argent massif poinçonné 925 fabriqué en Italie, fermoir boîte à cliquet.",
-      "description_ar": "سلسلة كبح رجالية فخمة مصنوعة من الفضة الخالصة عيار 925 المصنعة بإيطاليا مع قفل صندوقي.",
-      "description_en": "Heavy solid 925 sterling silver curb chain bracelet crafted in Italy with box lock clasp."
+      "titre_fr": "Bracelet Gourmette Homme Argent 1000 Massif Italien",
+      "titre_ar": "سوار فضة إيطالية 1000 صلبة للرجال",
+      "titre_en": "Men's Cuban Curb Bracelet Solid 1000 Italian Silver",
+      "description_fr": "Maille cubaine imposante en argent massif poinçonné 1000 fabriqué en Italie, fermoir boîte à cliquet.",
+      "description_ar": "سلسلة كبح رجالية فخمة مصنوعة من الفضة الخالصة عيار 1000 المصنعة بإيطاليا مع قفل صندوقي.",
+      "description_en": "Heavy solid 1000 sterling silver curb chain bracelet crafted in Italy with box lock clasp."
     },
     {
       "id": "b_9",

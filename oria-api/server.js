@@ -2497,7 +2497,7 @@ app.put('/api/subscriptions/:merchantId/status', (req, res) => {
 // GOLD RATES & HISTORY API (EXCLUSIVE OR 18K)
 // ==========================================
 
-// Public: Get current precious metals rates (Or 18K & Argent 925) and history
+// Public: Get current precious metals rates (Or 18K & Argent 1000) and history
 app.get('/api/gold-rates', (req, res) => {
   const db = readDB();
   const goldRates = db.goldRates || {
@@ -2527,7 +2527,7 @@ app.get('/api/gold-rates', (req, res) => {
   });
 });
 
-// Admin: Update rates (Or 18K & Argent 925) & record history
+// Admin: Update rates (Or 18K & Argent 1000) & record history
 app.post('/api/admin/gold-rates', requireAdminSession, (req, res) => {
   const { price18k, price, price24k, priceSilver, source, note, updatedBy } = req.body;
   const db = readDB();
