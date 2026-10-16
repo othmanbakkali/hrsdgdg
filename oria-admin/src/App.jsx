@@ -220,6 +220,45 @@ function AdminLayout() {
     setTimeout(() => setNotif(null), 4000);
   };
 
+  // BiDi-safe Phone Formatter & Link Helpers for RTL and LTR
+  const formatPhoneDisplay = (raw) => {
+    if (!raw) return '';
+    const str = String(raw).trim();
+    const digits = str.replace(/[^\d]/g, '');
+
+    // Moroccan phone numbers: 212XXXXXXXXX or 0XXXXXXXXX
+    if (digits.startsWith('212') && digits.length >= 11) {
+      const national = digits.slice(3);
+      const prefix = national.slice(0, 3);
+      const suffix = national.slice(3);
+      return `+212 ${prefix}-${suffix}`;
+    }
+    if (digits.startsWith('0') && digits.length === 10) {
+      const national = digits.slice(1);
+      const prefix = national.slice(0, 3);
+      const suffix = national.slice(3);
+      return `+212 ${prefix}-${suffix}`;
+    }
+    if (digits.length === 9) {
+      const prefix = digits.slice(0, 3);
+      const suffix = digits.slice(3);
+      return `+212 ${prefix}-${suffix}`;
+    }
+    return str;
+  };
+
+  const getCleanPhoneDigits = (raw) => {
+    if (!raw) return '';
+    const digits = String(raw).replace(/[^\d]/g, '');
+    if (digits.startsWith('0') && digits.length === 10) {
+      return '212' + digits.slice(1);
+    }
+    if (digits.startsWith('212')) {
+      return digits;
+    }
+    return '212' + digits;
+  };
+
   const handleUpdateUserAccountStatus = async (userId, newStatus, reason = '') => {
     try {
       const res = await fetch(`${API_URL}/users/${userId}/status`, {
@@ -2057,19 +2096,69 @@ function AdminLayout() {
                           </div>
                         </div>
                       </td>
-                      <td>
+                      <td style={{ verticalAlign: 'middle', minWidth: '220px' }}>
                         {u.role === 'commercant' ? (
-                          <div style={{ fontSize: '0.8rem' }}>
-                            <div>🏪 <strong>{u.shopName}</strong></div>
-                            {(u.phone || u.telephone) && <div>📞 {u.phone || u.telephone}</div>}
-                            {(u.address || u.city) && <div>📍 {[u.address, u.city].filter(Boolean).join(', ')}</div>}
+                          <div style={{ fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            {u.shopName && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ flexShrink: 0, fontSize: '0.95rem' }}>🏪</span>
+                                <strong dir="auto" style={{ color: 'var(--text-white)' }}>{u.shopName}</strong>
+                              </div>
+                            )}
+                            {(u.phone || u.telephone) && (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ flexShrink: 0, fontSize: '0.85rem' }}>📞</span>
+                                <a 
+                                  href={`tel:+${getCleanPhoneDigits(u.phone || u.telephone)}`}
+                                  dir="ltr"
+                                  style={{ 
+                                    direction: 'ltr', 
+                                    unicodeBidi: 'isolate', 
+                                    fontFamily: 'monospace, system-ui, sans-serif',
+                                    fontWeight: 700,
+                                    color: 'var(--admin-gold)',
+                                    textDecoration: 'none',
+                                    letterSpacing: '0.3px'
+                                  }}
+                                  title={lang === 'ar' ? 'الاتصال بالهاتف' : 'Appeler'}
+                                >
+                                  {formatPhoneDisplay(u.phone || u.telephone)}
+                                </a>
+                              </div>
+                            )}
+                            {(u.address || u.city) && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-gray)', fontSize: '0.78rem' }}>
+                                <span style={{ flexShrink: 0, fontSize: '0.85rem' }}>📍</span>
+                                <span dir="auto">{[u.address, u.city].filter(Boolean).join(', ')}</span>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           (u.phone || u.telephone) ? (
-                            <div style={{ fontSize: '0.8rem' }}>
-                              <div>📞 {u.phone || u.telephone}</div>
+                            <div style={{ fontSize: '0.82rem' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ flexShrink: 0, fontSize: '0.85rem' }}>📞</span>
+                                <a 
+                                  href={`tel:+${getCleanPhoneDigits(u.phone || u.telephone)}`}
+                                  dir="ltr"
+                                  style={{ 
+                                    direction: 'ltr', 
+                                    unicodeBidi: 'isolate', 
+                                    fontFamily: 'monospace, system-ui, sans-serif',
+                                    fontWeight: 700,
+                                    color: 'var(--admin-gold)',
+                                    textDecoration: 'none',
+                                    letterSpacing: '0.3px'
+                                  }}
+                                  title={lang === 'ar' ? 'الاتصال بالهاتف' : 'Appeler'}
+                                >
+                                  {formatPhoneDisplay(u.phone || u.telephone)}
+                                </a>
+                              </div>
                             </div>
-                          ) : '-'
+                          ) : (
+                            <span style={{ color: 'var(--text-gray)', fontSize: '0.8rem' }}>-</span>
+                          )
                         )}
                       </td>
                       <td>
@@ -3579,7 +3668,18 @@ function AdminLayout() {
                           </td>
                           <td style={{ padding: '14px 16px', color: 'var(--text-gray)', fontSize: '0.85rem' }}>
                             👤 {sale.buyer_nom || 'Client Marketplace'}
-                            {sale.buyer_phone && <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#63b3ed' }}>{sale.buyer_phone}</div>}
+                            {sale.buyer_phone && (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', marginTop: '2px' }}>
+                                <span>📞</span>
+                                <a 
+                                  href={`tel:+${getCleanPhoneDigits(sale.buyer_phone)}`}
+                                  dir="ltr"
+                                  style={{ direction: 'ltr', unicodeBidi: 'isolate', fontFamily: 'monospace', color: '#63b3ed', textDecoration: 'none' }}
+                                >
+                                  {formatPhoneDisplay(sale.buyer_phone)}
+                                </a>
+                              </div>
+                            )}
                           </td>
                           <td style={{ padding: '14px 16px' }}>
                             <span style={{
@@ -3705,6 +3805,8 @@ function AdminLayout() {
                 <input 
                   type="tel" 
                   className="form-input" 
+                  dir="ltr"
+                  style={{ direction: 'ltr', textAlign: lang === 'ar' ? 'right' : 'left' }}
                   value={userForm.phone} 
                   onChange={e => setUserForm({ ...userForm, phone: e.target.value })} 
                   placeholder={lang === 'ar' ? 'مثال: 0661234567' : 'Ex: 0661234567'}

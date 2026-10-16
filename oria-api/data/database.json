@@ -6,6 +6,7 @@
       "nom": "Yassine Alami",
       "mot_de_passe": "client123",
       "role": "client",
+      "phone": "+212 661-889900",
       "telephone": "+212 661-889900",
       "ville": "Casablanca",
       "adresse": "12 Boulevard Massira Al Khadra, Maarif",
@@ -24,6 +25,7 @@
       "seller_type": "bijouterie",
       "shopName": "Maison Royale Casablanca",
       "phone": "+212 522-123456",
+      "telephone": "+212 522-123456",
       "address": "25 Bd d'Anfa, Quartier Racine",
       "city": "Casablanca",
       "badges": [
@@ -56,6 +58,7 @@
       "seller_type": "expert",
       "shopName": "Héritage & Joyaux d'Époque",
       "phone": "+212 662-789012",
+      "telephone": "+212 662-789012",
       "address": "45 Av. Mohammed V",
       "city": "Rabat",
       "badges": [
@@ -88,6 +91,7 @@
       "seller_type": "marque",
       "shopName": "Marrakech Diamonds Co.",
       "phone": "+212 524-432100",
+      "telephone": "+212 524-432100",
       "address": "Gueliz Plaza",
       "city": "Marrakech",
       "badges": [
@@ -119,6 +123,7 @@
       "seller_type": "particulier",
       "shopName": "Collection Privée Fatima",
       "phone": "+212 663-112233",
+      "telephone": "+212 663-112233",
       "address": "Agdal",
       "city": "Rabat",
       "badges": [

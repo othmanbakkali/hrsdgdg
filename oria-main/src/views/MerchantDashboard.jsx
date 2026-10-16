@@ -530,7 +530,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       Commande #{order.id}
                     </span>
                     <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginLeft: '12px' }}>
-                      Client : <strong style={{ color: 'var(--text-white)' }}>{order.client_nom}</strong> ({order.client_telephone}) • {order.client_ville}
+                      Client : <strong style={{ color: 'var(--text-white)' }}>{order.client_nom}</strong> (<span dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate' }}>{order.client_telephone}</span>) • {order.client_ville}
                     </span>
                   </div>
 
