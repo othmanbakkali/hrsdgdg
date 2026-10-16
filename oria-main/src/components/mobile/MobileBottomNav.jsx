@@ -1,18 +1,15 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function MobileBottomNav({
-  activeTab, // 'home', 'explore', 'cart', 'account'
+  activeTab, // 'home', 'explore', 'sell', 'account'
   onChangeTab,
-  onOpenCart,
+  onOpenSell,
   onOpenFinder
 }) {
   const { user } = useAuth();
-  const { cartItems } = useCart();
   const { lang, t } = useLanguage();
-  const cartCount = cartItems.length;
 
   return (
     <div className="mobile-avito-bottom-nav">
@@ -47,25 +44,18 @@ export default function MobileBottomNav({
         <span className="nav-text">{t('search')}</span>
       </button>
 
-      {/* 3. Panier / Cart */}
+      {/* 3. Vendre un bijou / Sell */}
       <button 
-        className={`mobile-nav-item ${activeTab === 'cart' ? 'active' : ''}`}
+        className={`mobile-nav-item ${activeTab === 'sell' ? 'active' : ''}`}
         onClick={() => {
-          onChangeTab('cart');
-          if (onOpenCart) onOpenCart();
+          onChangeTab('sell');
+          if (onOpenSell) onOpenSell();
         }}
       >
         <span className="nav-icon-wrap" style={{ position: 'relative' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'cart' ? 'var(--primary-gold)' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-          </svg>
-          {cartCount > 0 && (
-            <span className="nav-badge-pill" style={{ background: '#ef4444' }}>{cartCount}</span>
-          )}
+          <span style={{ fontSize: '1.25rem' }}>♻️</span>
         </span>
-        <span className="nav-text">{t('cart')}</span>
+        <span className="nav-text">{lang === 'ar' ? 'بيع مجوهراتي' : 'Vendre'}</span>
       </button>
 
       {/* 4. Mon Compte */}

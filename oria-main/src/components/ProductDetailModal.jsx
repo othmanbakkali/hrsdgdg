@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage, translateCityToArabic } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
 import { API_URL } from '../config/api';
 
 export default function ProductDetailModal({ 
@@ -18,7 +17,6 @@ export default function ProductDetailModal({
   const isModalOpen = isOpen !== undefined ? isOpen : Boolean(product);
   const { t, isRtl, lang } = useLanguage();
   const { user, toggleFavorite } = useAuth();
-  const { addToCart } = useCart();
 
   const displayTitle = (lang === 'ar' && product?.titre_ar) 
     ? product.titre_ar 
@@ -411,9 +409,15 @@ Merci.`;
     }
   };
 
-  const handleAddFullLookToCart = () => {
-    addToCart(product);
-    complementaryItems.forEach(item => addToCart(item));
+  const handleInquireFullLook = () => {
+    const titles = [displayTitle, ...complementaryItems.map(c => (lang === 'ar' && c.titre_ar) ? c.titre_ar : (c.titre_fr || c.titre))].join(' + ');
+    const msg = encodeURIComponent(
+      lang === 'ar'
+        ? `السلام عليكم، أنا مهتم بالحصول على هذا الطقم المتناسق: ${titles}. هل هو متوفر وما هو السعر الإجمالي؟`
+        : `Bonjour, je suis intéressé(e) par cet ensemble assorti : ${titles}. Est-il disponible et quel est le prix total ?`
+    );
+    const phone = product?.vendeur_telephone ? product.vendeur_telephone.replace(/\s+/g, '').replace('+', '') : '212600000000';
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 
   return (
@@ -813,132 +817,78 @@ Merci.`;
             )}
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
-              {!isAuction && !isSold && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
-                  <button 
-                    onClick={() => {
-                      addToCart(product);
-                    }}
-                    className="btn-jewelia-primary"
-                    style={{
-                      padding: '12px 20px',
-                      borderRadius: '12px',
-                      fontSize: '0.92rem',
-                      fontWeight: '700',
-                      whiteSpace: 'nowrap',
-                      minHeight: '46px'
-                    }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <circle cx="9" cy="21" r="1"></circle>
-                      <circle cx="20" cy="21" r="1"></circle>
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                    </svg>
-                    <span>{t('addToCart')}</span>
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      addToCart(product);
-                      if (onDirectBuy) onDirectBuy();
-                      onClose();
-                    }}
-                    className="btn-jewelia-secondary"
-                    style={{
-                      borderColor: 'var(--primary-gold)',
-                      padding: '12px 20px',
-                      borderRadius: '12px',
-                      fontSize: '0.92rem',
-                      fontWeight: '700',
-                      whiteSpace: 'nowrap',
-                      minHeight: '46px',
-                      background: 'rgba(212, 175, 55, 0.08)',
-                      color: 'var(--text-dark)'
-                    }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--primary-gold)" style={{ flexShrink: 0 }}>
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    <span>{t('buyNow')}</span>
-                  </button>
-                </div>
-              )}
-
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '14px' }}>
               {/* If Sold, show clear non-clickable notification */}
-              {isSold && (
+              {isSold ? (
                 <div style={{ padding: '12px', textAlign: 'center', background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '12px', color: '#64748b', fontWeight: 700, fontSize: '0.92rem' }}>
                   🔒 {lang === 'ar' ? 'هذه القطعة مباعة وغير قابلة لإعادة البيع' : 'Cet article est vendu et n\'est plus disponible à l\'achat'}
                 </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* WhatsApp Contact & Reserve Button */}
+                  <a 
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={e => {
+                      if (!hasValidSellerPhone) {
+                        e.preventDefault();
+                        alert(lang === 'ar' ? 'رقم هاتف البائع غير متوفر حالياً.' : 'Le numéro WhatsApp de ce vendeur n\'est pas encore renseigné.');
+                      }
+                    }}
+                    style={{
+                      flex: 2,
+                      minWidth: '220px',
+                      color: '#ffffff',
+                      background: hasValidSellerPhone ? 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)' : '#94a3b8',
+                      padding: '13px 20px',
+                      borderRadius: '12px',
+                      fontSize: '0.96rem',
+                      fontWeight: 800,
+                      textDecoration: 'none',
+                      minHeight: '48px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      cursor: hasValidSellerPhone ? 'pointer' : 'not-allowed',
+                      boxShadow: hasValidSellerPhone ? '0 4px 16px rgba(37, 211, 102, 0.35)' : 'none',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                    }}
+                    title={hasValidSellerPhone ? (lang === 'ar' ? 'تواصل مع البائع عبر واتساب' : 'Contacter le vendeur sur WhatsApp') : 'Numéro indisponible'}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff" style={{ flexShrink: 0 }}>
+                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
+                    </svg>
+                    <span>{lang === 'ar' ? 'تواصل واطلب عبر واتساب' : 'Commander via WhatsApp'}</span>
+                  </a>
+
+                  {/* Photo Sharing Button */}
+                  <button
+                    type="button"
+                    onClick={handleShareProductPhoto}
+                    className="btn-jewelia-secondary"
+                    style={{
+                      padding: '12px 18px',
+                      borderRadius: '12px',
+                      fontSize: '0.88rem',
+                      fontWeight: '700',
+                      borderColor: 'var(--primary-gold)',
+                      background: 'rgba(212, 175, 55, 0.08)',
+                      color: 'var(--primary-gold)',
+                      minHeight: '48px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                    title={lang === 'ar' ? 'مشاركة صورة ورابط القطعة' : 'Partager la photo du bijou'}
+                  >
+                    <span>📸</span>
+                    <span>{lang === 'ar' ? 'مشاركة الصورة' : 'Partager la photo'}</span>
+                  </button>
+                </div>
               )}
-
-              {/* WhatsApp Button & Photo Sharing Row */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <a 
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={e => {
-                    if (isSold) {
-                      e.preventDefault();
-                      alert(lang === 'ar' ? 'هذه القطعة تم بيعها بالفعل.' : 'Cet article a déjà été vendu.');
-                    } else if (!hasValidSellerPhone) {
-                      e.preventDefault();
-                      alert(lang === 'ar' ? 'رقم هاتف البائع غير متوفر حالياً.' : 'Le numéro WhatsApp de ce vendeur n\'est pas encore renseigné.');
-                    }
-                  }}
-                  className="btn-jewelia-secondary"
-                  style={{
-                    flex: 2,
-                    minWidth: '200px',
-                    borderColor: '#25d366',
-                    color: '#ffffff',
-                    background: hasValidSellerPhone && !isSold ? 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)' : '#94a3b8',
-                    padding: '10px 16px',
-                    borderRadius: '10px',
-                    fontSize: '0.88rem',
-                    fontWeight: '700',
-                    textDecoration: 'none',
-                    minHeight: '44px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    cursor: hasValidSellerPhone && !isSold ? 'pointer' : 'not-allowed',
-                    boxShadow: hasValidSellerPhone && !isSold ? '0 3px 12px rgba(37, 211, 102, 0.3)' : 'none'
-                  }}
-                  title={hasValidSellerPhone ? (lang === 'ar' ? 'تواصل مع البائع عبر واتساب' : 'Contacter le vendeur sur WhatsApp') : 'Numéro indisponible'}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff" style={{ flexShrink: 0, width: '20px', height: '20px', minWidth: '20px', minHeight: '20px', display: 'inline-block', verticalAlign: 'middle' }}>
-                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
-                  </svg>
-                  <span>{lang === 'ar' ? 'تواصل مع البائع عبر واتساب' : 'Contacter le vendeur sur WhatsApp'}</span>
-                </a>
-
-                {/* Photo Sharing Button (Req 10) */}
-                <button
-                  type="button"
-                  onClick={handleShareProductPhoto}
-                  className="btn-jewelia-secondary"
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    fontSize: '0.85rem',
-                    fontWeight: '700',
-                    borderColor: 'var(--primary-gold)',
-                    background: 'rgba(212, 175, 55, 0.08)',
-                    color: 'var(--primary-gold)',
-                    minHeight: '44px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer'
-                  }}
-                  title={lang === 'ar' ? 'مشاركة صورة ورابط القطعة' : 'Partager la photo du bijou'}
-                >
-                  <span>📸</span>
-                  <span>{lang === 'ar' ? 'مشاركة الصورة' : 'Partager la photo'}</span>
-                </button>
 
                 <button 
                   onClick={() => toggleFavorite(product.id)}
@@ -994,7 +944,6 @@ Merci.`;
               </div>
             </div>
           </div>
-        </div>
 
         {/* SECTION 20: « COMPLÉTEZ VOTRE LOOK » & REVIEWS TABS */}
         <div style={{ borderTop: '1px solid var(--border-gold)', padding: '24px 32px', background: 'var(--bg-surface-elevated)', borderRadius: '0 0 var(--radius-md) var(--radius-md)' }}>
@@ -1077,11 +1026,26 @@ Merci.`;
                 </div>
 
                 <button 
-                  onClick={handleAddFullLookToCart}
-                  className="btn-jewelia-primary"
-                  style={{ padding: '10px 20px', fontSize: '0.88rem' }}
+                  onClick={handleInquireFullLook}
+                  style={{
+                    padding: '10px 18px',
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    borderRadius: '10px',
+                    color: '#ffffff',
+                    background: '#25D366',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                  title={lang === 'ar' ? 'طلب الطقم المتناسق عبر واتساب' : 'Commander le look complet via WhatsApp'}
                 >
-                  ✨ {t('addLookToCart')}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff">
+                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2Z" />
+                  </svg>
+                  <span>{lang === 'ar' ? 'طلب الطقم عبر واتساب' : 'Commander le look (WhatsApp)'}</span>
                 </button>
               </div>
             </div>

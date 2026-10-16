@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
+import { matchProduct } from '../utils/searchEngine';
 import MobileProductCard from '../components/mobile/MobileProductCard';
 import ProductCard from '../components/ProductCard';
 import GoldPriceCard from '../components/GoldPriceCard';
@@ -49,7 +49,6 @@ export default function Marketplace({
 }) {
   const { t, isRtl, lang } = useLanguage();
   const { user, toggleFavorite } = useAuth();
-  const { addToCart } = useCart();
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -88,44 +87,11 @@ export default function Marketplace({
     return () => clearInterval(interval);
   }, []);
 
-  // Filter products locally
+  // Filter products locally using intelligent bilingual search engine
   const filteredProducts = products.filter(product => {
-    // 1. Natural search or query
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchText = (
-        (product.titre_fr || product.titre || '') + ' ' + 
-        (product.titre_ar || '') + ' ' + 
-        (product.titre_en || '') + ' ' + 
-        (product.description_fr || product.description || '') + ' ' + 
-        (product.description_ar || '') + ' ' + 
-        (product.description_en || '') + ' ' + 
-        (product.matiere || '') + ' ' + 
-        (product.pierre || '') + ' ' + 
-        (product.style || '') + ' ' + 
-        (product.occasion || '') + ' ' + 
-        (product.pour_qui || '') + ' ' + 
-        (product.etat || '') + ' ' +
-        (product.city || '') + ' ' +
-        (product.vendeur_nom || '')
-      ).toLowerCase();
-
-      // Check max price in search query
-      const priceMatch = q.match(/moins de (\d+)/i) || q.match(/< ?(\d+)/i);
-      if (priceMatch && product.prix > parseFloat(priceMatch[1])) {
-        return false;
-      }
-
-      if (q.includes('seconde main') || q.includes('occasion') || q.includes('vintage')) {
-        if (product.type_vente !== 'SECOND_HAND') return false;
-      }
-      if (q.includes('neuf') || q.includes('première main')) {
-        if (product.type_vente !== 'FIRST_HAND') return false;
-      }
-
-      const terms = q.replace(/moins de \d+/gi, '').replace(/dh/gi, '').trim().split(/\s+/);
-      const matchesAnyTerm = terms.every(term => matchText.includes(term) || term.length < 2);
-      if (!matchesAnyTerm) return false;
+    // 1. Natural bilingual, dialect & synonym search
+    if (searchQuery && !matchProduct(product, searchQuery)) {
+      return false;
     }
 
     // 2. City Filter
@@ -584,14 +550,99 @@ export default function Marketplace({
             </div>
           </div>
 
+          {/* Active Search Notification Banner */}
+          {searchQuery && (
+            <div style={{
+              background: 'rgba(212, 175, 55, 0.08)',
+              border: '1px solid rgba(212, 175, 55, 0.28)',
+              borderRadius: '10px',
+              padding: '10px 16px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-dark)' }}>
+                  {lang === 'ar' ? 'نتائج البحث عن :' : 'Résultats pour :'} <strong style={{ color: 'var(--primary-gold)' }}>« {searchQuery} »</strong> ({sortedProducts.length})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(212, 175, 55, 0.4)',
+                  borderRadius: '6px',
+                  color: 'var(--primary-gold)',
+                  padding: '4px 10px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ {lang === 'ar' ? 'مسح البحث' : 'Effacer le filtre'}
+              </button>
+            </div>
+          )}
+
           {/* Empty state */}
           {sortedProducts.length === 0 ? (
             <div className="empty-results-box">
               <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '16px' }}>🔍</span>
-              <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>{lang === 'ar' ? 'لم يتم العثور على قطع تطابق البحث' : 'Aucun bijou correspondant trouvé'}</h3>
-              <p style={{ color: 'var(--text-gray)', fontSize: '0.92rem', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
-                {lang === 'ar' ? 'يرجى تجربة توسيع نطاق الميزانية أو اختيار مدينة أخرى أو تغيير نوع المعدن.' : 'Essayez d\'élargir votre budget, votre ville ou vos critères de matière.'}
+              <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>
+                {searchQuery 
+                  ? (lang === 'ar' ? `لم نجد أي قطعة تطابق « ${searchQuery} »` : `Aucun bijou ne correspond à « ${searchQuery} »`)
+                  : (lang === 'ar' ? 'لم يتم العثور على قطع تطابق البحث' : 'Aucun bijou correspondant trouvé')
+                }
+              </h3>
+              <p style={{ color: 'var(--text-gray)', fontSize: '0.92rem', marginBottom: '18px', maxWidth: '420px', margin: '0 auto 18px' }}>
+                {lang === 'ar' 
+                  ? 'جرب البحث بكلمات أخرى (مثل: خاتم، سوار، ذهب 18، ألماس) أو اضغط على أحد الاقتراحات السريعة أدناه.' 
+                  : 'Essayez une autre recherche (ex: bague, bracelet, or 18k, diamant) ou cliquez sur une suggestion ci-dessous.'
+                }
               </p>
+
+              {/* Quick suggestions in empty state */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginBottom: '20px' }}>
+                {(lang === 'ar' ? [
+                  { label: '💍 خواتم ذهب', q: 'خاتم' },
+                  { label: '👑 أساور 18K', q: 'سوار' },
+                  { label: '📿 سلاسل وقلادات', q: 'سلسلة' },
+                  { label: '💎 ألماس وسوليتير', q: 'الماس' },
+                  { label: '🔨 مزادات مباشرة', q: 'مزاد' },
+                  { label: '🔥 هميزات مستعملة', q: 'مستعمل' }
+                ] : [
+                  { label: '💍 Bagues en Or', q: 'bague' },
+                  { label: '👑 Bracelets 18K', q: 'bracelet' },
+                  { label: '📿 Colliers & Pendentifs', q: 'collier' },
+                  { label: '💎 Diamants', q: 'diamant' },
+                  { label: '🔨 Enchères', q: 'enchere' },
+                  { label: '🔥 Affaires Seconde Main', q: 'occasion' }
+                ]).map((sug, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSearchQuery(sug.q)}
+                    style={{
+                      background: 'rgba(212, 175, 55, 0.12)',
+                      border: '1px solid rgba(212, 175, 55, 0.35)',
+                      borderRadius: '16px',
+                      padding: '6px 14px',
+                      fontSize: '0.84rem',
+                      color: 'var(--primary-gold)',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {sug.label}
+                  </button>
+                ))}
+              </div>
+
               <button onClick={resetAllFilters} className="btn-jewelia-primary">
                 {lang === 'ar' ? 'إعادة ضبط كافة الفلاتر' : 'Réinitialiser tous les filtres'}
               </button>

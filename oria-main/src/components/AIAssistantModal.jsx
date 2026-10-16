@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { useCart } from '../context/CartContext';
 
 export default function AIAssistantModal({ isOpen, onClose, products = [], onSelectProduct }) {
   const { lang, t } = useLanguage();
   const isAr = lang === 'ar';
-  const { addToCart } = useCart();
 
   const [inputQuery, setInputQuery] = useState('');
   const [messages, setMessages] = useState([

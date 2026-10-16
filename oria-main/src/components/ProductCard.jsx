@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
 import { useLanguage, translateCityToArabic } from '../context/LanguageContext';
 
 export default function ProductCard({
@@ -12,7 +11,6 @@ export default function ProductCard({
 }) {
   const { lang, t } = useLanguage();
   const { user, toggleFavorite } = useAuth();
-  const { addToCart } = useCart();
   const [activeImgIndex, setActiveImgIndex] = useState(0);
 
   const displayTitle = (lang === 'ar' && product.titre_ar) 

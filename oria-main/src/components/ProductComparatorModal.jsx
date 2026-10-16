@@ -1,10 +1,8 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { useCart } from '../context/CartContext';
 
 export default function ProductComparatorModal({ isOpen, onClose, comparedProducts = [], onRemoveProduct, onSelectProduct }) {
   const { t, lang, isRtl } = useLanguage();
-  const { addToCart } = useCart();
 
   if (!isOpen) return null;
 
@@ -184,11 +182,14 @@ export default function ProductComparatorModal({ isOpen, onClose, comparedProduc
                   {comparedProducts.map(p => (
                     <td key={p.id} style={{ padding: '16px 12px' }}>
                       <button 
-                        onClick={() => addToCart(p)}
+                        onClick={() => {
+                          if (onSelectProduct) onSelectProduct(p);
+                          onClose();
+                        }}
                         className="btn-jewelia-primary"
                         style={{ width: '100%', padding: '10px 14px', fontSize: '0.85rem' }}
                       >
-                        + {t('addToCart') || 'إضافة إلى السلة'}
+                        👁️ {lang === 'ar' ? 'عرض التفاصيل' : 'Voir les détails'}
                       </button>
                     </td>
                   ))}

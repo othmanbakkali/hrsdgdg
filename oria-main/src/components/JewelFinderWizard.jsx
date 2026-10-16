@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { useCart } from '../context/CartContext';
 
 export default function JewelFinderWizard({ isOpen, onClose, products = [], onSelectProduct }) {
   const { t, isRtl, lang } = useLanguage();
   const isAr = lang === 'ar';
-  const { addToCart } = useCart();
 
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState({
@@ -456,34 +454,15 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
                           onSelectProduct(item);
                           onClose();
                         }}
+                        className="btn-jewelia-primary"
                         style={{
-                          flex: 1,
-                          padding: '6px',
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          border: '1px solid var(--border-gold)',
-                          color: '#fff',
-                          borderRadius: '4px',
-                          fontSize: '0.76rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
+                          width: '100%',
+                          padding: '8px 12px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700
                         }}
                       >
-                        {isAr ? 'عرض التفاصيل' : 'Voir détails'}
-                      </button>
-                      <button 
-                        onClick={() => addToCart(item)}
-                        style={{
-                          padding: '6px 10px',
-                          background: 'var(--primary-gold)',
-                          border: 'none',
-                          color: '#08080a',
-                          borderRadius: '4px',
-                          fontSize: '0.76rem',
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {isAr ? '+ السلة' : '+ Panier'}
+                        👁️ {isAr ? 'عرض وتواصل' : 'Voir la pièce'}
                       </button>
                     </div>
                   </div>

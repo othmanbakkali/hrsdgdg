@@ -31,7 +31,6 @@ import './styles/theme.css';
 function MainLayout() {
   const { t, lang, setLang, isRtl } = useLanguage();
   const { user, logout } = useAuth();
-  const { cartItems, removeFromCart, updateQuantity, clearCart, cartTotal } = useCart();
 
   // Theme State (Light background by default)
   const [theme, setTheme] = useState(() => localStorage.getItem('hrsdgdg-theme') || 'light');
@@ -93,17 +92,6 @@ function MainLayout() {
   // Comparator State
   const [comparedProductIds, setComparedProductIds] = useState([]);
 
-  // Cart & Checkout Drawer
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Cart, 2: Shipping, 3: Payment, 4: Confirmed
-  const [checkoutForm, setCheckoutForm] = useState({
-    nom: user?.nom || '',
-    telephone: user?.telephone || '',
-    adresse: user?.adresse || '',
-    ville: user?.ville || 'Casablanca',
-    mode_paiement: 'cash_on_delivery'
-  });
-  const [confirmedOrder, setConfirmedOrder] = useState(null);
 
   // Toast Notifications
   const [notifications, setNotifications] = useState([]);
@@ -187,47 +175,6 @@ function MainLayout() {
     setIsChatDrawerOpen(true);
   };
 
-  const handleCheckoutSubmit = async (e) => {
-    e.preventDefault();
-    if (cartItems.length === 0) return;
-
-    try {
-      const payload = {
-        client_id: user?.id || 'u_guest',
-        client_nom: checkoutForm.nom || user?.nom || 'Client JEWELIA',
-        client_telephone: checkoutForm.telephone || '+212 661-000000',
-        client_adresse: checkoutForm.adresse || 'Adresse de livraison',
-        client_ville: checkoutForm.ville || 'Casablanca',
-        mode_paiement: checkoutForm.mode_paiement,
-        items: cartItems.map(item => ({
-          bijou_id: item.id,
-          titre: item.titre,
-          quantite: item.quantity || 1
-        }))
-      };
-
-      const res = await fetch(`${API_URL}/commandes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        const order = await res.json();
-        setConfirmedOrder(order);
-        setCheckoutStep(4);
-        clearCart();
-        addNotification(`Commande confirmée avec succès ! #${order.id}`, "success");
-      }
-    } catch (err) {
-      console.error(err);
-      addNotification("Erreur lors de la commande", "error");
-    }
-  };
-
-  // Separate cart items by Universe
-  const firstHandCartItems = cartItems.filter(item => item.type_vente === 'FIRST_HAND' || !item.type_vente);
-  const secondHandCartItems = cartItems.filter(item => item.type_vente === 'SECOND_HAND');
   const comparedProducts = allProducts.filter(p => comparedProductIds.includes(p.id));
 
   // Handle Mobile Bottom Nav Tab Changes
@@ -239,9 +186,8 @@ function MainLayout() {
     } else if (tab === 'explore') {
       setActiveView('marketplace');
       setIsFinderOpen(true);
-    } else if (tab === 'cart') {
-      setIsCartOpen(true);
-      setCheckoutStep(1);
+    } else if (tab === 'sell') {
+      setIsSellModalOpen(true);
     } else if (tab === 'account') {
       if (!user) {
         setIsAuthModalOpen(true);
@@ -288,12 +234,6 @@ function MainLayout() {
           onClearSearch={() => setSearchQuery('')}
           onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
           activeFiltersCount={activeFiltersCount}
-          onOpenCart={() => {
-            setIsCartOpen(true);
-            setCheckoutStep(1);
-          }}
-          cartCount={cartItems.length}
-          onOpenChat={() => setIsChatDrawerOpen(true)}
           onOpenAI={() => setIsAIOpen(true)}
           onOpenSell={() => setIsSellModalOpen(true)}
           onOpenGoldModal={() => setIsGoldModalOpen(true)}
@@ -425,21 +365,6 @@ function MainLayout() {
 
             {/* PWA Install Button in Desktop Nav */}
             <PWAInstallButton variant="nav-item" />
-
-            {/* Cart Button */}
-            <button 
-              onClick={() => {
-                setIsCartOpen(true);
-                setCheckoutStep(1);
-              }}
-              className="jewelia-action-btn"
-            >
-              <span>🛒</span>
-              <span className="hide-mobile">{t('cart')}</span>
-              {cartItems.length > 0 && (
-                <span className="badge-count">{cartItems.length}</span>
-              )}
-            </button>
 
             {/* Account / User Menu */}
             <div style={{ position: 'relative' }}>
@@ -748,10 +673,7 @@ function MainLayout() {
         <MobileBottomNav 
           activeTab={mobileNavTab}
           onChangeTab={handleMobileNavTabChange}
-          onOpenCart={() => {
-            setIsCartOpen(true);
-            setCheckoutStep(1);
-          }}
+          onOpenSell={() => setIsSellModalOpen(true)}
           onOpenFinder={() => setIsFinderOpen(true)}
         />
       </div>
@@ -809,351 +731,7 @@ function MainLayout() {
         targetProduct={chatTargetProduct}
       />
 
-      {/* Panier & Commande Drawer */}
-      {isCartOpen && (
-        <div className="jewelia-modal-backdrop" onClick={() => setIsCartOpen(false)}>
-          <div 
-            className="jewelia-cart-drawer" 
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="cart-drawer-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '1.4rem' }}>🛒</span>
-                <h3>
-                  {checkoutStep === 1 ? 'Votre Panier' : checkoutStep === 2 ? 'Livraison & Adresse' : checkoutStep === 3 ? 'Paiement' : 'Confirmation'}
-                </h3>
-              </div>
-              <button 
-                onClick={() => setIsCartOpen(false)}
-                className="cart-drawer-close-btn"
-                title="Fermer le panier"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* STEP 1: CART ITEMS */}
-            {checkoutStep === 1 && (
-              <>
-                <div className="cart-items-scroll">
-                  {cartItems.length === 0 ? (
-                    <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-gray)' }}>
-                      <span style={{ fontSize: '3rem', display: 'block', marginBottom: '12px' }}>🛍️</span>
-                      <p style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: '6px' }}>Votre panier est actuellement vide.</p>
-                      <span style={{ fontSize: '0.85rem' }}>Découvrez nos bijoux d'exception et ajoutez vos coups de cœur.</span>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Première Main Group */}
-                      {firstHandCartItems.length > 0 && (
-                        <div className="cart-universe-group">
-                          <div className="cart-universe-header first">
-                            <span>{lang === 'ar' ? '✨ مجوهرات جديدة (يد أولى)' : '✨ PREMIÈRE MAIN (Neuf)'}</span>
-                            <span style={{ fontSize: '0.75rem' }}>
-                              {lang === 'ar' ? `${firstHandCartItems.length} قطعة` : `${firstHandCartItems.length} article(s)`}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            {firstHandCartItems.map(item => {
-                              const imgUrl = (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80';
-                              const qty = item.quantite || item.quantity || 1;
-                              return (
-                                <div key={item.id} className="cart-item-row">
-                                  <img src={imgUrl} alt={item.titre} className="cart-item-img" />
-                                  <div className="cart-item-details">
-                                    <div>
-                                      <strong className="cart-item-title">
-                                        {(lang === 'ar' && item.titre_ar) ? item.titre_ar : (item.titre_fr || item.titre)}
-                                      </strong>
-                                      <span className="cart-item-seller">
-                                        {lang === 'ar' ? `البائع : ${item.vendeur_nom || 'دار المجوهرات'}` : `Vendu par ${item.vendeur_nom || 'Bijouterie'}`}
-                                      </span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                                      <span className="cart-item-price">{item.prix ? item.prix.toLocaleString() : '0'} {lang === 'ar' ? 'د.م' : 'DH'}</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <button 
-                                          type="button"
-                                          onClick={() => updateQuantity(item.id, Math.max(1, qty - 1))}
-                                          className="cart-qty-btn"
-                                          title="Diminuer"
-                                        >
-                                          -
-                                        </button>
-                                        <span className="cart-qty-display">{qty}</span>
-                                        <button 
-                                          type="button"
-                                          onClick={() => updateQuantity(item.id, qty + 1)}
-                                          className="cart-qty-btn"
-                                          title="Augmenter"
-                                        >
-                                          +
-                                        </button>
-                                        <button 
-                                          type="button"
-                                          onClick={() => removeFromCart(item.id)}
-                                          className="cart-delete-btn"
-                                          title="Supprimer"
-                                        >
-                                          🗑️
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Seconde Main Group */}
-                      {secondHandCartItems.length > 0 && (
-                        <div className="cart-universe-group" style={{ marginTop: '14px' }}>
-                          <div className="cart-universe-header second">
-                            <span>{lang === 'ar' ? '♻️ مجوهرات مستعملة (موثقة ومفحوصة)' : '♻️ SECONDE MAIN (Occasion Authentifiée)'}</span>
-                            <span style={{ fontSize: '0.75rem' }}>
-                              {lang === 'ar' ? `${secondHandCartItems.length} قطعة` : `${secondHandCartItems.length} article(s)`}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            {secondHandCartItems.map(item => {
-                              const imgUrl = (item.images && item.images[0]) || item.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80';
-                              const qty = item.quantite || item.quantity || 1;
-                              return (
-                                <div key={item.id} className="cart-item-row">
-                                  <img src={imgUrl} alt={item.titre} className="cart-item-img" />
-                                  <div className="cart-item-details">
-                                    <div>
-                                      <strong className="cart-item-title">
-                                        {(lang === 'ar' && item.titre_ar) ? item.titre_ar : (item.titre_fr || item.titre)}
-                                      </strong>
-                                      <span className="cart-item-seller" style={{ color: '#10b981' }}>
-                                        {lang === 'ar' ? '🛡️ بائع موثق ومفحوص' : '🛡️ Vendeur Particulier vérifié'}
-                                      </span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                                      <span className="cart-item-price" style={{ color: '#10b981' }}>{item.prix ? item.prix.toLocaleString() : '0'} {lang === 'ar' ? 'د.م' : 'DH'}</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <button 
-                                          type="button"
-                                          onClick={() => updateQuantity(item.id, Math.max(1, qty - 1))}
-                                          className="cart-qty-btn"
-                                          title="Diminuer"
-                                        >
-                                          -
-                                        </button>
-                                        <span className="cart-qty-display">{qty}</span>
-                                        <button 
-                                          type="button"
-                                          onClick={() => updateQuantity(item.id, qty + 1)}
-                                          className="cart-qty-btn"
-                                          title="Augmenter"
-                                        >
-                                          +
-                                        </button>
-                                        <button 
-                                          type="button"
-                                          onClick={() => removeFromCart(item.id)}
-                                          className="cart-delete-btn"
-                                          title="Supprimer"
-                                        >
-                                          🗑️
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {cartItems.length > 0 && (
-                  <div className="cart-drawer-footer">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '1.1rem' }}>
-                      <span style={{ color: 'var(--text-gray)', fontSize: '0.95rem' }}>{lang === 'ar' ? 'المجموع التقديري :' : 'Total estimé :'}</span>
-                      <strong style={{ color: 'var(--light-gold, #d4af37)', fontWeight: 800, fontSize: '1.25rem' }}>{cartTotal.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}</strong>
-                    </div>
-                    <button 
-                      onClick={() => setCheckoutStep(2)}
-                      className="btn-jewelia-primary"
-                      style={{ width: '100%', padding: '14px', fontSize: '0.95rem', fontWeight: 700 }}
-                    >
-                      {lang === 'ar' ? 'متابعة الطلب الآمن ➔' : 'Passer la commande sécurisée ➔'}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* STEP 2: SHIPPING FORM */}
-            {checkoutStep === 2 && (
-              <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <div className="cart-items-scroll">
-                  <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">{lang === 'ar' ? 'الاسم الكامل' : 'Nom complet'}</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder={lang === 'ar' ? "مثال: ياسمين بنعلي" : "Ex: Yasmine Benali"}
-                      value={checkoutForm.nom}
-                      onChange={e => setCheckoutForm({ ...checkoutForm, nom: e.target.value })}
-                      className="filter-number-input"
-                      style={{ width: '100%', padding: '10px' }}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">{lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Numéro de téléphone (WhatsApp)'}</label>
-                    <input 
-                      type="tel" 
-                      required
-                      placeholder="+212 661-000000"
-                      value={checkoutForm.telephone}
-                      onChange={e => setCheckoutForm({ ...checkoutForm, telephone: e.target.value })}
-                      className="filter-number-input"
-                      style={{ width: '100%', padding: '10px' }}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">{lang === 'ar' ? 'مدينة التسليم' : 'Ville de livraison'}</label>
-                    <select 
-                      value={checkoutForm.ville}
-                      onChange={e => setCheckoutForm({ ...checkoutForm, ville: e.target.value })}
-                      className="filter-number-input"
-                      style={{ width: '100%', padding: '10px' }}
-                    >
-                      <option value="Casablanca">{lang === 'ar' ? 'الدار البيضاء' : 'Casablanca'}</option>
-                      <option value="Rabat">{lang === 'ar' ? 'الرباط' : 'Rabat'}</option>
-                      <option value="Marrakech">{lang === 'ar' ? 'مراكش' : 'Marrakech'}</option>
-                      <option value="Tanger">{lang === 'ar' ? 'طنجة' : 'Tanger'}</option>
-                      <option value="Fès">{lang === 'ar' ? 'فاس' : 'Fès'}</option>
-                      <option value="Agadir">{lang === 'ar' ? 'أكادير' : 'Agadir'}</option>
-                      <option value="Meknès">{lang === 'ar' ? 'مكناس' : 'Meknès'}</option>
-                      <option value="Oujda">{lang === 'ar' ? 'وجدة' : 'Oujda'}</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">{lang === 'ar' ? 'العنوان الكامل للتسليم' : 'Adresse complète de livraison'}</label>
-                    <textarea 
-                      required
-                      rows={3}
-                      placeholder={lang === 'ar' ? "الحي، الشارع، رقم العمارة أو الشقة..." : "Quartier, Rue, N° d'appartement..."}
-                      value={checkoutForm.adresse}
-                      onChange={e => setCheckoutForm({ ...checkoutForm, adresse: e.target.value })}
-                      className="filter-number-input"
-                      style={{ width: '100%', padding: '10px' }}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="filter-label">{lang === 'ar' ? 'طريقة الدفع' : 'Mode de paiement'}</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', cursor: 'pointer' }}>
-                        <input 
-                          type="radio" 
-                          name="payment"
-                          checked={checkoutForm.mode_paiement === 'cash_on_delivery'}
-                          onChange={() => setCheckoutForm({ ...checkoutForm, mode_paiement: 'cash_on_delivery' })}
-                        />
-                        <div>
-                          <strong style={{ fontSize: '0.85rem' }}>{lang === 'ar' ? '💵 الدفع عند الاستلام' : '💵 Paiement à la livraison'}</strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>
-                            {lang === 'ar' ? 'ادفع نقداً أو عبر جهاز الدفع الإلكتروني عند الاستلام' : 'Réglez en espèces ou TPE lors de la réception'}
-                          </span>
-                        </div>
-                      </label>
-
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', cursor: 'pointer' }}>
-                        <input 
-                          type="radio" 
-                          name="payment"
-                          checked={checkoutForm.mode_paiement === 'cmi'}
-                          onChange={() => setCheckoutForm({ ...checkoutForm, mode_paiement: 'cmi' })}
-                        />
-                        <div>
-                          <strong style={{ fontSize: '0.85rem' }}>{lang === 'ar' ? '💳 بطاقة بنكية مغربية (CMI)' : '💳 Carte bancaire marocaine (CMI)'}</strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>
-                            {lang === 'ar' ? 'دفع آمن مع تأكيد 3D-Secure' : 'Paiement sécurisé 3D-Secure'}
-                          </span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="cart-drawer-footer" style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    type="button"
-                    onClick={() => setCheckoutStep(1)}
-                    className="btn-jewelia-secondary"
-                    style={{ flex: 1 }}
-                  >
-                    {lang === 'ar' ? 'رجوع' : 'Retour'}
-                  </button>
-                  <button 
-                    type="submit"
-                    className="btn-jewelia-primary"
-                    style={{ flex: 2 }}
-                  >
-                    {lang === 'ar' ? `تأكيد الطلب (${cartTotal.toLocaleString()} د.م)` : `Confirmer la commande (${cartTotal.toLocaleString()} DH)`}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* STEP 4: ORDER CONFIRMED */}
-            {checkoutStep === 4 && confirmedOrder && (
-              <div className="cart-items-scroll" style={{ textAlign: 'center', padding: '30px 20px' }}>
-                <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '14px' }}>🎉</span>
-                <h3 style={{ fontSize: '1.4rem', color: 'var(--light-gold)', marginBottom: '8px' }}>
-                  {lang === 'ar' ? 'تم تأكيد طلبكم بنجاح !' : 'Commande Confirmée !'}
-                </h3>
-                <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '20px' }}>
-                  {lang === 'ar' ? 'رقم الطلب المرجعي :' : 'Numéro de référence :'} <strong style={{ color: '#fff' }}>#{confirmedOrder.id}</strong>
-                </p>
-
-                {/* Tracking Step Checkpoints */}
-                <div className="order-tracking-card" style={{ textAlign: lang === 'ar' ? 'right' : 'left' }}>
-                  <h4 style={{ fontSize: '0.95rem', color: 'var(--primary-gold)', marginBottom: '12px' }}>
-                    {lang === 'ar' ? 'تتبع مسار شحنتكم المؤمنة' : 'Suivi de votre livraison sécurisée'}
-                  </h4>
-                  <div className="tracking-steps-timeline">
-                    {confirmedOrder.tracking_steps.map((step, idx) => (
-                      <div key={idx} className={`tracking-step ${step.done ? 'done' : ''}`}>
-                        <div className="tracking-step-dot">{step.done ? '✓' : idx + 1}</div>
-                        <span className="tracking-step-title">{step.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => {
-                    setIsCartOpen(false);
-                    setConfirmedOrder(null);
-                    setCheckoutStep(1);
-                  }}
-                  className="btn-jewelia-primary"
-                  style={{ width: '100%', marginTop: '20px' }}
-                >
-                  {lang === 'ar' ? 'متابعة التسوق 💎' : 'Continuer mes achats 💎'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Global Modals */}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />

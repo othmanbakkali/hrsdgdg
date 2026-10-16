@@ -282,30 +282,6 @@ export default function MobileMenuDrawer({
                 </div>
                 <span className="nav-item-chevron">‹</span>
               </button>
-
-              <button 
-                className="menu-nav-item"
-                onClick={() => handleSelectNav(onOpenChat)}
-              >
-                <div className="nav-item-icon-box blue">💬</div>
-                <div className="nav-item-info">
-                  <span className="nav-item-label">{isAr ? 'المراسلة والتفاوض' : 'Messagerie & Négociations'}</span>
-                  <span className="nav-item-sub">{isAr ? 'تواصل مباشر مع الصائغين والبائعين' : 'Discussions privées sécurisées'}</span>
-                </div>
-                <span className="nav-item-chevron">‹</span>
-              </button>
-
-              <button 
-                className="menu-nav-item"
-                onClick={() => handleSelectNav(onOpenCart)}
-              >
-                <div className="nav-item-icon-box">🛒</div>
-                <div className="nav-item-info">
-                  <span className="nav-item-label">{isAr ? 'سلة المشتريات' : 'Mon Panier'}</span>
-                  <span className="nav-item-sub">{cartCount > 0 ? (isAr ? `${cartCount} قطع في السلة` : `${cartCount} articles`) : (isAr ? 'السلة فارغة' : 'Panier vide')}</span>
-                </div>
-                {cartCount > 0 && <span className="nav-item-badge cart">{cartCount}</span>}
-              </button>
             </div>
           </div>
 

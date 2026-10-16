@@ -112,28 +112,6 @@ export default function MobileTopBar({
             >
               <span>✨</span>
             </button>
-
-            {/* Chat & Messages */}
-            <button 
-              className="mobile-action-circle chat-btn"
-              onClick={onOpenChat}
-              title={isAr ? "المراسلة والعروض" : "Messagerie"}
-            >
-              <span>💬</span>
-              <span className="action-online-dot" />
-            </button>
-
-            {/* Shopping Cart */}
-            <button 
-              className="mobile-action-circle cart-btn"
-              onClick={onOpenCart}
-              title={isAr ? "سلة المشتريات" : "Panier"}
-            >
-              <span>🛒</span>
-              {cartCount > 0 && (
-                <span className="action-badge-count">{cartCount}</span>
-              )}
-            </button>
           </div>
         </div>
 
@@ -181,6 +159,74 @@ export default function MobileTopBar({
               <span className="filter-counter">{activeFiltersCount}</span>
             )}
           </button>
+        </div>
+
+        {/* 3. Quick Search Chips Strip */}
+        <div style={{
+          display: 'flex',
+          gap: '6px',
+          overflowX: 'auto',
+          padding: '4px 12px 8px',
+          scrollbarWidth: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          {(isAr ? [
+            { label: '💍 خواتم', q: 'خاتم' },
+            { label: '👑 أساور', q: 'سوار' },
+            { label: '📿 سلاسل', q: 'سلسلة' },
+            { label: '✨ ذهب 18K', q: '18k' },
+            { label: '💎 ألماس', q: 'الماس' },
+            { label: '🔨 مزادات', q: 'مزاد' },
+            { label: '🔥 هميزات', q: 'همزة' }
+          ] : [
+            { label: '💍 Bagues', q: 'bague' },
+            { label: '👑 Bracelets', q: 'bracelet' },
+            { label: '📿 Colliers', q: 'collier' },
+            { label: '✨ Or 18K', q: '18k' },
+            { label: '💎 Diamants', q: 'diamant' },
+            { label: '🔨 Enchères', q: 'enchere' },
+            { label: '🔥 Affaires', q: 'remise' }
+          ]).map((chip, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onSearchChange(chip.q)}
+              style={{
+                background: searchQuery === chip.q ? 'var(--primary-gold)' : 'rgba(212, 175, 55, 0.08)',
+                color: searchQuery === chip.q ? '#000' : 'var(--text-dark)',
+                border: '1px solid rgba(212, 175, 55, 0.28)',
+                borderRadius: '16px',
+                padding: '3px 10px',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              {chip.label}
+            </button>
+          ))}
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={onClearSearch}
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '16px',
+                padding: '3px 9px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
       </header>
 
