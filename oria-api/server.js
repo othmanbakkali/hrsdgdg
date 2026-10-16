@@ -39,8 +39,25 @@ function writeDB(data) {
 }
 
 // Session Management Helpers
-function createSession(user, expiresInMs = 24 * 60 * 60 * 1000) {
-  const db = readDB();
+const memorySessions = new Map();
+
+// Pre-populate in-memory session cache from storage
+try {
+  const initialDb = readDB();
+  if (Array.isArray(initialDb.sessions)) {
+    const now = Date.now();
+    initialDb.sessions.forEach(s => {
+      if (s && s.token && s.expiresAt > now) {
+        memorySessions.set(s.token, s);
+      }
+    });
+  }
+} catch (e) {
+  console.error('Failed to pre-populate memorySessions:', e);
+}
+
+function createSession(user, expiresInMs = 24 * 60 * 60 * 1000, existingDb = null) {
+  const db = existingDb || readDB();
   if (!Array.isArray(db.sessions)) {
     db.sessions = [];
   }
@@ -59,15 +76,29 @@ function createSession(user, expiresInMs = 24 * 60 * 60 * 1000) {
     expiresAt: now + expiresInMs
   };
   db.sessions.push(session);
-  writeDB(db);
+  if (!existingDb) {
+    writeDB(db);
+  }
+  memorySessions.set(token, session);
   return session;
 }
 
 function getSession(token) {
   if (!token) return null;
+  const now = Date.now();
+
+  // Fast in-memory lookup
+  if (memorySessions.has(token)) {
+    const memSession = memorySessions.get(token);
+    if (memSession.expiresAt > now) {
+      return memSession;
+    } else {
+      memorySessions.delete(token);
+    }
+  }
+
   const db = readDB();
   if (!Array.isArray(db.sessions)) return null;
-  const now = Date.now();
   const session = db.sessions.find(s => s && s.token === token);
   if (!session) return null;
   if (session.expiresAt <= now) {
@@ -75,11 +106,13 @@ function getSession(token) {
     writeDB(db);
     return null;
   }
+  memorySessions.set(token, session);
   return session;
 }
 
 function deleteSession(token) {
   if (!token) return;
+  memorySessions.delete(token);
   const db = readDB();
   if (!Array.isArray(db.sessions)) return;
   db.sessions = db.sessions.filter(s => s && s.token !== token);
@@ -165,7 +198,10 @@ function requireAdminSession(req, res, next) {
   }
 
   const session = getSession(token);
-  if (!session || session.role !== 'admin') {
+  if (!session) {
+    return res.status(401).json({ error: 'Session invalide ou expirée' });
+  }
+  if (session.role !== 'admin') {
     return res.status(403).json({ error: 'Accès refusé : privilèges administrateur requis' });
   }
 
@@ -390,9 +426,15 @@ app.post('/api/auth/login', (req, res) => {
     }
   }
 
+  // Update user login statistics
+  user.login_count = (user.login_count || 0) + 1;
+  user.derniere_connexion = new Date().toISOString();
+
   // Duration: 24h if rememberMe, otherwise 4h session
   const duration = rememberMe ? 24 * 60 * 60 * 1000 : 4 * 60 * 60 * 1000;
-  const session = createSession(user, duration);
+  // Create session passing db instance to atomically persist both session and user updates
+  const session = createSession(user, duration, db);
+  writeDB(db);
 
   if (user.role === 'admin') {
     const maxAgeSec = Math.floor(duration / 1000);
@@ -408,11 +450,6 @@ app.post('/api/auth/login', (req, res) => {
     !user.derniere_connexion ||
     user.mot_de_passe_modifie === false
   );
-
-  // Update user login statistics
-  user.login_count = (user.login_count || 0) + 1;
-  user.derniere_connexion = new Date().toISOString();
-  writeDB(db);
 
   const { mot_de_passe, ...safeUser } = user;
   res.json({
@@ -1978,7 +2015,7 @@ app.get('/api/encheres/:id/bids', (req, res) => {
 app.get('/api/config', async (req, res) => {
   const defaultConfig = { commission_globale: 5, commission_categories: {}, commission_commercants: {} };
   try {
-    if (isPostgresAvailable()) {
+    if (isPostgresAvailable) {
       const pgRes = await query(`SELECT value FROM system_config WHERE key = 'platform_config'`);
       if (pgRes && pgRes.rows && pgRes.rows.length > 0) {
         const val = pgRes.rows[0].value;
@@ -2000,7 +2037,7 @@ app.put('/api/config', async (req, res) => {
   };
 
   try {
-    if (isPostgresAvailable()) {
+    if (isPostgresAvailable) {
       await query(`
         INSERT INTO system_config (key, value, updated_at) 
         VALUES ('platform_config', $1, CURRENT_TIMESTAMP)

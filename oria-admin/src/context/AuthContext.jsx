@@ -66,12 +66,27 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
             return;
           }
+        } else if (res.status === 401 || res.status === 403) {
+          // Token is explicitly expired or invalid according to backend
+          sessionStorage.removeItem('oria_admin_session');
+          localStorage.removeItem('oria_admin_session');
+          setAdminUser(null);
+          setSessionToken(null);
+          setLoading(false);
+          return;
         }
       } catch (err) {
-        console.warn('Admin session backend check failed:', err.message);
+        console.warn('Admin session backend check network error:', err.message);
+        // Fallback gracefully on temporary network issues if cached session is still valid
+        if (storedSession.user && storedSession.user.role === 'admin') {
+          setAdminUser(storedSession.user);
+          setSessionToken(storedSession.sessionToken);
+          setLoading(false);
+          return;
+        }
       }
 
-      // If backend verification failed, wipe session
+      // If session verification failed or token is invalid, wipe session
       sessionStorage.removeItem('oria_admin_session');
       localStorage.removeItem('oria_admin_session');
       setAdminUser(null);
@@ -174,9 +189,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const res = await fetch(url, { ...options, headers });
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
       logout();
-      throw new Error("Session expirée ou non autorisée. Veuillez vous reconnecter.");
+      throw new Error("Session expirée. Veuillez vous reconnecter.");
     }
     return res;
   }, [sessionToken]);

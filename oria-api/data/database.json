@@ -139,7 +139,9 @@
       "email": "admin@hrsdgdg.com",
       "nom": "Hakim Benchaib",
       "mot_de_passe": "admin123",
-      "role": "admin"
+      "role": "admin",
+      "login_count": 1,
+      "derniere_connexion": "2026-10-16T18:55:06.180Z"
     },
     {
       "id": "u_admin_oria",
@@ -1746,12 +1748,10 @@
     }
   ],
   "goldRates": {
-    "currentPrice18k": 1035,
-    "currentPriceSilver": 14.50,
+    "currentPrice18k": 1050,
     "carat": "18K",
     "unit": "MAD/g",
-    "silverUnit": "MAD/g",
-    "lastUpdated": "2026-10-04T12:50:45.393Z",
+    "lastUpdated": "2026-10-15T12:57:31.019Z",
     "updatedBy": "PrixOr Railway (dllal)",
     "history": [
       {
@@ -3097,7 +3097,114 @@
         "change": "+0.5%",
         "source": "Fixation dllal",
         "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_169",
+        "date": "2026-10-05 15:36",
+        "price18k": 1035,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_170",
+        "date": "2026-10-06 16:27",
+        "price18k": 1038,
+        "change": "+0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_171",
+        "date": "2026-10-07 15:43",
+        "price18k": 1038,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_172",
+        "date": "2026-10-07 15:45",
+        "price18k": 1033,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_173",
+        "date": "2026-10-08 14:16",
+        "price18k": 1035,
+        "change": "+0.2%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_174",
+        "date": "2026-10-10 15:03",
+        "price18k": 1038,
+        "change": "+0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_175",
+        "date": "2026-10-11 15:58",
+        "price18k": 1050,
+        "change": "+1.2%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_176",
+        "date": "2026-10-12 14:37",
+        "price18k": 1045,
+        "change": "-0.5%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_177",
+        "date": "2026-10-12 14:44",
+        "price18k": 1048,
+        "change": "+0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_178",
+        "date": "2026-10-13 13:57",
+        "price18k": 1050,
+        "change": "+0.2%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_179",
+        "date": "2026-10-14 14:36",
+        "price18k": 1050,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_180",
+        "date": "2026-10-15 13:57",
+        "price18k": 1050,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
       }
     ]
-  }
+  },
+  "sessions": [
+    {
+      "token": "sess_62e29399fc83e4c000ebf9c78e2efeb9d211018f1ee7dc999c6d7ecbdb0127e4",
+      "userId": "u_admin",
+      "email": "admin@hrsdgdg.com",
+      "nom": "Hakim Benchaib",
+      "role": "admin",
+      "createdAt": "2026-10-16T18:55:06.181Z",
+      "expiresAt": 1792263306181
+    }
+  ]
 }
