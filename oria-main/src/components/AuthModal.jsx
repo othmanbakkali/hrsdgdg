@@ -181,12 +181,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       setErrorMsg(lang === 'ar' ? 'يرجى تحميل وثيقة الباتنت أو السجل التجاري لتفعيل حسابكم المهني.' : 'Veuillez joindre votre attestation de Patente (Image ou PDF).');
       return;
     }
-    if (!email.trim() || !email.includes('@')) {
-      setErrorMsg(lang === 'ar' ? 'يرجى إدخال بريد إلكتروني صالح.' : 'Veuillez saisir un email valide.');
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMsg(lang === 'ar' ? 'كلمة المرور يجب أن تتكون من 6 أحرف على الأقل.' : 'Le mot de passe doit comporter au moins 6 caractères.');
+    const cleanPhoneDigits = (phone || '').replace(/\D/g, '');
+    if (!phone.trim() || cleanPhoneDigits.length < 9) {
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم هاتف واتساب مغربي صالح للتواصل معكم (مثال: 0661234567).' : 'Veuillez saisir un numéro de téléphone WhatsApp marocain valide (ex: 0661234567).');
       return;
     }
     if (!acceptTerms) {
@@ -196,13 +193,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
     setLoading(true);
     try {
+      const normalizedPhone = formatMoroccanInternationalPhone(phone);
+      const generatedEmail = `pro_${cleanPhoneDigits}@hrsdgdg.ma`;
+      const generatedPassword = `Pro!${Math.random().toString(36).slice(-8)}*Gold`;
+
       const res = await register({
-        email: email.trim(),
-        mot_de_passe: password,
+        email: generatedEmail,
+        mot_de_passe: generatedPassword,
         nom: nom.trim(),
         role: 'commercant',
         shopName: shopName.trim(),
-        phone: phone.trim(),
+        phone: normalizedPhone,
         city,
         address: city,
         numero_patente: numeroPatente.trim(),
@@ -215,7 +216,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       setRegisteredPendingSuccess(true);
     } catch (err) {
       setLoading(false);
-      setErrorMsg(err.message || (lang === 'ar' ? 'حدث خطأ أثناء إنشاء الحساب. قد يكون البريد مسجلاً بالفعل.' : 'Erreur lors de la création du compte.'));
+      setErrorMsg(err.message || (lang === 'ar' ? 'حدث خطأ أثناء إرسال المعلومات. يرجى المحاولة مرة أخرى.' : 'Erreur lors de l\'envoi des informations.'));
     }
   };
 
@@ -275,7 +276,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       termsAcceptAndClose: "J'accepte les conditions",
       termsCloseBtn: "Fermer",
       loginBtn: "Se Connecter à mon Espace",
-      registerBtn: "Créer mon Compte Professionnel Agréé 👑",
+      registerBtn: "Envoyer les informations 👑",
       demoAccounts: "Accès Rapide Démo :",
       clientDemo: "Client (Yassine)",
       merchantDemo: "Joaillier (El Fassi)",
@@ -325,7 +326,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       termsAcceptAndClose: "أوافق على الشروط",
       termsCloseBtn: "إغلاق",
       loginBtn: "تسجيل الدخول إلى حسابي",
-      registerBtn: "تأكيد وإنشاء الحساب المهني 👑",
+      registerBtn: "إرسال المعلومات وتأكيد التسجيل 👑",
       demoAccounts: "دخول سريع للتجربة :",
       clientDemo: "زبون (ياسين)",
       merchantDemo: "صائغ (الفاسي)",
@@ -375,7 +376,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       termsAcceptAndClose: "I Accept the Terms",
       termsCloseBtn: "Close",
       loginBtn: "Sign In to My Account",
-      registerBtn: "Create My Certified Pro Account 👑",
+      registerBtn: "Envoyer les informations 👑",
       demoAccounts: "Express Demo Access:",
       clientDemo: "Client (Yassine)",
       merchantDemo: "Jeweller (El Fassi)",
@@ -392,8 +393,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
   const whatsappMessage = encodeURIComponent(
     lang === 'ar'
-      ? 'السلام عليكم، أحتاج مساعدة سريعة لإنشاء حسابي على منصة HRSDGDG للمجوهرات.'
-      : 'Bonjour, je souhaite une assistance rapide pour créer mon compte sur la plateforme HRSDGDG.'
+      ? `السلام عليكم، لقد قمت بإرسال معلومات طلب التسجيل المهني لمتجر (${shopName || 'المجوهرات'}) على منصة HRSDGDG. رقم الهاتف للتواصل: ${phone || ''}. يرجى مراجعة وتفعيل الحساب.`
+      : `Bonjour, j'ai soumis mes informations pour l'ouverture d'un compte professionnel (${shopName || 'Bijouterie'}) sur HRSDGDG. Téléphone de contact: ${phone || ''}. Merci de valider mon compte.`
   );
 
   return (
@@ -479,13 +480,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 </span>
               </div>
 
-              <h3 className="pending-success-title" style={{ color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', fontSize: '1.3rem', margin: '10px 0' }}>
-                {lang === 'ar' ? 'طلبكم في طور المعالجة.' : 'Votre demande est en cours de traitement.'}
+              <h3 className="pending-success-title" style={{ color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', fontSize: '1.35rem', margin: '12px 0 8px', fontWeight: 800 }}>
+                {lang === 'ar' 
+                  ? 'سيتواصل معكم أحد مسؤولي الإدارة لتفعيل وتأكيد حسابكم' 
+                  : 'Un administrateur va vous contacter pour validation du compte'}
               </h3>
-              <p className="pending-success-subtitle" style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              <p className="pending-success-subtitle" style={{ color: 'var(--text-gray)', fontSize: '0.92rem', marginBottom: '16px', lineHeight: 1.5 }}>
                 {lang === 'ar'
-                  ? 'تم تسجيل طلبكم بنجاح وجارٍ مراجعته وتفعيله من قِبل الإدارة.'
-                  : 'Votre demande a bien été enregistrée par nos services et est actuellement en cours de traitement.'}
+                  ? 'تم إرسال معلوماتكم ووثائقكم بنجاح. سيقوم أحد مسؤولي الإدارة بالاتصال بكم قريباً عبر رقم الهاتف أو الواتساب لمراجعة البيانات وتفعيل حسابكم المهني.'
+                  : 'Vos informations et documents professionnels ont été envoyés avec succès. Un administrateur va vous contacter prochainement pour valider votre compte.'}
               </p>
 
               {/* Information Summary Box (Only displays Moroccan international phone number, hides email & never exposes password) */}
@@ -529,12 +532,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   className="pending-btn-login"
                   onClick={() => {
                     setRegisteredPendingSuccess(false);
-                    setTab('login');
-                    setErrorMsg('');
+                    onClose();
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #d4af37, #f3e5ab)',
+                    color: '#000',
+                    fontWeight: 800,
+                    border: 'none',
+                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
                   }}
                 >
-                  <span>🔑</span>
-                  <span>{lang === 'ar' ? 'الانتقال لتسجيل الدخول' : 'Aller à la connexion'}</span>
+                  <span>✓</span>
+                  <span>{lang === 'ar' ? 'حسناً، فهمت' : 'D\'accord, compris'}</span>
                 </button>
               </div>
             </div>
@@ -784,79 +793,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 ))}
               </div>
 
-              {/* 6. EMAIL */}
-              <div className="auth-field-group">
-                <label className="auth-field-label">
-                  <span className="auth-label-icon">✉️</span>
-                  <span>{t.emailLabel}</span>
-                  <span className="auth-required-mark">*</span>
-                </label>
-                <div className="auth-input-container">
-                  <input
-                    type="email"
-                    required
-                    className="auth-text-input"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="nom@exemple.com"
-                    autoComplete="email"
-                  />
-                </div>
-              </div>
-
-              {/* 7. PASSWORD WITH GENERATOR & STRENGTH GAUGE */}
-              <div className="auth-field-group">
-                <div className="auth-label-row">
-                  <label className="auth-field-label">
-                    <span className="auth-label-icon">🔒</span>
-                    <span>{t.passLabel}</span>
-                    <span className="auth-required-mark">*</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="auth-generate-pwd-btn"
-                    onClick={generateStrongPassword}
-                    title="Générer un mot de passe sécurisé et facile à retenir"
-                  >
-                    {t.generatePwd}
-                  </button>
-                </div>
-
-                <div className="auth-input-container">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    className="auth-text-input has-toggle"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    className="auth-pwd-toggle-btn"
-                    onClick={() => setShowPassword(!showPassword)}
-                    title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  >
-                    {showPassword ? "👁️‍🗨️" : "👁️"}
-                  </button>
-                </div>
-
-                {/* Password strength indicator */}
-                {password && (
-                  <div className="auth-pwd-strength-bar-wrap animate-slide-down">
-                    <div className="strength-dots">
-                      <span className={`strength-dot ${pwdStrength.score >= 1 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 1 ? pwdStrength.color : undefined }} />
-                      <span className={`strength-dot ${pwdStrength.score >= 2 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 2 ? pwdStrength.color : undefined }} />
-                      <span className={`strength-dot ${pwdStrength.score >= 3 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 3 ? pwdStrength.color : undefined }} />
-                    </div>
-                    <span className="strength-label" style={{ color: pwdStrength.color }}>
-                      {pwdStrength.text}
-                    </span>
-                  </div>
-                )}
-              </div>
-
               {/* TERMS & CONDITIONS ACCEPTANCE CHECKBOX */}
               <div className="auth-terms-group">
                 <label className="auth-terms-checkbox-label">
@@ -904,12 +840,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   type="submit"
                   className={`auth-primary-submit-btn ${!acceptTerms ? 'btn-disabled-locked' : 'btn-enabled-active'}`}
                   disabled={!acceptTerms || loading}
-                  title={!acceptTerms ? (lang === 'ar' ? 'يرجى الموافقة على شروط الاستخدام لتفعيل زر إنشاء الحساب' : 'Veuillez cocher l\'acceptation des conditions d\'utilisation pour activer le bouton') : ''}
+                  title={!acceptTerms ? (lang === 'ar' ? 'يرجى الموافقة على شروط الاستخدام لتفعيل زر إرسال المعلومات' : 'Veuillez cocher l\'acceptation des conditions d\'utilisation pour activer le bouton') : ''}
                 >
                   {loading ? (
                     <span className="auth-loading-spinner-wrapper">
                       <span className="auth-spinner" />
-                      <span>{lang === 'ar' ? 'جاري إنشاء الحساب...' : 'Création du compte...'}</span>
+                      <span>{lang === 'ar' ? 'جاري إرسال المعلومات...' : 'Envoi des informations en cours...'}</span>
                     </span>
                   ) : (
                     <>

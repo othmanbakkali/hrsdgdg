@@ -474,24 +474,42 @@ app.post('/api/auth/register', (req, res) => {
   } = req.body;
   const db = readDB();
   
-  if (db.users.some(u => u.email === email)) {
-    return res.status(400).json({ message: 'Cet email est déjà enregistré' });
-  }
+  const userPhone = (phone || '').trim();
+  const cleanPhone = userPhone.replace(/\D/g, '');
+  const userEmail = (email && email.trim()) ? email.trim() : (cleanPhone ? `pro_${cleanPhone}@hrsdgdg.ma` : `pro_${Date.now()}@hrsdgdg.ma`);
+  const userPass = (mot_de_passe && mot_de_passe.trim()) ? mot_de_passe.trim() : `Pro!${Math.random().toString(36).slice(-8)}*Gold`;
 
   const rawDoc = patente_document || patenteDocument || '';
   const savedDocUrl = processDocument(rawDoc, 'patente');
   const numPatente = (numero_patente || numeroPatente || '').trim();
 
+  // If phone/email already submitted, update the existing pending request
+  const existingUser = db.users.find(u => u.email === userEmail || (cleanPhone && (u.phone || '').replace(/\D/g, '') === cleanPhone));
+  if (existingUser) {
+    existingUser.nom = nom || existingUser.nom;
+    existingUser.shopName = shopName || existingUser.shopName;
+    existingUser.phone = userPhone || existingUser.phone;
+    existingUser.telephone = userPhone || existingUser.telephone;
+    existingUser.city = city || existingUser.city;
+    existingUser.ville = city || existingUser.ville;
+    existingUser.numero_patente = numPatente || existingUser.numero_patente;
+    if (savedDocUrl) existingUser.patente_document = savedDocUrl;
+    existingUser.account_status = 'en_attente';
+    existingUser.verification_status = 'en_attente_validation';
+    writeDB(db);
+    return res.status(200).json({ success: true, message: 'Un administrateur va vous contacter pour validation du compte', user: existingUser });
+  }
+
   const newUser = {
     id: 'u_' + Math.random().toString(36).substr(2, 9),
-    email,
+    email: userEmail,
     nom,
-    mot_de_passe,
+    mot_de_passe: userPass,
     role: 'commercant', // Inscription strictement réservée aux professionnels
     is_professional: true,
     shopName: shopName || nom,
-    phone: phone || '',
-    telephone: phone || '',
+    phone: userPhone,
+    telephone: userPhone,
     city: city || 'Casablanca',
     ville: city || 'Casablanca',
     address: address || city || '',
