@@ -723,15 +723,15 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
           }}>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'أعلى سعر' : 'Plus haut'}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>{rawMax} DH</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>{rawMax} {isAr ? 'د.م' : 'DH'}</div>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'أدنى سعر' : 'Plus bas'}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ef4444', marginTop: '2px' }}>{rawMin} DH</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ef4444', marginTop: '2px' }}>{rawMin} {isAr ? 'د.م' : 'DH'}</div>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'متوسط السعر' : 'Prix moyen'}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fef3c7', marginTop: '2px' }}>{avgPrice} DH</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fef3c7', marginTop: '2px' }}>{avgPrice} {isAr ? 'د.م' : 'DH'}</div>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'عدد التسجيلات' : 'Enregistrements'}</div>

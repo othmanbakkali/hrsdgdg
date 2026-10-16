@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function MobileChatDrawer({
   isOpen,
@@ -7,6 +8,7 @@ export default function MobileChatDrawer({
   targetProduct = null
 }) {
   const { user } = useAuth();
+  const { lang, isRtl } = useLanguage();
   const [messages, setMessages] = useState([
     {
       id: '1',
@@ -104,15 +106,19 @@ export default function MobileChatDrawer({
 
           const sellerPhone = targetProduct.vendeur_phone || targetProduct.telephone || targetProduct.phone || '';
           const cleanPhone = formatWhatsAppPhone(sellerPhone);
-          const targetTitle = targetProduct.titre_fr || targetProduct.titre || 'Bijou';
-          const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Bonjour, je vous contacte à propos du bijou: ${targetTitle} (${targetProduct.prix?.toLocaleString()} DH)`)}`;
+          const isAr = lang === 'ar';
+          const targetTitle = (isAr && targetProduct.titre_ar) ? targetProduct.titre_ar : (targetProduct.titre_fr || targetProduct.titre || (isAr ? 'قطعة مجوهرات' : 'Bijou'));
+          const waMsg = isAr
+            ? `السلام عليكم، أتواصل معكم بخصوص هذه القطعة: ${targetTitle} (${targetProduct.prix?.toLocaleString()} د.م)`
+            : `Bonjour, je vous contacte à propos du bijou: ${targetTitle} (${targetProduct.prix?.toLocaleString()} DH)`;
+          const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}`;
 
           return (
             <div className="chat-product-banner">
               <img src={targetProduct.images && targetProduct.images[0]} alt={targetTitle} className="chat-banner-thumb" />
               <div className="chat-banner-info">
                 <strong className="chat-banner-title">{targetTitle}</strong>
-                <span className="chat-banner-price">{targetProduct.prix?.toLocaleString()} DH</span>
+                <span className="chat-banner-price">{targetProduct.prix?.toLocaleString()} {isAr ? 'د.م' : 'DH'}</span>
               </div>
               <a 
                 href={waUrl} 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, translateCityToArabic } from '../context/LanguageContext';
 
 export default function ProductCard({
   product,
@@ -66,19 +66,21 @@ export default function ProductCard({
     ? `${window.location.origin}/?product=${product.id}` 
     : `https://hrsdgdg.ma/?product=${product.id}`;
 
-  const grammageDisplay = realGramme !== null && realGramme !== undefined && Number(realGramme) > 0
-    ? `${realGramme} g`
-    : (lang === 'ar' ? 'غير محدد' : 'Non renseigné');
+  const isAr = lang === 'ar';
 
-  const cityDisplay = product.city || (lang === 'ar' ? 'الدار البيضاء' : 'Casablanca');
+  const grammageDisplay = realGramme !== null && realGramme !== undefined && Number(realGramme) > 0
+    ? `${realGramme} ${isAr ? 'غ' : 'g'}`
+    : (isAr ? 'غير محدد' : 'Non renseigné');
+
+  const cityDisplay = isAr ? translateCityToArabic(product.city) : (product.city || 'Casablanca');
 
   // Pre-filled WhatsApp message matching exact specification (Req 9)
-  const whatsappPreFilledText = lang === 'ar'
+  const whatsappPreFilledText = isAr
     ? `السلام عليكم، أرغب في الحصول على معلومات حول هذه القطعة.
 
 القطعة : ${displayTitle}
 المرجع : ${product.id}
-السعر : ${product.prix ? product.prix.toLocaleString() : 'N/A'} MAD
+السعر : ${product.prix ? product.prix.toLocaleString('fr-FR') : 'غير محدد'} د.م
 الوزن : ${grammageDisplay}
 المدينة : ${cityDisplay}
 رابط القطعة : ${productUrl}
@@ -90,7 +92,7 @@ export default function ProductCard({
 
 Article : ${displayTitle}
 Référence : ${product.id}
-Prix : ${product.prix ? product.prix.toLocaleString() : 'N/A'} MAD
+Prix : ${product.prix ? product.prix.toLocaleString('fr-FR') : 'N/A'} MAD
 Grammage : ${grammageDisplay}
 Ville : ${cityDisplay}
 Lien du produit : ${productUrl}
@@ -106,11 +108,11 @@ Merci.`;
   const handleWhatsAppClick = (e) => {
     e.stopPropagation();
     if (isSold) {
-      alert(lang === 'ar' ? 'هذه القطعة تم بيعها.' : 'Cet article a déjà été vendu.');
+      alert(isAr ? 'هذه القطعة تم بيعها.' : 'Cet article a déjà été vendu.');
       return;
     }
     if (!hasValidPhone) {
-      alert(lang === 'ar' ? 'رقم هاتف البائع غير متوفر حالياً.' : 'Le numéro WhatsApp de ce vendeur n\'est pas encore renseigné.');
+      alert(isAr ? 'رقم هاتف البائع غير متوفر حالياً.' : 'Le numéro WhatsApp de ce vendeur n\'est pas encore renseigné.');
       return;
     }
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
@@ -118,8 +120,10 @@ Merci.`;
 
   // State display text
   const etatDisplay = isSold 
-    ? (lang === 'ar' ? 'تم البيع' : 'Vendu') 
-    : (product.etat || (isSecondHand ? (lang === 'ar' ? 'مستعمل ممتازة' : 'Occasion') : (lang === 'ar' ? 'جديد 100%' : 'Neuf')));
+    ? (isAr ? 'تم البيع' : 'Vendu') 
+    : (isAr
+        ? (product.etat && (product.etat.toLowerCase().includes('occ') || product.etat.includes('مستعمل')) ? 'مستعمل ممتازة' : (isSecondHand ? 'مستعمل ممتازة' : 'جديد 100%'))
+        : (product.etat || (isSecondHand ? 'Occasion' : 'Neuf')));
 
   return (
     <div 
@@ -388,19 +392,21 @@ Merci.`;
             <span style={{ fontSize: '1.08rem', fontWeight: 800, color: isSold ? '#64748b' : '#b38728' }}>
               {product.prix ? product.prix.toLocaleString() : (lang === 'ar' ? 'غير محدد' : 'N/A')}
             </span>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>MAD</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>
+              {lang === 'ar' ? 'د.م' : 'MAD'}
+            </span>
             {discountPercent > 0 && product.ancien_prix && !isSold && (
               <span style={{ fontSize: '0.7rem', color: '#94a3b8', textDecoration: 'line-through' }}>
-                {product.ancien_prix.toLocaleString()} MAD
+                {product.ancien_prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'MAD'}
               </span>
             )}
           </div>
 
-          {/* 4. Grammage (en grammes 'g') */}
+          {/* 4. Grammage (en grammes 'g' ou 'غ') */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', color: '#334155', marginTop: '2px' }}>
             <span style={{ color: '#b38728', fontWeight: 700 }}>⚖️</span>
             <strong style={{ color: realGramme ? '#0f172a' : '#64748b', fontWeight: 700 }}>
-              {realGramme ? `${realGramme} g` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
+              {realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
             </strong>
           </div>
 
@@ -410,7 +416,7 @@ Merci.`;
             <span style={{ fontWeight: 600, color: '#334155' }}>{cityDisplay}</span>
             <span style={{ opacity: 0.4 }}>•</span>
             <span style={{ fontSize: '0.7rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {product.vendeur_nom || 'Vendeur Vérifié'}
+              {product.vendeur_nom || (lang === 'ar' ? 'بائع موثق' : 'Vendeur Vérifié')}
             </span>
           </div>
 

@@ -102,28 +102,28 @@ export default function LiveGoldTicker() {
         <div className="ticker-track">
           <div className="ticker-item">
             <span className="ticker-metal">👑 {t.gold18} :</span>
-            <span className="ticker-price">{rates.gold18k.toFixed(2)} MAD/g</span>
+            <span className="ticker-price">{rates.gold18k.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'MAD/g'}</span>
             <span className="ticker-trend positive">↗ {rates.variation}</span>
           </div>
           <span className="ticker-divider">•</span>
 
           <div className="ticker-item">
             <span className="ticker-metal">✨ {t.gold21} :</span>
-            <span className="ticker-price">{rates.gold21k.toFixed(2)} MAD/g</span>
+            <span className="ticker-price">{rates.gold21k.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'MAD/g'}</span>
             <span className="ticker-trend positive">↗</span>
           </div>
           <span className="ticker-divider">•</span>
 
           <div className="ticker-item">
             <span className="ticker-metal">🏆 {t.gold24} :</span>
-            <span className="ticker-price">{rates.gold24k.toFixed(2)} MAD/g</span>
+            <span className="ticker-price">{rates.gold24k.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'MAD/g'}</span>
             <span className="ticker-trend positive">↗</span>
           </div>
           <span className="ticker-divider">•</span>
 
           <div className="ticker-item">
             <span className="ticker-metal">🪙 {t.silver} :</span>
-            <span className="ticker-price">{rates.silver925.toFixed(2)} MAD/g</span>
+            <span className="ticker-price">{rates.silver925.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'MAD/g'}</span>
           </div>
         </div>
 
@@ -156,21 +156,21 @@ export default function LiveGoldTicker() {
                     className={`karat-pill ${calcKarat === '18k' ? 'active' : ''}`}
                     onClick={() => setCalcKarat('18k')}
                   >
-                    18K • {rates.gold18k} DH/g
+                    18K • {rates.gold18k} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
                   </button>
                   <button 
                     type="button" 
                     className={`karat-pill ${calcKarat === '21k' ? 'active' : ''}`}
                     onClick={() => setCalcKarat('21k')}
                   >
-                    21K • {rates.gold21k} DH/g
+                    21K • {rates.gold21k} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
                   </button>
                   <button 
                     type="button" 
                     className={`karat-pill ${calcKarat === '24k' ? 'active' : ''}`}
                     onClick={() => setCalcKarat('24k')}
                   >
-                    24K • {rates.gold24k} DH/g
+                    24K • {rates.gold24k} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
                   </button>
                 </div>
               </div>
@@ -178,7 +178,7 @@ export default function LiveGoldTicker() {
               <div className="form-group" style={{ marginTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <label className="form-label">{t.weightLabel}</label>
-                  <span style={{ color: 'var(--primary-gold)', fontWeight: 'bold' }}>{calcGrams} g</span>
+                  <span style={{ color: 'var(--primary-gold)', fontWeight: 'bold' }}>{calcGrams} {lang === 'ar' ? 'غ' : 'g'}</span>
                 </div>
                 <input 
                   type="range" 
@@ -196,7 +196,7 @@ export default function LiveGoldTicker() {
                       className="quick-gram-btn"
                       onClick={() => setCalcGrams(val)}
                     >
-                      {val}g
+                      {val} {lang === 'ar' ? 'غ' : 'g'}
                     </button>
                   ))}
                 </div>
@@ -205,9 +205,11 @@ export default function LiveGoldTicker() {
               <div className="calc-result-box">
                 <span className="calc-result-label">{t.totalEst}</span>
                 <div className="calc-result-value">
-                  {getCalculatedValue()} <span className="calc-result-currency">MAD</span>
+                  {getCalculatedValue()} <span className="calc-result-currency">{lang === 'ar' ? 'د.م' : 'MAD'}</span>
                 </div>
-                <span className="calc-guarantee-note">✨ Cours officiel certifié FMB - Joaillerie Marocaine</span>
+                <span className="calc-guarantee-note">
+                  {lang === 'ar' ? '✨ سعر رسمي معتمد من الفيدرالية المغربية للصياغة' : '✨ Cours officiel certifié FMB - Joaillerie Marocaine'}
+                </span>
               </div>
             </div>
 

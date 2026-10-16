@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, translateCityToArabic } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { API_URL } from '../config/api';
@@ -48,8 +48,8 @@ export default function ProductDetailModal({
   const realGramme = product?.gramme !== undefined && product?.gramme !== null && product?.gramme !== '' 
     ? product.gramme 
     : (product?.poids !== undefined && product?.poids !== null && product?.poids !== '' ? product.poids : null);
-  const grammageDisplay = realGramme ? `${realGramme} g` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné');
-  const cityDisplay = product?.city || (lang === 'ar' ? 'الدار البيضاء' : 'Casablanca');
+  const grammageDisplay = realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné');
+  const cityDisplay = lang === 'ar' ? translateCityToArabic(product?.city) : (product?.city || 'Casablanca');
 
   const productUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/?product=${product?.id}` 
@@ -60,7 +60,7 @@ export default function ProductDetailModal({
 
 القطعة : ${displayTitle}
 المرجع : ${product?.id}
-السعر : ${product?.prix ? product.prix.toLocaleString() : 'N/A'} MAD
+السعر : ${product?.prix ? product.prix.toLocaleString() : 'غير محدد'} د.م
 الوزن : ${grammageDisplay}
 المدينة : ${cityDisplay}
 رابط القطعة : ${productUrl}
@@ -276,7 +276,12 @@ Merci.`;
     const minRequired = (auctionInfo.bidsCount > 0) ? (currentHighest + (auctionInfo.increment_min || 50)) : auctionInfo.prix_depart;
 
     if (numericBid < minRequired) {
-      setBidFeedback({ type: 'error', message: `Le montant minimal requis est de ${minRequired.toLocaleString()} DH` });
+      setBidFeedback({ 
+        type: 'error', 
+        message: lang === 'ar' 
+          ? `الحد الأدنى المطلوب للمزايدة هو ${minRequired.toLocaleString()} د.م` 
+          : `Le montant minimal requis est de ${minRequired.toLocaleString()} DH` 
+      });
       return;
     }
 
@@ -292,12 +297,20 @@ Merci.`;
       });
 
       if (res.ok) {
-        setBidFeedback({ type: 'success', message: `🎉 Enchère de ${numericBid.toLocaleString()} DH déposée avec succès ! Vous menez actuellement la vente.` });
+        setBidFeedback({ 
+          type: 'success', 
+          message: lang === 'ar' 
+            ? `🎉 تم تسجيل مزايدتكم بمبلغ ${numericBid.toLocaleString()} د.م بنجاح! أنتم تتصدرون المزاد حالياً.` 
+            : `🎉 Enchère de ${numericBid.toLocaleString()} DH déposée avec succès ! Vous menez actuellement la vente.` 
+        });
         fetchAuctionDetails();
         setTimeout(() => setBidFeedback(null), 5000);
       } else {
         const err = await res.json();
-        setBidFeedback({ type: 'error', message: err.message || 'Erreur lors du dépôt de l\'offre.' });
+        setBidFeedback({ 
+          type: 'error', 
+          message: err.message || (lang === 'ar' ? 'حدث خطأ أثناء تسجيل المزايدة.' : 'Erreur lors du dépôt de l\'offre.') 
+        });
       }
     } catch (err) {
       console.error(err);
@@ -715,12 +728,12 @@ Merci.`;
               /* Normal Price Row */
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(0, 0, 0, 0.08)' }}>
                 <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }}>
-                  {product.prix.toLocaleString()} DH
+                  {product.prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
                 </span>
                 {product.ancien_prix && product.ancien_prix > product.prix && (
                   <>
                     <span style={{ fontSize: '1.1rem', color: 'var(--text-gray)', textDecoration: 'line-through' }}>
-                      {product.ancien_prix.toLocaleString()} DH
+                      {product.ancien_prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
                     </span>
                     <span className="card-discount-badge">
                       -{Math.round(((product.ancien_prix - product.prix) / product.ancien_prix) * 100)}%
@@ -749,7 +762,7 @@ Merci.`;
               <div>
                 <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'الوزن (غرام)' : 'Grammage'} :</span>{' '}
                 <strong style={{ color: 'var(--primary-gold)' }}>
-                  {product.gramme || product.poids ? `${product.gramme || product.poids} g` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
+                  {product.gramme || product.poids ? `${product.gramme || product.poids} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
                 </strong>
               </div>
               <div><span style={{ color: 'var(--text-gray)' }}>{t('stone')} :</span> <strong>{formatStone(product.pierre)}</strong></div>
@@ -772,7 +785,7 @@ Merci.`;
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   {Object.entries(product.composants_poids).map(([comp, weight]) => (
                     <span key={comp} style={{ color: 'var(--text-dark)' }}>
-                      • <strong>{comp} :</strong> {weight} g
+                      • <strong>{comp} :</strong> {weight} {lang === 'ar' ? 'غ' : 'g'}
                     </span>
                   ))}
                 </div>
@@ -1037,7 +1050,7 @@ Merci.`;
                           alt={c.titre} 
                           style={{ width: '70px', height: '70px', borderRadius: '8px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.15)' }}
                         />
-                        <span style={{ fontSize: '0.72rem', color: 'var(--light-gold)', display: 'block', marginTop: '2px' }}>{c.prix} DH</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--light-gold)', display: 'block', marginTop: '2px' }}>{c.prix} {lang === 'ar' ? 'د.م' : 'DH'}</span>
                       </div>
                     </React.Fragment>
                   ))}

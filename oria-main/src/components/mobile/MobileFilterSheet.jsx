@@ -50,10 +50,10 @@ export default function MobileFilterSheet({
 
   // Budget presets
   const budgetPresets = [
-    { value: 5000, label: isAr ? '5 000 درهم' : '5 000 DH' },
-    { value: 10000, label: isAr ? '10 000 درهم' : '10 000 DH' },
-    { value: 20000, label: isAr ? '20 000 درهم' : '20 000 DH' },
-    { value: 35000, label: isAr ? '35 000+ درهم (الكل)' : '35 000+ DH (Tout)' }
+    { value: 5000, label: isAr ? '5 000 د.م' : '5 000 DH' },
+    { value: 10000, label: isAr ? '10 000 د.م' : '10 000 DH' },
+    { value: 20000, label: isAr ? '20 000 د.م' : '20 000 DH' },
+    { value: 35000, label: isAr ? '35 000+ د.م (الكل)' : '35 000+ DH (Tout)' }
   ];
 
   return (
@@ -97,7 +97,7 @@ export default function MobileFilterSheet({
                 onChangePriceMax(nextBudget);
               }}
             >
-              <span>💰 {isAr ? `أقصى حد ${priceMax.toLocaleString()} درهم` : `Max ${priceMax.toLocaleString()} DH`}</span>
+              <span>💰 {isAr ? `أقصى حد ${priceMax.toLocaleString()} د.م` : `Max ${priceMax.toLocaleString()} DH`}</span>
             </button>
 
             {/* 18k Gold Quick Chip */}

@@ -112,7 +112,7 @@ export default function MobileMenuDrawer({
           >
             <span className="strip-icon">🥇</span>
             <span className="strip-text">
-              {isAr ? `ذهب 18K: ${goldRate.price18k ? Number(goldRate.price18k).toLocaleString('fr-FR') : '1 045'} DH` : `Or 18K: ${goldRate.price18k ? Number(goldRate.price18k).toLocaleString('fr-FR') : '1 045'} DH`}
+              {isAr ? `ذهب 18K: ${goldRate.price18k ? Number(goldRate.price18k).toLocaleString('fr-FR') : '1 045'} د.م` : `Or 18K: ${goldRate.price18k ? Number(goldRate.price18k).toLocaleString('fr-FR') : '1 045'} DH`}
             </span>
             <span className="strip-badge">{goldRate.change || '+0.7%'}</span>
           </button>

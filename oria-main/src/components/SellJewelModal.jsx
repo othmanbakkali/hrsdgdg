@@ -1052,7 +1052,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                             : `Valeur brute or 18k estimée (${goldRate18k} DH/g) :`}
                         </div>
                         <div className="est-calc-formula">
-                          {numPoids}g × {goldRate18k} DH = <span className="est-price-val">~{rawGoldValue.toLocaleString()} DH</span>
+                          {numPoids} {lang === 'ar' ? 'غ' : 'g'} × {goldRate18k} {lang === 'ar' ? 'د.م' : 'DH'} = <span className="est-price-val">~{rawGoldValue.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}</span>
                         </div>
                       </div>
                     </div>
@@ -1066,7 +1066,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                       onClick={() => applySuggestedPrice(1.0)}
                       title="Prix de l'or brut"
                     >
-                      {lang === 'ar' ? 'الذهب الصافي' : 'Or brut'} (~{rawGoldValue} DH)
+                      {lang === 'ar' ? 'الذهب الصافي' : 'Or brut'} (~{rawGoldValue} {lang === 'ar' ? 'د.م' : 'DH'})
                     </button>
                     <button
                       type="button"
@@ -1074,7 +1074,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                       onClick={() => applySuggestedPrice(1.20)}
                       title="+20% pour la façon et l'artisanat"
                     >
-                      +20% {lang === 'ar' ? 'مصنعية وإتقان' : 'Façon'} (~{Math.round(rawGoldValue * 1.20)} DH)
+                      +20% {lang === 'ar' ? 'مصنعية وإتقان' : 'Façon'} (~{Math.round(rawGoldValue * 1.20)} {lang === 'ar' ? 'د.م' : 'DH'})
                     </button>
                     <button
                       type="button"
@@ -1082,7 +1082,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                       onClick={() => applySuggestedPrice(1.40)}
                       title="+40% pour joaillerie haut de gamme"
                     >
-                      +40% {lang === 'ar' ? 'مجوهرات راقية' : 'Haute Joaillerie'} (~{Math.round(rawGoldValue * 1.40)} DH)
+                      +40% {lang === 'ar' ? 'مجوهرات راقية' : 'Haute Joaillerie'} (~{Math.round(rawGoldValue * 1.40)} {lang === 'ar' ? 'د.م' : 'DH'})
                     </button>
                   </div>
                 </div>
@@ -1188,7 +1188,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                 <div className="auth-two-col-grid" style={{ marginBottom: '12px' }}>
                   <div className="auth-field-group">
                     <label className="auth-field-label">
-                      <span>🔨 {lang === 'ar' ? 'سعر انطلاق المزاد (درهم مغربي) *' : 'Prix de départ de l\'enchère (DH) *'}</span>
+                      <span>🔨 {lang === 'ar' ? 'سعر انطلاق المزاد (د.م) *' : 'Prix de départ de l\'enchère (DH) *'}</span>
                     </label>
                     <input 
                       type="number"
@@ -1227,7 +1227,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                 <div className="auth-two-col-grid" style={{ marginBottom: '12px' }}>
                   <div className="auth-field-group">
                     <label className="auth-field-label">
-                      <span>💰 {lang === 'ar' ? 'سعر البيع المطلوب (درهم مغربي) *' : 'Prix de vente (DH) *'}</span>
+                      <span>💰 {lang === 'ar' ? 'سعر البيع المطلوب (د.م) *' : 'Prix de vente (DH) *'}</span>
                     </label>
                     <input 
                       type="number"

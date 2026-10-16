@@ -753,18 +753,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                       value={city}
                       onChange={e => setCity(e.target.value)}
                     >
-                      <option value="Casablanca">Casablanca (الدار البيضاء)</option>
-                      <option value="Rabat">Rabat (الرباط)</option>
-                      <option value="Marrakech">Marrakech (مراكش)</option>
-                      <option value="Fès">Fès (فاس)</option>
-                      <option value="Tanger">Tanger (طنجة)</option>
-                      <option value="Agadir">Agadir (أكادير)</option>
-                      <option value="Meknès">Meknès (مكناس)</option>
-                      <option value="Oujda">Oujda (وجدة)</option>
-                      <option value="Tétouan">Tétouan (تطوان)</option>
-                      <option value="Kenitra">Kénitra (القنيطرة)</option>
-                      <option value="Essaouira">Essaouira (الصويرة)</option>
-                      <option value="Autre">Autre Ville (مدينة أخرى)</option>
+                      <option value="Casablanca">{lang === 'ar' ? 'الدار البيضاء' : 'Casablanca'}</option>
+                      <option value="Rabat">{lang === 'ar' ? 'الرباط' : 'Rabat'}</option>
+                      <option value="Marrakech">{lang === 'ar' ? 'مراكش' : 'Marrakech'}</option>
+                      <option value="Fès">{lang === 'ar' ? 'فاس' : 'Fès'}</option>
+                      <option value="Tanger">{lang === 'ar' ? 'طنجة' : 'Tanger'}</option>
+                      <option value="Agadir">{lang === 'ar' ? 'أكادير' : 'Agadir'}</option>
+                      <option value="Meknès">{lang === 'ar' ? 'مكناس' : 'Meknès'}</option>
+                      <option value="Oujda">{lang === 'ar' ? 'وجدة' : 'Oujda'}</option>
+                      <option value="Tétouan">{lang === 'ar' ? 'تطوان' : 'Tétouan'}</option>
+                      <option value="Kenitra">{lang === 'ar' ? 'القنيطرة' : 'Kénitra'}</option>
+                      <option value="Essaouira">{lang === 'ar' ? 'الصويرة' : 'Essaouira'}</option>
+                      <option value="Autre">{lang === 'ar' ? 'مدينة أخرى' : 'Autre Ville'}</option>
                     </select>
                   </div>
                 </div>

@@ -148,17 +148,11 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
                         style={{ width: '50px', height: '50px', borderRadius: '6px', objectFit: 'cover' }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.68rem', fontWeight: 800, color: item.type_vente === 'SECOND_HAND' ? '#6ee7b7' : 'var(--light-gold)' }}>
-                          {item.type_vente === 'SECOND_HAND' 
-                            ? (isAr ? '♻️ مستعمل' : '♻️ Seconde Main')
-                            : (isAr ? '✨ جديد' : '✨ Première Main')
-                          }
-                        </div>
                         <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {item.titre}
+                          {(isAr && item.titre_ar) ? item.titre_ar : item.titre}
                         </div>
                         <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--primary-gold)' }} dir="ltr">
-                          {item.prix} {isAr ? 'درهم' : 'DH'}
+                          {item.prix} {isAr ? 'د.م' : 'DH'}
                         </div>
                       </div>
                       <button 
@@ -195,8 +189,8 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
         {/* Input */}
         <form onSubmit={handleSend} style={{ padding: '16px 20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '10px' }}>
           <input 
-            type="text"
-            placeholder={isAr ? "مثال: أبحث عن هدية لزوجتي بميزانية 2500 درهم..." : "Ex: Je cherche un cadeau pour ma femme, budget 1500 DH..."}
+            type="text" 
+            placeholder={isAr ? "مثال: أبحث عن هدية لزوجتي بميزانية 2500 د.م..." : "Ex: Je cherche un cadeau pour ma femme, budget 1500 DH..."}
             value={inputQuery}
             onChange={e => setInputQuery(e.target.value)}
             className="filter-number-input"

@@ -979,15 +979,15 @@ function MainLayout() {
                 {cartItems.length > 0 && (
                   <div className="cart-drawer-footer">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '1.1rem' }}>
-                      <span style={{ color: 'var(--text-gray)', fontSize: '0.95rem' }}>Total estimé :</span>
-                      <strong style={{ color: 'var(--light-gold, #d4af37)', fontWeight: 800, fontSize: '1.25rem' }}>{cartTotal.toLocaleString()} DH</strong>
+                      <span style={{ color: 'var(--text-gray)', fontSize: '0.95rem' }}>{lang === 'ar' ? 'المجموع التقديري :' : 'Total estimé :'}</span>
+                      <strong style={{ color: 'var(--light-gold, #d4af37)', fontWeight: 800, fontSize: '1.25rem' }}>{cartTotal.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}</strong>
                     </div>
                     <button 
                       onClick={() => setCheckoutStep(2)}
                       className="btn-jewelia-primary"
                       style={{ width: '100%', padding: '14px', fontSize: '0.95rem', fontWeight: 700 }}
                     >
-                      Passer la commande sécurisée ➔
+                      {lang === 'ar' ? 'متابعة الطلب الآمن ➔' : 'Passer la commande sécurisée ➔'}
                     </button>
                   </div>
                 )}
@@ -999,11 +999,11 @@ function MainLayout() {
               <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div className="cart-items-scroll">
                   <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">Nom complet</label>
+                    <label className="filter-label">{lang === 'ar' ? 'الاسم الكامل' : 'Nom complet'}</label>
                     <input 
                       type="text" 
                       required
-                      placeholder="Ex: Yasmine Benali"
+                      placeholder={lang === 'ar' ? "مثال: ياسمين بنعلي" : "Ex: Yasmine Benali"}
                       value={checkoutForm.nom}
                       onChange={e => setCheckoutForm({ ...checkoutForm, nom: e.target.value })}
                       className="filter-number-input"
@@ -1012,7 +1012,7 @@ function MainLayout() {
                   </div>
 
                   <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">Numéro de téléphone (WhatsApp)</label>
+                    <label className="filter-label">{lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Numéro de téléphone (WhatsApp)'}</label>
                     <input 
                       type="tel" 
                       required
@@ -1025,30 +1025,30 @@ function MainLayout() {
                   </div>
 
                   <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">Ville de livraison</label>
+                    <label className="filter-label">{lang === 'ar' ? 'مدينة التسليم' : 'Ville de livraison'}</label>
                     <select 
                       value={checkoutForm.ville}
                       onChange={e => setCheckoutForm({ ...checkoutForm, ville: e.target.value })}
                       className="filter-number-input"
                       style={{ width: '100%', padding: '10px' }}
                     >
-                      <option value="Casablanca">Casablanca</option>
-                      <option value="Rabat">Rabat</option>
-                      <option value="Marrakech">Marrakech</option>
-                      <option value="Tanger">Tanger</option>
-                      <option value="Fès">Fès</option>
-                      <option value="Agadir">Agadir</option>
-                      <option value="Meknès">Meknès</option>
-                      <option value="Oujda">Oujda</option>
+                      <option value="Casablanca">{lang === 'ar' ? 'الدار البيضاء' : 'Casablanca'}</option>
+                      <option value="Rabat">{lang === 'ar' ? 'الرباط' : 'Rabat'}</option>
+                      <option value="Marrakech">{lang === 'ar' ? 'مراكش' : 'Marrakech'}</option>
+                      <option value="Tanger">{lang === 'ar' ? 'طنجة' : 'Tanger'}</option>
+                      <option value="Fès">{lang === 'ar' ? 'فاس' : 'Fès'}</option>
+                      <option value="Agadir">{lang === 'ar' ? 'أكادير' : 'Agadir'}</option>
+                      <option value="Meknès">{lang === 'ar' ? 'مكناس' : 'Meknès'}</option>
+                      <option value="Oujda">{lang === 'ar' ? 'وجدة' : 'Oujda'}</option>
                     </select>
                   </div>
 
                   <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="filter-label">Adresse complète de livraison</label>
+                    <label className="filter-label">{lang === 'ar' ? 'العنوان الكامل للتسليم' : 'Adresse complète de livraison'}</label>
                     <textarea 
                       required
                       rows={3}
-                      placeholder="Quartier, Rue, N° d'appartement..."
+                      placeholder={lang === 'ar' ? "الحي، الشارع، رقم العمارة أو الشقة..." : "Quartier, Rue, N° d'appartement..."}
                       value={checkoutForm.adresse}
                       onChange={e => setCheckoutForm({ ...checkoutForm, adresse: e.target.value })}
                       className="filter-number-input"
@@ -1057,7 +1057,7 @@ function MainLayout() {
                   </div>
 
                   <div className="form-group">
-                    <label className="filter-label">Mode de paiement</label>
+                    <label className="filter-label">{lang === 'ar' ? 'طريقة الدفع' : 'Mode de paiement'}</label>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', cursor: 'pointer' }}>
                         <input 
@@ -1067,8 +1067,10 @@ function MainLayout() {
                           onChange={() => setCheckoutForm({ ...checkoutForm, mode_paiement: 'cash_on_delivery' })}
                         />
                         <div>
-                          <strong style={{ fontSize: '0.85rem' }}>💵 Paiement à la livraison</strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>Réglez en espèces ou TPE lors de la réception</span>
+                          <strong style={{ fontSize: '0.85rem' }}>{lang === 'ar' ? '💵 الدفع عند الاستلام' : '💵 Paiement à la livraison'}</strong>
+                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                            {lang === 'ar' ? 'ادفع نقداً أو عبر جهاز الدفع الإلكتروني عند الاستلام' : 'Réglez en espèces ou TPE lors de la réception'}
+                          </span>
                         </div>
                       </label>
 
@@ -1080,8 +1082,10 @@ function MainLayout() {
                           onChange={() => setCheckoutForm({ ...checkoutForm, mode_paiement: 'cmi' })}
                         />
                         <div>
-                          <strong style={{ fontSize: '0.85rem' }}>💳 Carte bancaire marocaine (CMI)</strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>Paiement sécurisé 3D-Secure</span>
+                          <strong style={{ fontSize: '0.85rem' }}>{lang === 'ar' ? '💳 بطاقة بنكية مغربية (CMI)' : '💳 Carte bancaire marocaine (CMI)'}</strong>
+                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                            {lang === 'ar' ? 'دفع آمن مع تأكيد 3D-Secure' : 'Paiement sécurisé 3D-Secure'}
+                          </span>
                         </div>
                       </label>
                     </div>
@@ -1095,14 +1099,14 @@ function MainLayout() {
                     className="btn-jewelia-secondary"
                     style={{ flex: 1 }}
                   >
-                    Retour
+                    {lang === 'ar' ? 'رجوع' : 'Retour'}
                   </button>
                   <button 
                     type="submit"
                     className="btn-jewelia-primary"
                     style={{ flex: 2 }}
                   >
-                    Confirmer la commande ({cartTotal.toLocaleString()} DH)
+                    {lang === 'ar' ? `تأكيد الطلب (${cartTotal.toLocaleString()} د.م)` : `Confirmer la commande (${cartTotal.toLocaleString()} DH)`}
                   </button>
                 </div>
               </form>
@@ -1113,16 +1117,16 @@ function MainLayout() {
               <div className="cart-items-scroll" style={{ textAlign: 'center', padding: '30px 20px' }}>
                 <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '14px' }}>🎉</span>
                 <h3 style={{ fontSize: '1.4rem', color: 'var(--light-gold)', marginBottom: '8px' }}>
-                  Commande Confirmée !
+                  {lang === 'ar' ? 'تم تأكيد طلبكم بنجاح !' : 'Commande Confirmée !'}
                 </h3>
                 <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '20px' }}>
-                  Numéro de référence : <strong style={{ color: '#fff' }}>#{confirmedOrder.id}</strong>
+                  {lang === 'ar' ? 'رقم الطلب المرجعي :' : 'Numéro de référence :'} <strong style={{ color: '#fff' }}>#{confirmedOrder.id}</strong>
                 </p>
 
                 {/* Tracking Step Checkpoints */}
-                <div className="order-tracking-card" style={{ textAlign: 'left' }}>
+                <div className="order-tracking-card" style={{ textAlign: lang === 'ar' ? 'right' : 'left' }}>
                   <h4 style={{ fontSize: '0.95rem', color: 'var(--primary-gold)', marginBottom: '12px' }}>
-                    Suivi de votre livraison sécurisée
+                    {lang === 'ar' ? 'تتبع مسار شحنتكم المؤمنة' : 'Suivi de votre livraison sécurisée'}
                   </h4>
                   <div className="tracking-steps-timeline">
                     {confirmedOrder.tracking_steps.map((step, idx) => (
@@ -1143,7 +1147,7 @@ function MainLayout() {
                   className="btn-jewelia-primary"
                   style={{ width: '100%', marginTop: '20px' }}
                 >
-                  Continuer mes achats 💎
+                  {lang === 'ar' ? 'متابعة التسوق 💎' : 'Continuer mes achats 💎'}
                 </button>
               </div>
             )}

@@ -41,7 +41,7 @@ const translations = {
     messages: "الرسائل",
     orders: "طلباتي",
     dashboard: "لوحة التحكم",
-    currency: "درهم",
+    currency: "د.م",
     grams: "غ",
     purity: "العيار",
     stock: "المخزون",
@@ -301,20 +301,74 @@ const translations = {
   }
 };
 
+export const translateCityToArabic = (city) => {
+  if (!city) return 'الدار البيضاء';
+  const c = String(city).trim().toLowerCase();
+  if (c.includes('casa') || c.includes('dar') || c.includes('بيضاء')) return 'الدار البيضاء';
+  if (c.includes('rabat') || c.includes('رباط')) return 'الرباط';
+  if (c.includes('marrak') || c.includes('مراكش')) return 'مراكش';
+  if (c.includes('fès') || c.includes('fes') || c.includes('فاس')) return 'فاس';
+  if (c.includes('tang') || c.includes('طنجة')) return 'طنجة';
+  if (c.includes('agad') || c.includes('أكادير') || c.includes('اكادير')) return 'أكادير';
+  if (c.includes('mekn') || c.includes('مكناس')) return 'مكناس';
+  if (c.includes('oujd') || c.includes('وجدة')) return 'وجدة';
+  if (c.includes('tétou') || c.includes('tetouan') || c.includes('تطوان')) return 'تطوان';
+  if (c.includes('kéni') || c.includes('kenitra') || c.includes('قنيطرة')) return 'القنيطرة';
+  if (c.includes('essaou') || c.includes('صويرة')) return 'الصويرة';
+  if (c.includes('el jadida') || c.includes('jadida') || c.includes('جديدة')) return 'الجديدة';
+  if (c.includes('safi') || c.includes('آسفي') || c.includes('اسفي')) return 'آسفي';
+  if (c.includes('nador') || c.includes('ناظور')) return 'الناظور';
+  if (c.includes('beni mellal') || c.includes('بني ملال')) return 'بني ملال';
+  if (c.includes('laâyoune') || c.includes('laayoune') || c.includes('عيون')) return 'العيون';
+  if (c.includes('dakhla') || c.includes('داخلة')) return 'الداخلة';
+  if (c.includes('salé') || c.includes('sale') || c.includes('سلا')) return 'سلا';
+  if (c.includes('mohamm') || c.includes('محمدية')) return 'المحمدية';
+  if (c.includes('khouribga') || c.includes('خريبكة')) return 'خريبكة';
+  if (c.includes('ouarzazate') || c.includes('ورزازات')) return 'ورزازات';
+  if (c.includes('taza') || c.includes('تازة')) return 'تازة';
+  if (c.includes('berrechid') || c.includes('برشيد')) return 'برشيد';
+  if (c.includes('taroudant') || c.includes('تارودانت')) return 'تارودانت';
+  if (c.includes('errachidia') || c.includes('الرشيدية')) return 'الرشيدية';
+  if (c.includes('larache') || c.includes('العرائش')) return 'العرائش';
+  if (c.includes('guelmim') || c.includes('كلميم')) return 'كلميم';
+  if (c.includes('khemisset') || c.includes('الخميسات')) return 'الخميسات';
+  if (c.includes('tiznit') || c.includes('تيزنيت')) return 'تيزنيت';
+  if (c.includes('berkane') || c.includes('بركان')) return 'بركان';
+  if (c.includes('al hoceima') || c.includes('الحسيمة')) return 'الحسيمة';
+  if (c.includes('autre') || c.includes('other')) return 'مدينة أخرى';
+  return city;
+};
+
+export const formatCurrency = (amount, lang = 'ar') => {
+  if (amount === undefined || amount === null || amount === '') return lang === 'ar' ? 'غير محدد' : 'N/A';
+  const num = Number(amount);
+  const formatted = isNaN(num) ? amount : num.toLocaleString('fr-FR');
+  const unit = lang === 'ar' ? 'د.م' : 'MAD';
+  return `${formatted} ${unit}`;
+};
+
+export const formatGrammage = (gramme, lang = 'ar') => {
+  if (gramme === undefined || gramme === null || gramme === '' || Number(gramme) <= 0) {
+    return lang === 'ar' ? 'غير محدد' : 'Non renseigné';
+  }
+  const unit = lang === 'ar' ? 'غ' : 'g';
+  return `${gramme} ${unit}`;
+};
+
 export const LanguageProvider = ({ children }) => {
   const [lang, setLangState] = useState(() => {
-    const saved = localStorage.getItem('jewelia-lang');
-    return (saved === 'fr' || saved === 'ar') ? saved : 'ar';
+    const saved = localStorage.getItem('jewelia-lang-ar');
+    return saved === 'fr' ? 'fr' : 'ar';
   });
 
   const setLang = (newLang) => {
     const validLang = (newLang === 'fr' || newLang === 'ar') ? newLang : 'ar';
     setLangState(validLang);
-    localStorage.setItem('jewelia-lang', validLang);
+    localStorage.setItem('jewelia-lang-ar', validLang);
   };
 
   useEffect(() => {
-    localStorage.setItem('jewelia-lang', lang);
+    localStorage.setItem('jewelia-lang-ar', lang);
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [lang]);
@@ -333,3 +387,4 @@ export const LanguageProvider = ({ children }) => {
 };
 
 export const useLanguage = () => useContext(LanguageContext);
+

@@ -264,7 +264,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               fontWeight: 700,
               color: '#8e9aa8'
             }}>
-              {isAr ? 'درهم/غرام' : 'MAD/gramme'}
+              {isAr ? 'د.م/غ' : 'MAD/gramme'}
             </span>
           </div>
           {/* Indicateur Argent 925 */}

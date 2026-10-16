@@ -273,7 +273,7 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
             </h3>
             <div style={{ margin: '30px 0' }}>
               <span style={{ fontSize: '2.4rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }} dir="ltr">
-                {answers.budget.toLocaleString()} {isAr ? 'درهم' : 'DH'}
+                {answers.budget.toLocaleString()} {isAr ? 'د.م' : 'DH'}
               </span>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', marginTop: '6px' }}>
                 {isAr ? 'الميزانية القصوى المرغوبة' : 'Budget maximum souhaité'}
@@ -295,9 +295,9 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-gray)', fontSize: '0.8rem', marginTop: '8px' }} dir="ltr">
-              <span>500 DH</span>
-              <span>15 000 DH</span>
-              <span>30 000+ DH</span>
+              <span>500 {isAr ? 'د.م' : 'DH'}</span>
+              <span>15 000 {isAr ? 'د.م' : 'DH'}</span>
+              <span>30 000+ {isAr ? 'د.م' : 'DH'}</span>
             </div>
           </div>
         )}
@@ -445,10 +445,10 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
 
                   <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {item.titre}
+                      {(isAr && item.titre_ar) ? item.titre_ar : item.titre}
                     </span>
                     <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--light-gold)' }} dir="ltr">
-                      {item.prix.toLocaleString()} {isAr ? 'درهم' : 'DH'}
+                      {item.prix.toLocaleString()} {isAr ? 'د.م' : 'DH'}
                     </span>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
                       <button 
