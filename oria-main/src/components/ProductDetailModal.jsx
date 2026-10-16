@@ -337,12 +337,13 @@ Merci.`;
 
   const currentImgUrl = galleryImages[activeImageIndex]?.url || galleryImages[0]?.url;
 
+  // Inverted arrows for natural image progression
   const handlePrevImage = () => {
-    setActiveImageIndex(prev => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+    setActiveImageIndex(prev => (prev === galleryImages.length - 1 ? 0 : prev + 1));
   };
 
   const handleNextImage = () => {
-    setActiveImageIndex(prev => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+    setActiveImageIndex(prev => (prev === 0 ? galleryImages.length - 1 : prev - 1));
   };
 
   // Keyboard navigation (Hook called unconditionally before any early return)
@@ -457,7 +458,8 @@ Merci.`;
                     type="button"
                     className="gallery-nav-arrow gallery-prev-btn"
                     onClick={(e) => { e.stopPropagation(); handlePrevImage(); }}
-                    aria-label="Image précédente"
+                    aria-label={lang === 'ar' ? 'الصورة التالية' : 'Image suivante'}
+                    title={lang === 'ar' ? 'الصورة التالية' : 'Image suivante'}
                   >
                     ‹
                   </button>
@@ -465,7 +467,8 @@ Merci.`;
                     type="button"
                     className="gallery-nav-arrow gallery-next-btn"
                     onClick={(e) => { e.stopPropagation(); handleNextImage(); }}
-                    aria-label="Image suivante"
+                    aria-label={lang === 'ar' ? 'الصورة السابقة' : 'Image précédente'}
+                    title={lang === 'ar' ? 'الصورة السابقة' : 'Image précédente'}
                   >
                     ›
                   </button>
@@ -547,8 +550,8 @@ Merci.`;
                   </div>
                   {galleryImages.length > 1 && (
                     <>
-                      <button className="lightbox-nav-btn prev" onClick={handlePrevImage}>‹</button>
-                      <button className="lightbox-nav-btn next" onClick={handleNextImage}>›</button>
+                      <button className="lightbox-nav-btn prev" onClick={handlePrevImage} title={lang === 'ar' ? 'الصورة التالية' : 'Image suivante'}>‹</button>
+                      <button className="lightbox-nav-btn next" onClick={handleNextImage} title={lang === 'ar' ? 'الصورة السابقة' : 'Image précédente'}>›</button>
                       <div className="gallery-lightbox-thumbs">
                         {galleryImages.map((item, idx) => (
                           <button 
