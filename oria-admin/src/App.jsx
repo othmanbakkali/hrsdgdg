@@ -3975,7 +3975,7 @@ function AdminLayout() {
       {/* Create/Edit User Modal */}
       {showUserModal && (
         <div className="modal-overlay">
-          <form className="modal-content" onSubmit={handleUserSubmit} style={{ maxWidth: '600px', padding: '30px' }}>
+          <form className="modal-content" onSubmit={handleUserSubmit} style={{ maxWidth: '600px' }}>
             <button type="button" className="modal-close-btn" onClick={() => setShowUserModal(false)}>✕</button>
             <h3 style={{ color: 'var(--admin-gold)', marginBottom: '25px', fontFamily: 'Playfair Display', fontSize: '1.6rem' }}>
               {editingUser ? t('editUser') : t('addUser')}
@@ -4238,7 +4238,7 @@ function AdminLayout() {
       {/* Edit Product Modal */}
       {showProductModal && (
         <div className="modal-overlay">
-          <form className="modal-content" onSubmit={handleProductSubmit} style={{ maxWidth: '600px', padding: '30px' }}>
+          <form className="modal-content" onSubmit={handleProductSubmit} style={{ maxWidth: '600px' }}>
             <button type="button" className="modal-close-btn" onClick={() => setShowProductModal(false)}>✕</button>
             <h3 style={{ color: 'var(--admin-gold)', marginBottom: '25px', fontFamily: 'Playfair Display', fontSize: '1.6rem' }}>
               {editingProduct ? t('editProduct') : t('newProduct')}
@@ -4694,7 +4694,7 @@ function AdminLayout() {
             </div>
 
             {/* 1. POIDS EN PREMIER SUIVI DU PRIX */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+            <div className="admin-form-grid-2">
               <div className="form-group">
                 <label className="form-label">{t('weight')} (غ / g)</label>
                 <input 
@@ -4739,7 +4739,7 @@ function AdminLayout() {
             </div>
 
             {/* 2. CATÉGORIE & LISTE DES VILLES */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+            <div className="admin-form-grid-2">
               <div className="form-group">
                 <label className="form-label">{t('category')}</label>
                 <select 
@@ -4798,11 +4798,11 @@ function AdminLayout() {
             {/* 3. ÉTAT DU BIJOU : Neuf, Bonne occasion & Pièce artisanale */}
             <div className="form-group" style={{ marginBottom: '18px' }}>
               <label className="form-label">{lang === 'ar' ? 'حالة القطعة' : 'État du Bijou'}</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+              <div className="product-condition-grid">
                 {[
                   { value: 'Neuf', fr: '✨ Neuf', ar: '✨ جديد' },
-                  { value: 'Occasion', fr: '🏷️ Bonne occasion', ar: '🏷️ مستعمل بحالة ممتازة' },
-                  { value: 'Artisanal', fr: '🏺 Pièce artisanale', ar: '🏺 قطعة تقليدية / حرفية' }
+                  { value: 'Occasion', fr: '🏷️ Bonne occasion', ar: '🏷️ مستعمل ممتازة' },
+                  { value: 'Artisanal', fr: '🏺 Pièce artisanale', ar: '🏺 قطعة حرفية' }
                 ].map(item => {
                   const isActive = (productForm.etat || 'Neuf') === item.value;
                   return (
@@ -4811,16 +4811,24 @@ function AdminLayout() {
                       type="button"
                       onClick={() => setProductForm({ ...productForm, etat: item.value })}
                       style={{
-                        padding: '10px 8px',
+                        padding: '10px 4px',
+                        minHeight: '48px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         borderRadius: '8px',
                         border: isActive ? '1.5px solid var(--admin-gold)' : '1px solid rgba(255,255,255,0.12)',
                         background: isActive ? 'rgba(212, 175, 55, 0.16)' : 'rgba(255,255,255,0.03)',
                         color: isActive ? 'var(--admin-gold)' : 'var(--text-gray)',
                         fontWeight: 700,
-                        fontSize: '0.85rem',
+                        fontSize: 'clamp(0.72rem, 2.4vw, 0.85rem)',
+                        lineHeight: 1.25,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent'
                       }}
                     >
                       {lang === 'ar' ? item.ar : item.fr}
