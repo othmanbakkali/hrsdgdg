@@ -28,6 +28,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: 🚀 Deploy to Remote Production Server via SSH
+        if: ${{ secrets.SSH_PRIVATE_KEY != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST || '198.199.75.86' }}
@@ -39,10 +40,14 @@ jobs:
             echo "💎 [HRSDGDG CI/CD] Starting automated deployment on server..."
             cd /var/www/hrsdgdg
             
-            # Pull latest code if git repo exists
+            # Fetch and sync latest code from GitHub repository
             if [ -d ".git" ]; then
-              git fetch origin main
-              git reset --hard origin/main
+              git remote set-url origin https://github.com/othmanbakkali/hrsdgdg.git 2>/dev/null || true
+              git fetch origin main || git fetch https://github.com/othmanbakkali/hrsdgdg.git main
+              git reset --hard FETCH_HEAD
+            elif [ -d "/var/repo/hrsdgdg.git" ]; then
+              git --git-dir=/var/repo/hrsdgdg.git --work-tree=/var/www/hrsdgdg fetch https://github.com/othmanbakkali/hrsdgdg.git main:main || true
+              git --git-dir=/var/repo/hrsdgdg.git --work-tree=/var/www/hrsdgdg checkout -f main
             fi
             
             # Execute automated docker deployment
