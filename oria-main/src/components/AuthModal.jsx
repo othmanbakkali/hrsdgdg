@@ -50,17 +50,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   // Subscription plan selection for merchants
   const [plans, setPlans] = useState([
     {
-      id: 'plan_starter',
-      name: 'Pass Essentiel',
-      name_fr: 'Pass Essentiel',
-      name_ar: 'الباقة الأساسية',
-      price_monthly: 0,
-      price_annual: 0,
-      max_products: 5,
-      commission_rate: 8,
-      popular: false
-    },
-    {
       id: 'plan_pro',
       name: 'Pack Prestige Joaillier',
       name_fr: 'Pack Prestige Joaillier',
@@ -70,17 +59,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       max_products: 30,
       commission_rate: 4,
       popular: true
-    },
-    {
-      id: 'plan_vip',
-      name: 'Haute Joaillerie VIP',
-      name_fr: 'Haute Joaillerie VIP',
-      name_ar: 'باقة كبار الصاغة VIP',
-      price_monthly: 1290,
-      price_annual: 11900,
-      max_products: 9999,
-      commission_rate: 2,
-      popular: false
     }
   ]);
   const [selectedPlanId, setSelectedPlanId] = useState('plan_pro');
@@ -98,7 +76,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [isOpen]);
 
   // Terms & Conditions States
@@ -131,10 +109,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     const suggested = `Oria${randomSuffix}!Gold`;
     setPassword(suggested);
     setShowPassword(true);
-    
+
     // Copy to clipboard
     if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(suggested).catch(() => {});
+      navigator.clipboard.writeText(suggested).catch(() => { });
     }
     setCopySuccessToast(lang === 'ar' ? 'تم إنشاء كلمة مرور قوية ونسخها لحافظتك! 📋' : 'Mot de passe sécurisé généré et copié ! 📋');
     setTimeout(() => setCopySuccessToast(''), 4000);
@@ -420,15 +398,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
   return (
     <div className="modal-overlay auth-modal-overlay" onClick={onClose}>
-      <div 
-        className="modal-content auth-modal-card auth-modal-card-v2" 
+      <div
+        className="modal-content auth-modal-card auth-modal-card-v2"
         onClick={e => e.stopPropagation()}
         style={{ direction: isRtl ? 'rtl' : 'ltr' }}
       >
         {/* Top Close Button */}
-        <button 
-          className="auth-modal-close" 
-          onClick={onClose} 
+        <button
+          className="auth-modal-close"
+          onClick={onClose}
           title="Fermer"
           aria-label="Fermer la fenêtre"
         >
@@ -453,8 +431,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
         {/* Segmented Tab Switcher */}
         <div className="auth-tab-pill-container">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className={`auth-tab-pill ${tab === 'register' ? 'active' : ''}`}
             onClick={() => { setTab('register'); setErrorMsg(''); }}
           >
@@ -462,8 +440,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
             <span className="auth-tab-text">{t.registerTab}</span>
             <span className="auth-fast-chip">15s</span>
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className={`auth-tab-pill ${tab === 'login' ? 'active' : ''}`}
             onClick={() => { setTab('login'); setErrorMsg(''); }}
           >
@@ -505,7 +483,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 {lang === 'ar' ? 'طلبكم في طور المعالجة.' : 'Votre demande est en cours de traitement.'}
               </h3>
               <p className="pending-success-subtitle" style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '16px' }}>
-                {lang === 'ar' 
+                {lang === 'ar'
                   ? 'تم تسجيل طلبكم بنجاح وجارٍ مراجعته وتفعيله من قِبل الإدارة.'
                   : 'Votre demande a bien été enregistrée par nos services et est actuellement en cours de traitement.'}
               </p>
@@ -561,410 +539,410 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
               </div>
             </div>
           ) : (
-          <form onSubmit={handleRegisterSubmit} className="auth-form-body">
-            
-            {/* 1. EXCLUSIVE PROFESSIONAL ACCESS BANNER */}
-            <div className="auth-field-group" style={{ marginBottom: '16px' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.16) 0%, rgba(184, 134, 11, 0.08) 100%)',
-                border: '1.5px solid var(--primary-gold)',
-                borderRadius: '12px',
-                padding: '16px 18px',
-                boxShadow: '0 4px 18px rgba(212, 175, 55, 0.12)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.3rem' }}>👑</span>
-                    <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--primary-gold)' }}>
-                      {t.proOnlyBannerTitle}
+            <form onSubmit={handleRegisterSubmit} className="auth-form-body">
+
+              {/* 1. EXCLUSIVE PROFESSIONAL ACCESS BANNER */}
+              <div className="auth-field-group" style={{ marginBottom: '16px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.16) 0%, rgba(184, 134, 11, 0.08) 100%)',
+                  border: '1.5px solid var(--primary-gold)',
+                  borderRadius: '12px',
+                  padding: '16px 18px',
+                  boxShadow: '0 4px 18px rgba(212, 175, 55, 0.12)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.3rem' }}>👑</span>
+                      <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--primary-gold)' }}>
+                        {t.proOnlyBannerTitle}
+                      </span>
+                    </div>
+                    <span style={{
+                      background: '#10b981',
+                      color: '#fff',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      padding: '3px 10px',
+                      borderRadius: '12px',
+                      boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+                    }}>
+                      {lang === 'ar' ? 'حصري للصاغة' : 'Réservé aux Pro'}
                     </span>
                   </div>
-                  <span style={{
-                    background: '#10b981',
-                    color: '#fff',
-                    fontSize: '0.72rem',
-                    fontWeight: 800,
-                    padding: '3px 10px',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
-                  }}>
-                    {lang === 'ar' ? 'حصري للصاغة' : 'Réservé aux Pro'}
-                  </span>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-gray)', lineHeight: 1.45 }}>
+                    {t.proOnlyBannerDesc}
+                  </p>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-gray)', lineHeight: 1.45 }}>
-                  {t.proOnlyBannerDesc}
-                </p>
               </div>
-            </div>
 
-            {/* 3. NAME INPUT (MANAGER / OWNER) */}
-            <div className="auth-field-group">
-              <label className="auth-field-label">
-                <span className="auth-label-icon">👤</span>
-                <span>{t.nameLabel}</span>
-                <span className="auth-required-mark">*</span>
-              </label>
-              <div className="auth-input-container">
-                <input 
-                  type="text" 
-                  required 
-                  className="auth-text-input" 
-                  value={nom}
-                  onChange={e => setNom(e.target.value)}
-                  placeholder={lang === 'ar' ? "مثال: الحاج عمر التازي" : "Ex: Omar Tazi (Gérant)"}
-                  autoComplete="name"
-                />
-              </div>
-            </div>
-
-            {/* 4. SHOP NAME */}
-            <div className="auth-field-group animate-slide-down">
-              <label className="auth-field-label">
-                <span className="auth-label-icon">🏪</span>
-                <span>{t.shopLabel}</span>
-                <span className="auth-required-mark">*</span>
-              </label>
-              <div className="auth-input-container">
-                <input 
-                  type="text" 
-                  required 
-                  className="auth-text-input" 
-                  value={shopName}
-                  onChange={e => setShopName(e.target.value)}
-                  placeholder={lang === 'ar' ? "مثال: مجوهرات التازي الملكية" : "Ex: Joaillerie Royale Fès"}
-                />
-              </div>
-            </div>
-
-            {/* 4b. NUMÉRO DE PATENTE & RC */}
-            <div className="auth-field-group animate-slide-down">
-              <label className="auth-field-label">
-                <span className="auth-label-icon">📜</span>
-                <span>{t.patenteNumberLabel}</span>
-                <span className="auth-required-mark">*</span>
-              </label>
-              <div className="auth-input-container">
-                <input 
-                  type="text" 
-                  required 
-                  className="auth-text-input" 
-                  value={numeroPatente}
-                  onChange={e => setNumeroPatente(e.target.value)}
-                  placeholder={lang === 'ar' ? "مثال: 40289134 (الباتنت أو السجل التجاري)" : "Ex: 40289134 (N° Patente ou RC)"}
-                />
-              </div>
-            </div>
-
-            {/* 4c. TÉLÉCHARGER LA PATENTE (DOCUMENT UPLOAD) */}
-            <div className="auth-field-group animate-slide-down">
-              <label className="auth-field-label">
-                <span className="auth-label-icon">📄</span>
-                <span>{t.patenteDocLabel}</span>
-                <span className="auth-required-mark">*</span>
-              </label>
-              
-              <div style={{
-                border: patenteDocBase64 ? '1.5px solid #10b981' : '1.5px dashed var(--border-gold)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '14px 18px',
-                background: patenteDocBase64 ? 'rgba(16, 185, 129, 0.07)' : 'rgba(212, 175, 55, 0.04)',
-                transition: 'all 0.2s',
-                textAlign: 'center'
-              }}>
-                {patenteDocBase64 ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: isRtl ? 'right' : 'left' }}>
-                      <span style={{ fontSize: '1.8rem' }}>📄</span>
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#10b981' }}>
-                          {patenteDocName || (lang === 'ar' ? 'وثيقة الباتنت مرفقة' : 'Attestation de Patente jointe')}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
-                          {patenteDocSize || 'Document vérifié'} • {t.patenteUploadedSuccess}
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRemovePatenteDoc}
-                      style={{
-                        background: '#ef4444',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        fontWeight: 700
-                      }}
-                    >
-                      {lang === 'ar' ? 'إلغاء وتغيير' : 'Changer'}
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <input
-                      type="file"
-                      id="patente-upload-input"
-                      accept=".pdf,image/png,image/jpeg,image/webp,image/jpg"
-                      style={{ display: 'none' }}
-                      onChange={handlePatenteFileChange}
-                    />
-                    <label
-                      htmlFor="patente-upload-input"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: 'linear-gradient(135deg, var(--primary-gold), #b8860b)',
-                        color: '#fff',
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        fontSize: '0.88rem',
-                        boxShadow: '0 2px 10px rgba(184, 134, 11, 0.25)',
-                        marginBottom: '6px'
-                      }}
-                    >
-                      <span>📎</span>
-                      <span>{t.patenteUploadBtn}</span>
-                    </label>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
-                      {t.patenteDocHint}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-
-            {/* 5. PHONE & CITY WITH SMART MOROCCAN SHORTCUTS */}
-            <div className="auth-two-col-grid">
-              {/* Phone */}
+              {/* 3. NAME INPUT (MANAGER / OWNER) */}
               <div className="auth-field-group">
                 <label className="auth-field-label">
-                  <span className="auth-label-icon">📱</span>
-                  <span>{t.phoneLabel}</span>
+                  <span className="auth-label-icon">👤</span>
+                  <span>{t.nameLabel}</span>
                   <span className="auth-required-mark">*</span>
-                </label>
-                <div className="auth-input-container auth-phone-input-wrap">
-                  <span className="auth-country-flag" title="Maroc (+212)">🇲🇦</span>
-                  <input 
-                    type="tel" 
-                    required 
-                    className="auth-text-input auth-phone-input" 
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    placeholder="06 00 00 00 00"
-                    autoComplete="tel"
-                  />
-                </div>
-                <span className="auth-field-micro-hint">{t.phoneHint}</span>
-              </div>
-
-              {/* City Selection with Quick City Pills */}
-              <div className="auth-field-group">
-                <label className="auth-field-label">
-                  <span className="auth-label-icon">📍</span>
-                  <span>{t.cityLabel}</span>
                 </label>
                 <div className="auth-input-container">
-                  <select 
-                    className="auth-text-input auth-select-input"
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                  >
-                    <option value="Casablanca">Casablanca (الدار البيضاء)</option>
-                    <option value="Rabat">Rabat (الرباط)</option>
-                    <option value="Marrakech">Marrakech (مراكش)</option>
-                    <option value="Fès">Fès (فاس)</option>
-                    <option value="Tanger">Tanger (طنجة)</option>
-                    <option value="Agadir">Agadir (أكادير)</option>
-                    <option value="Meknès">Meknès (مكناس)</option>
-                    <option value="Oujda">Oujda (وجدة)</option>
-                    <option value="Tétouan">Tétouan (تطوان)</option>
-                    <option value="Kenitra">Kénitra (القنيطرة)</option>
-                    <option value="Essaouira">Essaouira (الصويرة)</option>
-                    <option value="Autre">Autre Ville (مدينة أخرى)</option>
-                  </select>
+                  <input
+                    type="text"
+                    required
+                    className="auth-text-input"
+                    value={nom}
+                    onChange={e => setNom(e.target.value)}
+                    placeholder={lang === 'ar' ? "مثال: الحاج عمر التازي" : "Ex: Omar Tazi (Gérant)"}
+                    autoComplete="name"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Quick City Pills (1 Click Selection) */}
-            <div className="quick-city-pills-row">
-              {topMoroccanCities.map(c => (
-                <button
-                  key={c.key}
-                  type="button"
-                  className={`city-pill-btn ${city === c.key ? 'active' : ''}`}
-                  onClick={() => setCity(c.key)}
-                >
-                  {lang === 'ar' ? c.ar : c.fr}
-                </button>
-              ))}
-            </div>
-
-            {/* 6. EMAIL */}
-            <div className="auth-field-group">
-              <label className="auth-field-label">
-                <span className="auth-label-icon">✉️</span>
-                <span>{t.emailLabel}</span>
-                <span className="auth-required-mark">*</span>
-              </label>
-              <div className="auth-input-container">
-                <input 
-                  type="email" 
-                  required 
-                  className="auth-text-input" 
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="nom@exemple.com"
-                  autoComplete="email"
-                />
-              </div>
-            </div>
-
-            {/* 7. PASSWORD WITH GENERATOR & STRENGTH GAUGE */}
-            <div className="auth-field-group">
-              <div className="auth-label-row">
+              {/* 4. SHOP NAME */}
+              <div className="auth-field-group animate-slide-down">
                 <label className="auth-field-label">
-                  <span className="auth-label-icon">🔒</span>
-                  <span>{t.passLabel}</span>
+                  <span className="auth-label-icon">🏪</span>
+                  <span>{t.shopLabel}</span>
                   <span className="auth-required-mark">*</span>
                 </label>
-                <button
-                  type="button"
-                  className="auth-generate-pwd-btn"
-                  onClick={generateStrongPassword}
-                  title="Générer un mot de passe sécurisé et facile à retenir"
-                >
-                  {t.generatePwd}
-                </button>
-              </div>
-
-              <div className="auth-input-container">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  required 
-                  className="auth-text-input has-toggle" 
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="auth-pwd-toggle-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                >
-                  {showPassword ? "👁️‍🗨️" : "👁️"}
-                </button>
-              </div>
-
-              {/* Password strength indicator */}
-              {password && (
-                <div className="auth-pwd-strength-bar-wrap animate-slide-down">
-                  <div className="strength-dots">
-                    <span className={`strength-dot ${pwdStrength.score >= 1 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 1 ? pwdStrength.color : undefined }} />
-                    <span className={`strength-dot ${pwdStrength.score >= 2 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 2 ? pwdStrength.color : undefined }} />
-                    <span className={`strength-dot ${pwdStrength.score >= 3 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 3 ? pwdStrength.color : undefined }} />
-                  </div>
-                  <span className="strength-label" style={{ color: pwdStrength.color }}>
-                    {pwdStrength.text}
-                  </span>
+                <div className="auth-input-container">
+                  <input
+                    type="text"
+                    required
+                    className="auth-text-input"
+                    value={shopName}
+                    onChange={e => setShopName(e.target.value)}
+                    placeholder={lang === 'ar' ? "مثال: مجوهرات التازي الملكية" : "Ex: Joaillerie Royale Fès"}
+                  />
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* TERMS & CONDITIONS ACCEPTANCE CHECKBOX */}
-            <div className="auth-terms-group">
-              <label className="auth-terms-checkbox-label">
-                <input 
-                  type="checkbox"
-                  className="auth-terms-checkbox"
-                  checked={acceptTerms}
-                  onChange={e => setAcceptTerms(e.target.checked)}
-                  required
-                />
-                <span className="auth-terms-text">
-                  {lang === 'ar' ? (
-                    <>
-                      {t.termsAcceptPrefix}
+              {/* 4b. NUMÉRO DE PATENTE & RC */}
+              <div className="auth-field-group animate-slide-down">
+                <label className="auth-field-label">
+                  <span className="auth-label-icon">📜</span>
+                  <span>{t.patenteNumberLabel}</span>
+                  <span className="auth-required-mark">*</span>
+                </label>
+                <div className="auth-input-container">
+                  <input
+                    type="text"
+                    required
+                    className="auth-text-input"
+                    value={numeroPatente}
+                    onChange={e => setNumeroPatente(e.target.value)}
+                    placeholder={lang === 'ar' ? "مثال: 40289134 (الباتنت أو السجل التجاري)" : "Ex: 40289134 (N° Patente ou RC)"}
+                  />
+                </div>
+              </div>
+
+              {/* 4c. TÉLÉCHARGER LA PATENTE (DOCUMENT UPLOAD) */}
+              <div className="auth-field-group animate-slide-down">
+                <label className="auth-field-label">
+                  <span className="auth-label-icon">📄</span>
+                  <span>{t.patenteDocLabel}</span>
+                  <span className="auth-required-mark">*</span>
+                </label>
+
+                <div style={{
+                  border: patenteDocBase64 ? '1.5px solid #10b981' : '1.5px dashed var(--border-gold)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '14px 18px',
+                  background: patenteDocBase64 ? 'rgba(16, 185, 129, 0.07)' : 'rgba(212, 175, 55, 0.04)',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}>
+                  {patenteDocBase64 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: isRtl ? 'right' : 'left' }}>
+                        <span style={{ fontSize: '1.8rem' }}>📄</span>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#10b981' }}>
+                            {patenteDocName || (lang === 'ar' ? 'وثيقة الباتنت مرفقة' : 'Attestation de Patente jointe')}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
+                            {patenteDocSize || 'Document vérifié'} • {t.patenteUploadedSuccess}
+                          </div>
+                        </div>
+                      </div>
                       <button
                         type="button"
-                        className="auth-terms-link-btn"
-                        onClick={() => { setTermsLangTab('ar'); setShowTermsModal(true); }}
+                        onClick={handleRemovePatenteDoc}
+                        style={{
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
                       >
-                        {t.termsLinkText}
+                        {lang === 'ar' ? 'إلغاء وتغيير' : 'Changer'}
                       </button>
-                      {t.termsAcceptSuffix}
-                    </>
+                    </div>
+                  ) : (
+                    <div>
+                      <input
+                        type="file"
+                        id="patente-upload-input"
+                        accept=".pdf,image/png,image/jpeg,image/webp,image/jpg"
+                        style={{ display: 'none' }}
+                        onChange={handlePatenteFileChange}
+                      />
+                      <label
+                        htmlFor="patente-upload-input"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: 'linear-gradient(135deg, var(--primary-gold), #b8860b)',
+                          color: '#fff',
+                          padding: '10px 20px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.88rem',
+                          boxShadow: '0 2px 10px rgba(184, 134, 11, 0.25)',
+                          marginBottom: '6px'
+                        }}
+                      >
+                        <span>📎</span>
+                        <span>{t.patenteUploadBtn}</span>
+                      </label>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                        {t.patenteDocHint}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+
+              {/* 5. PHONE & CITY WITH SMART MOROCCAN SHORTCUTS */}
+              <div className="auth-two-col-grid">
+                {/* Phone */}
+                <div className="auth-field-group">
+                  <label className="auth-field-label">
+                    <span className="auth-label-icon">📱</span>
+                    <span>{t.phoneLabel}</span>
+                    <span className="auth-required-mark">*</span>
+                  </label>
+                  <div className="auth-input-container auth-phone-input-wrap">
+                    <span className="auth-country-flag" title="Maroc (+212)">🇲🇦</span>
+                    <input
+                      type="tel"
+                      required
+                      className="auth-text-input auth-phone-input"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="06 00 00 00 00"
+                      autoComplete="tel"
+                    />
+                  </div>
+                  <span className="auth-field-micro-hint">{t.phoneHint}</span>
+                </div>
+
+                {/* City Selection with Quick City Pills */}
+                <div className="auth-field-group">
+                  <label className="auth-field-label">
+                    <span className="auth-label-icon">📍</span>
+                    <span>{t.cityLabel}</span>
+                  </label>
+                  <div className="auth-input-container">
+                    <select
+                      className="auth-text-input auth-select-input"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                    >
+                      <option value="Casablanca">Casablanca (الدار البيضاء)</option>
+                      <option value="Rabat">Rabat (الرباط)</option>
+                      <option value="Marrakech">Marrakech (مراكش)</option>
+                      <option value="Fès">Fès (فاس)</option>
+                      <option value="Tanger">Tanger (طنجة)</option>
+                      <option value="Agadir">Agadir (أكادير)</option>
+                      <option value="Meknès">Meknès (مكناس)</option>
+                      <option value="Oujda">Oujda (وجدة)</option>
+                      <option value="Tétouan">Tétouan (تطوان)</option>
+                      <option value="Kenitra">Kénitra (القنيطرة)</option>
+                      <option value="Essaouira">Essaouira (الصويرة)</option>
+                      <option value="Autre">Autre Ville (مدينة أخرى)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick City Pills (1 Click Selection) */}
+              <div className="quick-city-pills-row">
+                {topMoroccanCities.map(c => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    className={`city-pill-btn ${city === c.key ? 'active' : ''}`}
+                    onClick={() => setCity(c.key)}
+                  >
+                    {lang === 'ar' ? c.ar : c.fr}
+                  </button>
+                ))}
+              </div>
+
+              {/* 6. EMAIL */}
+              <div className="auth-field-group">
+                <label className="auth-field-label">
+                  <span className="auth-label-icon">✉️</span>
+                  <span>{t.emailLabel}</span>
+                  <span className="auth-required-mark">*</span>
+                </label>
+                <div className="auth-input-container">
+                  <input
+                    type="email"
+                    required
+                    className="auth-text-input"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="nom@exemple.com"
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              {/* 7. PASSWORD WITH GENERATOR & STRENGTH GAUGE */}
+              <div className="auth-field-group">
+                <div className="auth-label-row">
+                  <label className="auth-field-label">
+                    <span className="auth-label-icon">🔒</span>
+                    <span>{t.passLabel}</span>
+                    <span className="auth-required-mark">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="auth-generate-pwd-btn"
+                    onClick={generateStrongPassword}
+                    title="Générer un mot de passe sécurisé et facile à retenir"
+                  >
+                    {t.generatePwd}
+                  </button>
+                </div>
+
+                <div className="auth-input-container">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className="auth-text-input has-toggle"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="auth-pwd-toggle-btn"
+                    onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {showPassword ? "👁️‍🗨️" : "👁️"}
+                  </button>
+                </div>
+
+                {/* Password strength indicator */}
+                {password && (
+                  <div className="auth-pwd-strength-bar-wrap animate-slide-down">
+                    <div className="strength-dots">
+                      <span className={`strength-dot ${pwdStrength.score >= 1 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 1 ? pwdStrength.color : undefined }} />
+                      <span className={`strength-dot ${pwdStrength.score >= 2 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 2 ? pwdStrength.color : undefined }} />
+                      <span className={`strength-dot ${pwdStrength.score >= 3 ? 'filled' : ''}`} style={{ backgroundColor: pwdStrength.score >= 3 ? pwdStrength.color : undefined }} />
+                    </div>
+                    <span className="strength-label" style={{ color: pwdStrength.color }}>
+                      {pwdStrength.text}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* TERMS & CONDITIONS ACCEPTANCE CHECKBOX */}
+              <div className="auth-terms-group">
+                <label className="auth-terms-checkbox-label">
+                  <input
+                    type="checkbox"
+                    className="auth-terms-checkbox"
+                    checked={acceptTerms}
+                    onChange={e => setAcceptTerms(e.target.checked)}
+                    required
+                  />
+                  <span className="auth-terms-text">
+                    {lang === 'ar' ? (
+                      <>
+                        {t.termsAcceptPrefix}
+                        <button
+                          type="button"
+                          className="auth-terms-link-btn"
+                          onClick={() => { setTermsLangTab('ar'); setShowTermsModal(true); }}
+                        >
+                          {t.termsLinkText}
+                        </button>
+                        {t.termsAcceptSuffix}
+                      </>
+                    ) : (
+                      <>
+                        {t.termsAcceptPrefix}
+                        <button
+                          type="button"
+                          className="auth-terms-link-btn"
+                          onClick={() => { setTermsLangTab(lang === 'en' ? 'en' : 'fr'); setShowTermsModal(true); }}
+                        >
+                          {t.termsLinkText}
+                        </button>
+                        {t.termsAcceptSuffix}
+                      </>
+                    )}
+                    <span className="auth-required-mark">*</span>
+                  </span>
+                </label>
+              </div>
+
+              {/* SUBMIT BUTTON (LOCKED UNTIL TERMS ACCEPTED) */}
+              <div className="auth-submit-btn-wrapper">
+                <button
+                  type="submit"
+                  className={`auth-primary-submit-btn ${!acceptTerms ? 'btn-disabled-locked' : 'btn-enabled-active'}`}
+                  disabled={!acceptTerms || loading}
+                  title={!acceptTerms ? (lang === 'ar' ? 'يرجى الموافقة على شروط الاستخدام لتفعيل زر إنشاء الحساب' : 'Veuillez cocher l\'acceptation des conditions d\'utilisation pour activer le bouton') : ''}
+                >
+                  {loading ? (
+                    <span className="auth-loading-spinner-wrapper">
+                      <span className="auth-spinner" />
+                      <span>{lang === 'ar' ? 'جاري إنشاء الحساب...' : 'Création du compte...'}</span>
+                    </span>
                   ) : (
                     <>
-                      {t.termsAcceptPrefix}
-                      <button
-                        type="button"
-                        className="auth-terms-link-btn"
-                        onClick={() => { setTermsLangTab(lang === 'en' ? 'en' : 'fr'); setShowTermsModal(true); }}
-                      >
-                        {t.termsLinkText}
-                      </button>
-                      {t.termsAcceptSuffix}
+                      <span>{acceptTerms ? '👑' : '🔒'}</span>
+                      <span>{t.registerBtn}</span>
                     </>
                   )}
-                  <span className="auth-required-mark">*</span>
-                </span>
-              </label>
-            </div>
+                </button>
 
-            {/* SUBMIT BUTTON (LOCKED UNTIL TERMS ACCEPTED) */}
-            <div className="auth-submit-btn-wrapper">
-              <button 
-                type="submit" 
-                className={`auth-primary-submit-btn ${!acceptTerms ? 'btn-disabled-locked' : 'btn-enabled-active'}`} 
-                disabled={!acceptTerms || loading}
-                title={!acceptTerms ? (lang === 'ar' ? 'يرجى الموافقة على شروط الاستخدام لتفعيل زر إنشاء الحساب' : 'Veuillez cocher l\'acceptation des conditions d\'utilisation pour activer le bouton') : ''}
-              >
-                {loading ? (
-                  <span className="auth-loading-spinner-wrapper">
-                    <span className="auth-spinner" />
-                    <span>{lang === 'ar' ? 'جاري إنشاء الحساب...' : 'Création du compte...'}</span>
-                  </span>
-                ) : (
-                  <>
-                    <span>{acceptTerms ? '👑' : '🔒'}</span>
-                    <span>{t.registerBtn}</span>
-                  </>
+                {!acceptTerms && (
+                  <div className="auth-terms-locked-hint">
+                    <span className="locked-hint-icon">⚠️</span>
+                    <span>
+                      {lang === 'ar'
+                        ? 'يجب تأكيد الموافقة على شروط وأحكام الاستخدام أعلاه لتفعيل زر إنشاء الحساب'
+                        : 'Veuillez cocher la case d\'acceptation des conditions d\'utilisation pour débloquer la création de compte.'}
+                    </span>
+                  </div>
                 )}
-              </button>
+              </div>
 
-              {!acceptTerms && (
-                <div className="auth-terms-locked-hint">
-                  <span className="locked-hint-icon">⚠️</span>
-                  <span>
-                    {lang === 'ar' 
-                      ? 'يجب تأكيد الموافقة على شروط وأحكام الاستخدام أعلاه لتفعيل زر إنشاء الحساب'
-                      : 'Veuillez cocher la case d\'acceptation des conditions d\'utilisation pour débloquer la création de compte.'}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Switch to Login */}
-            <div className="auth-bottom-switch-link">
-              <span>{t.alreadyHaveAcc}</span>{' '}
-              <button 
-                type="button" 
-                className="switch-link-btn"
-                onClick={() => { setTab('login'); setErrorMsg(''); }}
-              >
-                {t.switchLogin}
-              </button>
-            </div>
-          </form>
+              {/* Quick Switch to Login */}
+              <div className="auth-bottom-switch-link">
+                <span>{t.alreadyHaveAcc}</span>{' '}
+                <button
+                  type="button"
+                  className="switch-link-btn"
+                  onClick={() => { setTab('login'); setErrorMsg(''); }}
+                >
+                  {t.switchLogin}
+                </button>
+              </div>
+            </form>
           )
         ) : (
           /* ========================================================
@@ -978,10 +956,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <span>{t.emailLabel}</span>
               </label>
               <div className="auth-input-container">
-                <input 
-                  type="email" 
-                  required 
-                  className="auth-text-input" 
+                <input
+                  type="email"
+                  required
+                  className="auth-text-input"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="nom@exemple.com"
@@ -999,10 +977,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 </label>
               </div>
               <div className="auth-input-container">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  required 
-                  className="auth-text-input has-toggle" 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="auth-text-input has-toggle"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -1020,9 +998,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
             </div>
 
             {/* Submit Button */}
-            <button 
-              type="submit" 
-              className="auth-primary-submit-btn" 
+            <button
+              type="submit"
+              className="auth-primary-submit-btn"
               disabled={loading}
             >
               {loading ? (
@@ -1041,8 +1019,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
             {/* Quick Switch to Register */}
             <div className="auth-bottom-switch-link">
               <span>{t.dontHaveAcc}</span>{' '}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="switch-link-btn"
                 onClick={() => { setTab('register'); setErrorMsg(''); }}
               >
@@ -1057,32 +1035,32 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <span className="auth-demo-title">{t.demoAccounts}</span>
               </div>
               <div className="auth-demo-buttons-grid">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="auth-demo-pill"
                   onClick={() => setDemoAccount('client@jewelia.com', 'client123')}
                 >
                   <span className="demo-pill-icon">👤</span>
                   <span className="demo-pill-text">{t.clientDemo}</span>
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="auth-demo-pill"
                   onClick={() => setDemoAccount('gold@jewelia.com', 'merchant123')}
                 >
                   <span className="demo-pill-icon">🏪</span>
                   <span className="demo-pill-text">{t.merchantDemo}</span>
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="auth-demo-pill"
                   onClick={() => setDemoAccount('vintage@jewelia.com', 'merchant123')}
                 >
                   <span className="demo-pill-icon">💎</span>
                   <span className="demo-pill-text">{lang === 'ar' ? 'خبير مجوهرات (بنسودة)' : 'Expert (Bennani)'}</span>
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="auth-demo-pill"
                   onClick={() => setDemoAccount('admin@hrsdgdg.com', 'admin123')}
                   style={{ borderColor: 'var(--primary-gold)', background: 'rgba(212, 175, 55, 0.12)' }}
@@ -1107,8 +1085,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
           ======================================================== */}
       {showTermsModal && (
         <div className="terms-modal-overlay animate-fade-in" onClick={() => setShowTermsModal(false)}>
-          <div 
-            className="terms-modal-card animate-scale-up" 
+          <div
+            className="terms-modal-card animate-scale-up"
             onClick={e => e.stopPropagation()}
             style={{ direction: termsLangTab === 'ar' ? 'rtl' : 'ltr' }}
           >
@@ -1125,8 +1103,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   </p>
                 </div>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="terms-modal-close-btn"
                 onClick={() => setShowTermsModal(false)}
                 aria-label="Fermer"
@@ -1242,15 +1220,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
             {/* Modal Footer Actions */}
             <div className="terms-modal-footer">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="terms-btn-secondary"
                 onClick={() => setShowTermsModal(false)}
               >
                 {termsLangTab === 'ar' ? 'إغلاق' : 'Fermer'}
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="terms-btn-primary-gold"
                 onClick={() => {
                   setAcceptTerms(true);
