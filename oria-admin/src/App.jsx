@@ -4795,13 +4795,14 @@ function AdminLayout() {
               </div>
             </div>
 
-            {/* 3. ÉTAT DU BIJOU : Neuf & Bonne occasion uniquement */}
+            {/* 3. ÉTAT DU BIJOU : Neuf, Bonne occasion & Pièce artisanale */}
             <div className="form-group" style={{ marginBottom: '18px' }}>
               <label className="form-label">{lang === 'ar' ? 'حالة القطعة' : 'État du Bijou'}</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                 {[
                   { value: 'Neuf', fr: '✨ Neuf', ar: '✨ جديد' },
-                  { value: 'Occasion', fr: '🏷️ Bonne occasion', ar: '🏷️ مستعمل بحالة ممتازة' }
+                  { value: 'Occasion', fr: '🏷️ Bonne occasion', ar: '🏷️ مستعمل بحالة ممتازة' },
+                  { value: 'Artisanal', fr: '🏺 Pièce artisanale', ar: '🏺 قطعة تقليدية / حرفية' }
                 ].map(item => {
                   const isActive = (productForm.etat || 'Neuf') === item.value;
                   return (

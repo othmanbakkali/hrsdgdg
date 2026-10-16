@@ -609,7 +609,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       <option value="cat_men">⌚ Bijoux Homme</option>
                       <option value="cat_boxes">🎁 Coffrets & Cadeaux</option>
                       <option value="cat_traditional">👑 Bijoux Traditionnels</option>
-                      <option value="cat_artisanal">🏺 Bijoux Artisanaux</option>
+                      <option value="cat_artisanal">🏺 Pièce Artisanale</option>
                     </>
                   )}
                 </select>

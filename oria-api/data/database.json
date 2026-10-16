@@ -225,8 +225,8 @@
     },
     {
       "id": "cat_artisanal",
-      "nom_fr": "Bijoux Artisanaux",
-      "nom_ar": "مجوهرات تقليدية وحرفية",
+      "nom_fr": "Pièce Artisanale",
+      "nom_ar": "قطعة تقليدية وحرفية",
       "nom_en": "Artisanal Jewelry",
       "icon": "🏺"
     }

@@ -188,14 +188,19 @@ Merci.`;
 
   const formatCondition = (etat) => {
     if (!etat) return '';
+    const e = etat.toLowerCase();
     if (lang === 'ar') {
-      const e = etat.toLowerCase();
+      if (e.includes('art') || e.includes('حرف') || e.includes('تقليد')) return '🏺 قطعة تقليدية / حرفية';
       if (e.includes('comme neuf')) return t('condLikeNew') || 'كالجديد تماماً';
       if (e.includes('neuf')) return t('condNew') || 'جديد';
+      if (e.includes('occasion')) return 'مستعمل بحالة ممتازة';
       if (e.includes('excellent')) return t('condExcellent') || 'حالة ممتازة';
       if (e.includes('très bon') || e.includes('tres bon')) return t('condVeryGood') || 'حالة جيدة جداً';
       if (e.includes('bon')) return t('condGood') || 'حالة جيدة';
       if (e.includes('restaur')) return t('condRestore') || 'يحتاج صيانة';
+    } else {
+      if (e.includes('art')) return '🏺 Pièce artisanale';
+      if (e.includes('occasion')) return 'Occasion (Très bon état)';
     }
     return etat;
   };
