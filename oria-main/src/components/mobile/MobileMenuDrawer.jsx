@@ -25,6 +25,7 @@ export default function MobileMenuDrawer({
   onToggleTheme,
   user,
   onOpenAuth,
+  onOpenChangePassword,
   onLogout,
   onNavigate
 }) {
@@ -333,6 +334,15 @@ export default function MobileMenuDrawer({
                       onClick={() => handleSelectNav(() => onNavigate('merchant-dashboard'))}
                     >
                       🏪 {isAr ? 'فضاء التاجر' : 'Espace Vendeur'}
+                    </button>
+                  )}
+                  {onOpenChangePassword && (
+                    <button 
+                      className="user-quick-btn"
+                      onClick={() => handleSelectNav(onOpenChangePassword)}
+                      title={isAr ? 'تغيير كلمة المرور' : 'Changer de mot de passe'}
+                    >
+                      🔑 {isAr ? 'كلمة المرور' : 'Mot de passe'}
                     </button>
                   )}
                   {onLogout && (

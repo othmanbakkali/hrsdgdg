@@ -399,12 +399,106 @@ app.post('/api/auth/login', (req, res) => {
     res.setHeader('Set-Cookie', `oria_admin_session=${session.token}; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}`);
   }
 
+  // Detect if this is the user's first login / authentication
+  const isFirstLogin = Boolean(
+    user.premier_login === true ||
+    user.doit_changer_mot_de_passe === true ||
+    user.first_login === true ||
+    (!user.login_count || user.login_count === 0) ||
+    !user.derniere_connexion ||
+    user.mot_de_passe_modifie === false
+  );
+
+  // Update user login statistics
+  user.login_count = (user.login_count || 0) + 1;
+  user.derniere_connexion = new Date().toISOString();
+  writeDB(db);
+
   const { mot_de_passe, ...safeUser } = user;
   res.json({
     ...safeUser,
+    first_login: isFirstLogin,
     sessionToken: session.token,
     expiresAt: session.expiresAt
   });
+});
+
+// Change Password Endpoint
+app.post('/api/auth/change-password', async (req, res) => {
+  const { userId, email, currentPassword, newPassword } = req.body;
+
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 6) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Le mot de passe doit comporter au moins 6 caractères.' 
+    });
+  }
+
+  const db = readDB();
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const user = db.users.find(u => 
+    (userId && u.id === userId) || 
+    (normalizedEmail && (u.email || '').toLowerCase() === normalizedEmail)
+  );
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'Utilisateur introuvable.' });
+  }
+
+  // If currentPassword is provided and user already had a password, verify match
+  if (currentPassword && user.mot_de_passe && user.mot_de_passe !== currentPassword) {
+    return res.status(400).json({ success: false, message: 'L\'ancien mot de passe saisi est incorrect.' });
+  }
+
+  // Update password and clear first-login requirement flags
+  user.mot_de_passe = newPassword.trim();
+  user.premier_login = false;
+  user.doit_changer_mot_de_passe = false;
+  user.first_login = false;
+  user.mot_de_passe_modifie = true;
+  user.password_updated_at = new Date().toISOString();
+
+  writeDB(db);
+
+  // Sync to PostgreSQL if active
+  if (isPostgresAvailable) {
+    try {
+      await query('UPDATE users SET mot_de_passe = $1, updated_at = NOW() WHERE id = $2', [user.mot_de_passe, user.id]);
+    } catch (pgErr) {
+      console.warn('PostgreSQL password update warning:', pgErr.message);
+    }
+  }
+
+  const { mot_de_passe: _, ...safeUser } = user;
+  res.json({
+    success: true,
+    message: 'Votre mot de passe a été modifié avec succès.',
+    user: {
+      ...safeUser,
+      first_login: false,
+      premier_login: false,
+      doit_changer_mot_de_passe: false
+    }
+  });
+});
+
+// Dismiss First Login Modal (Save choice to not ask again)
+app.post('/api/auth/dismiss-first-login', (req, res) => {
+  const { userId, email } = req.body;
+  const db = readDB();
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const user = db.users.find(u => 
+    (userId && u.id === userId) || 
+    (normalizedEmail && (u.email || '').toLowerCase() === normalizedEmail)
+  );
+
+  if (user) {
+    user.premier_login = false;
+    user.doit_changer_mot_de_passe = false;
+    user.first_login = false;
+    writeDB(db);
+  }
+  res.json({ success: true });
 });
 
 // Verify active session
@@ -524,7 +618,11 @@ app.post('/api/auth/register', (req, res) => {
     verification_status: 'en_attente_validation',
     created_at: new Date().toISOString(),
     badges: ['Professionnel Agréé', 'Patente Déposée'],
-    favoris: []
+    favoris: [],
+    premier_login: true,
+    doit_changer_mot_de_passe: true,
+    first_login: true,
+    login_count: 0
   };
 
   // Setup initial subscription
@@ -625,7 +723,11 @@ app.post('/api/users', (req, res) => {
     numero_patente: numPatente,
     patente_document: savedDocUrl,
     patente_filename: patente_filename || (numPatente ? `Patente_${numPatente}` : 'Patente_Officielle.pdf'),
-    favoris: []
+    favoris: [],
+    premier_login: true,
+    doit_changer_mot_de_passe: true,
+    first_login: true,
+    login_count: 0
   };
 
   if (newUser.role === 'commercant') {

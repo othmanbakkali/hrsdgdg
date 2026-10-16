@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import ProductCard from '../components/ProductCard';
 
-export default function MerchantDashboard({ onOpenSellModal }) {
-  const { t } = useLanguage();
+export default function MerchantDashboard({ onOpenSellModal, onOpenChangePassword }) {
+  const { t, lang } = useLanguage();
   const { user } = useAuth();
+  const isAr = lang === 'ar';
 
   const [activeTab, setActiveTab] = useState('listings'); // 'listings', 'orders', 'add-product', 'sales-history', 'verifications'
   const [stats, setStats] = useState({ totalSales: 0, totalCommission: 0, netEarnings: 0, itemsSold: 0 });
@@ -355,6 +356,17 @@ export default function MerchantDashboard({ onOpenSellModal }) {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {onOpenChangePassword && (
+            <button 
+              onClick={onOpenChangePassword}
+              className="btn-jewelia-secondary"
+              style={{ padding: '10px 18px', fontSize: '0.88rem' }}
+              title={isAr ? 'تغيير كلمة المرور' : 'Changer mot de passe'}
+            >
+              🔐 {isAr ? 'كلمة المرور' : 'Mot de passe'}
+            </button>
+          )}
+
           <button 
             onClick={() => setActiveTab('sales-history')}
             className="btn-jewelia-secondary"

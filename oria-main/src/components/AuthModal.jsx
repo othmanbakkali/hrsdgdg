@@ -150,10 +150,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     setErrorMsg('');
     setLoading(true);
     try {
-      await login(email, password);
+      const loggedUser = await login(email, password);
       setLoading(false);
       onClose();
-      if (onAuthSuccess) onAuthSuccess('login');
+      if (onAuthSuccess) onAuthSuccess('login', loggedUser);
     } catch (err) {
       setLoading(false);
       setErrorMsg(err.message || (lang === 'ar' ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' : 'Email ou mot de passe incorrect.'));

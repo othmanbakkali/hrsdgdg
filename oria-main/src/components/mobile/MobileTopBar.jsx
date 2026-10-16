@@ -29,6 +29,7 @@ export default function MobileTopBar({
   onToggleTheme,
   user,
   onOpenAuth,
+  onOpenChangePassword,
   onLogout,
   onNavigate
 }) {
@@ -254,6 +255,7 @@ export default function MobileTopBar({
         onToggleTheme={onToggleTheme}
         user={user}
         onOpenAuth={onOpenAuth}
+        onOpenChangePassword={onOpenChangePassword}
         onLogout={onLogout}
         onNavigate={onNavigate}
       />

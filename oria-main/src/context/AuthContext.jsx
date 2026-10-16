@@ -135,8 +135,77 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const changePassword = async (newPassword, currentPassword) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          email: user?.email,
+          currentPassword,
+          newPassword
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Erreur lors du changement de mot de passe');
+      }
+      if (data.user) {
+        const updatedUser = { 
+          ...user, 
+          ...data.user, 
+          first_login: false, 
+          premier_login: false, 
+          doit_changer_mot_de_passe: false 
+        };
+        setUser(updatedUser);
+        localStorage.setItem('oria_user', JSON.stringify(updatedUser));
+      }
+      return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const dismissFirstLogin = async () => {
+    try {
+      if (user?.id || user?.email) {
+        fetch(`${API_URL}/auth/dismiss-first-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user?.id, email: user?.email })
+        }).catch(() => {});
+      }
+      if (user) {
+        const updatedUser = { 
+          ...user, 
+          first_login: false, 
+          premier_login: false, 
+          doit_changer_mot_de_passe: false 
+        };
+        setUser(updatedUser);
+        localStorage.setItem('oria_user', JSON.stringify(updatedUser));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, login, register, logout, switchEvalRole, toggleFavorite, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      setUser, 
+      login, 
+      register, 
+      logout, 
+      changePassword, 
+      dismissFirstLogin, 
+      switchEvalRole, 
+      toggleFavorite, 
+      loading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

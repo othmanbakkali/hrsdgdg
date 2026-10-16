@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import ProductCard from '../components/ProductCard';
 
-export default function ClientDashboard({ onSelectProduct, onOpenSellModal }) {
-  const { t } = useLanguage();
+export default function ClientDashboard({ onSelectProduct, onOpenSellModal, onOpenChangePassword }) {
+  const { t, lang } = useLanguage();
   const { user } = useAuth();
+  const isAr = lang === 'ar';
   
   const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'my-listings', 'favorites', 'messages'
   const [orders, setOrders] = useState([]);
@@ -150,13 +151,33 @@ export default function ClientDashboard({ onSelectProduct, onOpenSellModal }) {
           </div>
         </div>
 
-        <button 
-          onClick={onOpenSellModal}
-          className="btn-jewelia-primary"
-          style={{ padding: '10px 18px', fontSize: '0.85rem' }}
-        >
-          ♻️ Déposer une annonce Seconde Main
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {onOpenChangePassword && (
+            <button 
+              onClick={onOpenChangePassword}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(212, 175, 55, 0.12)',
+                border: '1px solid var(--border-gold)',
+                color: 'var(--primary-gold)',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              🔐 {isAr ? 'تغيير كلمة المرور' : 'Changer mot de passe'}
+            </button>
+          )}
+
+          <button 
+            onClick={onOpenSellModal}
+            className="btn-jewelia-primary"
+            style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+          >
+            ♻️ {isAr ? 'إيداع إعلان مجوهرات' : 'Déposer une annonce Seconde Main'}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

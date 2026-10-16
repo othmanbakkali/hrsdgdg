@@ -14,6 +14,7 @@ import SellJewelModal from './components/SellJewelModal';
 import ProductComparatorModal from './components/ProductComparatorModal';
 import AIAssistantModal from './components/AIAssistantModal';
 import GoldPriceHistoryModal from './components/GoldPriceHistoryModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
 import PWAInstallBanner from './pwa/PWAInstallBanner';
 import PWAInstallButton from './pwa/PWAInstallButton';
 
@@ -88,6 +89,16 @@ function MainLayout() {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [chatTargetProduct, setChatTargetProduct] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isFirstLoginChange, setIsFirstLoginChange] = useState(false);
+
+  // Automatically prompt user to change password upon first authentication
+  useEffect(() => {
+    if (user && (user.first_login === true || user.premier_login === true || user.doit_changer_mot_de_passe === true)) {
+      setIsFirstLoginChange(true);
+      setIsChangePasswordOpen(true);
+    }
+  }, [user]);
 
   // Comparator State
   const [comparedProductIds, setComparedProductIds] = useState([]);
@@ -248,6 +259,10 @@ function MainLayout() {
           onToggleTheme={toggleTheme}
           user={user}
           onOpenAuth={() => setIsAuthModalOpen(true)}
+          onOpenChangePassword={() => {
+            setIsFirstLoginChange(false);
+            setIsChangePasswordOpen(true);
+          }}
           onLogout={logout}
           onNavigate={setActiveView}
         />
@@ -445,6 +460,17 @@ function MainLayout() {
                         style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--primary-gold)', textAlign: lang === 'ar' ? 'right' : 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600 }}
                       >
                         🏪 {lang === 'ar' ? 'فضاء التاجر والمتجر' : 'Espace Vendeur & Boutique'}
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          setIsFirstLoginChange(false);
+                          setIsChangePasswordOpen(true);
+                          setUserMenuOpen(false);
+                        }}
+                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--text-white)', textAlign: lang === 'ar' ? 'right' : 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}
+                      >
+                        🔑 {lang === 'ar' ? 'تغيير كلمة المرور' : 'Changer de mot de passe'}
                       </button>
 
                       <button 
@@ -650,12 +676,20 @@ function MainLayout() {
           <ClientDashboard 
             onSelectProduct={(p) => setSelectedProduct(p)}
             onOpenSellModal={() => setIsSellModalOpen(true)}
+            onOpenChangePassword={() => {
+              setIsFirstLoginChange(false);
+              setIsChangePasswordOpen(true);
+            }}
           />
         )}
 
         {activeView === 'merchant-dashboard' && (
           <MerchantDashboard 
             onOpenSellModal={() => setIsSellModalOpen(true)}
+            onOpenChangePassword={() => {
+              setIsFirstLoginChange(false);
+              setIsChangePasswordOpen(true);
+            }}
           />
         )}
       </div>
@@ -734,7 +768,21 @@ function MainLayout() {
 
 
       {/* Global Modals */}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onAuthSuccess={(type, loggedUser) => {
+          if (loggedUser && (loggedUser.first_login || loggedUser.premier_login || loggedUser.doit_changer_mot_de_passe)) {
+            setIsFirstLoginChange(true);
+            setIsChangePasswordOpen(true);
+          }
+        }}
+      />
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+        isFirstLogin={isFirstLoginChange}
+      />
       <JewelFinderWizard 
         isOpen={isFinderOpen} 
         onClose={() => setIsFinderOpen(false)} 
