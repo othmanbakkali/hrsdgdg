@@ -725,20 +725,40 @@ Merci.`;
                 </form>
               </div>
             ) : (
-              /* Normal Price Row */
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(0, 0, 0, 0.08)' }}>
-                <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }}>
-                  {product.prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
-                </span>
-                {product.ancien_prix && product.ancien_prix > product.prix && (
-                  <>
-                    <span style={{ fontSize: '1.1rem', color: 'var(--text-gray)', textDecoration: 'line-through' }}>
-                      {product.ancien_prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
-                    </span>
-                    <span className="card-discount-badge">
-                      -{Math.round(((product.ancien_prix - product.prix) / product.ancien_prix) * 100)}%
-                    </span>
-                  </>
+              /* Normal Price Row with Grammage on the same line */
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(0, 0, 0, 0.08)', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }}>
+                    {product.prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
+                  </span>
+                  {product.ancien_prix && product.ancien_prix > product.prix && (
+                    <>
+                      <span style={{ fontSize: '1.1rem', color: 'var(--text-gray)', textDecoration: 'line-through' }}>
+                        {product.ancien_prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
+                      </span>
+                      <span className="card-discount-badge">
+                        -{Math.round(((product.ancien_prix - product.prix) / product.ancien_prix) * 100)}%
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                {realGramme && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    background: 'rgba(212, 175, 55, 0.08)',
+                    border: '1.5px solid var(--border-gold)',
+                    borderRadius: '20px',
+                    fontSize: '0.95rem',
+                    fontWeight: 800,
+                    color: 'var(--primary-gold)'
+                  }}>
+                    <span>⚖️</span>
+                    <span>{realGramme} {lang === 'ar' ? 'غ' : 'g'}</span>
+                  </div>
                 )}
               </div>
             )}

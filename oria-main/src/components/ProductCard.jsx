@@ -387,27 +387,41 @@ Merci.`;
             {displayTitle}
           </h4>
 
-          {/* 3. Prix */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '2px' }}>
-            <span style={{ fontSize: '1.08rem', fontWeight: 800, color: isSold ? '#64748b' : '#b38728' }}>
-              {product.prix ? product.prix.toLocaleString() : (lang === 'ar' ? 'غير محدد' : 'N/A')}
-            </span>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>
-              {lang === 'ar' ? 'د.م' : 'MAD'}
-            </span>
-            {discountPercent > 0 && product.ancien_prix && !isSold && (
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textDecoration: 'line-through' }}>
-                {product.ancien_prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'MAD'}
+          {/* 3 & 4. Prix et Grammage sur la même ligne */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '3px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', minWidth: 0, overflow: 'hidden' }}>
+              <span style={{ fontSize: '1.08rem', fontWeight: 800, color: isSold ? '#64748b' : '#b38728', whiteSpace: 'nowrap' }}>
+                {product.prix ? product.prix.toLocaleString() : (lang === 'ar' ? 'غير محدد' : 'N/A')}
               </span>
-            )}
-          </div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>
+                {lang === 'ar' ? 'د.م' : 'MAD'}
+              </span>
+              {discountPercent > 0 && product.ancien_prix && !isSold && (
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8', textDecoration: 'line-through', whiteSpace: 'nowrap' }}>
+                  {product.ancien_prix.toLocaleString()}
+                </span>
+              )}
+            </div>
 
-          {/* 4. Grammage (en grammes 'g' ou 'غ') */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', color: '#334155', marginTop: '2px' }}>
-            <span style={{ color: '#b38728', fontWeight: 700 }}>⚖️</span>
-            <strong style={{ color: realGramme ? '#0f172a' : '#64748b', fontWeight: 700 }}>
-              {realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
-            </strong>
+            {/* Grammage (sur la même ligne que le prix) */}
+            <div style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '3px', 
+              fontSize: '0.74rem', 
+              color: realGramme ? '#0f172a' : '#64748b', 
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              padding: '1px 5px',
+              borderRadius: '4px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0'
+            }}>
+              <span style={{ color: '#b38728', fontWeight: 700, fontSize: '0.74rem' }}>⚖️</span>
+              <strong style={{ fontWeight: 700 }}>
+                {realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'N/A')}
+              </strong>
+            </div>
           </div>
 
           {/* 5. Ville */}
