@@ -358,7 +358,7 @@ Merci.`;
           6. État de l'article
           7. Bouton d'action WhatsApp
       */}
-      <div style={{ padding: '8px 10px 10px', display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, justifyContent: 'space-between', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: '8px 10px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
         <div style={{ minWidth: 0, width: '100%' }}>
           {/* 2. Nom de l'article ou de la parure (avec retour à la ligne automatique sans déformer l'affichage) */}
           <h4 
@@ -434,83 +434,68 @@ Merci.`;
             </span>
           </div>
 
-          {/* 6. État de l'article */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{lang === 'ar' ? 'الحالة :' : 'État :'}</span>
-            <span style={{
-              display: 'inline-block',
-              padding: '1px 6px',
-              borderRadius: '4px',
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              background: isSold ? '#fee2e2' : '#f1f5f9',
-              color: isSold ? '#dc2626' : '#334155',
-              border: isSold ? '1px solid #fca5a5' : '1px solid #e2e8f0'
-            }}>
-              {etatDisplay}
-            </span>
+          {/* 6. État de l'article & Petite icône WhatsApp en face sur la même ligne */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginTop: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, overflow: 'hidden' }}>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', flexShrink: 0 }}>{lang === 'ar' ? 'الحالة :' : 'État :'}</span>
+              <span style={{
+                display: 'inline-block',
+                padding: '1px 6px',
+                borderRadius: '4px',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                background: isSold ? '#fee2e2' : '#f1f5f9',
+                color: isSold ? '#dc2626' : '#334155',
+                border: isSold ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {etatDisplay}
+              </span>
+            </div>
+
+            {/* Petite icône WhatsApp juste en face de l'état sur la même ligne */}
+            {!isSold ? (
+              <button
+                type="button"
+                onClick={handleWhatsAppClick}
+                disabled={!hasValidPhone}
+                style={{
+                  background: hasValidPhone ? 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)' : '#e2e8f0',
+                  color: hasValidPhone ? '#ffffff' : '#94a3b8',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '26px',
+                  height: '26px',
+                  minWidth: '26px',
+                  minHeight: '26px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: hasValidPhone ? 'pointer' : 'not-allowed',
+                  boxShadow: hasValidPhone ? '0 2px 6px rgba(37, 211, 102, 0.35)' : 'none',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  padding: 0,
+                  flexShrink: 0
+                }}
+                onMouseEnter={e => {
+                  if (hasValidPhone) e.currentTarget.style.transform = 'scale(1.15)';
+                }}
+                onMouseLeave={e => {
+                  if (hasValidPhone) e.currentTarget.style.transform = 'scale(1)';
+                }}
+                title={hasValidPhone ? (lang === 'ar' ? "تواصل مع البائع عبر واتساب" : "Contacter le vendeur sur WhatsApp") : (lang === 'ar' ? "رقم غير متوفر" : "Numéro indisponible")}
+                aria-label="WhatsApp"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style={{ display: 'block' }}>
+                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
+                </svg>
+              </button>
+            ) : null}
           </div>
         </div>
-
-        {/* 7. BOUTON D'ACTION APPROPRIÉ : WHATSAPP */}
-        <div style={{ marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
-          {isSold ? (
-            <button
-              disabled
-              style={{
-                width: '100%',
-                padding: '6px 8px',
-                background: '#f1f5f9',
-                color: '#94a3b8',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                cursor: 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px'
-              }}
-            >
-              🔒 {lang === 'ar' ? 'مباع' : 'Vendu'}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleWhatsAppClick}
-              disabled={!hasValidPhone}
-              style={{
-                width: '100%',
-                minHeight: '34px',
-                padding: '6px 10px',
-                background: hasValidPhone 
-                  ? 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)' 
-                  : '#e2e8f0',
-                color: hasValidPhone ? '#ffffff' : '#64748b',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                cursor: hasValidPhone ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                boxShadow: hasValidPhone ? '0 2px 6px rgba(37, 211, 102, 0.22)' : 'none',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                boxSizing: 'border-box'
-              }}
-              title={hasValidPhone ? (lang === 'ar' ? "تواصل مع البائع عبر واتساب" : "Contacter le vendeur sur WhatsApp") : "Numéro de vendeur indisponible"}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, width: '16px', height: '16px', minWidth: '16px', minHeight: '16px', display: 'inline-block', verticalAlign: 'middle' }}>
-                <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
-           </svg>
-           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{lang === 'ar' ? 'تواصل عبر واتساب' : 'Contacter sur WhatsApp'}</span>
-         </button>
-       )}
-     </div>
-   </div>
- </div>
+      </div>
+    </div>
   );
 }
