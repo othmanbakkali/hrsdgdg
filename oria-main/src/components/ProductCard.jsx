@@ -261,37 +261,6 @@ Merci.`;
             </div>
           )}
 
-          {/* Favorite button */}
-          <button 
-            type="button"
-            className={`avito-fav-btn ${isFavorited ? 'favorited' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleFavorite(product.id);
-            }}
-            style={{
-              position: 'absolute',
-              top: '6px',
-              right: lang === 'ar' ? 'auto' : '6px',
-              left: lang === 'ar' ? '6px' : 'auto',
-              background: 'rgba(255, 255, 255, 0.88)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 3,
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-            }}
-            title={isFavorited ? (lang === 'ar' ? "إزالة من المفضلة" : "Retirer des favoris") : (lang === 'ar' ? "إضافة إلى المفضلة" : "Ajouter aux favoris")}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill={isFavorited ? "#ef4444" : "none"} stroke={isFavorited ? "#ef4444" : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          </button>
 
           {/* Badges: Sold, Auction, or Condition */}
           {isSold ? (
@@ -390,15 +359,15 @@ Merci.`;
           {/* 3 & 4. Prix et Grammage sur la même ligne */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '3px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', minWidth: 0, overflow: 'hidden' }}>
-              <span style={{ fontSize: '1.08rem', fontWeight: 800, color: isSold ? '#64748b' : '#b38728', whiteSpace: 'nowrap' }}>
-                {product.prix ? product.prix.toLocaleString() : (lang === 'ar' ? 'غير محدد' : 'N/A')}
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: isSold ? '#64748b' : '#b48625', whiteSpace: 'nowrap', letterSpacing: '0.2px' }}>
+                {product.prix ? product.prix.toLocaleString('fr-FR') : (lang === 'ar' ? 'غير محدد' : 'N/A')}
               </span>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: isSold ? '#94a3b8' : '#b48625', whiteSpace: 'nowrap' }}>
                 {lang === 'ar' ? 'د.م' : 'MAD'}
               </span>
               {discountPercent > 0 && product.ancien_prix && !isSold && (
-                <span style={{ fontSize: '0.68rem', color: '#94a3b8', textDecoration: 'line-through', whiteSpace: 'nowrap' }}>
-                  {product.ancien_prix.toLocaleString()}
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', textDecoration: 'line-through', whiteSpace: 'nowrap', opacity: 0.85 }}>
+                  {product.ancien_prix.toLocaleString('fr-FR')}
                 </span>
               )}
             </div>

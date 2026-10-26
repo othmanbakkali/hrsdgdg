@@ -214,7 +214,7 @@ export default function Marketplace({
     <div className="marketplace-container">
       {/* 1. OFFICIAL LIVE GOLD RATE BANNER (DISPLAYED ON MOBILE & DESKTOP) */}
       <div className="gold-ribbon-placement-container" style={{ padding: '0 16px', maxWidth: '1400px', margin: '4px auto 14px', width: '100%', boxSizing: 'border-box' }}>
-        <GoldPriceCard onOpenHistoryModal={onOpenGoldModal} />
+        <GoldPriceCard onOpenHistoryModal={(metal) => onOpenGoldModal && onOpenGoldModal(metal)} />
       </div>
 
       {/* 2. CATEGORIES BAR (Direct Category Access) */}
@@ -350,9 +350,17 @@ export default function Marketplace({
           <div className="filter-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <label className="filter-label" style={{ margin: 0 }}>{lang === 'ar' ? 'الميزانية القصوى' : 'Budget Max'}</label>
-              <span className="filter-price-display" dir="ltr">
-                {priceMax.toLocaleString()} {t('currency') || 'DH'}
-              </span>
+              <div className={`sheet-luxury-price-badge ${priceMax >= 35000 ? 'max-unlimited' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                {priceMax >= 35000 ? (
+                  <span className="badge-unlimited">{lang === 'ar' ? '✨ الكل (بدون سقف)' : '✨ Illimité (Tous)'}</span>
+                ) : (
+                  <>
+                    <span className="badge-prefix">{lang === 'ar' ? 'حتى' : 'Jusqu\'à'}</span>
+                    <strong className="badge-amount">{String(Math.round(priceMax || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}</strong>
+                    <span className="badge-currency">{lang === 'ar' ? 'د.م' : 'DH'}</span>
+                  </>
+                )}
+              </div>
             </div>
             <input 
               type="range"
@@ -361,12 +369,16 @@ export default function Marketplace({
               step="500"
               value={priceMax}
               onChange={e => setPriceMax(parseFloat(e.target.value))}
-              className="filter-range-input"
+              className="filter-range-input sheet-range-slider"
+              dir="ltr"
+              style={{
+                background: `linear-gradient(to right, #d4af37 0%, #d4af37 ${Math.min(100, Math.max(0, ((priceMax - 500) / 34500) * 100))}%, #e2e8f0 ${Math.min(100, Math.max(0, ((priceMax - 500) / 34500) * 100))}%, #e2e8f0 100%)`
+              }}
             />
-            <div className="range-labels-row" dir="ltr">
-              <span>500 {t('currency') || 'DH'}</span>
-              <span>15 000 {t('currency') || 'DH'}</span>
-              <span>35 000+ {t('currency') || 'DH'}</span>
+            <div className="sheet-range-bounds range-labels-row" dir="ltr">
+              <span className="bound-min">500 {lang === 'ar' ? 'د.م' : 'DH'}</span>
+              <span className="bound-mid">15 000 {lang === 'ar' ? 'د.م' : 'DH'}</span>
+              <span className="bound-max">35 000+ {lang === 'ar' ? 'د.م' : 'DH'}</span>
             </div>
           </div>
 
@@ -542,7 +554,7 @@ export default function Marketplace({
                 className="products-sort-select"
               >
                 <option value="newest">{lang === 'ar' ? '🕒 الأحدث أولاً' : '🕒 Plus récents d\'abord'}</option>
-                <option value="popular">{lang === 'ar' ? '⭐ الأكثر شعبية' : '⭐ Popularité & Favoris'}</option>
+                <option value="popular">{lang === 'ar' ? '⭐ الأكثر طلباً' : '⭐ Plus populaires'}</option>
                 <option value="price_asc">{lang === 'ar' ? '💰 السعر: تصاعدي' : '💰 Prix croissant'}</option>
                 <option value="price_desc">{lang === 'ar' ? '💎 السعر: تنازلي' : '💎 Prix décroissant'}</option>
                 <option value="rating">{lang === 'ar' ? '🏆 الأعلى تقييماً' : '🏆 Meilleures notes'}</option>

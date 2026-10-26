@@ -44,19 +44,6 @@ export default function MobileBottomNav({
         <span className="nav-text">{t('search')}</span>
       </button>
 
-      {/* 3. Vendre un bijou / Sell */}
-      <button 
-        className={`mobile-nav-item ${activeTab === 'sell' ? 'active' : ''}`}
-        onClick={() => {
-          onChangeTab('sell');
-          if (onOpenSell) onOpenSell();
-        }}
-      >
-        <span className="nav-icon-wrap" style={{ position: 'relative' }}>
-          <span style={{ fontSize: '1.25rem' }}>♻️</span>
-        </span>
-        <span className="nav-text">{lang === 'ar' ? 'بيع مجوهراتي' : 'Vendre'}</span>
-      </button>
 
       {/* 4. Mon Compte */}
       <button 

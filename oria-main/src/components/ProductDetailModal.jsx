@@ -899,30 +899,6 @@ Merci.`;
               )}
 
                 <button 
-                  onClick={() => toggleFavorite(product.id)}
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    minWidth: '42px',
-                    borderRadius: '10px',
-                    border: isFavorited ? '1.5px solid #ef4444' : '1px solid var(--border-gold)',
-                    background: isFavorited ? '#fef2f2' : 'var(--bg-surface)',
-                    color: isFavorited ? '#ef4444' : 'var(--text-gray)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
-                  }}
-                  title={lang === 'ar' ? 'إضافة إلى المفضلة' : 'Favoris'}
-                >
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill={isFavorited ? "#ef4444" : "none"} stroke={isFavorited ? "#ef4444" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                  </svg>
-                </button>
-
-                <button 
                   onClick={() => onAddToCompare(product)}
                   style={{
                     width: '42px',

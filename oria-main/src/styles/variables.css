@@ -187,20 +187,44 @@ body.dark-theme {
   font-family: var(--font-arabic);
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* Custom Scrollbar - Unified Luxury Inset (Top & Bottom Spacing) */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 24px;
+  scroll-padding-bottom: 28px;
 }
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
 ::-webkit-scrollbar-track {
   background: transparent;
+  margin-top: 14px;
+  margin-bottom: 14px;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(179, 135, 40, 0.28);
-  border-radius: 10px;
+  background: rgba(179, 135, 40, 0.35);
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-gold);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.4) transparent;
 }
 
 /* Typography Hierarchy */

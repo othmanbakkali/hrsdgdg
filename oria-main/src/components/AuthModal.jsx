@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { API_URL } from '../config/api';
 import OriaLogo from './OriaLogo';
+import { ALL_MOROCCAN_CITIES, TOP_MOROCCAN_CITIES } from '../utils/moroccanCities';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab = 'register' }) {
   const { login, register } = useAuth();
@@ -18,7 +19,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   }, [initialTab, isOpen]);
 
   // Login fields
-  const [email, setEmail] = useState('');
+  const [phoneOrEmail, setPhoneOrEmail] = useState('');
   const [password, setPassword] = useState('');
 
   // Register extra fields (Professional Joaillier)
@@ -26,10 +27,22 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   const [shopName, setShopName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('Casablanca');
+  const [customCity, setCustomCity] = useState('');
   const [numeroPatente, setNumeroPatente] = useState('');
   const [patenteDocBase64, setPatenteDocBase64] = useState('');
   const [patenteDocName, setPatenteDocName] = useState('');
   const [patenteDocSize, setPatenteDocSize] = useState('');
+  const [numeroBureauGarantie, setNumeroBureauGarantie] = useState('');
+  const [bureauGarantieDocBase64, setBureauGarantieDocBase64] = useState('');
+  const [bureauGarantieDocName, setBureauGarantieDocName] = useState('');
+  const [bureauGarantieDocSize, setBureauGarantieDocSize] = useState('');
+  const [numeroCin, setNumeroCin] = useState('');
+  const [cinRectoDocBase64, setCinRectoDocBase64] = useState('');
+  const [cinRectoDocName, setCinRectoDocName] = useState('');
+  const [cinRectoDocSize, setCinRectoDocSize] = useState('');
+  const [cinVersoDocBase64, setCinVersoDocBase64] = useState('');
+  const [cinVersoDocName, setCinVersoDocName] = useState('');
+  const [cinVersoDocSize, setCinVersoDocSize] = useState('');
 
   // Helper to normalize Moroccan phone numbers to +212XXXXXXXXX
   const formatMoroccanInternationalPhone = (raw) => {
@@ -85,6 +98,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   const [termsLangTab, setTermsLangTab] = useState(lang === 'ar' ? 'ar' : 'fr');
   const [copySuccessToast, setCopySuccessToast] = useState('');
   const [registeredPendingSuccess, setRegisteredPendingSuccess] = useState(false);
+  const [remoteTerms, setRemoteTerms] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/terms-and-conditions`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.fr && data.ar) {
+          setRemoteTerms(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -145,18 +170,107 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     setPatenteDocSize('');
   };
 
+  // Handle CIN Recto File Upload (PDF, JPG, PNG, WEBP)
+  const handleCinRectoFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg(lang === 'ar' ? 'حجم الملف كبير جداً (الحد الأقصى 10 ميغابايت).' : 'Le document est trop volumineux (max 10 Mo).');
+      return;
+    }
+
+    setCinRectoDocName(file.name);
+    setCinRectoDocSize((file.size / 1024).toFixed(1) + ' KB');
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setCinRectoDocBase64(ev.target.result);
+      setErrorMsg('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveCinRectoDoc = () => {
+    setCinRectoDocBase64('');
+    setCinRectoDocName('');
+    setCinRectoDocSize('');
+  };
+
+  // Handle CIN Verso File Upload (PDF, JPG, PNG, WEBP)
+  const handleCinVersoFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg(lang === 'ar' ? 'حجم الملف كبير جداً (الحد الأقصى 10 ميغابايت).' : 'Le document est trop volumineux (max 10 Mo).');
+      return;
+    }
+
+    setCinVersoDocName(file.name);
+    setCinVersoDocSize((file.size / 1024).toFixed(1) + ' KB');
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setCinVersoDocBase64(ev.target.result);
+      setErrorMsg('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveCinVersoDoc = () => {
+    setCinVersoDocBase64('');
+    setCinVersoDocName('');
+    setCinVersoDocSize('');
+  };
+
+  // Handle Bureau de Garantie File Upload (PDF, JPG, PNG, WEBP)
+  const handleBureauGarantieFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg(lang === 'ar' ? 'حجم الملف كبير جداً (الحد الأقصى 10 ميغابايت).' : 'Le document est trop volumineux (max 10 Mo).');
+      return;
+    }
+
+    setBureauGarantieDocName(file.name);
+    setBureauGarantieDocSize((file.size / 1024).toFixed(1) + ' KB');
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setBureauGarantieDocBase64(ev.target.result);
+      setErrorMsg('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveBureauGarantieDoc = () => {
+    setBureauGarantieDocBase64('');
+    setBureauGarantieDocName('');
+    setBureauGarantieDocSize('');
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    if (!phoneOrEmail.trim()) {
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم الهاتف أو البريد الإلكتروني.' : 'Veuillez saisir votre numéro de téléphone.');
+      return;
+    }
+    if (!password) {
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال كلمة المرور.' : 'Veuillez saisir votre mot de passe.');
+      return;
+    }
     setLoading(true);
     try {
-      const loggedUser = await login(email, password);
+      const loggedUser = await login(phoneOrEmail.trim(), password);
       setLoading(false);
       onClose();
       if (onAuthSuccess) onAuthSuccess('login', loggedUser);
     } catch (err) {
       setLoading(false);
-      setErrorMsg(err.message || (lang === 'ar' ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' : 'Email ou mot de passe incorrect.'));
+      setErrorMsg(err.message || (lang === 'ar' ? 'رقم الهاتف أو كلمة المرور غير صحيحة.' : 'Numéro de téléphone ou mot de passe incorrect.'));
     }
   };
 
@@ -181,6 +295,22 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       setErrorMsg(lang === 'ar' ? 'يرجى تحميل وثيقة الباتنت أو السجل التجاري لتفعيل حسابكم المهني.' : 'Veuillez joindre votre attestation de Patente (Image ou PDF).');
       return;
     }
+    if (!numeroBureauGarantie.trim()) {
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم الاعتماد والتسجيل بمكتب الضمانة.' : 'Veuillez saisir votre numéro d\'immatriculation au Bureau de Garantie.');
+      return;
+    }
+    if (!bureauGarantieDocBase64) {
+      setErrorMsg(lang === 'ar' ? 'يرجى تحميل صورة وثيقة أو بطاقة مكتب الضمانة.' : 'Veuillez joindre la photo de votre carte ou attestation du Bureau de Garantie.');
+      return;
+    }
+    if (!cinRectoDocBase64) {
+      setErrorMsg(lang === 'ar' ? 'يرجى تحميل بطاقة التعريف الوطنية (الوجه الأمامي Recto).' : 'Veuillez joindre la face avant (Recto) de votre CIN.');
+      return;
+    }
+    if (!cinVersoDocBase64) {
+      setErrorMsg(lang === 'ar' ? 'يرجى تحميل بطاقة التعريف الوطنية (الوجه الخلفي Verso).' : 'Veuillez joindre la face arrière (Verso) de votre CIN.');
+      return;
+    }
     const cleanPhoneDigits = (phone || '').replace(/\D/g, '');
     if (!phone.trim() || cleanPhoneDigits.length < 9) {
       setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم هاتف واتساب مغربي صالح للتواصل معكم (مثال: 0661234567).' : 'Veuillez saisir un numéro de téléphone WhatsApp marocain valide (ex: 0661234567).');
@@ -196,6 +326,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       const normalizedPhone = formatMoroccanInternationalPhone(phone);
       const generatedEmail = `pro_${cleanPhoneDigits}@hrsdgdg.ma`;
       const generatedPassword = `Pro!${Math.random().toString(36).slice(-8)}*Gold`;
+      const finalCity = (city === 'Autre' && customCity.trim()) ? customCity.trim() : city;
 
       const res = await register({
         email: generatedEmail,
@@ -204,11 +335,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
         role: 'commercant',
         shopName: shopName.trim(),
         phone: normalizedPhone,
-        city,
-        address: city,
+        city: finalCity,
+        address: finalCity,
         numero_patente: numeroPatente.trim(),
         patente_document: patenteDocBase64,
         patente_filename: patenteDocName || `Patente_${numeroPatente.trim() || 'Pro'}.pdf`,
+        numero_bureau_garantie: numeroBureauGarantie.trim(),
+        bureau_garantie_document: bureauGarantieDocBase64,
+        bureau_garantie_filename: bureauGarantieDocName || `Garantie_${numeroBureauGarantie.trim() || 'Pro'}.jpg`,
+        numero_cin: numeroCin.trim(),
+        cin_recto_document: cinRectoDocBase64,
+        cin_recto_filename: cinRectoDocName || `CIN_Recto_${numeroCin.trim() || 'Pro'}.jpg`,
+        cin_verso_document: cinVersoDocBase64,
+        cin_verso_filename: cinVersoDocName || `CIN_Verso_${numeroCin.trim() || 'Pro'}.jpg`,
         plan_id: selectedPlanId,
         billing_cycle: billingCycle
       });
@@ -220,21 +359,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     }
   };
 
-  const setDemoAccount = (demoEmail, demoPass) => {
-    setEmail(demoEmail);
+  const setDemoAccount = (demoId, demoPass) => {
+    setPhoneOrEmail(demoId);
     setPassword(demoPass);
     setErrorMsg('');
   };
-
-  // Top Moroccan cities for quick 1-click pills
-  const topMoroccanCities = [
-    { key: 'Casablanca', ar: 'الدار البيضاء', fr: 'Casablanca' },
-    { key: 'Rabat', ar: 'الرباط', fr: 'Rabat' },
-    { key: 'Marrakech', ar: 'مراكش', fr: 'Marrakech' },
-    { key: 'Fès', ar: 'فاس', fr: 'Fès' },
-    { key: 'Tanger', ar: 'طنجة', fr: 'Tanger' },
-    { key: 'Agadir', ar: 'أكادير', fr: 'Agadir' }
-  ];
 
   const labels = {
     fr: {
@@ -244,7 +373,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       welcomeDesc: "Accédez à votre coffre-fort, vos enchères privées et vos commandes.",
       createAcc: "Espace Professionnel Agréé",
       createDesc: "Inscription strictement réservée aux bijoutiers, artisans orfèvres et joailliers agréés.",
-      emailLabel: "Adresse Email Professionnelle",
+      emailLabel: "Numéro de Téléphone (ou Email)",
+      loginIdentifierLabel: "Numéro de Téléphone (ou Email)",
+      loginIdentifierPlaceholder: "Ex: 0661234567 ou +212661234567",
       passLabel: "Mot de passe",
       generatePwd: "🔑 Générer un mot de passe fort",
       nameLabel: "Nom & Prénom du Gérant / Responsable",
@@ -260,6 +391,20 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       patenteDocHint: "Joindre une photo nette ou un PDF de votre patente (max 10 Mo)",
       patenteUploadBtn: "Télécharger l'attestation de Patente 📄",
       patenteUploadedSuccess: "Document joint avec succès ✓",
+      garantieSectionTitle: "Bureau de Garantie (Douanes & Impôts)",
+      garantieNumberLabel: "Numéro au Bureau de Garantie",
+      garantieDocLabel: "Photo de la carte / Attestation de Garantie",
+      garantieDocHint: "Photo nette ou document officiel (max 10 Mo)",
+      garantieUploadBtn: "Télécharger la photo du Bureau de Garantie 🏛️",
+      garantieUploadedSuccess: "Document Garantie joint avec succès ✓",
+      cinSectionTitle: "Carte d'Identité Nationale (CIN)",
+      cinNumberLabel: "Numéro de CIN",
+      cinRectoLabel: "CIN - Face Avant (Recto)",
+      cinVersoLabel: "CIN - Face Arrière (Verso)",
+      cinUploadRectoBtn: "Télécharger CIN Recto 🪪",
+      cinUploadVersoBtn: "Télécharger CIN Verso 🪪",
+      cinDocHint: "Photo nette ou scan PDF (max 10 Mo)",
+      cinUploadedSuccess: "CIN jointe avec succès ✓",
       subscriptionTitle: "Choix de votre Forfait Commerçant",
       subscriptionSubtitle: "Sélectionnez la formule adaptée à votre atelier ou bijouterie",
       monthlyBilling: "Facturation Mensuelle",
@@ -294,7 +439,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       welcomeDesc: "ادخل إلى خزنتك ومزاداتك الحصرية وطلباتك بكل أمان.",
       createAcc: "تسجيل الصاغة والمحلات المعتمدة",
       createDesc: "التسجيل في المنصة مخصص حصرياً للمحترفين والصاغة المعتمدين لممارسة الصياغة بالمغرب.",
-      emailLabel: "البريد الإلكتروني المهني",
+      emailLabel: "رقم الهاتف / واتساب (أو البريد)",
+      loginIdentifierLabel: "رقم الهاتف / واتساب (أو البريد)",
+      loginIdentifierPlaceholder: "مثال: 0661234567 أو +212661234567",
       passLabel: "كلمة المرور",
       generatePwd: "🔑 توليد كلمة مرور قوية",
       nameLabel: "الاسم الكامل للمسؤول / المدير",
@@ -310,6 +457,20 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       patenteDocHint: "أرفق صورة واضحة أو ملف PDF لوثيقة الباتنت (الحد الأقصى 10 ميغابايت)",
       patenteUploadBtn: "تحميل وثيقة الباتنت 📄",
       patenteUploadedSuccess: "تم إرفاق الوثيقة بنجاح ✓",
+      garantieSectionTitle: "مكتب الضمانة (الجمارك والضرائب غير المباشرة)",
+      garantieNumberLabel: "رقم مكتب الضمانة",
+      garantieDocLabel: "صورة بطاقة أو وثيقة مكتب الضمانة",
+      garantieDocHint: "صورة واضحة أو وثيقة رسمية (الحد الأقصى 10 ميغابايت)",
+      garantieUploadBtn: "تحميل صورة أو وثيقة مكتب الضمانة 🏛️",
+      garantieUploadedSuccess: "تم إرفاق وثيقة مكتب الضمانة بنجاح ✓",
+      cinSectionTitle: "بطاقة التعريف الوطنية (CIN)",
+      cinNumberLabel: "رقم بطاقة التعريف الوطنية (CIN)",
+      cinRectoLabel: "بطاقة التعريف الوطنية (الوجه الأمامي Recto)",
+      cinVersoLabel: "بطاقة التعريف الوطنية (الوجه الخلفي Verso)",
+      cinUploadRectoBtn: "تحميل البطاقة (الوجه الأمامي) 🪪",
+      cinUploadVersoBtn: "تحميل البطاقة (الوجه الخلفي) 🪪",
+      cinDocHint: "صورة واضحة أو ملف PDF (الحد الأقصى 10 ميغابايت)",
+      cinUploadedSuccess: "تم إرفاق البطاقة بنجاح ✓",
       subscriptionTitle: "اختر باقة الاشتراك لمتجرك",
       subscriptionSubtitle: "حدد الباقة المناسبة لحجم ونشاط ورشتك أو مجوهراتك",
       monthlyBilling: "اشتراك شهري",
@@ -360,6 +521,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       patenteDocHint: "Attach a clear photo or PDF of your business license (max 10 MB)",
       patenteUploadBtn: "Upload Tax License Document 📄",
       patenteUploadedSuccess: "Document attached successfully ✓",
+      cinSectionTitle: "National Identity Card (CIN)",
+      cinNumberLabel: "CIN Number",
+      cinRectoLabel: "National ID - Front Side (Recto)",
+      cinVersoLabel: "National ID - Back Side (Verso)",
+      cinUploadRectoBtn: "Upload CIN Front 🪪",
+      cinUploadVersoBtn: "Upload CIN Back 🪪",
+      cinDocHint: "Clear photo or PDF (max 10 MB)",
+      cinUploadedSuccess: "CIN attached successfully ✓",
       subscriptionTitle: "Select your Merchant Plan",
       subscriptionSubtitle: "Choose the package tailored to your workshop or jewelry salon",
       monthlyBilling: "Monthly Billing",
@@ -515,18 +684,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
               </div>
 
               {/* Action Buttons */}
-              <div className="pending-actions-grid">
-                <a
-                  href={`https://wa.me/212661000000?text=${whatsappMessage}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="pending-btn-whatsapp"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}>
-                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.07 16.3C4.24 14.98 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.55 14.39C16.3 14.27 15.08 13.67 14.86 13.59C14.63 13.5 14.47 13.46 14.3 13.71C14.14 13.96 13.67 14.51 13.53 14.67C13.38 14.84 13.24 14.86 12.99 14.73C12.74 14.61 11.94 14.35 11 13.51C10.26 12.85 9.77 12.04 9.63 11.79C9.48 11.54 9.61 11.41 9.74 11.28C9.85 11.17 9.99 11 10.11 10.86C10.24 10.72 10.28 10.61 10.36 10.45C10.45 10.28 10.4 10.14 10.34 10.02C10.28 9.9 9.81 8.74 9.61 8.27C9.42 7.81 9.22 7.87 9.08 7.86C8.94 7.86 8.78 7.85 8.61 7.85C8.45 7.85 8.18 7.91 7.96 8.16C7.73 8.4 7.1 8.99 7.1 10.19C7.1 11.39 7.98 12.55 8.1 12.71C8.22 12.87 9.82 15.35 12.28 16.41C12.86 16.66 13.32 16.82 13.67 16.93C14.26 17.12 14.79 17.09 15.22 17.03C15.7 16.96 16.69 16.43 16.9 15.85C17.1 15.27 17.1 14.77 17.04 14.67C16.98 14.56 16.81 14.51 16.55 14.39Z" />
-                  </svg>
-                  <span>{lang === 'ar' ? 'تسريع التفعيل عبر واتساب' : 'Accélérer via WhatsApp'}</span>
-                </a>
+              <div className="pending-actions-grid" style={{ marginTop: '20px' }}>
                 <button
                   type="button"
                   className="pending-btn-login"
@@ -535,14 +693,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                     onClose();
                   }}
                   style={{
-                    background: 'linear-gradient(135deg, #d4af37, #f3e5ab)',
+                    width: '100%',
+                    padding: '13px 24px',
+                    fontSize: '0.98rem',
+                    background: 'linear-gradient(135deg, #d4af37 0%, #f3e5ab 50%, #c5a880 100%)',
                     color: '#000',
                     fontWeight: 800,
                     border: 'none',
-                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 18px rgba(212, 175, 55, 0.35)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <span>✓</span>
+                  <span style={{ fontSize: '1.1rem' }}>✓</span>
                   <span>{lang === 'ar' ? 'حسناً، فهمت' : 'D\'accord, compris'}</span>
                 </button>
               </div>
@@ -725,6 +893,302 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 </div>
               </div>
 
+              {/* 4d. BUREAU DE GARANTIE (NUMÉRO D'IMMATRICULATION + ATTESTATION/PHOTO) */}
+              <div className="auth-field-group animate-slide-down" style={{ marginTop: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <label className="auth-field-label" style={{ marginBottom: 0 }}>
+                    <span className="auth-label-icon">🏛️</span>
+                    <span style={{ fontWeight: 800 }}>{t.garantieSectionTitle}</span>
+                    <span className="auth-required-mark">*</span>
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--primary-gold)', fontWeight: 600 }}>
+                    {lang === 'ar' ? 'إلزامي للصاغة والمجوهرات' : 'Obligatoire (Douanes & Impôts)'}
+                  </span>
+                </div>
+
+                {/* Numéro Bureau de Garantie */}
+                <div className="auth-input-container" style={{ marginBottom: '10px' }}>
+                  <input
+                    type="text"
+                    required
+                    className="auth-text-input"
+                    value={numeroBureauGarantie}
+                    onChange={e => setNumeroBureauGarantie(e.target.value)}
+                    placeholder={lang === 'ar' ? "رقم مكتب الضمانة (مثال: BG-84920-CASA أو رقم الاعتماد)" : "Ex: BG-84920-CASA (N° d'immatriculation au Bureau de Garantie)"}
+                  />
+                </div>
+
+                {/* Upload Card for Bureau de Garantie photo / document */}
+                <div style={{
+                  border: bureauGarantieDocBase64 ? '1.5px solid #10b981' : '1.5px dashed var(--border-gold)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '14px 18px',
+                  background: bureauGarantieDocBase64 ? 'rgba(16, 185, 129, 0.07)' : 'rgba(212, 175, 55, 0.04)',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}>
+                  {bureauGarantieDocBase64 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: isRtl ? 'right' : 'left' }}>
+                        <span style={{ fontSize: '1.8rem' }}>🏛️</span>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#10b981' }}>
+                            {bureauGarantieDocName || (lang === 'ar' ? 'صورة مكتب الضمانة مرفقة' : 'Document Bureau de Garantie joint')}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
+                            {bureauGarantieDocSize || 'Document vérifié'} • {t.garantieUploadedSuccess}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveBureauGarantieDoc}
+                        style={{
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
+                      >
+                        {lang === 'ar' ? 'إلغاء وتغيير' : 'Changer'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <input
+                        type="file"
+                        id="bureau-garantie-upload-input"
+                        accept=".pdf,image/png,image/jpeg,image/webp,image/jpg"
+                        style={{ display: 'none' }}
+                        onChange={handleBureauGarantieFileChange}
+                      />
+                      <label
+                        htmlFor="bureau-garantie-upload-input"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: 'linear-gradient(135deg, var(--primary-gold), #b8860b)',
+                          color: '#fff',
+                          padding: '10px 20px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.88rem',
+                          boxShadow: '0 2px 10px rgba(184, 134, 11, 0.25)',
+                          marginBottom: '6px'
+                        }}
+                      >
+                        <span>📎</span>
+                        <span>{t.garantieUploadBtn}</span>
+                      </label>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                        {t.garantieDocHint}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 4e. CARTE D'IDENTITÉ NATIONALE (CIN) RECTO / VERSO */}
+              <div className="auth-field-group animate-slide-down" style={{ marginTop: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <label className="auth-field-label" style={{ marginBottom: 0 }}>
+                    <span className="auth-label-icon">🪪</span>
+                    <span style={{ fontWeight: 800 }}>{t.cinSectionTitle}</span>
+                    <span className="auth-required-mark">*</span>
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--primary-gold)', fontWeight: 600 }}>
+                    {lang === 'ar' ? 'الوجه الأمامي والخلفي مطلوبان' : 'Recto & Verso obligatoires'}
+                  </span>
+                </div>
+
+                {/* CIN Number Input */}
+                <div className="auth-input-container" style={{ marginBottom: '12px' }}>
+                  <input
+                    type="text"
+                    className="auth-text-input"
+                    value={numeroCin}
+                    onChange={(e) => setNumeroCin(e.target.value)}
+                    placeholder={lang === 'ar' ? "رقم بطاقة التعريف الوطنية (مثال: BE123456) - اختياري" : "Numéro de CIN (ex: BE123456) - optionnel"}
+                    style={{ width: '100%', boxSizing: 'border-box', letterSpacing: '0.5px' }}
+                  />
+                </div>
+
+                {/* 2-Column Upload Cards for CIN Recto & CIN Verso */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '12px' }}>
+                  {/* CIN RECTO */}
+                  <div style={{
+                    border: cinRectoDocBase64 ? '1.5px solid #10b981' : '1.5px dashed var(--border-gold)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '12px 14px',
+                    background: cinRectoDocBase64 ? 'rgba(16, 185, 129, 0.07)' : 'rgba(212, 175, 55, 0.04)',
+                    transition: 'all 0.2s',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-gold)', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <span>🪪</span>
+                      <span>{t.cinRectoLabel}</span>
+                      <span className="auth-required-mark">*</span>
+                    </div>
+
+                    {cinRectoDocBase64 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', textAlign: isRtl ? 'right' : 'left' }}>
+                          <span style={{ fontSize: '1.4rem' }}>🪪</span>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#10b981', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {cinRectoDocName || 'CIN_Recto.jpg'}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                              {cinRectoDocSize || 'OK'} • {t.cinUploadedSuccess}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCinRectoDoc}
+                          style={{
+                            background: '#ef4444',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                            fontWeight: 700
+                          }}
+                        >
+                          {lang === 'ar' ? 'تغيير' : 'Changer'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <input
+                          type="file"
+                          id="cin-recto-upload-input"
+                          accept=".pdf,image/png,image/jpeg,image/webp,image/jpg"
+                          style={{ display: 'none' }}
+                          onChange={handleCinRectoFileChange}
+                        />
+                        <label
+                          htmlFor="cin-recto-upload-input"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            background: 'linear-gradient(135deg, var(--primary-gold), #b8860b)',
+                            color: '#fff',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            fontSize: '0.82rem',
+                            boxShadow: '0 2px 8px rgba(184, 134, 11, 0.22)',
+                            marginBottom: '4px',
+                            width: '100%'
+                          }}
+                        >
+                          <span>📎</span>
+                          <span>{t.cinUploadRectoBtn}</span>
+                        </label>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                          {t.cinDocHint}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* CIN VERSO */}
+                  <div style={{
+                    border: cinVersoDocBase64 ? '1.5px solid #10b981' : '1.5px dashed var(--border-gold)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '12px 14px',
+                    background: cinVersoDocBase64 ? 'rgba(16, 185, 129, 0.07)' : 'rgba(212, 175, 55, 0.04)',
+                    transition: 'all 0.2s',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-gold)', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <span>🪪</span>
+                      <span>{t.cinVersoLabel}</span>
+                      <span className="auth-required-mark">*</span>
+                    </div>
+
+                    {cinVersoDocBase64 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', textAlign: isRtl ? 'right' : 'left' }}>
+                          <span style={{ fontSize: '1.4rem' }}>🪪</span>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#10b981', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {cinVersoDocName || 'CIN_Verso.jpg'}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                              {cinVersoDocSize || 'OK'} • {t.cinUploadedSuccess}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCinVersoDoc}
+                          style={{
+                            background: '#ef4444',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                            fontWeight: 700
+                          }}
+                        >
+                          {lang === 'ar' ? 'تغيير' : 'Changer'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <input
+                          type="file"
+                          id="cin-verso-upload-input"
+                          accept=".pdf,image/png,image/jpeg,image/webp,image/jpg"
+                          style={{ display: 'none' }}
+                          onChange={handleCinVersoFileChange}
+                        />
+                        <label
+                          htmlFor="cin-verso-upload-input"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            background: 'linear-gradient(135deg, var(--primary-gold), #b8860b)',
+                            color: '#fff',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            fontSize: '0.82rem',
+                            boxShadow: '0 2px 8px rgba(184, 134, 11, 0.22)',
+                            marginBottom: '4px',
+                            width: '100%'
+                          }}
+                        >
+                          <span>📎</span>
+                          <span>{t.cinUploadVersoBtn}</span>
+                        </label>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                          {t.cinDocHint}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
 
               {/* 5. PHONE & CITY WITH SMART MOROCCAN SHORTCUTS */}
               <div className="auth-two-col-grid">
@@ -762,26 +1226,36 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                       value={city}
                       onChange={e => setCity(e.target.value)}
                     >
-                      <option value="Casablanca">{lang === 'ar' ? 'الدار البيضاء' : 'Casablanca'}</option>
-                      <option value="Rabat">{lang === 'ar' ? 'الرباط' : 'Rabat'}</option>
-                      <option value="Marrakech">{lang === 'ar' ? 'مراكش' : 'Marrakech'}</option>
-                      <option value="Fès">{lang === 'ar' ? 'فاس' : 'Fès'}</option>
-                      <option value="Tanger">{lang === 'ar' ? 'طنجة' : 'Tanger'}</option>
-                      <option value="Agadir">{lang === 'ar' ? 'أكادير' : 'Agadir'}</option>
-                      <option value="Meknès">{lang === 'ar' ? 'مكناس' : 'Meknès'}</option>
-                      <option value="Oujda">{lang === 'ar' ? 'وجدة' : 'Oujda'}</option>
-                      <option value="Tétouan">{lang === 'ar' ? 'تطوان' : 'Tétouan'}</option>
-                      <option value="Kenitra">{lang === 'ar' ? 'القنيطرة' : 'Kénitra'}</option>
-                      <option value="Essaouira">{lang === 'ar' ? 'الصويرة' : 'Essaouira'}</option>
-                      <option value="Autre">{lang === 'ar' ? 'مدينة أخرى' : 'Autre Ville'}</option>
+                      {ALL_MOROCCAN_CITIES.map(c => (
+                        <option key={c.key} value={c.key}>
+                          {lang === 'ar' ? `${c.ar} (${c.fr})` : `${c.fr} (${c.ar})`}
+                        </option>
+                      ))}
+                      <option value="Autre">
+                        {lang === 'ar' ? '✨ مدينة أخرى (كتابة يدوية)' : '✨ Autre Ville (Saisie manuelle)'}
+                      </option>
                     </select>
                   </div>
+                  {city === 'Autre' && (
+                    <div style={{ marginTop: '8px' }}>
+                      <input
+                        type="text"
+                        className="auth-text-input"
+                        placeholder={lang === 'ar' ? 'أدخل اسم مدينتك أو جماعتك...' : 'Précisez votre ville ou commune...'}
+                        value={customCity}
+                        onChange={e => setCustomCity(e.target.value)}
+                        autoFocus
+                        required
+                        style={{ borderColor: 'var(--color-gold, #c5a880)', background: 'rgba(197, 168, 128, 0.05)' }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Quick City Pills (1 Click Selection) */}
               <div className="quick-city-pills-row">
-                {topMoroccanCities.map(c => (
+                {TOP_MOROCCAN_CITIES.map(c => (
                   <button
                     key={c.key}
                     type="button"
@@ -885,21 +1359,21 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
              TAB 2: LOGIN FORM
              ======================================================== */
           <form onSubmit={handleLoginSubmit} className="auth-form-body">
-            {/* Email Input */}
+            {/* Phone Number / Identifier Input */}
             <div className="auth-field-group">
               <label className="auth-field-label">
-                <span className="auth-label-icon">✉️</span>
-                <span>{t.emailLabel}</span>
+                <span className="auth-label-icon">📱</span>
+                <span>{t.loginIdentifierLabel || t.emailLabel}</span>
               </label>
               <div className="auth-input-container">
                 <input
-                  type="email"
+                  type="text"
                   required
                   className="auth-text-input"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="nom@exemple.com"
-                  autoComplete="email"
+                  value={phoneOrEmail}
+                  onChange={e => setPhoneOrEmail(e.target.value)}
+                  placeholder={t.loginIdentifierPlaceholder || (lang === 'ar' ? "مثال: 0661234567 أو +212661234567" : "Ex: 0661234567 ou +212661234567")}
+                  autoComplete="username tel"
                 />
               </div>
             </div>
@@ -974,7 +1448,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <button
                   type="button"
                   className="auth-demo-pill"
-                  onClick={() => setDemoAccount('client@jewelia.com', 'client123')}
+                  onClick={() => setDemoAccount('0661889900', 'client123')}
+                  title="Téléphone: 0661889900"
                 >
                   <span className="demo-pill-icon">👤</span>
                   <span className="demo-pill-text">{t.clientDemo}</span>
@@ -982,7 +1457,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <button
                   type="button"
                   className="auth-demo-pill"
-                  onClick={() => setDemoAccount('gold@jewelia.com', 'merchant123')}
+                  onClick={() => setDemoAccount('0522123456', 'merchant123')}
+                  title="Téléphone: 0522123456"
                 >
                   <span className="demo-pill-icon">🏪</span>
                   <span className="demo-pill-text">{t.merchantDemo}</span>
@@ -990,7 +1466,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <button
                   type="button"
                   className="auth-demo-pill"
-                  onClick={() => setDemoAccount('vintage@jewelia.com', 'merchant123')}
+                  onClick={() => setDemoAccount('0662789012', 'merchant123')}
+                  title="Téléphone: 0662789012"
                 >
                   <span className="demo-pill-icon">💎</span>
                   <span className="demo-pill-text">{lang === 'ar' ? 'خبير مجوهرات (بنسودة)' : 'Expert (Bennani)'}</span>
@@ -1000,6 +1477,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   className="auth-demo-pill"
                   onClick={() => setDemoAccount('admin@hrsdgdg.com', 'admin123')}
                   style={{ borderColor: 'var(--primary-gold)', background: 'rgba(212, 175, 55, 0.12)' }}
+                  title="Admin: admin@hrsdgdg.com"
                 >
                   <span className="demo-pill-icon">👑</span>
                   <span className="demo-pill-text">{lang === 'ar' ? 'المشرف (Admin)' : 'Admin HRSDGDG'}</span>
@@ -1032,10 +1510,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <span className="terms-modal-icon">📜</span>
                 <div>
                   <h3 className="terms-modal-title">
-                    {termsLangTab === 'ar' ? 'شروط وأحكام استخدام المنصة' : 'Conditions Générales d\'Utilisation'}
+                    {remoteTerms?.[termsLangTab]?.title || (termsLangTab === 'ar' ? 'شروط وأحكام استخدام المنصة' : 'Conditions Générales d\'Utilisation')}
                   </h3>
                   <p className="terms-modal-subtitle">
-                    {termsLangTab === 'ar' ? 'منصة HRSDGDG الرسمية لتجار وصاغة المجوهرات بالمغرب' : 'Plateforme Numérique Joaillerie & Bijouterie au Maroc'}
+                    {remoteTerms?.[termsLangTab]?.subtitle || (termsLangTab === 'ar' ? 'منصة HRSDGDG الرسمية لتجار وصاغة المجوهرات بالمغرب' : 'Plateforme Numérique Joaillerie & Bijouterie au Maroc')}
                   </p>
                 </div>
               </div>
@@ -1069,7 +1547,23 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
             {/* Scrollable Terms Body */}
             <div className="terms-modal-body-scroll">
-              {termsLangTab === 'ar' ? (
+              {remoteTerms?.[termsLangTab] ? (
+                <div className={`terms-content-${termsLangTab}`}>
+                  {remoteTerms[termsLangTab].preamble && (
+                    <div className="terms-preamble">
+                      <strong>{termsLangTab === 'ar' ? 'ديباجة تمهيدية : ' : 'Préambule : '}</strong>
+                      {remoteTerms[termsLangTab].preamble}
+                    </div>
+                  )}
+
+                  {(remoteTerms[termsLangTab].articles || []).map(art => (
+                    <div key={art.id} className="terms-article-item">
+                      <h4 className="terms-article-title">{art.title}</h4>
+                      <p>{art.content}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : termsLangTab === 'ar' ? (
                 <div className="terms-content-ar">
                   <div className="terms-preamble">
                     <strong>ديباجة تمهيدية :</strong> تُحدد هذه الشروط والأحكام القواعد الملزمة لإنشاء الحسابات واستخدام خدمات منصة <strong>HRSDGDG</strong> الرقمية المخصصة حصرياً للمحترفين والصاغة المعتمدين لممارسة تجارة وصياغة المعادن الثمينة بالمملكة المغربية.

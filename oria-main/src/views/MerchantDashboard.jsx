@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import ProductCard from '../components/ProductCard';
+import { ALL_MOROCCAN_CITIES } from '../utils/moroccanCities';
 
 export default function MerchantDashboard({ onOpenSellModal, onOpenChangePassword }) {
   const { t, lang } = useLanguage();
@@ -826,18 +827,12 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   onChange={e => setNewProduct({ ...newProduct, city: e.target.value })}
                   className="filter-select-control"
                 >
-                  <option value="Casablanca">Casablanca (الدار البيضاء)</option>
-                  <option value="Rabat">Rabat (الرباط)</option>
-                  <option value="Marrakech">Marrakech (مراكش)</option>
-                  <option value="Fès">Fès (فاس)</option>
-                  <option value="Tanger">Tanger (طنجة)</option>
-                  <option value="Agadir">Agadir (أكادير)</option>
-                  <option value="Meknès">Meknès (مكناس)</option>
-                  <option value="Oujda">Oujda (وجدة)</option>
-                  <option value="Tétouan">Tétouan (تطوان)</option>
-                  <option value="Kenitra">Kénitra (القنيطرة)</option>
-                  <option value="Essaouira">Essaouira (الصويرة)</option>
-                  <option value="Autre">Autre Ville (مدينة أخرى)</option>
+                  {ALL_MOROCCAN_CITIES.map(c => (
+                    <option key={c.key} value={c.key}>
+                      {isAr ? `${c.ar} (${c.fr})` : `${c.fr} (${c.ar})`}
+                    </option>
+                  ))}
+                  <option value="Autre">{isAr ? 'مدينة أخرى' : 'Autre Ville'}</option>
                 </select>
               </div>
 

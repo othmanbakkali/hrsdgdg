@@ -84,6 +84,7 @@ function MainLayout() {
   const [isComparatorOpen, setIsComparatorOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isGoldModalOpen, setIsGoldModalOpen] = useState(false);
+  const [historyModalMetal, setHistoryModalMetal] = useState('gold');
   const [isCityPickerOpen, setIsCityPickerOpen] = useState(false);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
@@ -636,7 +637,10 @@ function MainLayout() {
             onOpenSellModal={() => setIsSellModalOpen(true)}
             onOpenAIModal={() => setIsAIOpen(true)}
             onOpenComparator={() => setIsComparatorOpen(true)}
-            onOpenGoldModal={() => setIsGoldModalOpen(true)}
+            onOpenGoldModal={(metal) => {
+              setHistoryModalMetal(metal || 'gold');
+              setIsGoldModalOpen(true);
+            }}
             comparedProductIds={comparedProductIds}
             onToggleCompare={handleToggleCompare}
             initialUniverse={saleUniverse}
@@ -796,12 +800,14 @@ function MainLayout() {
       <AIAssistantModal 
         isOpen={isAIOpen} 
         onClose={() => setIsAIOpen(false)} 
+        products={allProducts}
         onSelectProduct={(p) => setSelectedProduct(p)}
       />
       <GoldPriceHistoryModal 
         isOpen={isGoldModalOpen}
         onClose={() => setIsGoldModalOpen(false)}
         onOpenSellModal={() => setIsSellModalOpen(true)}
+        initialMetal={historyModalMetal}
       />
       <ProductComparatorModal 
         isOpen={isComparatorOpen} 

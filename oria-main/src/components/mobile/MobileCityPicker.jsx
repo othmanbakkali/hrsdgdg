@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { ALL_MOROCCAN_CITIES } from '../../utils/moroccanCities';
+
+const ALL_CITIES_OPTION = {
+  key: '',
+  fr: 'Toutes les villes',
+  ar: 'كل المدن',
+  regionFr: 'Maroc entier',
+  regionAr: 'المغرب بأكمله',
+  count: '100+'
+};
 
 const MOROCCAN_CITIES = [
-  { name: 'Toutes les villes', nameAr: 'كل المدن', region: 'Maroc entier', regionAr: 'المغرب بأكمله', count: '100+' },
-  { name: 'Casablanca', nameAr: 'الدار البيضاء', region: 'Grand Casablanca', regionAr: 'جهة الدار البيضاء - سطات', count: '48' },
-  { name: 'Rabat', nameAr: 'الرباط', region: 'Rabat-Salé-Kénitra', regionAr: 'الرباط - سلا - القنيطرة', count: '32' },
-  { name: 'Marrakech', nameAr: 'مراكش', region: 'Marrakech-Safi', regionAr: 'مراكش - آسفي', count: '29' },
-  { name: 'Tanger', nameAr: 'طنجة', region: 'Tanger-Tétouan-Al Hoceïma', regionAr: 'طنجة - تطوان - الحسيمة', count: '24' },
-  { name: 'Fès', nameAr: 'فاس', region: 'Fès-Meknès', regionAr: 'فاس - مكناس', count: '18' },
-  { name: 'Agadir', nameAr: 'أكادير', region: 'Souss-Massa', regionAr: 'سوس - ماسة', count: '16' },
-  { name: 'Meknès', nameAr: 'مكناس', region: 'Fès-Meknès', regionAr: 'فاس - مكناس', count: '12' },
-  { name: 'Oujda', nameAr: 'وجدة', region: 'Oriental', regionAr: 'الجهة الشرقية', count: '9' },
-  { name: 'Kénitra', nameAr: 'القنيطرة', region: 'Rabat-Salé-Kénitra', regionAr: 'الرباط - سلا - القنيطرة', count: '11' },
-  { name: 'Tétouan', nameAr: 'تطوان', region: 'Tanger-Tétouan', regionAr: 'طنجة - تطوان', count: '8' },
-  { name: 'El Jadida', nameAr: 'الجديدة', region: 'Casablanca-Settat', regionAr: 'الدار البيضاء - سطات', count: '7' },
-  { name: 'Nador', nameAr: 'الناظور', region: 'Oriental', regionAr: 'الجهة الشرقية', count: '6' },
-  { name: 'Mohammédia', nameAr: 'المحمدية', region: 'Casablanca-Settat', regionAr: 'الدار البيضاء - سطات', count: '8' },
-  { name: 'Béni Mellal', nameAr: 'بني ملال', region: 'Béni Mellal-Khénifra', regionAr: 'بني ملال - خنيفرة', count: '5' }
+  ALL_CITIES_OPTION,
+  ...ALL_MOROCCAN_CITIES.map(c => ({
+    key: c.key,
+    fr: c.fr,
+    ar: c.ar,
+    regionFr: c.regionFr,
+    regionAr: c.regionAr,
+    count: '10+'
+  }))
 ];
 
 export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSelectCity }) {
@@ -27,9 +31,9 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
   if (!isOpen) return null;
 
   const filteredCities = MOROCCAN_CITIES.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    c.nameAr.includes(search) ||
-    c.region.toLowerCase().includes(search.toLowerCase()) ||
+    c.fr.toLowerCase().includes(search.toLowerCase()) || 
+    c.ar.includes(search) ||
+    c.regionFr.toLowerCase().includes(search.toLowerCase()) ||
     c.regionAr.includes(search)
   );
 
@@ -67,15 +71,15 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
         {/* Cities List */}
         <div className="cities-scroll-list">
           {filteredCities.map((city) => {
-            const cityName = isAr ? city.nameAr : city.name;
-            const isAll = city.name === 'Toutes les villes';
-            const isSelected = (selectedCity === city.name) || (selectedCity === city.nameAr) || (!selectedCity && isAll);
+            const cityName = isAr ? city.ar : city.fr;
+            const isAll = city.fr === 'Toutes les villes';
+            const isSelected = (selectedCity === city.fr) || (selectedCity === city.ar) || (selectedCity === city.key) || (!selectedCity && isAll);
             return (
               <div 
-                key={city.name}
+                key={city.key || city.fr}
                 className={`city-list-item ${isSelected ? 'active' : ''}`}
                 onClick={() => {
-                  onSelectCity(isAll ? '' : (isAr ? city.nameAr : city.name));
+                  onSelectCity(isAll ? '' : (isAr ? city.ar : city.fr));
                   onClose();
                 }}
               >
@@ -83,7 +87,7 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
                   <span className="city-item-icon">{isAll ? '🇲🇦' : '📍'}</span>
                   <div>
                     <strong className="city-item-name">{cityName}</strong>
-                    <span className="city-item-region">{isAr ? city.regionAr : city.region}</span>
+                    <span className="city-item-region">{isAr ? city.regionAr : city.regionFr}</span>
                   </div>
                 </div>
                 <div className="city-item-right">

@@ -5,6 +5,7 @@ import OriaLogo from './components/OriaLogo';
 import AdminLogin from './components/AdminLogin';
 import SilverIcon from './components/SilverIcon';
 import './styles/admin.css';
+import { ALL_MOROCCAN_CITIES } from './utils/moroccanCities';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -69,10 +70,14 @@ function AdminLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (isMerchant && activeTab !== 'products' && activeTab !== 'sales_history' && activeTab !== 'gold_rates') {
+    if (isMerchant && activeTab !== 'products' && activeTab !== 'sales_history' && (activeTab !== 'gold_rates' || !hasPermission('manage_gold_rates'))) {
       setActiveTab('products');
+    } else if (activeTab === 'gold_rates' && !hasPermission('manage_gold_rates')) {
+      setActiveTab('dashboard');
+    } else if (activeTab === 'terms' && !hasPermission('manage_terms')) {
+      setActiveTab('dashboard');
     }
-  }, [isMerchant, activeTab]);
+  }, [isMerchant, activeTab, rolePermissions, adminUser]);
   const [stats, setStats] = useState({ totalSales: 0, totalCommissions: 0, totalMerchants: 0, totalClients: 0, totalProducts: 0, merchantsBreakdown: [] });
   const [pendingProducts, setPendingProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -135,7 +140,7 @@ function AdminLayout() {
   // User form modal state
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [userForm, setUserForm] = useState({ nom: '', email: '', mot_de_passe: '', role: 'client', shopName: '', phone: '', address: '', city: '', numero_patente: '', patente_document: '', patente_filename: '' });
+  const [userForm, setUserForm] = useState({ nom: '', email: '', mot_de_passe: '', role: 'client', shopName: '', phone: '', address: '', city: '', numero_patente: '', patente_document: '', patente_filename: '', numero_bureau_garantie: '', bureau_garantie_document: '', bureau_garantie_filename: '', numero_cin: '', cin_recto_document: '', cin_recto_filename: '', cin_verso_document: '', cin_verso_filename: '' });
 
   // Subscriptions management state
   const [subscriptionsData, setSubscriptionsData] = useState(null);
@@ -155,22 +160,54 @@ function AdminLayout() {
   const [goldSourceInput, setGoldSourceInput] = useState('');
   const [goldNoteInput, setGoldNoteInput] = useState('');
   const [isUpdatingGold, setIsUpdatingGold] = useState(false);
+  const [adminMetalHistoryTab, setAdminMetalHistoryTab] = useState('silver');
   const [salesHistory, setSalesHistory] = useState([]);
   const [salesSearchTerm, setSalesSearchTerm] = useState('');
 
   // Notification Banner
   const [notif, setNotif] = useState(null);
 
+  // Terms & Conditions Management State
+  const [termsData, setTermsData] = useState(null);
+  const [termsEditorLang, setTermsEditorLang] = useState('ar'); // 'ar', 'fr', 'preview'
+  const [previewTermsLang, setPreviewTermsLang] = useState('ar');
+  const [isSavingTerms, setIsSavingTerms] = useState(false);
+  const [termsDirty, setTermsDirty] = useState(false);
+
   // Roles and permissions management state
   const [rolePermissions, setRolePermissions] = useState(() => {
     const saved = localStorage.getItem('role_permissions');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.admin && !parsed.admin.includes('manage_gold_rates')) {
+            parsed.admin.push('manage_gold_rates');
+          }
+          if (parsed.admin && !parsed.admin.includes('manage_terms')) {
+            parsed.admin.push('manage_terms');
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Error parsing role_permissions from localStorage', e);
+      }
+    }
     return {
-      admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products'],
+      admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products', 'manage_gold_rates', 'manage_terms'],
       commercant: ['publish_listings', 'manage_orders', 'view_shop_analytics', 'chat_with_clients'],
       client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
     };
   });
+
+  const hasPermission = (permKey) => {
+    const currentRole = adminUser?.role || 'admin';
+    const rolePerms = rolePermissions?.[currentRole];
+    if (Array.isArray(rolePerms)) {
+      return rolePerms.includes(permKey);
+    }
+    return currentRole === 'admin';
+  };
 
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
   const [permissionsDirty, setPermissionsDirty] = useState(false);
@@ -192,7 +229,7 @@ function AdminLayout() {
   const handleResetPermissions = async () => {
     if (!window.confirm(t('resetPermissionsConfirm'))) return;
     const defaults = {
-      admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products'],
+      admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products', 'manage_gold_rates', 'manage_terms'],
       commercant: ['publish_listings', 'edit_products', 'create_products', 'view_shop_analytics', 'manage_orders', 'chat_with_clients'],
       client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
     };
@@ -238,6 +275,155 @@ function AdminLayout() {
       triggerNotif('Erreur de connexion au serveur.');
     } finally {
       setIsSavingPermissions(false);
+    }
+  };
+
+  // Terms & Conditions Action Handlers
+  const handleSaveTerms = async () => {
+    if (!termsData) return;
+    setIsSavingTerms(true);
+    try {
+      const res = await authFetch(`${API_URL}/terms-and-conditions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(termsData)
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setTermsData(updated);
+        setTermsDirty(false);
+        triggerNotif(t('saveTermsSuccess'));
+      } else {
+        triggerNotif('Erreur lors de la sauvegarde des termes');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotif('Erreur réseau lors de la sauvegarde');
+    } finally {
+      setIsSavingTerms(false);
+    }
+  };
+
+  const handleAddTermArticle = () => {
+    if (!termsData) return;
+    const currentLang = termsEditorLang === 'fr' ? 'fr' : 'ar';
+    const langData = termsData[currentLang] || { articles: [] };
+    const articles = [...(langData.articles || [])];
+    const newId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) + 1 : 1;
+    const newArticle = {
+      id: newId,
+      title: currentLang === 'ar' ? `المادة ${newId} : عنوان المادة الجديدة` : `Article ${newId} : Nouveau Titre de Clause`,
+      content: currentLang === 'ar' ? 'اكتب هنا نص المادة وشروطها القانونية...' : 'Rédigez ici le contenu de la nouvelle clause légale...'
+    };
+    const updated = {
+      ...termsData,
+      [currentLang]: {
+        ...langData,
+        articles: [...articles, newArticle]
+      }
+    };
+    setTermsData(updated);
+    setTermsDirty(true);
+  };
+
+  const handleRemoveTermArticle = (idToRemove) => {
+    if (!termsData) return;
+    const currentLang = termsEditorLang === 'fr' ? 'fr' : 'ar';
+    const langData = termsData[currentLang] || { articles: [] };
+    const articles = (langData.articles || []).filter(a => a.id !== idToRemove);
+    const updated = {
+      ...termsData,
+      [currentLang]: {
+        ...langData,
+        articles
+      }
+    };
+    setTermsData(updated);
+    setTermsDirty(true);
+  };
+
+  const handleUpdateTermArticle = (id, field, value) => {
+    if (!termsData) return;
+    const currentLang = termsEditorLang === 'fr' ? 'fr' : 'ar';
+    const langData = termsData[currentLang] || { articles: [] };
+    const articles = (langData.articles || []).map(a => {
+      if (a.id === id) {
+        return { ...a, [field]: value };
+      }
+      return a;
+    });
+    const updated = {
+      ...termsData,
+      [currentLang]: {
+        ...langData,
+        articles
+      }
+    };
+    setTermsData(updated);
+    setTermsDirty(true);
+  };
+
+  const handleUpdateTermGeneral = (field, value) => {
+    if (!termsData) return;
+    const currentLang = termsEditorLang === 'fr' ? 'fr' : 'ar';
+    const langData = termsData[currentLang] || {};
+    const updated = {
+      ...termsData,
+      [currentLang]: {
+        ...langData,
+        [field]: value
+      }
+    };
+    setTermsData(updated);
+    setTermsDirty(true);
+  };
+
+  const handleResetTermsToDefault = async () => {
+    if (!window.confirm(t('resetTermsConfirm'))) return;
+    try {
+      const res = await authFetch(`${API_URL}/terms-and-conditions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          version: "1.0",
+          fr: {
+            title: "Conditions Générales d'Utilisation",
+            subtitle: "Plateforme Numérique Joaillerie & Bijouterie au Maroc",
+            preamble: "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès, l'inscription et l'exploitation des services de la plateforme numérique HRSDGDG, exclusivement réservée aux professionnels de la bijouterie et joaillerie au Royaume du Maroc.",
+            articles: [
+              { id: 1, title: "Article 1 : Éligibilité & Inscription Réservée aux Professionnels", content: "La création d'un compte commerçant / atelier est strictement réservée aux personnes physiques ou morales exerçant légalement le métier de bijoutier-joaillier au Maroc, détentrices d'une patente professionnelle active et d'un Registre de Commerce (RC) valide." },
+              { id: 2, title: "Article 2 : Garantie de Titre Or 18K & Poinçons Légaux", content: "Tous les bijoux et ouvrages mis en vente ou en enchères doivent être obligatoirement en or titré 18 carats (750‰) et revêtus des poinçons légaux conformes aux dispositions de l'Administration des Douanes et Impôts Indirects (Bureau de Garantie). Toute défaillance de titre engage la responsabilité civile et pénale exclusive du vendeur." },
+              { id: 3, title: "Article 3 : Vérification de la Patente et Conformité Documentaire", content: "L'adhérent garantit l'authenticité de l'attestation de patente et des pièces administratives téléversées. L'administration de HRSDGDG se réserve le droit d'auditer ces pièces et de suspendre tout compte dont les justificatifs s'avèrent non conformes." },
+              { id: 4, title: "Article 4 : Exactitude des Descriptions, Poids et Enchères", content: "Le professionnel s'engage à fournir des descriptions rigoureusement exactes (poids net en grammes, pureté, pierres serties) et à livrer des pièces strictement identiques aux photos et caractéristiques publiées, ainsi qu'à honorer l'ensemble des adjudications d'enchères." },
+              { id: 5, title: "Article 5 : Forfaits, Quotas & Commissions", content: "L'utilisation de la plateforme est régie par les formules d'abonnements souscrites. Les quotas de dépôts de bijoux et les commissions sur ventes sont appliqués conformément à la grille tarifaire en vigueur." },
+              { id: 6, title: "Article 6 : Protection des Données Personnelles (Loi 09-08)", content: "Les données collectées font l'objet d'un traitement hautement sécurisé et chiffré, dans le strict respect de la Loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel (CNDP)." },
+              { id: 7, title: "Article 7 : Sanctions, Suspension & Résiliation", content: "Tout manquement aux présentes conditions, tentative de fraude, fausse déclaration sur le titre d'or ou refus d'honorer une vente conclue entraîne la suspension immédiate et irrévocable du compte professionnel." }
+            ]
+          },
+          ar: {
+            title: "شروط وأحكام استخدام المنصة",
+            subtitle: "منصة HRSDGDG الرسمية لتجار وصاغة المجوهرات بالمغرب",
+            preamble: "تُحدد هذه الشروط والأحكام القواعد الملزمة لإنشاء الحسابات واستخدام خدمات منصة HRSDGDG الرقمية المخصصة حصرياً للمحترفين والصاغة المعتمدين لممارسة تجارة وصياغة المعادن الثمينة بالمملكة المغربية.",
+            articles: [
+              { id: 1, title: "المادة 1 : الأهلية والتسجيل الحصري للمهنيين", content: "يقتصر إنشاء حساب Commerçant / صائغ معتمد على أصحاب المحلات، الورشات، والمؤسسات الحاصلة على رقم باتنت مهني وسجل تجاري (RC) ساري المفعول بالمغرب وفقاً للقوانين المنظمة لمهنة الصياغة." },
+              { id: 2, title: "المادة 2 : ضمان أصالة الذهب عيار 18 قيراط والدمغة القانونية", content: "يلتزم الصائغ المسجل بأن تكون كافة المجوهرات والمعروضات مصنوعة من الذهب القانوني عيار 18 قيراط (750 بالألف)، ومدموغة بالدمغة الرسمية لمكتب الضمانة المغربي وبدمغة الصانع، وتتحمل المؤسسة العارضة المسؤولية القانونية التامة في حالة ثبوت أي مخالفة للعيار." },
+              { id: 3, title: "المادة 3 : التحقق من وثيقة الباتنت والسجل التجاري", content: "يقر المستخدم بأن جميع الوثائق المرفوعة (شهادة الباتنت، السجل التجاري، والبيانات التعريفية) صحيحة وحديثة. تحتفظ إدارة المنصة بحق التحقق من صحة الوثائق مع الجهات المختصة ورفض أو تعليق أي حساب غير مستوفٍ للشروط." },
+              { id: 4, title: "المادة 4 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات", content: "يلتزم الصائغ بالدقة المتناهية في ذكر الأوزان الصافية بالغرام، نوع الأحجار الكريمة، والمواصفات الفنية، وتسليم القطع للمشتري مطابقة للصور والوصف المنشور، والالتزام بإتمام المزادات المنتهية لصالح الفائزين." },
+              { id: 5, title: "المادة 5 : باقات الاشتراكات والعمولات", content: "يخضع عرض المجوهرات لباقات الاشتراك المختارة وتحدد كل باقة الحد الأقصى للمنتجات ونسب العمولة المستحقة للمنصة عن كل عملية بيع مؤكدة." },
+              { id: 6, title: "المادة 6 : حماية المعطيات والسرية المهنية (قانون 09-08)", content: "تلتزم المنصة بحماية وسرية البيانات والمعاملات التجارية الخاصة بالصاغة والمشتركين طبقاً لأحكام القانون المغربي رقم 09-08 المتعلق بحماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي (CNDP)." },
+              { id: 7, title: "المادة 7 : الجزاءات وإنهاء الحساب", content: "يحق لإدارة المنصة إيقاف أو فسخ حساب أي عضو بصورة فورية ونهائية في حال الإخلال بشروط الأمان، التلاعب بالأسعار أو العيارات، أو الإخلال بتسليم الطلبات." }
+            ]
+          }
+        })
+      });
+      if (res.ok) {
+        const def = await res.json();
+        setTermsData(def);
+        setTermsDirty(false);
+        triggerNotif(t('resetTermsSuccess'));
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -355,6 +541,14 @@ function AdminLayout() {
       numero_patente: '',
       patente_document: '',
       patente_filename: '',
+      numero_bureau_garantie: '',
+      bureau_garantie_document: '',
+      bureau_garantie_filename: '',
+      numero_cin: '',
+      cin_recto_document: '',
+      cin_recto_filename: '',
+      cin_verso_document: '',
+      cin_verso_filename: '',
       plan_id: (subscriptionsData?.plans && subscriptionsData.plans[0]?.id) || 'plan_starter',
       billing_cycle: 'monthly'
     });
@@ -378,6 +572,14 @@ function AdminLayout() {
       numero_patente: u.numero_patente || '',
       patente_document: u.patente_document || '',
       patente_filename: u.patente_filename || '',
+      numero_bureau_garantie: u.numero_bureau_garantie || '',
+      bureau_garantie_document: u.bureau_garantie_document || '',
+      bureau_garantie_filename: u.bureau_garantie_filename || '',
+      numero_cin: u.numero_cin || '',
+      cin_recto_document: u.cin_recto_document || '',
+      cin_recto_filename: u.cin_recto_filename || '',
+      cin_verso_document: u.cin_verso_document || '',
+      cin_verso_filename: u.cin_verso_filename || '',
       plan_id: u.subscription?.plan_id || 'plan_starter',
       billing_cycle: u.subscription?.billing_cycle || 'monthly'
     });
@@ -836,7 +1038,8 @@ function AdminLayout() {
         allBijouxRes,
         subscriptionsRes,
         goldRes,
-        salesRes
+        salesRes,
+        termsRes
       ] = await Promise.allSettled([
         isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/stats/admin`),
         isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/bijoux?status=Pending`),
@@ -847,7 +1050,8 @@ function AdminLayout() {
         authFetch(`${API_URL}/bijoux?includeSold=true`),
         isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/subscriptions/all`),
         authFetch(`${API_URL}/gold-rates`),
-        authFetch(isMerchantUser && adminUser?.id ? `${API_URL}/sales-history?merchant_id=${adminUser.id}` : `${API_URL}/sales-history`)
+        authFetch(isMerchantUser && adminUser?.id ? `${API_URL}/sales-history?merchant_id=${adminUser.id}` : `${API_URL}/sales-history`),
+        authFetch(`${API_URL}/terms-and-conditions`)
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value && statsRes.value.ok) {
@@ -876,8 +1080,12 @@ function AdminLayout() {
           const configData = await configRes.value.json();
           setCommissionConfig(configData);
           if (configData.role_permissions && typeof configData.role_permissions === 'object') {
-            setRolePermissions(configData.role_permissions);
-            localStorage.setItem('role_permissions', JSON.stringify(configData.role_permissions));
+            const perms = { ...configData.role_permissions };
+            if (perms.admin && !perms.admin.includes('manage_gold_rates')) {
+              perms.admin = [...perms.admin, 'manage_gold_rates'];
+            }
+            setRolePermissions(perms);
+            localStorage.setItem('role_permissions', JSON.stringify(perms));
           }
         } catch (e) { console.error('Config parse error', e); }
       }
@@ -935,6 +1143,13 @@ function AdminLayout() {
           }
           setSalesHistory(list);
         } catch (e) { console.error('Sales parse error', e); }
+      }
+
+      if (termsRes && termsRes.status === 'fulfilled' && termsRes.value && termsRes.value.ok) {
+        try {
+          const termsJson = await termsRes.value.json();
+          setTermsData(prev => prev && termsDirty ? prev : termsJson);
+        } catch (e) { console.error('Terms parse error', e); }
       }
 
     } catch (error) {
@@ -1026,16 +1241,10 @@ function AdminLayout() {
     }
   };
 
-  const handleUpdateGoldRate = async (e) => {
-    e.preventDefault();
-    const val = parseFloat(goldPriceInput);
-    const valSilver = parseFloat(silverPriceInput);
-    if (!val || isNaN(val) || val <= 0) {
-      triggerNotif('Veuillez saisir un prix valide pour l\'Or 18K (ex: 1045)');
-      return;
-    }
+  const handleUpdateSilverRateOnly = async (customVal) => {
+    const valSilver = parseFloat(customVal !== undefined && customVal !== null ? customVal : silverPriceInput);
     if (!valSilver || isNaN(valSilver) || valSilver <= 0) {
-      triggerNotif('Veuillez saisir un prix valide pour l\'Argent 1000 (ex: 14.50)');
+      triggerNotif(lang === 'ar' ? 'يرجى إدخال سعر صحيح لغرام الفضة 1000 (مثال: 14.50)' : 'Veuillez saisir un prix valide pour l\'Argent 1000 (ex: 14.50)');
       return;
     }
 
@@ -1045,16 +1254,93 @@ function AdminLayout() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          price18k: val,
           priceSilver: valSilver,
-          source: goldSourceInput.trim() || (lang === 'ar' ? 'السعر الرسمي المحدد - المغرب' : 'Fixation Officielle Maroc'),
-          note: goldNoteInput.trim() || (lang === 'ar' ? 'تحديث دوري معتمد' : 'Mise à jour régulière'),
+          source: goldSourceInput.trim() || (lang === 'ar' ? 'سعر الفضة المحدد - المغرب' : 'Fixation Officielle Argent Maroc'),
+          note: goldNoteInput.trim() || (lang === 'ar' ? 'تعديل سعر الفضة من لوحة التحكم' : 'Paramétrage cours argent depuis le dashboard'),
           updatedBy: adminUser?.nom || 'Super-Admin'
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        triggerNotif(lang === 'ar' ? 'تم تحديث أسعار الذهب والفضة بنجاح !' : 'Cours de l\'or 18K et de l\'argent 1000 mis à jour avec succès !');
+        triggerNotif(lang === 'ar' ? `تم تحديث سعر الفضة 1000 بنجاح: ${valSilver} د.م/غ` : `Cours de l'argent 1000 mis à jour : ${valSilver} MAD/g`);
+        setSilverPriceInput(String(valSilver));
+        fetchData();
+      } else {
+        triggerNotif(data.error || 'Erreur lors de la mise à jour');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotif('Erreur de communication avec le serveur.');
+    } finally {
+      setIsUpdatingGold(false);
+    }
+  };
+
+  const handleUpdateGoldRateOnly = async (customVal) => {
+    const valGold = parseFloat(customVal !== undefined && customVal !== null ? customVal : goldPriceInput);
+    if (!valGold || isNaN(valGold) || valGold <= 0) {
+      triggerNotif(lang === 'ar' ? 'يرجى إدخال سعر صحيح لغرام الذهب عيار 18 (مثال: 1045)' : 'Veuillez saisir un prix valide pour l\'Or 18K (ex: 1045)');
+      return;
+    }
+
+    setIsUpdatingGold(true);
+    try {
+      const res = await authFetch(`${API_URL}/admin/gold-rates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          price18k: valGold,
+          source: goldSourceInput.trim() || (lang === 'ar' ? 'السعر الرسمي المحدد - المغرب' : 'Fixation Officielle Maroc'),
+          note: goldNoteInput.trim() || (lang === 'ar' ? 'تعديل سعر الذهب من لوحة التحكم' : 'Mise à jour or 18K depuis le dashboard'),
+          updatedBy: adminUser?.nom || 'Super-Admin'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerNotif(lang === 'ar' ? `تم تحديث سعر الذهب 18K بنجاح: ${valGold} د.م/غ` : `Cours de l'or 18K mis à jour : ${valGold} MAD/g`);
+        setGoldPriceInput(String(valGold));
+        fetchData();
+      } else {
+        triggerNotif(data.error || 'Erreur lors de la mise à jour');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotif('Erreur de communication avec le serveur.');
+    } finally {
+      setIsUpdatingGold(false);
+    }
+  };
+
+  const handleUpdateGoldRate = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const val = parseFloat(goldPriceInput);
+    const valSilver = parseFloat(silverPriceInput);
+    const hasGold = val && !isNaN(val) && val > 0;
+    const hasSilver = valSilver && !isNaN(valSilver) && valSilver > 0;
+
+    if (!hasGold && !hasSilver) {
+      triggerNotif(lang === 'ar' ? 'يرجى إدخال سعر صحيح للذهب أو الفضة' : 'Veuillez saisir au moins un prix valide pour l\'Or 18K ou l\'Argent 1000');
+      return;
+    }
+
+    setIsUpdatingGold(true);
+    try {
+      const payload = {
+        source: goldSourceInput.trim() || (lang === 'ar' ? 'السعر الرسمي المحدد - المغرب' : 'Fixation Officielle Maroc'),
+        note: goldNoteInput.trim() || (lang === 'ar' ? 'تحديث دوري معتمد' : 'Mise à jour régulière'),
+        updatedBy: adminUser?.nom || 'Super-Admin'
+      };
+      if (hasGold) payload.price18k = val;
+      if (hasSilver) payload.priceSilver = valSilver;
+
+      const res = await authFetch(`${API_URL}/admin/gold-rates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerNotif(lang === 'ar' ? 'تم تحديث أسعار الذهب والفضة بنجاح !' : 'Cours des métaux précieux mis à jour avec succès !');
         setGoldSourceInput('');
         setGoldNoteInput('');
         fetchData();
@@ -1479,11 +1765,13 @@ function AdminLayout() {
               </>
             )}
 
-            <li>
-              <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => { setActiveTab('gold_rates'); setMobileMenuOpen(false); }}>
-                🥇 {t('goldRates')}
-              </span>
-            </li>
+            {hasPermission('manage_gold_rates') && (
+              <li>
+                <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => { setActiveTab('gold_rates'); setMobileMenuOpen(false); }}>
+                  🥇 {t('goldRates')}
+                </span>
+              </li>
+            )}
             <li>
               <span className={`nav-link ${activeTab === 'sales_history' ? 'active' : ''}`} onClick={() => { setActiveTab('sales_history'); setMobileMenuOpen(false); }}>
                 📜 {isMerchant ? (lang === 'ar' ? 'سجل مبيعاتي' : 'Mes Ventes & Commandes') : (lang === 'ar' ? 'سجل المبيعات' : 'Historique des Ventes')} ({salesHistory.length})
@@ -1512,6 +1800,13 @@ function AdminLayout() {
                     🛡️ {t('roles')}
                   </span>
                 </li>
+                {hasPermission('manage_terms') && (
+                  <li>
+                    <span className={`nav-link ${activeTab === 'terms' ? 'active' : ''}`} onClick={() => { setActiveTab('terms'); setMobileMenuOpen(false); }}>
+                      ⚖️ {t('termsAndConditions')}
+                    </span>
+                  </li>
+                )}
               </>
             )}
 
@@ -1536,6 +1831,7 @@ function AdminLayout() {
             ) : (
               activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل المبيعات والصفقات المكتملة' : '📜 Historique Général des Ventes') :
               activeTab === 'subscriptions' ? t('subscriptionsTitle') : 
+              activeTab === 'terms' ? (lang === 'ar' ? '⚖️ إدارة شروط وأحكام الاستخدام' : "⚖️ Termes & Conditions d'Utilisation") :
               t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))
             )
           }</h1>
@@ -1582,6 +1878,266 @@ function AdminLayout() {
         {/* Tab content view router */}
         {activeTab === 'dashboard' && (
           <div>
+            {/* Precious Metals Direct Configuration & Live Tracking (Gold 18K & Silver 1000) */}
+            {hasPermission('manage_gold_rates') && (
+              <div style={{
+                background: 'linear-gradient(145deg, #181b26 0%, #11131a 100%)',
+              border: '1.5px solid rgba(212, 175, 55, 0.35)',
+              borderRadius: '16px',
+              padding: '22px 24px',
+              marginBottom: '28px',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.45), 0 0 25px rgba(212, 175, 55, 0.08)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '18px', paddingBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: '1.25rem', fontFamily: 'Playfair Display, serif', color: 'var(--admin-gold)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>⚖️</span>
+                    <span>{lang === 'ar' ? 'الأسعار الرسمية للمعادن النفيسة والضبط المباشر' : 'Cours Officiel des Métaux Précieux & Paramétrage Direct'}</span>
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-gray)' }}>
+                    {lang === 'ar' ? 'متابعة وضبط فوري لأسعار الذهب والفضة المعروضة في المنصة للعملاء والزبائن' : 'Suivi et configuration instantanée des cotations affichées aux clients'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('gold_rates')}
+                  style={{
+                    background: 'rgba(212, 175, 55, 0.12)',
+                    border: '1px solid var(--admin-gold)',
+                    color: 'var(--admin-gold)',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>{lang === 'ar' ? 'عرض السجل الكامل والتفاصيل' : 'Gérer l\'historique complet'}</span>
+                  <span>➔</span>
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
+                {/* Gold 18K Card on Dashboard */}
+                <div style={{
+                  background: 'linear-gradient(145deg, rgba(38, 30, 14, 0.6) 0%, rgba(18, 20, 27, 0.85) 100%)',
+                  border: '1px solid rgba(245, 176, 39, 0.35)',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '14px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>🏆</span>
+                      <strong style={{ color: 'var(--admin-gold)', fontSize: '0.92rem' }}>
+                        {lang === 'ar' ? 'ذهب 18 قيراط (750‰)' : 'Or 18 Karats (750‰)'}
+                      </strong>
+                    </div>
+                    <span style={{
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#10b981',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      borderRadius: '12px',
+                      padding: '2px 8px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800
+                    }}>
+                      ● {lang === 'ar' ? 'المعيار الرسمي' : 'Standard Officiel'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: '2.4rem', fontWeight: 900, color: '#f6b22b', lineHeight: 1 }}>
+                      {goldRatesData.currentPrice18k || 1045}
+                    </span>
+                    <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-gray)' }}>
+                      MAD / g
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                    <span style={{ fontSize: '0.76rem', color: 'var(--text-gray)' }}>
+                      {lang === 'ar' ? 'تحديث تلقائي عبر البورصة' : 'Mise à jour via PrixOr'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSyncRailwayGold}
+                      disabled={isUpdatingGold}
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(212, 175, 55, 0.1))',
+                        border: '1px solid var(--admin-gold)',
+                        color: 'var(--admin-gold)',
+                        borderRadius: '6px',
+                        padding: '5px 10px',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <span>{isUpdatingGold ? '⏳' : '🔄'}</span>
+                      <span>{lang === 'ar' ? 'مزامنة سريعة' : 'Synchroniser'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Silver 1000 Card on Dashboard - FULLY CONFIGURABLE */}
+                <div style={{
+                  background: 'linear-gradient(145deg, rgba(28, 34, 48, 0.6) 0%, rgba(16, 18, 25, 0.85) 100%)',
+                  border: '1px solid rgba(203, 213, 225, 0.35)',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '14px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <SilverIcon size={18} />
+                      <strong style={{ color: '#e2e8f0', fontSize: '0.92rem' }}>
+                        {lang === 'ar' ? 'فضة 1000 نقية (Ag 1000)' : 'Argent Pur 1000‰ (Ag 1000)'}
+                      </strong>
+                    </div>
+                    <span style={{
+                      background: 'rgba(203, 213, 225, 0.15)',
+                      color: '#cbd5e1',
+                      border: '1px solid rgba(203, 213, 225, 0.3)',
+                      borderRadius: '12px',
+                      padding: '2px 8px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800
+                    }}>
+                      🛡️ {lang === 'ar' ? 'قابل للضبط' : 'Paramétrable'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: '2.4rem', fontWeight: 900, color: '#f8fafc', lineHeight: 1 }}>
+                      {typeof goldRatesData.currentPriceSilver === 'number' ? goldRatesData.currentPriceSilver.toFixed(2) : (goldRatesData.currentPriceSilver || '14.50')}
+                    </span>
+                    <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-gray)' }}>
+                      MAD / g
+                    </span>
+                  </div>
+
+                  {/* Inline Parameterization Input & Buttons */}
+                  <div style={{ paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="1"
+                        max="1000"
+                        value={silverPriceInput}
+                        onChange={(e) => setSilverPriceInput(e.target.value)}
+                        placeholder="14.50"
+                        style={{
+                          width: '105px',
+                          padding: '6px 10px',
+                          background: 'rgba(0,0,0,0.3)',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          color: '#f8fafc',
+                          fontSize: '1rem',
+                          fontWeight: 800
+                        }}
+                      />
+                      {/* Step Increment Quick Buttons */}
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {['-0.5', '+0.5', '+1'].map(step => (
+                          <button
+                            key={step}
+                            type="button"
+                            onClick={() => {
+                              const curr = parseFloat(silverPriceInput) || 14.50;
+                              const delta = parseFloat(step);
+                              const next = Math.max(1, +(curr + delta).toFixed(2));
+                              setSilverPriceInput(String(next));
+                            }}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.08)',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              color: '#cbd5e1',
+                              borderRadius: '4px',
+                              padding: '5px 7px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {step}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isUpdatingGold}
+                        onClick={() => handleUpdateSilverRateOnly()}
+                        style={{
+                          flex: 1,
+                          background: 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)',
+                          color: '#0f172a',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '7px 12px',
+                          fontSize: '0.8rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <span>💾</span>
+                        <span>{isUpdatingGold ? '...' : (lang === 'ar' ? 'حفظ السعر' : 'Enregistrer')}</span>
+                      </button>
+                    </div>
+
+                    {/* Quick Presets */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                        {lang === 'ar' ? 'خيارات سريعة :' : 'Préréglages :'}
+                      </span>
+                      {['13.50', '14.00', '14.50', '15.00', '15.50'].map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setSilverPriceInput(preset);
+                            handleUpdateSilverRateOnly(preset);
+                          }}
+                          style={{
+                            background: silverPriceInput === preset ? 'rgba(203, 213, 225, 0.25)' : 'transparent',
+                            border: '1px solid rgba(203, 213, 225, 0.3)',
+                            color: '#cbd5e1',
+                            borderRadius: '4px',
+                            padding: '2px 6px',
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {preset} MAD
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
             {/* Global Metrics Row */}
             <div className="stats-row">
               <div className="stat-card">
@@ -2057,7 +2613,7 @@ function AdminLayout() {
                     <th>{t('role')}</th>
                     <th>{lang === 'ar' ? 'حالة التفعيل والاعتماد' : 'Statut & Activation'}</th>
                     <th>{lang === 'ar' ? 'معلومات المتجر / الاتصال' : 'Info Boutique / Contact'}</th>
-                    <th>{lang === 'ar' ? 'رقم ووثيقة الباتنت' : 'Patente & Document'}</th>
+                    <th>{lang === 'ar' ? 'وثائق الباتنت والبطاقة الوطنية' : 'Documents (Patente & CIN)'}</th>
                     <th>{t('action')}</th>
                   </tr>
                 </thead>
@@ -2269,7 +2825,7 @@ function AdminLayout() {
                       <td>
                         {u.numero_patente ? (
                           <div style={{ fontSize: '0.8rem' }}>
-                            <div style={{ fontWeight: 700, color: 'var(--admin-gold)' }}>🔢 {u.numero_patente}</div>
+                            <div style={{ fontWeight: 700, color: 'var(--admin-gold)' }}>📜 {u.numero_patente}</div>
                             {u.patente_document ? (
                               <a
                                 href={`${API_URL.replace('/api', '')}${u.patente_document}`}
@@ -2281,20 +2837,85 @@ function AdminLayout() {
                                   gap: '4px',
                                   color: '#38bdf8',
                                   textDecoration: 'underline',
-                                  marginTop: '4px',
-                                  fontSize: '0.75rem',
+                                  marginTop: '2px',
+                                  fontSize: '0.74rem',
                                   fontWeight: 600
                                 }}
                               >
-                                📄 {u.patente_filename || (lang === 'ar' ? 'عرض / تحميل الباتنت' : 'Télécharger Patente')}
+                                📄 {u.patente_filename || (lang === 'ar' ? 'الباتنت' : 'Patente')}
                               </a>
                             ) : (
                               <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>
-                                {lang === 'ar' ? 'بدون وثيقة مرفقة' : 'Sans document'}
+                                {lang === 'ar' ? 'بدون وثيقة باتنت' : 'Sans doc patente'}
                               </span>
                             )}
                           </div>
-                        ) : (
+                        ) : null}
+
+                        {(u.numero_bureau_garantie || u.bureau_garantie_document) && (
+                          <div style={{ fontSize: '0.78rem', marginTop: u.numero_patente ? '6px' : '0', paddingTop: u.numero_patente ? '4px' : '0', borderTop: u.numero_patente ? '1px dashed rgba(255,255,255,0.08)' : 'none' }}>
+                            {u.numero_bureau_garantie && (
+                              <div style={{ fontWeight: 700, color: '#fbbf24' }}>
+                                🏛️ {lang === 'ar' ? 'الضمانة :' : 'Garantie :'} {u.numero_bureau_garantie}
+                              </div>
+                            )}
+                            {u.bureau_garantie_document ? (
+                              <a
+                                href={`${API_URL.replace('/api', '')}${u.bureau_garantie_document}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  color: '#38bdf8',
+                                  textDecoration: 'underline',
+                                  marginTop: '2px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600
+                                }}
+                              >
+                                🏛️ {u.bureau_garantie_filename || (lang === 'ar' ? 'صورة الضمانة' : 'Doc Garantie')}
+                              </a>
+                            ) : (
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)' }}>
+                                {lang === 'ar' ? 'بدون وثيقة ضمانة' : 'Sans doc garantie'}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {(u.numero_cin || u.cin_recto_document || u.cin_verso_document) && (
+                          <div style={{ fontSize: '0.78rem', marginTop: (u.numero_patente || u.numero_bureau_garantie) ? '6px' : '0', paddingTop: (u.numero_patente || u.numero_bureau_garantie) ? '4px' : '0', borderTop: (u.numero_patente || u.numero_bureau_garantie) ? '1px dashed rgba(255,255,255,0.08)' : 'none' }}>
+                            {u.numero_cin && (
+                              <div style={{ fontWeight: 600, color: '#e2e8f0' }}>🪪 CIN: {u.numero_cin}</div>
+                            )}
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
+                              {u.cin_recto_document && (
+                                <a
+                                  href={`${API_URL.replace('/api', '')}${u.cin_recto_document}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: '#38bdf8', textDecoration: 'underline', fontSize: '0.72rem', fontWeight: 600 }}
+                                >
+                                  🪪 {lang === 'ar' ? 'الوجه' : 'Recto'}
+                                </a>
+                              )}
+                              {u.cin_verso_document && (
+                                <a
+                                  href={`${API_URL.replace('/api', '')}${u.cin_verso_document}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: '#38bdf8', textDecoration: 'underline', fontSize: '0.72rem', fontWeight: 600 }}
+                                >
+                                  🪪 {lang === 'ar' ? 'الظهر' : 'Verso'}
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {!u.numero_patente && !u.numero_bureau_garantie && !u.bureau_garantie_document && !u.numero_cin && !u.cin_recto_document && !u.cin_verso_document && (
                           <span style={{ color: 'var(--text-gray)', fontSize: '0.75rem' }}>-</span>
                         )}
                       </td>
@@ -2431,7 +3052,9 @@ function AdminLayout() {
                   { key: 'manage_users', labelKey: 'perm_manage_users' },
                   { key: 'manage_roles', labelKey: 'perm_manage_roles' },
                   { key: 'edit_products', labelKey: 'perm_edit_products' },
-                  { key: 'create_products', labelKey: 'perm_create_products' }
+                  { key: 'create_products', labelKey: 'perm_create_products' },
+                  { key: 'manage_gold_rates', labelKey: 'perm_manage_gold_rates' },
+                  { key: 'manage_terms', labelKey: 'perm_manage_terms' }
                 ];
                 
                 return (
@@ -2560,6 +3183,325 @@ function AdminLayout() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'terms' && (
+          <div className="terms-admin-container">
+            {!hasPermission('manage_terms') ? (
+              <div className="terms-admin-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>🚫</span>
+                <h3 style={{ color: 'var(--danger-red)', margin: '0 0 10px', fontSize: '1.4rem' }}>
+                  {lang === 'ar' ? 'غير مصرح لك بالوصول إلى هذه الصفحة' : 'Accès Restreint & Non Autorisé'}
+                </h3>
+                <p style={{ color: 'var(--text-gray)', maxWidth: '500px', margin: '0 auto', fontSize: '0.9rem' }}>
+                  {lang === 'ar' 
+                    ? 'حسابك الحالي لا يمتلك صلاحية تعديل شروط وأحكام الاستخدام (manage_terms). يرجى مراجعة مشرف النظام.'
+                    : "Votre profil administrateur ne dispose pas de l'autorisation 'manage_terms' pour administrer les conditions d'utilisation."}
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Header Action Bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                  <div>
+                    <h2 style={{ fontFamily: 'Playfair Display', margin: 0, color: 'var(--text-white)' }}>
+                      {t('termsManagementTitle')}
+                    </h2>
+                    <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: 'var(--text-gray)' }}>
+                      {t('termsManagementSubtitle')}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{
+                      background: 'rgba(212, 175, 55, 0.1)',
+                      border: '1px solid var(--border-gold)',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '0.82rem',
+                      color: 'var(--admin-gold)'
+                    }}>
+                      🏷️ {lang === 'ar' ? 'الإصدار :' : 'Version :'} <strong>{termsData?.version || '1.0'}</strong>
+                      {termsData?.lastUpdated && (
+                        <span style={{ marginInlineStart: '8px', opacity: 0.8 }}>
+                          • {termsData.lastUpdated}
+                        </span>
+                      )}
+                    </span>
+                    <button 
+                      type="button"
+                      className="btn-outline-gold" 
+                      style={{ padding: '9px 18px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }} 
+                      onClick={handleResetTermsToDefault}
+                    >
+                      <span>🔄</span>
+                      <span>{lang === 'ar' ? 'استرجاع البنود القياسية' : 'Clauses Standard'}</span>
+                    </button>
+                    <button 
+                      type="button"
+                      className="btn-gold" 
+                      style={{ 
+                        padding: '9px 24px', 
+                        fontSize: '0.88rem', 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        cursor: 'pointer', 
+                        borderRadius: 'var(--radius-sm)', 
+                        fontWeight: 700, 
+                        boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)' 
+                      }} 
+                      onClick={handleSaveTerms}
+                      disabled={isSavingTerms}
+                    >
+                      <span>💾</span>
+                      <span>{isSavingTerms ? (lang === 'ar' ? 'جارٍ الحفظ...' : 'Enregistrement...') : (lang === 'ar' ? 'حفظ الشروط والتطبيق' : 'Sauvegarder les Conditions')}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Unsaved alert banner */}
+                {termsDirty && (
+                  <div style={{
+                    background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.08) 100%)',
+                    border: '1px solid var(--admin-gold)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '12px 20px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-white)' }}>
+                        {lang === 'ar' 
+                          ? 'تنبيه: تم تعديل بنود شروط الاستخدام. اضغط على حفظ لتطبيقها على نافذة تسجيل التجار.' 
+                          : 'Des modifications ont été apportées aux termes. Cliquez sur "Sauvegarder" pour les rendre effectives.'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-gold"
+                      style={{ padding: '7px 18px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+                      onClick={handleSaveTerms}
+                      disabled={isSavingTerms}
+                    >
+                      <span>💾</span>
+                      <span>{isSavingTerms ? (lang === 'ar' ? 'جارٍ الحفظ...' : 'Enregistrement...') : (lang === 'ar' ? 'حفظ الآن' : 'Sauvegarder maintenant')}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Editor Tabs: Arabic, French, Preview */}
+                <div className="terms-editor-lang-tabs">
+                  <button
+                    type="button"
+                    className={`terms-editor-tab-btn ${termsEditorLang === 'ar' ? 'active' : ''}`}
+                    onClick={() => setTermsEditorLang('ar')}
+                  >
+                    <span>🇲🇦</span>
+                    <span>النسخة العربية (Arabe)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`terms-editor-tab-btn ${termsEditorLang === 'fr' ? 'active' : ''}`}
+                    onClick={() => setTermsEditorLang('fr')}
+                  >
+                    <span>🇫🇷</span>
+                    <span>Version Française (Français)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`terms-editor-tab-btn ${termsEditorLang === 'preview' ? 'active' : ''}`}
+                    onClick={() => setTermsEditorLang('preview')}
+                  >
+                    <span>👁️</span>
+                    <span>{lang === 'ar' ? 'معاينة مباشرة (Aperçu)' : 'Aperçu Direct Client'}</span>
+                  </button>
+                </div>
+
+                {termsEditorLang === 'preview' ? (
+                  /* LIVE PREVIEW */
+                  <div className="terms-preview-box">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-gold)', paddingBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '1.4rem' }}>📜</span>
+                        <div>
+                          <h3 style={{ margin: 0, color: 'var(--text-white)', fontSize: '1.1rem' }}>
+                            {termsData?.[previewTermsLang]?.title || (previewTermsLang === 'ar' ? 'شروط وأحكام استخدام المنصة' : "Conditions Générales d'Utilisation")}
+                          </h3>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+                            {termsData?.[previewTermsLang]?.subtitle || 'HRSDGDG Joaillerie & Bijoux'}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          className={`terms-editor-tab-btn ${previewTermsLang === 'ar' ? 'active' : ''}`}
+                          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                          onClick={() => setPreviewTermsLang('ar')}
+                        >
+                          🇲🇦 العربية
+                        </button>
+                        <button
+                          type="button"
+                          className={`terms-editor-tab-btn ${previewTermsLang === 'fr' ? 'active' : ''}`}
+                          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                          onClick={() => setPreviewTermsLang('fr')}
+                        >
+                          🇫🇷 Français
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ direction: previewTermsLang === 'ar' ? 'rtl' : 'ltr', textAlign: previewTermsLang === 'ar' ? 'right' : 'left' }}>
+                      {termsData?.[previewTermsLang]?.preamble && (
+                        <div className="terms-preview-preamble">
+                          <strong style={{ color: 'var(--admin-gold)' }}>
+                            {previewTermsLang === 'ar' ? 'ديباجة تمهيدية : ' : 'Préambule : '}
+                          </strong>
+                          {termsData[previewTermsLang].preamble}
+                        </div>
+                      )}
+
+                      {(termsData?.[previewTermsLang]?.articles || []).map(art => (
+                        <div key={art.id} className="terms-preview-article-item">
+                          <div className="terms-preview-article-title">{art.title}</div>
+                          <div className="terms-preview-article-text">{art.content}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  /* EDITING FORM FOR FR OR AR */
+                  <div style={{ direction: termsEditorLang === 'ar' ? 'rtl' : 'ltr', textAlign: termsEditorLang === 'ar' ? 'right' : 'left' }}>
+                    {/* General info card */}
+                    <div className="terms-admin-card" style={{ marginBottom: '20px' }}>
+                      <h3 style={{ margin: '0 0 16px', color: 'var(--text-white)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>📑</span>
+                        <span>{termsEditorLang === 'ar' ? 'معلومات الوثيقة والديباجة التمهيدية' : 'Informations Générales & Préambule'}</span>
+                      </h3>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                        <div>
+                          <label className="form-label">{termsEditorLang === 'ar' ? 'عنوان الوثيقة الرئيسي' : 'Titre du Document'}</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={termsData?.[termsEditorLang]?.title || ''}
+                            onChange={e => handleUpdateTermGeneral('title', e.target.value)}
+                            placeholder={termsEditorLang === 'ar' ? 'شروط وأحكام استخدام المنصة' : "Conditions Générales d'Utilisation"}
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">{termsEditorLang === 'ar' ? 'العنوان الفرعي' : 'Sous-Titre'}</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={termsData?.[termsEditorLang]?.subtitle || ''}
+                            onChange={e => handleUpdateTermGeneral('subtitle', e.target.value)}
+                            placeholder={termsEditorLang === 'ar' ? 'منصة HRSDGDG الرسمية لتجار وصاغة المجوهرات بالمغرب' : 'Plateforme Numérique Joaillerie & Bijouterie au Maroc'}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="form-label">{termsEditorLang === 'ar' ? 'الديباجة التمهيدية (Préambule)' : 'Préambule Introductif'}</label>
+                        <textarea
+                          className="form-input"
+                          rows={3}
+                          value={termsData?.[termsEditorLang]?.preamble || ''}
+                          onChange={e => handleUpdateTermGeneral('preamble', e.target.value)}
+                          placeholder={termsEditorLang === 'ar' ? 'تحدد هذه الشروط والأحكام القواعد الملزمة...' : 'Les présentes Conditions Générales régissent...'}
+                          style={{ minHeight: '80px', lineHeight: 1.6 }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Articles list */}
+                    <div className="terms-admin-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                          <h3 style={{ margin: 0, color: 'var(--text-white)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>⚖️</span>
+                            <span>{termsEditorLang === 'ar' ? 'بنود ومواد الشروط والأحكام' : 'Articles & Clauses Juridiques'}</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)', fontWeight: 'normal', marginInlineStart: '6px' }}>
+                              ({(termsData?.[termsEditorLang]?.articles || []).length} {termsEditorLang === 'ar' ? 'مواد' : 'articles'})
+                            </span>
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-gold"
+                          style={{ padding: '8px 18px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          onClick={handleAddTermArticle}
+                        >
+                          <span>➕</span>
+                          <span>{termsEditorLang === 'ar' ? 'إضافة مادة جديدة' : 'Ajouter une Clause'}</span>
+                        </button>
+                      </div>
+
+                      <div>
+                        {(termsData?.[termsEditorLang]?.articles || []).map((art, idx) => (
+                          <div key={art.id || idx} className="terms-article-admin-card">
+                            <div className="terms-article-card-header">
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                                <span className="terms-article-num-badge">
+                                  #{idx + 1}
+                                </span>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ margin: 0, fontWeight: 700, color: 'var(--admin-gold)', background: 'rgba(255,255,255,0.03)' }}
+                                  value={art.title || ''}
+                                  onChange={e => handleUpdateTermArticle(art.id, 'title', e.target.value)}
+                                  placeholder={termsEditorLang === 'ar' ? `المادة ${idx + 1} : عنوان المادة` : `Article ${idx + 1} : Titre`}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                className="btn-reject"
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                onClick={() => handleRemoveTermArticle(art.id)}
+                                title={termsEditorLang === 'ar' ? 'حذف هذه المادة' : 'Supprimer cet article'}
+                              >
+                                <span>🗑️</span>
+                                <span>{termsEditorLang === 'ar' ? 'حذف' : 'Supprimer'}</span>
+                              </button>
+                            </div>
+                            <div>
+                              <textarea
+                                className="form-input"
+                                rows={4}
+                                style={{ margin: 0, lineHeight: 1.6 }}
+                                value={art.content || ''}
+                                onChange={e => handleUpdateTermArticle(art.id, 'content', e.target.value)}
+                                placeholder={termsEditorLang === 'ar' ? 'أدخل نص وتفاصيل المادة القانونية هنا...' : 'Saisissez le texte complet de cette clause...'}
+                              />
+                            </div>
+                          </div>
+                        ))}
+
+                        <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                          <button
+                            type="button"
+                            className="btn-outline-gold"
+                            style={{ padding: '10px 24px', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                            onClick={handleAddTermArticle}
+                          >
+                            <span>➕</span>
+                            <span>{termsEditorLang === 'ar' ? 'إضافة مادة قانونية أخرى' : 'Ajouter un autre article'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -2823,6 +3765,46 @@ function AdminLayout() {
                                   style={{ marginLeft: '6px', color: '#38bdf8', textDecoration: 'underline' }}
                                 >
                                   📄 {lang === 'ar' ? 'معاينة' : 'Voir'}
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          {(m.numero_bureau_garantie || m.bureau_garantie_document) && (
+                            <div style={{ fontSize: '0.72rem', marginTop: '3px', color: '#fbbf24' }}>
+                              🏛️ {lang === 'ar' ? 'الضمانة :' : 'Garantie :'} <strong>{m.numero_bureau_garantie || '-'}</strong>
+                              {m.bureau_garantie_document && (
+                                <a 
+                                  href={`${API_URL.replace('/api', '')}${m.bureau_garantie_document}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ marginLeft: '6px', color: '#38bdf8', textDecoration: 'underline' }}
+                                >
+                                  🏛️ {lang === 'ar' ? 'معاينة' : 'Voir'}
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          {(m.numero_cin || m.cin_recto_document || m.cin_verso_document) && (
+                            <div style={{ fontSize: '0.72rem', marginTop: '3px', color: '#cbd5e1' }}>
+                              🪪 CIN: <strong>{m.numero_cin || '-'}</strong>
+                              {m.cin_recto_document && (
+                                <a 
+                                  href={`${API_URL.replace('/api', '')}${m.cin_recto_document}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ marginLeft: '6px', color: '#38bdf8', textDecoration: 'underline' }}
+                                >
+                                  {lang === 'ar' ? 'الوجه' : 'Recto'}
+                                </a>
+                              )}
+                              {m.cin_verso_document && (
+                                <a 
+                                  href={`${API_URL.replace('/api', '')}${m.cin_verso_document}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ marginLeft: '6px', color: '#38bdf8', textDecoration: 'underline' }}
+                                >
+                                  {lang === 'ar' ? 'الظهر' : 'Verso'}
                                 </a>
                               )}
                             </div>
@@ -3355,8 +4337,9 @@ function AdminLayout() {
         )}
 
         {activeTab === 'gold_rates' && (
-          <div>
-            {/* Header & Status */}
+          hasPermission('manage_gold_rates') ? (
+            <div>
+              {/* Header & Status */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
               <div>
                 <h2 style={{ fontFamily: 'Playfair Display', margin: '0 0 6px 0', fontSize: '1.8rem', color: 'var(--admin-gold)' }}>
@@ -3462,68 +4445,212 @@ function AdminLayout() {
 
             {/* Update Form Card */}
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '24px', marginBottom: '32px', boxShadow: 'var(--shadow)' }}>
-              <h3 style={{ fontFamily: 'Playfair Display', margin: '0 0 16px 0', fontSize: '1.3rem', color: 'var(--admin-gold)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>✏️</span>
-                <span>{lang === 'ar' ? 'تحديث سعر الذهب عيار 18 اليوم' : 'Mettre à jour le cours de l\'Or 18K'}</span>
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ fontFamily: 'Playfair Display', margin: 0, fontSize: '1.3rem', color: 'var(--admin-gold)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>✏️</span>
+                  <span>{lang === 'ar' ? 'تحديد وضبط أسعار الذهب والفضة اليوم' : 'Paramétrer & Mettre à jour les cours de l\'Or 18K et de l\'Argent'}</span>
+                </h3>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+                  {lang === 'ar' ? 'يمكن تعديل سعر الفضة أو الذهب بشكل مستقل أو معاً' : 'Mise à jour indépendante ou combinée'}
+                </span>
+              </div>
 
-              <form onSubmit={handleUpdateGoldRate} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', alignItems: 'end' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-white)' }}>
-                    {lang === 'ar' ? 'سعر غرام الذهب عيار 18 (د.م/غ) *' : 'Prix de l\'Or 18K (MAD/g) *'}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="100"
-                    max="10000"
-                    required
-                    value={goldPriceInput}
-                    onChange={(e) => setGoldPriceInput(e.target.value)}
-                    placeholder="1045"
+              {/* Dual Column Configuration Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+                {/* 1. Gold 18K Box */}
+                <div style={{
+                  background: 'rgba(212, 175, 55, 0.05)',
+                  border: '1.5px solid rgba(212, 175, 55, 0.35)',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 800, color: 'var(--admin-gold)' }}>
+                      <span>🏆</span>
+                      <span>{lang === 'ar' ? 'سعر غرام الذهب 18K (د.م/غ)' : 'Prix Or 18K (MAD/g)'}</span>
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>
+                      {goldRatesData.currentPrice18k || 1045} MAD/g
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="100"
+                      max="10000"
+                      value={goldPriceInput}
+                      onChange={(e) => setGoldPriceInput(e.target.value)}
+                      placeholder="1045"
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid var(--border-gold)',
+                        borderRadius: '6px',
+                        color: 'var(--text-white)',
+                        fontSize: '1.15rem',
+                        fontWeight: 800
+                      }}
+                    />
+                    {/* Quick increment buttons */}
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {['-5', '+5', '+10'].map(step => (
+                        <button
+                          key={step}
+                          type="button"
+                          onClick={() => {
+                            const curr = parseFloat(goldPriceInput) || 1045;
+                            const delta = parseFloat(step);
+                            setGoldPriceInput(String(Math.max(100, curr + delta)));
+                          }}
+                          style={{
+                            background: 'rgba(212, 175, 55, 0.1)',
+                            border: '1px solid rgba(212, 175, 55, 0.25)',
+                            color: 'var(--admin-gold)',
+                            borderRadius: '4px',
+                            padding: '6px 8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {step}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isUpdatingGold}
+                    onClick={() => handleUpdateGoldRateOnly()}
                     style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid var(--border-gold)',
-                      borderRadius: '8px',
-                      color: 'var(--text-white)',
-                      fontSize: '1.2rem',
-                      fontWeight: 800
+                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.1) 100%)',
+                      border: '1px solid var(--admin-gold)',
+                      color: 'var(--admin-gold)',
+                      borderRadius: '6px',
+                      padding: '8px 14px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
                     }}
-                  />
+                  >
+                    <span>💾</span>
+                    <span>{isUpdatingGold ? '⏳ ...' : (lang === 'ar' ? 'تثبيت سعر الذهب فقط' : 'Enregistrer l\'Or 18K seul')}</span>
+                  </button>
                 </div>
 
-                <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: '#e2e8f0' }}>
-                    <SilverIcon size={16} />
-                    <span>{lang === 'ar' ? 'سعر غرام الفضة 1000 (د.م/غ) *' : 'Prix de l\'Argent 1000 (MAD/g) *'}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="1"
-                    max="1000"
-                    required
-                    value={silverPriceInput}
-                    onChange={(e) => setSilverPriceInput(e.target.value)}
-                    placeholder="14.50"
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      color: '#f8fafc',
-                      fontSize: '1.2rem',
-                      fontWeight: 800
-                    }}
-                  />
-                </div>
+                {/* 2. Silver 1000 Box - DIRECT PARAMETERIZATION */}
+                <div style={{
+                  background: 'rgba(203, 213, 225, 0.05)',
+                  border: '1.5px solid rgba(203, 213, 225, 0.35)',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 800, color: '#e2e8f0' }}>
+                      <SilverIcon size={18} />
+                      <span>{lang === 'ar' ? 'سعر غرام الفضة 1000 (د.م/غ)' : 'Prix Argent 1000 (MAD/g)'}</span>
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: 700 }}>
+                      {typeof goldRatesData.currentPriceSilver === 'number' ? goldRatesData.currentPriceSilver.toFixed(2) : (goldRatesData.currentPriceSilver || '14.50')} MAD/g
+                    </span>
+                  </div>
 
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="1"
+                      max="1000"
+                      value={silverPriceInput}
+                      onChange={(e) => setSilverPriceInput(e.target.value)}
+                      placeholder="14.50"
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        color: '#f8fafc',
+                        fontSize: '1.15rem',
+                        fontWeight: 800
+                      }}
+                    />
+                    {/* Quick increment buttons */}
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {['-0.5', '+0.5', '+1'].map(step => (
+                        <button
+                          key={step}
+                          type="button"
+                          onClick={() => {
+                            const curr = parseFloat(silverPriceInput) || 14.50;
+                            const delta = parseFloat(step);
+                            const next = Math.max(1, +(curr + delta).toFixed(2));
+                            setSilverPriceInput(String(next));
+                          }}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#e2e8f0',
+                            borderRadius: '4px',
+                            padding: '6px 8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {step}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      disabled={isUpdatingGold}
+                      onClick={() => handleUpdateSilverRateOnly()}
+                      style={{
+                        flex: 1,
+                        background: 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)',
+                        color: '#0f172a',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 14px',
+                        fontSize: '0.82rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>💾</span>
+                      <span>{isUpdatingGold ? '⏳ ...' : (lang === 'ar' ? 'تثبيت سعر الفضة فقط' : 'Enregistrer l\'Argent seul')}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Source & Note Fields with Combined Save */}
+              <form onSubmit={handleUpdateGoldRate} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', alignItems: 'end', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-white)' }}>
-                    {lang === 'ar' ? 'المصدر / المرجع' : 'Source / Bourse de référence'}
+                    {lang === 'ar' ? 'المصدر / المرجع المعتمد' : 'Source / Bourse de référence'}
                   </label>
                   <input
                     type="text"
@@ -3532,19 +4659,19 @@ function AdminLayout() {
                     placeholder={lang === 'ar' ? 'مثال: سوق الصاغة الدار البيضاء...' : 'Ex: Marché de Casablanca, Clôture officielle...'}
                     style={{
                       width: '100%',
-                      padding: '12px 14px',
+                      padding: '10px 14px',
                       background: 'rgba(0,0,0,0.2)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       color: 'var(--text-white)',
-                      fontSize: '0.95rem'
+                      fontSize: '0.92rem'
                     }}
                   />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-white)' }}>
-                    {lang === 'ar' ? 'ملاحظة أو تبرير التغيير' : 'Note ou motif d\'évolution'}
+                    {lang === 'ar' ? 'ملاحظة أو سبب التعديل' : 'Note ou motif d\'évolution'}
                   </label>
                   <input
                     type="text"
@@ -3553,12 +4680,12 @@ function AdminLayout() {
                     placeholder={lang === 'ar' ? 'مثال: استقرار الطلب بالسوق المغربي...' : 'Ex: Fixation hebdomadaire officielle...'}
                     style={{
                       width: '100%',
-                      padding: '12px 14px',
+                      padding: '10px 14px',
                       background: 'rgba(0,0,0,0.2)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       color: 'var(--text-white)',
-                      fontSize: '0.95rem'
+                      fontSize: '0.92rem'
                     }}
                   />
                 </div>
@@ -3570,8 +4697,8 @@ function AdminLayout() {
                     className="btn-gold"
                     style={{
                       width: '100%',
-                      padding: '12px 20px',
-                      fontSize: '0.95rem',
+                      padding: '11px 20px',
+                      fontSize: '0.92rem',
                       fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
@@ -3580,28 +4707,236 @@ function AdminLayout() {
                       margin: 0
                     }}
                   >
-                    {isUpdatingGold ? '⏳ ...' : (lang === 'ar' ? '💾 تثبيت السعر (18K)' : '💾 Enregistrer la cotation 18K')}
+                    {isUpdatingGold ? '⏳ ...' : (lang === 'ar' ? '💾 تحديث أسعار الذهب والفضة معاً' : '💾 Enregistrer les deux cours')}
                   </button>
                 </div>
               </form>
             </div>
 
-            {/* History Table */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-              <h3 style={{ fontFamily: 'Playfair Display', margin: 0, fontSize: '1.4rem', color: 'var(--text-white)' }}>
-                {lang === 'ar' ? '📊 سجل التغييرات التاريخية لسعر الذهب عيار 18' : '📊 Historique des Changements du Cours 18K'}
-              </h3>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-gray)' }}>
-                {lang === 'ar' ? `إجمالي التعديلات : ${(goldRatesData.history || []).length}` : `Total cotations : ${(goldRatesData.history || []).length}`}
-              </span>
+            {/* History Header & Metal Filter Switcher */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '14px' }}>
+              <div>
+                <h3 style={{ fontFamily: 'Playfair Display', margin: 0, fontSize: '1.4rem', color: 'var(--text-white)' }}>
+                  {lang === 'ar' ? '📊 المنحنى البياني وسجل التغييرات التاريخية' : '📊 Évolution Graphique & Historique des Cotations'}
+                </h3>
+                <p style={{ color: 'var(--text-gray)', margin: '4px 0 0 0', fontSize: '0.84rem' }}>
+                  {lang === 'ar' ? 'تتبع فوري لمنحنى تطور أسعار الذهب والفضة مع سجل كامل لجميع التعديلات' : 'Traçabilité visuelle en temps réel et registre d\'audit complet pour l\'or et l\'argent'}
+                </p>
+              </div>
+
+              {/* Tabs: Argent 1000‰ vs Or 18K */}
+              <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '4px', gap: '6px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <button
+                  type="button"
+                  onClick={() => setAdminMetalHistoryTab('silver')}
+                  style={{
+                    background: adminMetalHistoryTab === 'silver' ? 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)' : 'transparent',
+                    color: adminMetalHistoryTab === 'silver' ? '#0f172a' : '#cbd5e1',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: 800,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: adminMetalHistoryTab === 'silver' ? '0 0 16px rgba(56, 189, 248, 0.35)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <SilverIcon size={16} />
+                  <span>{lang === 'ar' ? 'الفضة عيار 1000' : 'Argent 1000‰'}</span>
+                  <span style={{ fontSize: '0.74rem', opacity: 0.85 }}>({(goldRatesData.silverHistory || []).length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminMetalHistoryTab('gold')}
+                  style={{
+                    background: adminMetalHistoryTab === 'gold' ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : 'transparent',
+                    color: adminMetalHistoryTab === 'gold' ? '#000000' : '#cbd5e1',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: 800,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: adminMetalHistoryTab === 'gold' ? '0 0 16px rgba(212, 175, 55, 0.35)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span>🏆</span>
+                  <span>{lang === 'ar' ? 'الذهب عيار 18' : 'Or 18K (750‰)'}</span>
+                  <span style={{ fontSize: '0.74rem', opacity: 0.85 }}>({(goldRatesData.history || []).length})</span>
+                </button>
+              </div>
             </div>
 
+            {/* Visual Evolution Graph Card */}
+            {(() => {
+              const isSilver = adminMetalHistoryTab === 'silver';
+              const rawList = isSilver ? (goldRatesData.silverHistory || []) : (goldRatesData.history || []);
+              const priceExtractor = isSilver 
+                ? (item) => Number(item.priceSilver || item.price || 14.50)
+                : (item) => Number(item.price18k || item.price || 1032);
+              const prices = rawList.map(priceExtractor);
+              const minVal = prices.length > 0 ? Math.min(...prices) : (isSilver ? 14.50 : 1032);
+              const maxVal = prices.length > 0 ? Math.max(...prices) : (isSilver ? 14.50 : 1032);
+              const avgVal = prices.length > 0 ? (prices.reduce((a, b) => a + b, 0) / prices.length) : (isSilver ? 14.50 : 1032);
+
+              const width = 800;
+              const height = 180;
+              const padL = isSilver ? 70 : 65;
+              const padR = 30;
+              const padT = 25;
+              const padB = 30;
+              const innerW = width - padL - padR;
+              const innerH = height - padT - padB;
+              const pPad = isSilver ? Math.max((maxVal - minVal) * 0.25, 0.40) : Math.max((maxVal - minVal) * 0.15, 6);
+              const pMin = isSilver ? Number((minVal - pPad).toFixed(2)) : Math.floor(minVal - pPad);
+              const pMax = isSilver ? Number((maxVal + pPad).toFixed(2)) : Math.ceil(maxVal + pPad);
+              const pRange = pMax - pMin || (isSilver ? 1 : 10);
+
+              const pts = rawList.map((item, idx) => {
+                const x = padL + (idx / Math.max(rawList.length - 1, 1)) * innerW;
+                const p = priceExtractor(item);
+                const y = padT + (1 - (p - pMin) / pRange) * innerH;
+                return { x, y, price: p, date: item.date?.split(' ')[0] || item.date };
+              });
+
+              let pathD = '';
+              if (pts.length === 1) pathD = `M ${pts[0].x} ${pts[0].y}`;
+              else if (pts.length > 1) {
+                pathD = `M ${pts[0].x},${pts[0].y}`;
+                for (let i = 0; i < pts.length - 1; i++) {
+                  const p0 = pts[i === 0 ? 0 : i - 1];
+                  const p1 = pts[i];
+                  const p2 = pts[i + 1];
+                  const p3 = pts[i + 2] || p2;
+                  const cp1x = p1.x + (p2.x - p0.x) / 6;
+                  const cp1y = p1.y + (p2.y - p0.y) / 6;
+                  const cp2x = p2.x - (p3.x - p1.x) / 6;
+                  const cp2y = p2.y - (p3.y - p1.y) / 6;
+                  pathD += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+                }
+              }
+
+              const strokeColor = isSilver ? '#38bdf8' : '#d4af37';
+              const gradId = isSilver ? "adminSilverGrad" : "adminGoldGrad";
+
+              return (
+                <div style={{
+                  background: 'linear-gradient(180deg, rgba(20, 24, 38, 0.8) 0%, rgba(10, 12, 20, 0.95) 100%)',
+                  border: isSilver ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(212, 175, 55, 0.3)',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  marginBottom: '24px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)'
+                }}>
+                  {/* Graph Top Metrics */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{isSilver ? '🛡️' : '🏆'}</span>
+                      <span style={{ fontWeight: 800, color: 'var(--text-white)', fontSize: '0.98rem' }}>
+                        {isSilver 
+                          ? (lang === 'ar' ? 'منحنى تطور سعر غرام الفضة عيار 1000 (MAD/g)' : 'Courbe d\'évolution du cours de l\'Argent Pur 1000‰ (MAD/g)')
+                          : (lang === 'ar' ? 'منحنى تطور سعر غرام الذهب عيار 18 قيراط (MAD/g)' : 'Courbe d\'évolution du cours de l\'Or 18 Karats (MAD/g)')}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '3px 10px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 800 }}>
+                        ▲ Max: {isSilver ? maxVal.toFixed(2) : Math.round(maxVal)} MAD/g
+                      </span>
+                      <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', padding: '3px 10px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 800 }}>
+                        ▼ Min: {isSilver ? minVal.toFixed(2) : Math.round(minVal)} MAD/g
+                      </span>
+                      <span style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-white)', padding: '3px 10px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 700 }}>
+                        Moy: {isSilver ? Number(avgVal).toFixed(2) : Math.round(avgVal)} MAD/g
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* SVG Chart */}
+                  {pts.length > 0 ? (
+                    <div style={{ width: '100%', overflow: 'hidden' }}>
+                      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+                        <defs>
+                          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.35" />
+                            <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Grid lines */}
+                        {[0, 0.5, 1].map((ratio, i) => {
+                          const y = padT + (1 - ratio) * innerH;
+                          const v = isSilver ? (pMin + ratio * pRange).toFixed(2) : Math.round(pMin + ratio * pRange);
+                          return (
+                            <g key={i}>
+                              <line x1={padL} y1={y} x2={width - padR} y2={y} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 4" />
+                              <text x={padL - 8} y={y + 3.5} fill="#94a3b8" fontSize="10" fontWeight="600" textAnchor="end">
+                                {v}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Area */}
+                        {pathD && pts.length > 1 && (
+                          <path
+                            d={`${pathD} L ${pts[pts.length - 1].x},${padT + innerH} L ${pts[0].x},${padT + innerH} Z`}
+                            fill={`url(#${gradId})`}
+                          />
+                        )}
+
+                        {/* Line */}
+                        {pathD && (
+                          <path
+                            d={pathD}
+                            fill="none"
+                            stroke={strokeColor}
+                            strokeWidth="2.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        )}
+
+                        {/* Nodes */}
+                        {pts.map((pt, i) => (
+                          <g key={i}>
+                            <circle cx={pt.x} cy={pt.y} r="4.5" fill="#151824" stroke={strokeColor} strokeWidth="2.5" />
+                            <text x={pt.x} y={padT + innerH + 16} fill="#94a3b8" fontSize="9" fontWeight="600" textAnchor="middle">
+                              {pt.date}
+                            </text>
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-gray)', fontSize: '0.85rem' }}>
+                      {lang === 'ar' ? 'لا توجد بيانات بيانية مسجلة حتى الآن.' : 'Aucune donnée d\'évolution pour le moment.'}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* History Table */}
             <div className="table-container">
               <table className="admin-table">
                 <thead>
                   <tr>
                     <th>{lang === 'ar' ? 'التاريخ والوقت' : 'Date & Heure'}</th>
-                    <th>{lang === 'ar' ? 'سعر 18K (د.م/غ)' : 'Prix Or 18K (MAD/g)'}</th>
+                    <th>
+                      {adminMetalHistoryTab === 'silver'
+                        ? (lang === 'ar' ? 'سعر الفضة 1000 (د.م/غ)' : 'Prix Argent 1000 (MAD/g)')
+                        : (lang === 'ar' ? 'سعر الذهب 18K (د.م/غ)' : 'Prix Or 18K (MAD/g)')}
+                    </th>
                     <th>{lang === 'ar' ? 'التغيير' : 'Variation'}</th>
                     <th>{lang === 'ar' ? 'المصدر' : 'Source'}</th>
                     <th>{lang === 'ar' ? 'ملاحظة' : 'Note'}</th>
@@ -3609,93 +4944,117 @@ function AdminLayout() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...(goldRatesData.history || [])].reverse().map((item) => {
-                    const isPositive = item.change && item.change.startsWith('+');
-                    const isNeutral = !item.change || item.change === '0.0%' || item.change === '0%';
-                    const getLocalizedSource = (s) => {
-                      if (!s) return lang === 'ar' ? 'سوق الذهب المغربي' : 'Marché Maroc';
-                      if (lang === 'ar') {
-                        const map = {
-                          'Fixation Casablanca': 'تحديد الدار البيضاء',
-                          'Marché national': 'السوق الوطني للذهب',
-                          'Bourse de référence': 'بورصة الذهب المعتمدة',
-                          'Cours officiel de clôture': 'السعر الرسمي للإغلاق',
-                          'Cours officiel clôture': 'السعر الرسمي للإغلاق',
-                          'Fixation Officielle Maroc': 'السعر الرسمي المحدد بالمغرب',
-                          'Marché Maroc': 'سوق الذهب المغربي'
-                        };
-                        return map[s] || s;
-                      }
-                      return s;
-                    };
-                    const getLocalizedNote = (n) => {
-                      if (!n || n === '-') return '-';
-                      if (lang === 'ar') {
-                        const map = {
-                          'Cours matinal': 'السعر الصباحي الافتتاحي',
-                          'Forte demande joaillerie': 'طلب متزايد على الصياغة',
-                          'Tendance haussière': 'اتجاه تصاعدي في السوق',
-                          'Cours actuel du jour': 'السعر الرسمي المعتمد اليوم',
-                          'Validation 18K': 'تأكيد سعر عيار 18',
-                          'Mise à jour régulière': 'تحديث دوري معتمد'
-                        };
-                        return map[n] || n;
-                      }
-                      return n;
-                    };
-                    return (
-                      <tr key={item.id}>
-                        <td style={{ fontWeight: 600, color: 'var(--text-white)', whiteSpace: 'nowrap' }} dir="ltr">
-                          📅 {item.date}
-                        </td>
-                        <td style={{ color: 'var(--admin-gold)', fontWeight: 800, fontSize: '1.1rem' }} dir="ltr">
-                          {item.price18k || 1045} {lang === 'ar' ? 'د.م' : 'MAD'}
-                        </td>
-                        <td>
-                          <span dir="ltr" style={{
-                            display: 'inline-block',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                            fontSize: '0.78rem',
-                            fontWeight: 800,
-                            background: isNeutral ? 'rgba(255,255,255,0.06)' : (isPositive ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'),
-                            color: isNeutral ? 'var(--text-gray)' : (isPositive ? '#10b981' : '#ef4444')
-                          }}>
-                            {item.change || '0.0%'}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: '0.85rem', color: 'var(--text-white)' }}>
-                          {getLocalizedSource(item.source)}
-                        </td>
-                        <td style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>
-                          {getLocalizedNote(item.note)}
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteGoldHistory(item.id)}
-                            title={lang === 'ar' ? 'حذف من السجل' : 'Supprimer de l\'historique'}
-                            style={{
-                              background: 'rgba(239,68,68,0.12)',
-                              border: '1px solid rgba(239,68,68,0.3)',
-                              color: '#ef4444',
-                              borderRadius: '6px',
-                              padding: '5px 10px',
-                              cursor: 'pointer',
-                              fontSize: '0.8rem',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {(!goldRatesData.history || goldRatesData.history.length === 0) && (
+                  {(() => {
+                    const isSilver = adminMetalHistoryTab === 'silver';
+                    const activeList = isSilver ? (goldRatesData.silverHistory || []) : (goldRatesData.history || []);
+                    
+                    return [...activeList].reverse().map((item) => {
+                      const isPositive = item.change && item.change.startsWith('+') && item.change !== '+0.0%';
+                      const isNeutral = !item.change || item.change === '0.0%' || item.change === '0%';
+                      const priceVal = isSilver
+                        ? Number(item.priceSilver || item.price || 14.50).toFixed(2)
+                        : (item.price18k || item.price || 1032);
+
+                      const getLocalizedSource = (s) => {
+                        if (!s) return lang === 'ar' ? 'سوق المعادن المغربي' : 'Marché Maroc';
+                        if (lang === 'ar') {
+                          const map = {
+                            'Fixation Casablanca': 'تحديد الدار البيضاء',
+                            'Bourse Casablanca': 'بورصة الدار البيضاء',
+                            'Marché national': 'السوق الوطني للذهب',
+                            'Marché National Argent': 'السوق الوطني للفضة',
+                            'Bourse de référence': 'بورصة الذهب المعتمدة',
+                            'Cours officiel de clôture': 'السعر الرسمي للإغلاق',
+                            'Cours officiel clôture': 'السعر الرسمي للإغلاق',
+                            'Fixation Officielle Maroc': 'السعر الرسمي المحدد بالمغرب',
+                            'Fixation Argent Maroc': 'سعر الفضة المحدد بالمغرب',
+                            'Marché Maroc': 'سوق المعادن المغربي'
+                          };
+                          return map[s] || s;
+                        }
+                        return s;
+                      };
+
+                      const getLocalizedNote = (n) => {
+                        if (!n || n === '-') return '-';
+                        if (lang === 'ar') {
+                          const map = {
+                            'Cours matinal': 'السعر الصباحي الافتتاحي',
+                            'Fixation matinale Ag 1000': 'السعر الصباحي الافتتاحي Ag 1000',
+                            'Forte demande joaillerie': 'طلب متزايد على الصياغة',
+                            'Raffinement lingots 1000': 'تنقية وسبك سبائك 1000',
+                            'Tendance haussière': 'اتجاه تصاعدي في السوق',
+                            'Cours actuel du jour': 'السعر الرسمي المعتمد اليوم',
+                            'Cours actuel du jour (Ag 1000)': 'السعر المعتمد اليوم (Ag 1000)',
+                            'Validation 18K': 'تأكيد سعر عيار 18',
+                            'Cours certifié Ag 1000‰': 'سعر الفضة المعتمد 1000‰',
+                            'Mise à jour régulière': 'تحديث دوري معتمد',
+                            'Progression continue de l\'argent pur': 'تطور إيجابي وتصاعدي لسعر الفضة',
+                            'Paramétrage cours argent depuis le dashboard': 'ضبط سعر الفضة من لوحة التحكم',
+                            'Mise à jour du cours de l\'argent': 'تعديل سعر غرام الفضة'
+                          };
+                          return map[n] || n;
+                        }
+                        return n;
+                      };
+
+                      return (
+                        <tr key={item.id}>
+                          <td style={{ fontWeight: 600, color: 'var(--text-white)', whiteSpace: 'nowrap' }} dir="ltr">
+                            📅 {item.date}
+                          </td>
+                          <td style={{ color: isSilver ? '#38bdf8' : 'var(--admin-gold)', fontWeight: 800, fontSize: '1.05rem' }} dir="ltr">
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              {isSilver && <SilverIcon size={14} />}
+                              <span>{priceVal} {lang === 'ar' ? 'د.م/غ' : 'MAD/g'}</span>
+                            </span>
+                          </td>
+                          <td>
+                            <span dir="ltr" style={{
+                              display: 'inline-block',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.78rem',
+                              fontWeight: 800,
+                              background: isNeutral ? 'rgba(255,255,255,0.06)' : (isPositive ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'),
+                              color: isNeutral ? 'var(--text-gray)' : (isPositive ? '#10b981' : '#ef4444')
+                            }}>
+                              {item.change || '0.0%'}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '0.85rem', color: 'var(--text-white)' }}>
+                            {getLocalizedSource(item.source)}
+                          </td>
+                          <td style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>
+                            {getLocalizedNote(item.note)}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteGoldHistory(item.id)}
+                              title={lang === 'ar' ? 'حذف من السجل' : 'Supprimer de l\'historique'}
+                              style={{
+                                background: 'rgba(239,68,68,0.12)',
+                                border: '1px solid rgba(239,68,68,0.3)',
+                                color: '#ef4444',
+                                borderRadius: '6px',
+                                padding: '5px 10px',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                  {((adminMetalHistoryTab === 'silver' ? (goldRatesData.silverHistory || []) : (goldRatesData.history || [])).length === 0) && (
                     <tr>
                       <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-gray)' }}>
-                        {lang === 'ar' ? 'لا يوجد سجل تغييرات سابق.' : 'Aucun historique enregistré pour le moment.'}
+                        {lang === 'ar' ? 'لا يوجد سجل تغييرات سابق لهذه الفئة.' : 'Aucun historique enregistré pour cette catégorie.'}
                       </td>
                     </tr>
                   )}
@@ -3703,6 +5062,35 @@ function AdminLayout() {
               </table>
             </div>
           </div>
+        ) : (
+            <div style={{
+              background: 'linear-gradient(145deg, #181b26 0%, #11131a 100%)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '16px',
+              padding: '40px 24px',
+              textAlign: 'center',
+              maxWidth: '600px',
+              margin: '60px auto',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.5)'
+            }}>
+              <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>🔒</span>
+              <h2 style={{ color: '#ef4444', marginBottom: '10px', fontFamily: 'Playfair Display' }}>
+                {lang === 'ar' ? 'غير مصرح بالدخول' : 'Accès Restreint'}
+              </h2>
+              <p style={{ color: 'var(--text-gray)', fontSize: '0.95rem', marginBottom: '24px' }}>
+                {lang === 'ar' 
+                  ? 'ليس لديك الصلاحيات الكافية للاطلاع على أسعار المعادن والذهب أو إدارتها. يرجى التواصل مع مشرف النظام.'
+                  : 'Votre rôle ne dispose pas des autorisations nécessaires pour consulter ou gérer les cours des métaux précieux.'}
+              </p>
+              <button
+                type="button"
+                className="btn-gold"
+                onClick={() => setActiveTab(isMerchant ? 'products' : 'dashboard')}
+              >
+                {lang === 'ar' ? 'العودة إلى الصفحة الرئيسية' : 'Retour à l\'accueil'}
+              </button>
+            </div>
+          )
         )}
 
         {/* Sales History Management Section */}
@@ -4118,7 +5506,7 @@ function AdminLayout() {
                       onChange={e => setUserForm({ ...userForm, numero_patente: e.target.value })} 
                     />
                   </div>
-                  {(userForm.patente_document || editingUser?.patente_document) && (
+                      {(userForm.patente_document || editingUser?.patente_document) && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '4px', border: '1px dashed rgba(212,175,55,0.3)', fontSize: '0.8rem' }}>
                       <span style={{ color: 'var(--text-gray)' }}>
                         📎 {lang === 'ar' ? 'ملف وثيقة الباتنت :' : 'Document Patente :'} <strong style={{ color: 'var(--text-white)' }}>{userForm.patente_filename || editingUser?.patente_filename || 'patente_doc'}</strong>
@@ -4133,6 +5521,107 @@ function AdminLayout() {
                       </a>
                     </div>
                   )}
+                </div>
+
+                {/* Bureau de Garantie Details & Document */}
+                <div style={{ padding: '12px', background: 'rgba(251,191,36,0.06)', borderRadius: '6px', border: '1px solid rgba(251,191,36,0.25)', marginBottom: '15px' }}>
+                  <div className="form-group" style={{ marginBottom: (userForm.bureau_garantie_document || editingUser?.bureau_garantie_document) ? '10px' : 0 }}>
+                    <label className="form-label" style={{ fontWeight: 600, color: '#fbbf24' }}>
+                      🏛️ {lang === 'ar' ? 'رقم مكتب الضمانة (Bureau de Garantie)' : 'Numéro du Bureau de Garantie (Douanes & Impôts)'}
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder={lang === 'ar' ? "مثال: BG-84920-CASA أو رقم الاعتماد" : "Ex: BG-84920-CASA"}
+                      value={userForm.numero_bureau_garantie || ''} 
+                      onChange={e => setUserForm({ ...userForm, numero_bureau_garantie: e.target.value })} 
+                    />
+                  </div>
+                  {(userForm.bureau_garantie_document || editingUser?.bureau_garantie_document) && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '4px', border: '1px dashed rgba(251,191,36,0.3)', fontSize: '0.8rem' }}>
+                      <span style={{ color: 'var(--text-gray)' }}>
+                        📎 {lang === 'ar' ? 'صورة / وثيقة مكتب الضمانة :' : 'Document Bureau de Garantie :'} <strong style={{ color: 'var(--text-white)' }}>{userForm.bureau_garantie_filename || editingUser?.bureau_garantie_filename || 'garantie_doc'}</strong>
+                      </span>
+                      <a 
+                        href={`${API_URL.replace('/api', '')}${userForm.bureau_garantie_document || editingUser?.bureau_garantie_document}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#38bdf8', textDecoration: 'underline', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        📥 {lang === 'ar' ? 'معاينة / تحميل' : 'Voir / Télécharger'}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* CIN Recto / Verso Documents */}
+                <div style={{ padding: '12px', background: 'rgba(56,189,248,0.05)', borderRadius: '6px', border: '1px solid rgba(56,189,248,0.2)', marginBottom: '15px' }}>
+                  <div className="form-group" style={{ marginBottom: '10px' }}>
+                    <label className="form-label" style={{ fontWeight: 600, color: '#38bdf8' }}>
+                      🪪 {lang === 'ar' ? 'رقم بطاقة التعريف الوطنية (CIN)' : 'Numéro de Carte d\'Identité (CIN)'}
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="Ex: BE123456"
+                      value={userForm.numero_cin || ''} 
+                      onChange={e => setUserForm({ ...userForm, numero_cin: e.target.value })} 
+                    />
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                    {/* CIN Recto */}
+                    <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px dashed rgba(56,189,248,0.3)', fontSize: '0.8rem' }}>
+                      <div style={{ fontWeight: 700, color: '#38bdf8', marginBottom: '6px' }}>
+                        🪪 {lang === 'ar' ? 'الوجه الأمامي (Recto)' : 'Face Avant (Recto)'}
+                      </div>
+                      {(userForm.cin_recto_document || editingUser?.cin_recto_document) ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', wordBreak: 'break-all' }}>
+                            {userForm.cin_recto_filename || editingUser?.cin_recto_filename || 'CIN_Recto'}
+                          </span>
+                          <a 
+                            href={`${API_URL.replace('/api', '')}${userForm.cin_recto_document || editingUser?.cin_recto_document}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#38bdf8', textDecoration: 'underline', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem' }}
+                          >
+                            📥 {lang === 'ar' ? 'معاينة / تحميل' : 'Voir / Télécharger'}
+                          </a>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-gray)', fontSize: '0.75rem' }}>
+                          {lang === 'ar' ? 'لا توجد وثيقة مرفقة' : 'Aucun document joint'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* CIN Verso */}
+                    <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px dashed rgba(56,189,248,0.3)', fontSize: '0.8rem' }}>
+                      <div style={{ fontWeight: 700, color: '#38bdf8', marginBottom: '6px' }}>
+                        🪪 {lang === 'ar' ? 'الوجه الخلفي (Verso)' : 'Face Arrière (Verso)'}
+                      </div>
+                      {(userForm.cin_verso_document || editingUser?.cin_verso_document) ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', wordBreak: 'break-all' }}>
+                            {userForm.cin_verso_filename || editingUser?.cin_verso_filename || 'CIN_Verso'}
+                          </span>
+                          <a 
+                            href={`${API_URL.replace('/api', '')}${userForm.cin_verso_document || editingUser?.cin_verso_document}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#38bdf8', textDecoration: 'underline', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem' }}
+                          >
+                            📥 {lang === 'ar' ? 'معاينة / تحميل' : 'Voir / Télécharger'}
+                          </a>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-gray)', fontSize: '0.75rem' }}>
+                          {lang === 'ar' ? 'لا توجد وثيقة مرفقة' : 'Aucun document joint'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Initial Subscription Plan */}
@@ -4765,32 +6254,12 @@ function AdminLayout() {
                   onChange={e => setProductForm({ ...productForm, city: e.target.value })} 
                   required 
                 >
-                  {[
-                    { key: 'Casablanca', ar: 'الدار البيضاء (Casablanca)', fr: 'Casablanca' },
-                    { key: 'Rabat', ar: 'الرباط (Rabat)', fr: 'Rabat' },
-                    { key: 'Marrakech', ar: 'مراكش (Marrakech)', fr: 'Marrakech' },
-                    { key: 'Fès', ar: 'فاس (Fès)', fr: 'Fès' },
-                    { key: 'Tanger', ar: 'طنجة (Tanger)', fr: 'Tanger' },
-                    { key: 'Agadir', ar: 'أكادير (Agadir)', fr: 'Agadir' },
-                    { key: 'Meknès', ar: 'مكناس (Meknès)', fr: 'Meknès' },
-                    { key: 'Oujda', ar: 'وجدة (Oujda)', fr: 'Oujda' },
-                    { key: 'Tétouan', ar: 'تطوان (Tétouan)', fr: 'Tétouan' },
-                    { key: 'Essaouira', ar: 'الصويرة (Essaouira)', fr: 'Essaouira' },
-                    { key: 'El Jadida', ar: 'الجديدة (El Jadida)', fr: 'El Jadida' },
-                    { key: 'Nador', ar: 'الناظور (Nador)', fr: 'Nador' },
-                    { key: 'Safi', ar: 'آسفي (Safi)', fr: 'Safi' },
-                    { key: 'Kenitra', ar: 'القنيطرة (Kenitra)', fr: 'Kenitra' },
-                    { key: 'Mohammédia', ar: 'المحمدية (Mohammédia)', fr: 'Mohammédia' },
-                    { key: 'Béni Mellal', ar: 'بني ملال (Béni Mellal)', fr: 'Béni Mellal' },
-                    { key: 'Laâyoune', ar: 'العيون (Laâyoune)', fr: 'Laâyoune' },
-                    { key: 'Dakhla', ar: 'الداخلة (Dakhla)', fr: 'Dakhla' },
-                    { key: 'Salé', ar: 'سلا (Salé)', fr: 'Salé' },
-                    { key: 'Témara', ar: 'تمارة (Témara)', fr: 'Témara' }
-                  ].map(city => (
+                  {ALL_MOROCCAN_CITIES.map(city => (
                     <option key={city.key} value={city.key}>
-                      {lang === 'ar' ? city.ar : city.fr}
+                      {lang === 'ar' ? `${city.ar} (${city.fr})` : `${city.fr} (${city.ar})`}
                     </option>
                   ))}
+                  <option value="Autre">{lang === 'ar' ? 'مدينة أخرى' : 'Autre Ville'}</option>
                 </select>
               </div>
             </div>

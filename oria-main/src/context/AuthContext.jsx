@@ -20,12 +20,17 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (phoneOrEmail, password) => {
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({
+          phone: phoneOrEmail,
+          email: phoneOrEmail,
+          identifier: phoneOrEmail,
+          password
+        })
       });
       if (!res.ok) {
         const err = await res.json();

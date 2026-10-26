@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { API_URL } from '../config/api';
+import SilverIcon from './SilverIcon';
 
-export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal }) {
+export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal, initialMetal = 'gold' }) {
   const { lang, isRtl } = useLanguage();
   const isAr = lang === 'ar';
 
+  const [activeMetal, setActiveMetal] = useState(initialMetal || 'gold'); // 'gold' | 'silver'
   const [goldData, setGoldData] = useState({
-    currentPrice18k: 1045,
+    currentPrice18k: 1032,
+    currentPriceSilver: 14.50,
     carat: '18K',
     unit: 'MAD/g',
+    silverUnit: 'MAD/g',
     lastUpdated: '',
-    history: []
+    history: [],
+    silverHistory: []
   });
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -20,44 +25,68 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
   const itemsPerPage = 5;
   const svgRef = useRef(null);
 
+  // Sync initialMetal when modal opens
+  useEffect(() => {
+    if (isOpen && initialMetal) {
+      setActiveMetal(initialMetal);
+    }
+  }, [isOpen, initialMetal]);
+
   useEffect(() => {
     if (!isOpen) return;
     setIsLoading(true);
     fetch(`${API_URL}/gold-rates`)
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.currentPrice18k) {
+        if (data.success) {
           setGoldData(data);
         }
       })
-      .catch(err => console.error('Failed to fetch gold rates:', err))
+      .catch(err => console.error('Failed to fetch metal rates:', err))
       .finally(() => setIsLoading(false));
   }, [isOpen]);
 
-  // Reset pagination to page 1 on filter or data update
+  // Reset pagination & hover on tab or filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedRange, goldData]);
+    setHoveredIndex(null);
+  }, [activeMetal, selectedRange, goldData]);
 
-  const currentPrice = goldData.currentPrice18k || 1045;
+  // Fallback history for Gold 18K
+  const fallbackGoldHistory = useMemo(() => [
+    { id: 'gh_1', date: '2026-10-18 09:30', price18k: 1010, change: '+0.5%', source: isAr ? 'تحديد الدار البيضاء' : 'Fixation Casablanca', note: isAr ? 'السعر الصباحي الافتتاحي' : 'Cours matinal' },
+    { id: 'gh_2', date: '2026-10-20 11:15', price18k: 1025, change: '+1.5%', source: isAr ? 'السوق الوطني للذهب' : 'Marché national', note: isAr ? 'طلب متزايد على الصياغة' : 'Forte demande' },
+    { id: 'gh_3', date: '2026-10-22 10:00', price18k: 1028, change: '+0.3%', source: isAr ? 'بورصة الذهب المعتمدة' : 'Bourse de référence', note: isAr ? 'اتجاه تصاعدي في السوق' : 'Hausse continue' },
+    { id: 'gh_4', date: '2026-10-24 15:45', price18k: 1030, change: '+0.2%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Cours officiel clôture', note: isAr ? 'استقرار تداولات عيار 18' : 'Stabilité marché' },
+    { id: 'gh_5', date: '2026-10-26 12:00', price18k: 1032, change: '+0.2%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Cours officiel clôture', note: isAr ? 'السعر الرسمي المعتمد اليوم' : 'Cours actuel du jour' }
+  ], [isAr]);
 
-  const fullHistoryList = (goldData.history && goldData.history.length > 0)
-    ? goldData.history
-    : [
-        { id: '1', date: '15/09', price18k: 1010, change: '+0.5%', source: isAr ? 'تحديد الدار البيضاء' : 'Fixation Casablanca', note: isAr ? 'السعر الصباحي الافتتاحي' : 'Cours matinal' },
-        { id: '2', date: '17/09', price18k: 1025, change: '+1.5%', source: isAr ? 'السوق الوطني للذهب' : 'Marché national', note: isAr ? 'طلب متزايد على الصياغة' : 'Forte demande' },
-        { id: '3', date: '19/09', price18k: 1038, change: '+1.3%', source: isAr ? 'بورصة الذهب المعتمدة' : 'Bourse de référence', note: isAr ? 'اتجاه تصاعدي في السوق' : 'Hausse continue' },
-        { id: '4', date: '20/09', price18k: 1045, change: '+0.7%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Cours officiel clôture', note: isAr ? 'السعر الرسمي المعتمد اليوم' : 'Cours actuel du jour' }
-      ];
+  // Fallback history for Silver 1000
+  const fallbackSilverHistory = useMemo(() => [
+    { id: 'sh_1', date: '2026-10-18 09:30', priceSilver: 13.80, change: '0.0%', source: isAr ? 'السوق الوطني للفضة' : 'Marché National Argent', note: isAr ? 'السعر الصباحي الافتتاحي' : 'Fixation matinale Ag 1000' },
+    { id: 'sh_2', date: '2026-10-20 11:15', priceSilver: 13.95, change: '+1.1%', source: isAr ? 'بورصة الدار البيضاء' : 'Bourse Casablanca', note: isAr ? 'طلب متزايد على السبائك' : 'Raffinement lingots 1000' },
+    { id: 'sh_3', date: '2026-10-22 10:00', priceSilver: 14.10, change: '+1.1%', source: isAr ? 'السوق الوطني للفضة' : 'Marché National Argent', note: isAr ? 'طلب صناعي وصياغة' : 'Forte demande joaillerie' },
+    { id: 'sh_4', date: '2026-10-24 15:45', priceSilver: 14.25, change: '+1.1%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Fixation Officielle Maroc', note: isAr ? 'تأكيد السعر المرجعي' : 'Cours certifié Ag 1000‰' },
+    { id: 'sh_5', date: '2026-10-25 10:30', priceSilver: 14.40, change: '+1.1%', source: isAr ? 'بورصة الدار البيضاء' : 'Bourse Casablanca', note: isAr ? 'اتجاه تصاعدي للفضة' : 'Progression continue' },
+    { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Fixation Officielle Maroc', note: isAr ? 'السعر الرسمي المعتمد اليوم' : 'Cours actuel du jour' }
+  ], [isAr]);
 
-  // Filter history by range
+  // Active full list depending on selected metal
+  const fullHistoryList = useMemo(() => {
+    if (activeMetal === 'silver') {
+      return (goldData.silverHistory && goldData.silverHistory.length > 0)
+        ? goldData.silverHistory
+        : fallbackSilverHistory;
+    }
+    return (goldData.history && goldData.history.length > 0)
+      ? goldData.history
+      : fallbackGoldHistory;
+  }, [activeMetal, goldData, fallbackGoldHistory, fallbackSilverHistory]);
+
+  // Filter history by time range
   const filteredHistory = useMemo(() => {
-    if (selectedRange === '7d') {
-      return fullHistoryList.slice(-7);
-    }
-    if (selectedRange === '30d') {
-      return fullHistoryList.slice(-30);
-    }
+    if (selectedRange === '7d') return fullHistoryList.slice(-7);
+    if (selectedRange === '30d') return fullHistoryList.slice(-30);
     return fullHistoryList;
   }, [fullHistoryList, selectedRange]);
 
@@ -74,26 +103,32 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
   }, [reversedHistory, validCurrentPage, itemsPerPage]);
 
   const formatSource = (src) => {
-    if (!src) return isAr ? 'سوق الذهب المغربي' : 'Marché Maroc';
+    if (!src) return isAr ? 'سوق المعادن بالمغرب' : 'Marché Maroc';
     if (isAr) {
       const map = {
         'Fixation Casablanca': 'تحديد الدار البيضاء',
+        'Bourse Casablanca': 'بورصة الدار البيضاء',
         'Marché national': 'السوق الوطني للذهب',
+        'Marché National Argent': 'السوق الوطني للفضة',
         'Bourse de référence': 'بورصة الذهب المعتمدة',
         'Cours officiel de clôture': 'السعر الرسمي للإغلاق',
         'Cours officiel clôture': 'السعر الرسمي للإغلاق',
         'Fixation Officielle Maroc': 'السعر الرسمي المحدد بالمغرب',
-        'Marché Maroc': 'سوق الذهب المغربي'
+        'Fixation Argent Maroc': 'سعر الفضة المحدد بالمغرب',
+        'Marché Maroc': 'سوق المعادن الثمينة بالمغرب'
       };
       return map[src] || src;
     }
     const reverseMap = {
       'تحديد الدار البيضاء': 'Fixation Casablanca',
+      'بورصة الدار البيضاء': 'Bourse Casablanca',
       'السوق الوطني للذهب': 'Marché national',
+      'السوق الوطني للفضة': 'Marché National Argent',
       'بورصة الذهب المعتمدة': 'Bourse de référence',
       'السعر الرسمي للإغلاق': 'Cours officiel de clôture',
       'السعر الرسمي المحدد بالمغرب': 'Fixation Officielle Maroc',
-      'سوق الذهب المغربي': 'Marché Maroc'
+      'سعر الفضة المحدد بالمغرب': 'Fixation Argent Maroc',
+      'سوق المعادن بالمغرب': 'Marché Maroc'
     };
     return reverseMap[src] || src;
   };
@@ -103,41 +138,50 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     if (isAr) {
       const map = {
         'Cours matinal': 'السعر الصباحي الافتتاحي',
+        'Fixation matinale Ag 1000': 'السعر الصباحي الافتتاحي Ag 1000',
         'Forte demande joaillerie': 'طلب متزايد على الصياغة',
         'Forte demande': 'طلب متزايد على الصياغة',
+        'Raffinement lingots 1000': 'تنقية وسبك فضة 1000',
+        'Raffinement lingots': 'تنقية وسبك السبائك',
         'Tendance haussière': 'اتجاه تصاعدي في السوق',
-        'Hausse continue': 'اتجاه تصاعدي في السوق',
+        'Hausse continue': 'اتجاه تصاعدي مستمر',
+        'Progression continue': 'تطور إيجابي وتصاعدي',
         'Cours actuel du jour': 'السعر الرسمي المعتمد اليوم',
+        'Cours actuel du jour (Ag 1000)': 'السعر المعتمد اليوم (Ag 1000)',
         'Validation 18K': 'تأكيد سعر عيار 18',
-        'Mise à jour régulière': 'تحديث دوري معتمد'
+        'Cours certifié Ag 1000‰': 'سعر الفضة المعتمد 1000‰',
+        'Mise à jour régulière': 'تحديث دوري معتمد',
+        'Stabilité marché': 'استقرار السوق'
       };
       return map[nt] || nt;
     }
-    const reverseMap = {
-      'السعر الصباحي الافتتاحي': 'Cours matinal',
-      'طلب متزايد على الصياغة': 'Forte demande joaillerie',
-      'اتجاه تصاعدي في السوق': 'Tendance haussière',
-      'السعر الرسمي المعتمد اليوم': 'Cours actuel du jour',
-      'تأكيد سعر عيار 18': 'Validation 18K',
-      'تحديث دوري معتمد': 'Mise à jour régulière'
-    };
-    return reverseMap[nt] || nt;
+    return nt;
   };
 
   // --- STATS COMPUTATION ---
-  const prices = filteredHistory.map(h => Number(h.price18k) || 1045);
-  const rawMin = Math.min(...prices);
-  const rawMax = Math.max(...prices);
-  const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / (prices.length || 1));
-  const firstPrice = prices[0] || 1045;
-  const lastPrice = prices[prices.length - 1] || 1045;
+  const isSilver = activeMetal === 'silver';
+  const prices = filteredHistory.map(h => {
+    if (isSilver) {
+      return Number(h.priceSilver || h.price || 14.50);
+    }
+    return Number(h.price18k || h.price || 1032);
+  });
+
+  const rawMin = prices.length > 0 ? Math.min(...prices) : (isSilver ? 14.50 : 1032);
+  const rawMax = prices.length > 0 ? Math.max(...prices) : (isSilver ? 14.50 : 1032);
+  const avgPrice = prices.length > 0
+    ? (prices.reduce((a, b) => a + b, 0) / prices.length)
+    : (isSilver ? 14.50 : 1032);
+
+  const firstPrice = prices[0] || (isSilver ? 14.50 : 1032);
+  const lastPrice = prices[prices.length - 1] || (isSilver ? 14.50 : 1032);
   const totalChangeVal = lastPrice - firstPrice;
   const totalChangePct = firstPrice ? ((totalChangeVal / firstPrice) * 100).toFixed(1) : '0.0';
 
-  // Chart dimensions & scaling
+  // SVG Chart Dimensions & Padding
   const svgWidth = 640;
   const svgHeight = 220;
-  const padLeft = 65;
+  const padLeft = isSilver ? 70 : 65;
   const padRight = 35;
   const padTop = 32;
   const padBottom = 38;
@@ -145,27 +189,38 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
   const chartInnerWidth = svgWidth - padLeft - padRight;
   const chartInnerHeight = svgHeight - padTop - padBottom;
 
-  const pricePadding = Math.max((rawMax - rawMin) * 0.15, 6);
-  const minPrice = Math.floor(rawMin - pricePadding);
-  const maxPrice = Math.ceil(rawMax + pricePadding);
-  const priceRange = maxPrice - minPrice || 1;
+  const pricePadding = isSilver
+    ? Math.max((rawMax - rawMin) * 0.22, 0.45)
+    : Math.max((rawMax - rawMin) * 0.15, 6);
 
-  // Grid levels (4 evenly spaced horizontal guide lines)
+  const minPrice = isSilver
+    ? Number((rawMin - pricePadding).toFixed(2))
+    : Math.floor(rawMin - pricePadding);
+
+  const maxPrice = isSilver
+    ? Number((rawMax + pricePadding).toFixed(2))
+    : Math.ceil(rawMax + pricePadding);
+
+  const priceRange = maxPrice - minPrice || (isSilver ? 1 : 10);
+
+  // 4 Horizontal Grid Levels
   const gridLevels = [0, 0.33, 0.66, 1].map(ratio => {
-    const val = Math.round(minPrice + ratio * priceRange);
+    const val = minPrice + ratio * priceRange;
     const y = padTop + (1 - ratio) * chartInnerHeight;
-    return { val, y };
+    const displayVal = isSilver ? val.toFixed(2) : Math.round(val);
+    return { val: displayVal, y };
   });
 
-  // Points coordinates
+  // Vector Points
   const points = filteredHistory.map((h, i) => {
     const x = padLeft + (i / Math.max(filteredHistory.length - 1, 1)) * chartInnerWidth;
-    const p = Number(h.price18k) || 1045;
+    const p = isSilver ? Number(h.priceSilver || h.price || 14.50) : Number(h.price18k || h.price || 1032);
     const y = padTop + (1 - (p - minPrice) / priceRange) * chartInnerHeight;
     return {
       x,
       y,
       price: p,
+      displayPrice: isSilver ? p.toFixed(2) : Math.round(p),
       date: h.date?.split(' ')[0] || h.date,
       fullDate: h.date,
       change: h.change || '+0.0%',
@@ -175,7 +230,6 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     };
   });
 
-  // Min and Max point indices
   let maxPointIndex = 0;
   let minPointIndex = 0;
   points.forEach((pt, idx) => {
@@ -212,7 +266,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     ? `${smoothLinePath} L ${points[points.length - 1].x.toFixed(1)},${chartBottomY} L ${points[0].x.toFixed(1)},${chartBottomY} Z`
     : '';
 
-  // Calculate clean non-overlapping X-axis ticks (4 to 6 items max)
+  // Non-overlapping X-axis ticks
   const xTicks = useMemo(() => {
     if (points.length <= 6) {
       return points.map(p => ({ x: p.x, date: p.date }));
@@ -231,7 +285,6 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     }));
   }, [points]);
 
-  // Handle interactive hover over SVG
   const handleMouseMove = (e) => {
     if (!svgRef.current || points.length === 0) return;
     const rect = svgRef.current.getBoundingClientRect();
@@ -239,7 +292,6 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     if (!clientX) return;
     const mouseX = ((clientX - rect.left) / rect.width) * svgWidth;
 
-    // Find closest point by X coordinate
     let closestIndex = 0;
     let minDiff = Infinity;
     points.forEach((pt, idx) => {
@@ -254,6 +306,13 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
   };
 
   const activePoint = hoveredIndex !== null ? points[hoveredIndex] : points[points.length - 1];
+
+  // Visual Theme Colors based on active metal
+  const themeStroke = isSilver ? '#38bdf8' : '#F6B22B';
+  const themeGlow = isSilver ? 'rgba(56, 189, 248, 0.45)' : 'rgba(246, 178, 43, 0.4)';
+  const themeAreaGradId = isSilver ? 'luxurySilverAreaGrad' : 'luxuryGoldAreaGrad';
+  const themeUnit = isAr ? 'د.م/غ' : 'MAD/g';
+  const themeCurrency = isAr ? 'د.م' : 'DH';
 
   if (!isOpen) return null;
 
@@ -284,13 +343,15 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
         onClick={e => e.stopPropagation()}
         style={{
           background: 'linear-gradient(170deg, #151824 0%, #0b0d14 100%)',
-          border: '1.5px solid rgba(212, 175, 55, 0.35)',
+          border: isSilver ? '1.5px solid rgba(56, 189, 248, 0.35)' : '1.5px solid rgba(212, 175, 55, 0.35)',
           borderRadius: '24px',
           width: '100%',
-          maxWidth: '740px',
+          maxWidth: '760px',
           maxHeight: '94vh',
           overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 175, 55, 0.12)',
+          boxShadow: isSilver 
+            ? '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.15)'
+            : '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 175, 55, 0.12)',
           padding: '28px',
           color: '#ffffff',
           position: 'relative',
@@ -325,110 +386,148 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
         </button>
 
         {/* Modal Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid rgba(212, 175, 55, 0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px', paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
           <div style={{
             width: '52px',
             height: '52px',
             borderRadius: '16px',
-            background: 'linear-gradient(135deg, #d4af37 0%, #996515 100%)',
+            background: isSilver 
+              ? 'linear-gradient(135deg, #38bdf8 0%, #1e293b 100%)' 
+              : 'linear-gradient(135deg, #d4af37 0%, #996515 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '1.8rem',
-            boxShadow: '0 6px 18px rgba(212, 175, 55, 0.35)',
+            boxShadow: isSilver ? '0 6px 18px rgba(56, 189, 248, 0.35)' : '0 6px 18px rgba(212, 175, 55, 0.35)',
             flexShrink: 0
           }}>
-            🥇
+            {isSilver ? '🛡️' : '🥇'}
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: '#fef3c7', fontFamily: 'Cinzel, Playfair Display, serif' }}>
-                {isAr ? 'سعر الذهب عيار 18 قيراط وسجل التغييرات' : 'Cours Officiel & Historique de l\'Or 18K'}
+              <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: isSilver ? '#e2e8f0' : '#fef3c7', fontFamily: 'Cinzel, Playfair Display, serif' }}>
+                {isSilver
+                  ? (isAr ? 'سعر الفضة عيار 1000 وسجل التغييرات' : 'Cours Officiel & Historique de l\'Argent 1000‰')
+                  : (isAr ? 'سعر الذهب عيار 18 وسجل التغييرات' : 'Cours Officiel & Historique de l\'Or 18K')}
               </h2>
               <span style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
+                background: isSilver ? 'rgba(56, 189, 248, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                color: isSilver ? '#38bdf8' : '#10b981',
                 padding: '3px 10px',
                 borderRadius: '12px',
                 fontSize: '0.72rem',
                 fontWeight: 700,
-                border: '1px solid rgba(16, 185, 129, 0.3)',
+                border: isSilver ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px'
               }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></span>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isSilver ? '#38bdf8' : '#10b981' }}></span>
                 {isAr ? 'المعيار الرسمي بالمغرب' : 'Standard Officiel Maroc'}
               </span>
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
-              {isAr 
-                ? 'متابعة حية لسعر غرام الذهب عيار 18 قيراط بالدرهم المغربي (MAD)' 
-                : 'Cotation en direct du gramme d\'or 18 carats en Dirhams Marocains (MAD)'}
+              {isSilver
+                ? (isAr ? 'متابعة حية لسعر غرام الفضة الخالصة عيار 1000 بالدرهم المغربي (MAD)' : 'Cotation en direct du gramme d\'argent pur 1000‰ en Dirhams Marocains (MAD)')
+                : (isAr ? 'متابعة حية لسعر غرام الذهب عيار 18 قيراط بالدرهم المغربي (MAD)' : 'Cotation en direct du gramme d\'or 18 carats en Dirhams Marocains (MAD)')}
             </p>
           </div>
         </div>
 
-        {/* Current Rate Hero Box (18K @ 1045 DH) */}
+        {/* --- PROMINENT METAL SELECTOR TABS --- */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.14) 0%, rgba(15, 23, 42, 0.7) 100%)',
-          border: '1.5px solid rgba(212, 175, 55, 0.35)',
-          borderRadius: '18px',
-          padding: '18px 24px',
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-          boxShadow: '0 8px 24px rgba(212, 175, 55, 0.1)'
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '12px',
+          marginBottom: '18px'
         }}>
-          <div>
-            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: 'var(--primary-gold)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-              {isAr ? 'السعر الحالي للغرام (عيار 18)' : 'Prix Actuel au Gramme (Or 18K)'}
+          {/* 1. Tab Or 18K */}
+          <button
+            type="button"
+            onClick={() => { setActiveMetal('gold'); setHoveredIndex(null); }}
+            style={{
+              padding: '12px 16px',
+              borderRadius: '14px',
+              border: activeMetal === 'gold' ? '2px solid #d4af37' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: activeMetal === 'gold'
+                ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.28) 0%, rgba(15, 23, 42, 0.9) 100%)'
+                : 'rgba(255, 255, 255, 0.04)',
+              color: activeMetal === 'gold' ? '#fef3c7' : '#94a3b8',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: activeMetal === 'gold' ? '0 0 24px rgba(212, 175, 55, 0.25)' : 'none',
+              transition: 'all 0.25s ease'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.25rem' }}>🏆</span>
+              <div style={{ textAlign: isRtl ? 'right' : 'left' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>
+                  {isAr ? 'الذهب عيار 18 (750‰)' : 'Or 18 Karats (750‰)'}
+                </div>
+                <div style={{ fontSize: '0.72rem', opacity: 0.8 }}>
+                  {isAr ? 'المعيار الرسمي للذهب' : 'Cotation officielle Or'}
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{
-                fontSize: '2.6rem',
-                fontWeight: 900,
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-                background: 'linear-gradient(180deg, #ffd700 0%, #f59e0b 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.4))'
-              }}>
-                {currentPrice}
-              </span>
-              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#fef3c7' }}>
-                {isAr ? 'درهم / غرام' : 'DH / gramme'}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ textAlign: isRtl ? 'left' : 'right' }}>
-            <span style={{
-              display: 'inline-block',
-              background: (totalChangeVal >= 0) ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-              color: (totalChangeVal >= 0) ? '#10b981' : '#ef4444',
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '0.88rem',
-              fontWeight: 800,
-              border: (totalChangeVal >= 0) ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
-              marginBottom: '6px'
+            <div style={{
+              fontSize: '1.2rem',
+              fontWeight: 900,
+              color: '#f6b22b',
+              fontFamily: 'system-ui, sans-serif'
             }}>
-              {totalChangeVal >= 0 ? `▲ +${totalChangePct}%` : `▼ ${totalChangePct}%`} {isAr ? 'التغير الإجمالي' : 'Variation Globale'}
-            </span>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              {isAr ? 'مستقر وموثوق للصياغة بالمغرب' : 'Cours de référence certifié'}
+              {goldData.currentPrice18k || 1032} <span style={{ fontSize: '0.72rem', color: '#d4af37' }}>{themeCurrency}</span>
             </div>
-          </div>
+          </button>
+
+          {/* 2. Tab Argent 1000 */}
+          <button
+            type="button"
+            onClick={() => { setActiveMetal('silver'); setHoveredIndex(null); }}
+            style={{
+              padding: '12px 16px',
+              borderRadius: '14px',
+              border: activeMetal === 'silver' ? '2px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: activeMetal === 'silver'
+                ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%)'
+                : 'rgba(255, 255, 255, 0.04)',
+              color: activeMetal === 'silver' ? '#f8fafc' : '#94a3b8',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: activeMetal === 'silver' ? '0 0 24px rgba(56, 189, 248, 0.25)' : 'none',
+              transition: 'all 0.25s ease'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <SilverIcon size={22} />
+              <div style={{ textAlign: isRtl ? 'right' : 'left' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>
+                  {isAr ? 'الفضة عيار 1000 (Ag 1000)' : 'Argent Pur 1000‰ (Ag 1000)'}
+                </div>
+                <div style={{ fontSize: '0.72rem', opacity: 0.8 }}>
+                  {isAr ? 'المعيار الرسمي للفضة' : 'Cotation officielle Argent'}
+                </div>
+              </div>
+            </div>
+            <div style={{
+              fontSize: '1.2rem',
+              fontWeight: 900,
+              color: '#38bdf8',
+              fontFamily: 'system-ui, sans-serif'
+            }}>
+              {Number(goldData.currentPriceSilver || 14.50).toFixed(2)} <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{themeCurrency}</span>
+            </div>
+          </button>
         </div>
 
         {/* --- PREMIUM FINANCIAL GRAPH CONTAINER --- */}
         <div style={{
           background: 'linear-gradient(180deg, rgba(20, 24, 38, 0.9) 0%, rgba(10, 12, 20, 0.95) 100%)',
-          border: '1px solid rgba(212, 175, 55, 0.25)',
+          border: isSilver ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(212, 175, 55, 0.25)',
           borderRadius: '20px',
           padding: '20px 22px',
           marginBottom: '22px',
@@ -437,11 +536,26 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
           {/* Graph Header: Title + Period Selector */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#fef3c7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: isSilver ? '#e2e8f0' : '#fef3c7', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>📈</span>
-                <span>{isAr ? 'المنحنى البياني لتطور سعر غرام عيار 18 مؤخراً' : 'Évolution récente du cours Or 18K'}</span>
+                <span>
+                  {isSilver
+                    ? (isAr ? 'المنحنى البياني لتطور سعر غرام الفضة 1000 مؤخراً' : 'Évolution du cours de l\'Argent Pur 1000‰')
+                    : (isAr ? 'المنحنى البياني لتطور سعر غرام الذهب عيار 18 مؤخراً' : 'Évolution du cours de l\'Or 18 Karats')}
+                </span>
+                <span style={{
+                  fontSize: '0.72rem',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  background: isSilver ? 'rgba(56, 189, 248, 0.15)' : 'rgba(212, 175, 55, 0.15)',
+                  color: isSilver ? '#38bdf8' : '#f6b22b',
+                  border: isSilver ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(212, 175, 55, 0.3)'
+                }}>
+                  {isSilver ? 'Ag 1000‰' : 'Au 750‰'}
+                </span>
               </div>
-              <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px' }}>
                 {isAr ? 'حرك المؤشر فوق الخط البياني لمعاينة التفاصيل اليومية' : 'Survolez la courbe pour inspecter les cotations'}
               </div>
             </div>
@@ -459,8 +573,10 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                   onClick={() => { setSelectedRange(tab.key); setHoveredIndex(null); }}
                   style={{
                     border: 'none',
-                    background: selectedRange === tab.key ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : 'transparent',
-                    color: selectedRange === tab.key ? '#000000' : '#cbd5e1',
+                    background: selectedRange === tab.key 
+                      ? (isSilver ? 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)' : 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)')
+                      : 'transparent',
+                    color: selectedRange === tab.key ? (isSilver ? '#0f172a' : '#000000') : '#cbd5e1',
                     fontWeight: selectedRange === tab.key ? '800' : '600',
                     fontSize: '0.74rem',
                     padding: '4px 12px',
@@ -475,14 +591,14 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
             </div>
           </div>
 
-          {/* Interactive Inspection Banner (shows when hovering or latest) */}
+          {/* Interactive Inspection Banner */}
           {activePoint && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'rgba(212, 175, 55, 0.08)',
-              border: '1px solid rgba(212, 175, 55, 0.25)',
+              background: isSilver ? 'rgba(56, 189, 248, 0.08)' : 'rgba(212, 175, 55, 0.08)',
+              border: isSilver ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid rgba(212, 175, 55, 0.25)',
               borderRadius: '12px',
               padding: '8px 14px',
               marginBottom: '12px',
@@ -493,21 +609,21 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ color: '#94a3b8' }}>🗓️ {activePoint.fullDate || activePoint.date}</span>
                 <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-                <span style={{ color: '#f6b22b', fontWeight: 800, fontSize: '0.95rem' }}>
-                  {activePoint.price} DH / g
+                <span style={{ color: themeStroke, fontWeight: 800, fontSize: '0.98rem' }}>
+                  {activePoint.displayPrice} {themeCurrency} / g
                 </span>
                 <span style={{
                   padding: '1px 6px',
                   borderRadius: '4px',
                   fontSize: '0.72rem',
                   fontWeight: 700,
-                  background: activePoint.change?.startsWith('+') ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                  color: activePoint.change?.startsWith('+') ? '#10b981' : '#ef4444'
+                  background: activePoint.change?.startsWith('+') ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                  color: activePoint.change?.startsWith('+') ? '#10b981' : '#cbd5e1'
                 }}>
                   {activePoint.change}
                 </span>
               </div>
-              <div style={{ color: '#cbd5e1', fontSize: '0.75rem', opacity: 0.85 }}>
+              <div style={{ color: '#cbd5e1', fontSize: '0.75rem', opacity: 0.9 }}>
                 🏛️ {formatSource(activePoint.source)} {activePoint.note ? `• ${formatNote(activePoint.note)}` : ''}
               </div>
             </div>
@@ -531,8 +647,15 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                   <stop offset="60%" stopColor="#D4AF37" stopOpacity="0.12" />
                   <stop offset="100%" stopColor="#D4AF37" stopOpacity="0.0" />
                 </linearGradient>
-                <filter id="goldGlowShadow" x="-10%" y="-10%" width="120%" height="130%">
-                  <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#F6B22B" floodOpacity="0.4" />
+
+                <linearGradient id="luxurySilverAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.4" />
+                  <stop offset="60%" stopColor="#94a3b8" stopOpacity="0.12" />
+                  <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
+                </linearGradient>
+
+                <filter id="metalGlowShadow" x="-10%" y="-10%" width="120%" height="130%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor={themeStroke} floodOpacity="0.45" />
                 </filter>
               </defs>
 
@@ -557,7 +680,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                     textAnchor={isRtl ? 'start' : 'end'}
                     fontFamily="system-ui, monospace"
                   >
-                    {lvl.val} DH
+                    {lvl.val} {themeCurrency}
                   </text>
                 </g>
               ))}
@@ -566,33 +689,33 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
               {smoothAreaPath && (
                 <path 
                   d={smoothAreaPath} 
-                  fill="url(#luxuryGoldAreaGrad)" 
+                  fill={`url(#${themeAreaGradId})`} 
                 />
               )}
 
-              {/* Smooth Gold Curve Stroke */}
+              {/* Smooth Curve Stroke */}
               {smoothLinePath && (
                 <path 
                   d={smoothLinePath} 
                   fill="none" 
-                  stroke="#F6B22B" 
+                  stroke={themeStroke} 
                   strokeWidth="3.2" 
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
-                  filter="url(#goldGlowShadow)"
+                  filter="url(#metalGlowShadow)"
                 />
               )}
 
-              {/* Min and Max Badges on the Curve */}
+              {/* Min and Max Badges on Curve */}
               {points.length > 2 && (
                 <>
                   {/* Max Point Badge */}
                   <g>
                     <circle cx={points[maxPointIndex].x} cy={points[maxPointIndex].y} r="5" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
                     <rect 
-                      x={points[maxPointIndex].x - 38} 
+                      x={points[maxPointIndex].x - 42} 
                       y={points[maxPointIndex].y - 24} 
-                      width="76" 
+                      width="84" 
                       height="18" 
                       rx="4" 
                       fill="rgba(16, 185, 129, 0.95)" 
@@ -605,7 +728,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                       fontWeight="800" 
                       textAnchor="middle"
                     >
-                      ▲ {points[maxPointIndex].price} DH
+                      ▲ {points[maxPointIndex].displayPrice} {themeCurrency}
                     </text>
                   </g>
 
@@ -614,9 +737,9 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                     <g>
                       <circle cx={points[minPointIndex].x} cy={points[minPointIndex].y} r="5" fill="#e11d48" stroke="#ffffff" strokeWidth="1.5" />
                       <rect 
-                        x={points[minPointIndex].x - 38} 
+                        x={points[minPointIndex].x - 42} 
                         y={Math.min(points[minPointIndex].y + 8, svgHeight - padBottom - 18)} 
-                        width="76" 
+                        width="84" 
                         height="18" 
                         rx="4" 
                         fill="rgba(225, 29, 72, 0.95)" 
@@ -629,58 +752,57 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                         fontWeight="800" 
                         textAnchor="middle"
                       >
-                        ▼ {points[minPointIndex].price} DH
+                        ▼ {points[minPointIndex].displayPrice} {themeCurrency}
                       </text>
                     </g>
                   )}
                 </>
               )}
 
-              {/* Interactive Hover Crosshair & Selected Coordinate */}
+              {/* Hover Crosshair & Selected Coordinate */}
               {hoveredIndex !== null && points[hoveredIndex] && (
                 <g>
-                  {/* Vertical Crosshair Line */}
                   <line 
                     x1={points[hoveredIndex].x} 
                     y1={padTop} 
                     x2={points[hoveredIndex].x} 
                     y2={chartBottomY} 
-                    stroke="rgba(246, 178, 43, 0.7)" 
+                    stroke={themeStroke} 
                     strokeDasharray="3 3" 
                     strokeWidth="1.5"
+                    opacity="0.8"
                   />
-                  {/* Glowing Target Node */}
                   <circle 
                     cx={points[hoveredIndex].x} 
                     cy={points[hoveredIndex].y} 
                     r="9" 
-                    fill="rgba(246, 178, 43, 0.3)" 
+                    fill={themeGlow} 
                   />
                   <circle 
                     cx={points[hoveredIndex].x} 
                     cy={points[hoveredIndex].y} 
                     r="5.5" 
                     fill="#151824" 
-                    stroke="#F6B22B" 
-                    strokeWidth="3"
+                    stroke={themeStroke} 
+                    strokeWidth="3" 
                   />
                 </g>
               )}
 
-              {/* Latest Point Indicator (when not hovering) */}
+              {/* Latest Point Indicator */}
               {hoveredIndex === null && points.length > 0 && (
                 <g>
                   <circle 
                     cx={points[points.length - 1].x} 
                     cy={points[points.length - 1].y} 
                     r="7" 
-                    fill="rgba(246, 178, 43, 0.35)" 
+                    fill={themeGlow} 
                   />
                   <circle 
                     cx={points[points.length - 1].x} 
                     cy={points[points.length - 1].y} 
                     r="4" 
-                    fill="#F6B22B" 
+                    fill={themeStroke} 
                   />
                 </g>
               )}
@@ -723,29 +845,41 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
           }}>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'أعلى سعر' : 'Plus haut'}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>{rawMax} {isAr ? 'د.م' : 'DH'}</div>
+              <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>
+                {isSilver ? rawMax.toFixed(2) : Math.round(rawMax)} {themeCurrency}
+              </div>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'أدنى سعر' : 'Plus bas'}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ef4444', marginTop: '2px' }}>{rawMin} {isAr ? 'د.م' : 'DH'}</div>
+              <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#ef4444', marginTop: '2px' }}>
+                {isSilver ? rawMin.toFixed(2) : Math.round(rawMin)} {themeCurrency}
+              </div>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'متوسط السعر' : 'Prix moyen'}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fef3c7', marginTop: '2px' }}>{avgPrice} {isAr ? 'د.م' : 'DH'}</div>
+              <div style={{ fontSize: '0.98rem', fontWeight: 800, color: isSilver ? '#e2e8f0' : '#fef3c7', marginTop: '2px' }}>
+                {isSilver ? Number(avgPrice).toFixed(2) : Math.round(avgPrice)} {themeCurrency}
+              </div>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{isAr ? 'عدد التسجيلات' : 'Enregistrements'}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#d4af37', marginTop: '2px' }}>{filteredHistory.length}</div>
+              <div style={{ fontSize: '0.98rem', fontWeight: 800, color: themeStroke, marginTop: '2px' }}>
+                {filteredHistory.length}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* History Table with 5/5 Pagination */}
+        {/* --- CHRONOLOGICAL HISTORY TABLE --- */}
         <div style={{ marginBottom: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-            <h4 style={{ margin: 0, fontSize: '0.96rem', color: '#fef3c7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ margin: 0, fontSize: '0.96rem', color: isSilver ? '#e2e8f0' : '#fef3c7', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>📜</span>
-              <span>{isAr ? 'سجل التغييرات والتواريخ (عيار 18)' : 'Historique Chronologique des Variations (18K)'}</span>
+              <span>
+                {isSilver
+                  ? (isAr ? 'سجل التغييرات والتواريخ (الفضة 1000)' : 'Historique Chronologique des Variations (Argent 1000‰)')
+                  : (isAr ? 'سجل التغييرات والتواريخ (الذهب 18K)' : 'Historique Chronologique des Variations (Or 18K)')}
+              </span>
             </h4>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
               {isAr
@@ -759,34 +893,57 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
                   <th style={{ padding: '10px 14px' }}>{isAr ? 'التاريخ' : 'Date'}</th>
-                  <th style={{ padding: '10px 14px' }}>{isAr ? 'السعر (د.م/غ)' : 'Prix 18K (DH/g)'}</th>
+                  <th style={{ padding: '10px 14px' }}>
+                    {isSilver
+                      ? (isAr ? 'سعر الفضة (د.م/غ)' : 'Prix Argent 1000 (DH/g)')
+                      : (isAr ? 'سعر الذهب 18K (د.م/غ)' : 'Prix Or 18K (DH/g)')}
+                  </th>
                   <th style={{ padding: '10px 14px' }}>{isAr ? 'التغير' : 'Variation'}</th>
                   <th style={{ padding: '10px 14px' }}>{isAr ? 'المصدر' : 'Source'}</th>
                   <th style={{ padding: '10px 14px' }}>{isAr ? 'ملاحظة' : 'Note'}</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedItems.map((item, idx) => (
-                  <tr key={item.id || idx} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '10px 14px', color: '#cbd5e1', fontWeight: 600 }} dir="ltr">{item.date}</td>
-                    <td style={{ padding: '10px 14px', color: '#d4af37', fontWeight: 800, fontSize: '0.95rem' }} dir="ltr">{item.price18k || 1045} {isAr ? 'د.م' : 'DH'}</td>
-                    <td style={{ padding: '10px 14px' }}>
-                      <span dir="ltr" style={{
-                        display: 'inline-block',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '0.72rem',
-                        fontWeight: 800,
-                        background: (item.change && item.change.startsWith('+')) ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)',
-                        color: (item.change && item.change.startsWith('+')) ? '#10b981' : '#cbd5e1'
-                      }}>
-                        {item.change || '0.0%'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 500 }}>{formatSource(item.source)}</td>
-                    <td style={{ padding: '10px 14px', color: '#94a3b8', fontSize: '0.8rem' }}>{formatNote(item.note)}</td>
-                  </tr>
-                ))}
+                {paginatedItems.map((item, idx) => {
+                  const val = isSilver
+                    ? (item.priceSilver || item.price || 14.50)
+                    : (item.price18k || item.price || 1032);
+                  const displayVal = isSilver ? Number(val).toFixed(2) : Math.round(val);
+                  const isPositive = item.change && item.change.startsWith('+') && item.change !== '+0.0%';
+
+                  return (
+                    <tr key={item.id || idx} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '10px 14px', color: '#cbd5e1', fontWeight: 600 }} dir="ltr">
+                        {item.date}
+                      </td>
+                      <td style={{ padding: '10px 14px', color: themeStroke, fontWeight: 800, fontSize: '0.95rem' }} dir="ltr">
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {isSilver && <SilverIcon size={14} />}
+                          <span>{displayVal} {themeCurrency}</span>
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span dir="ltr" style={{
+                          display: 'inline-block',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          background: isPositive ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)',
+                          color: isPositive ? '#10b981' : '#cbd5e1'
+                        }}>
+                          {item.change || '0.0%'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px', color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 500 }}>
+                        {formatSource(item.source)}
+                      </td>
+                      <td style={{ padding: '10px 14px', color: '#94a3b8', fontSize: '0.8rem' }}>
+                        {formatNote(item.note)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
@@ -835,9 +992,13 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                         width: '28px',
                         height: '28px',
                         borderRadius: '6px',
-                        border: page === validCurrentPage ? '1.5px solid #d4af37' : '1px solid rgba(255, 255, 255, 0.08)',
-                        background: page === validCurrentPage ? 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)' : 'rgba(255, 255, 255, 0.04)',
-                        color: page === validCurrentPage ? '#000000' : '#cbd5e1',
+                        border: page === validCurrentPage 
+                          ? (isSilver ? '1.5px solid #38bdf8' : '1.5px solid #d4af37') 
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                        background: page === validCurrentPage 
+                          ? (isSilver ? 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)' : 'linear-gradient(135deg, #d4af37 0%, #aa7c11 100%)') 
+                          : 'rgba(255, 255, 255, 0.04)',
+                        color: page === validCurrentPage ? (isSilver ? '#0f172a' : '#000000') : '#cbd5e1',
                         fontSize: '0.78rem',
                         fontWeight: page === validCurrentPage ? 800 : 600,
                         cursor: 'pointer',
@@ -882,4 +1043,3 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     </div>
   );
 }
-

@@ -14,7 +14,9 @@
         "b_1",
         "b_3",
         "b_7"
-      ]
+      ],
+      "login_count": 2,
+      "derniere_connexion": "2026-10-26T23:51:30.012Z"
     },
     {
       "id": "u_merchant1",
@@ -47,7 +49,9 @@
         "auto_renew": true,
         "max_products": 5,
         "commission_rate": 8
-      }
+      },
+      "login_count": 1,
+      "derniere_connexion": "2026-10-26T23:51:21.480Z"
     },
     {
       "id": "u_merchant2",
@@ -140,8 +144,8 @@
       "nom": "Hakim Benchaib",
       "mot_de_passe": "admin123",
       "role": "admin",
-      "login_count": 1,
-      "derniere_connexion": "2026-10-16T18:55:06.180Z"
+      "login_count": 4,
+      "derniere_connexion": "2026-10-26T23:51:21.489Z"
     },
     {
       "id": "u_admin_oria",
@@ -1699,6 +1703,18 @@
   ],
   "subscriptions_history": [
     {
+      "id": "sub_tx_9hkudh4re",
+      "merchant_id": "u_b0ezp21gx",
+      "merchant_name": "Al Baraka Or & Diamants",
+      "plan_id": "plan_pro",
+      "plan_name": "Pack Prestige Joaillier",
+      "amount": 490,
+      "billing_cycle": "monthly",
+      "status": "Paid",
+      "date": "2026-10-26T23:42:33.551Z",
+      "invoice_number": "INV-2026-4839"
+    },
+    {
       "id": "sub_tx_85d8iwzot",
       "merchant_id": "u_merchant3",
       "merchant_name": "Marrakech Diamonds Co.",
@@ -1748,10 +1764,12 @@
     }
   ],
   "goldRates": {
-    "currentPrice18k": 1050,
+    "currentPrice18k": 1032,
+    "currentPriceSilver": 15,
     "carat": "18K",
     "unit": "MAD/g",
-    "lastUpdated": "2026-10-15T12:57:31.019Z",
+    "silverUnit": "MAD/g",
+    "lastUpdated": "2026-10-26T13:35:30.165Z",
     "updatedBy": "PrixOr Railway (dllal)",
     "history": [
       {
@@ -3193,18 +3211,265 @@
         "change": "0.0%",
         "source": "Fixation dllal",
         "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_181",
+        "date": "2026-10-17 15:41",
+        "price18k": 1048,
+        "change": "-0.2%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_182",
+        "date": "2026-10-19 14:05",
+        "price18k": 1048,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_183",
+        "date": "2026-10-20 16:23",
+        "price18k": 1047,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_184",
+        "date": "2026-10-21 14:23",
+        "price18k": 1046,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_185",
+        "date": "2026-10-22 15:01",
+        "price18k": 1045,
+        "change": "-0.1%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_186",
+        "date": "2026-10-24 15:41",
+        "price18k": 1035,
+        "change": "-1.0%",
+        "source": "Fixation admin",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_187",
+        "date": "2026-10-25 14:58",
+        "price18k": 1035,
+        "change": "0.0%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_188",
+        "date": "2026-10-26 14:35",
+        "price18k": 1032,
+        "change": "-0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      }
+    ],
+    "silverHistory": [
+      {
+        "id": "sh_1",
+        "date": "2026-10-18 09:30",
+        "priceSilver": 13.8,
+        "change": "0.0%",
+        "source": "Marché National Argent",
+        "note": "Fixation matinale Ag 1000"
+      },
+      {
+        "id": "sh_2",
+        "date": "2026-10-20 11:15",
+        "priceSilver": 13.95,
+        "change": "+1.1%",
+        "source": "Bourse Casablanca",
+        "note": "Raffinement lingots 1000"
+      },
+      {
+        "id": "sh_3",
+        "date": "2026-10-22 10:00",
+        "priceSilver": 14.1,
+        "change": "+1.1%",
+        "source": "Marché National Argent",
+        "note": "Hausse demande industrielle & bijouterie"
+      },
+      {
+        "id": "sh_4",
+        "date": "2026-10-24 15:45",
+        "priceSilver": 14.25,
+        "change": "+1.1%",
+        "source": "Fixation Officielle Maroc",
+        "note": "Cours certifié Ag 1000‰"
+      },
+      {
+        "id": "sh_5",
+        "date": "2026-10-25 10:30",
+        "priceSilver": 14.4,
+        "change": "+1.1%",
+        "source": "Bourse Casablanca",
+        "note": "Progression continue de l'argent pur"
+      },
+      {
+        "id": "sh_6",
+        "date": "2026-10-26 12:00",
+        "priceSilver": 14.5,
+        "change": "+0.7%",
+        "source": "Fixation Officielle Maroc",
+        "note": "Cours actuel du jour (Ag 1000)"
       }
     ]
   },
   "sessions": [
     {
-      "token": "sess_62e29399fc83e4c000ebf9c78e2efeb9d211018f1ee7dc999c6d7ecbdb0127e4",
+      "token": "sess_a03bd5369af78be62a813b84b824eae4cdfaab00c4d8e41efc660d8dcb8d6676",
       "userId": "u_admin",
       "email": "admin@hrsdgdg.com",
       "nom": "Hakim Benchaib",
       "role": "admin",
-      "createdAt": "2026-10-16T18:55:06.181Z",
-      "expiresAt": 1792263306181
+      "createdAt": "2026-10-26T20:16:46.399Z",
+      "expiresAt": 1793060206398
+    },
+    {
+      "token": "sess_9b35ef461c6a9ffa123163e8232b51e5f3094d828ec80da56bd1f15f81eb33d8",
+      "userId": "u_admin",
+      "email": "admin@hrsdgdg.com",
+      "nom": "Hakim Benchaib",
+      "role": "admin",
+      "createdAt": "2026-10-26T21:05:50.435Z",
+      "expiresAt": 1793063150435
+    },
+    {
+      "token": "sess_2816e9cde5f15eb77e69c987d56091431e6e0f89e26de16502dbfb63dd6288bf",
+      "userId": "u_client1",
+      "email": "client@jewelia.com",
+      "nom": "Yassine Alami",
+      "role": "client",
+      "createdAt": "2026-10-26T23:51:21.461Z",
+      "expiresAt": 1793073081461
+    },
+    {
+      "token": "sess_166b62ea7522484171d099373224e82f32c3885ba90ada725064e7539e0f0f6a",
+      "userId": "u_merchant1",
+      "email": "gold@jewelia.com",
+      "nom": "Maison Royale Joaillerie",
+      "role": "commercant",
+      "createdAt": "2026-10-26T23:51:21.481Z",
+      "expiresAt": 1793073081480
+    },
+    {
+      "token": "sess_47b1c7aa72aa06648c9a3eeee03a5ba49b95cd2c2d609481b51883c9e905c498",
+      "userId": "u_admin",
+      "email": "admin@hrsdgdg.com",
+      "nom": "Hakim Benchaib",
+      "role": "admin",
+      "createdAt": "2026-10-26T23:51:21.489Z",
+      "expiresAt": 1793073081489
+    },
+    {
+      "token": "sess_7fa3903a535f66758ab8b95082186cc7a9e566517545023e6a7c772582d3c1e5",
+      "userId": "u_client1",
+      "email": "client@jewelia.com",
+      "nom": "Yassine Alami",
+      "role": "client",
+      "createdAt": "2026-10-26T23:51:30.012Z",
+      "expiresAt": 1793073090012
     }
-  ]
+  ],
+  "terms_and_conditions": {
+    "version": "1.0",
+    "lastUpdated": "2026-10-26",
+    "fr": {
+      "title": "Conditions Générales d'Utilisation",
+      "subtitle": "Plateforme Numérique Joaillerie & Bijouterie au Maroc",
+      "preamble": "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès, l'inscription et l'exploitation des services de la plateforme numérique HRSDGDG, exclusivement réservée aux professionnels de la bijouterie et joaillerie au Royaume du Maroc.",
+      "articles": [
+        {
+          "id": 1,
+          "title": "Article 1 : Éligibilité & Inscription Réservée aux Professionnels",
+          "content": "La création d'un compte commerçant / atelier est strictement réservée aux personnes physiques ou morales exerçant légalement le métier de bijoutier-joaillier au Maroc, détentrices d'une patente professionnelle active et d'un Registre de Commerce (RC) valide."
+        },
+        {
+          "id": 2,
+          "title": "Article 2 : Garantie de Titre Or 18K & Poinçons Légaux",
+          "content": "Tous les bijoux et ouvrages mis en vente ou en enchères doivent être obligatoirement en or titré 18 carats (750‰) et revêtus des poinçons légaux conformes aux dispositions de l'Administration des Douanes et Impôts Indirects (Bureau de Garantie). Toute défaillance de titre engage la responsabilité civile et pénale exclusive du vendeur."
+        },
+        {
+          "id": 3,
+          "title": "Article 3 : Vérification de la Patente et Conformité Documentaire",
+          "content": "L'adhérent garantit l'authenticité de l'attestation de patente et des pièces administratives téléversées. L'administration de HRSDGDG se réserve le droit d'auditer ces pièces et de suspendre tout compte dont les justificatifs s'avèrent non conformes."
+        },
+        {
+          "id": 4,
+          "title": "Article 4 : Exactitude des Descriptions, Poids et Enchères",
+          "content": "Le professionnel s'engage à fournir des descriptions rigoureusement exactes (poids net en grammes, pureté, pierres serties) et à livrer des pièces strictement identiques aux photos et caractéristiques publiées, ainsi qu'à honorer l'ensemble des adjudications d'enchères."
+        },
+        {
+          "id": 5,
+          "title": "Article 5 : Forfaits, Quotas & Commissions",
+          "content": "L'utilisation de la plateforme est régie par les formules d'abonnements souscrites. Les quotas de dépôts de bijoux et les commissions sur ventes sont appliqués conformément à la grille tarifaire en vigueur."
+        },
+        {
+          "id": 6,
+          "title": "Article 6 : Protection des Données Personnelles (Loi 09-08)",
+          "content": "Les données collectées font l'objet d'un traitement hautement sécurisé et chiffré, dans le strict respect de la Loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel (CNDP)."
+        },
+        {
+          "id": 7,
+          "title": "Article 7 : Sanctions, Suspension & Résiliation",
+          "content": "Tout manquement aux présentes conditions, tentative de fraude, fausse déclaration sur le titre d'or ou refus d'honorer une vente conclue entraîne la suspension immédiate et irrévocable du compte professionnel."
+        }
+      ]
+    },
+    "ar": {
+      "title": "شروط وأحكام استخدام المنصة",
+      "subtitle": "منصة HRSDGDG الرسمية لتجار وصاغة المجوهرات بالمغرب",
+      "preamble": "تُحدد هذه الشروط والأحكام القواعد الملزمة لإنشاء الحسابات واستخدام خدمات منصة HRSDGDG الرقمية المخصصة حصرياً للمحترفين والصاغة المعتمدين لممارسة تجارة وصياغة المعادن الثمينة بالمملكة المغربية.",
+      "articles": [
+        {
+          "id": 1,
+          "title": "المادة 1 : الأهلية والتسجيل الحصري للمهنيين",
+          "content": "يقتصر إنشاء حساب Commerçant / صائغ معتمد على أصحاب المحلات، الورشات، والمؤسسات الحاصلة على رقم باتنت مهني وسجل تجاري (RC) ساري المفعول بالمغرب وفقاً للقوانين المنظمة لمهنة الصياغة."
+        },
+        {
+          "id": 2,
+          "title": "المادة 2 : ضمان أصالة الذهب عيار 18 قيراط والدمغة القانونية",
+          "content": "يلتزم الصائغ المسجل بأن تكون كافة المجوهرات والمعروضات مصنوعة من الذهب القانوني عيار 18 قيراط (750 بالألف)، ومدموغة بالدمغة الرسمية لمكتب الضمانة المغربي وبدمغة الصانع، وتتحمل المؤسسة العارضة المسؤولية القانونية التامة في حالة ثبوت أي مخالفة للعيار."
+        },
+        {
+          "id": 3,
+          "title": "المادة 3 : التحقق من وثيقة الباتنت والسجل التجاري",
+          "content": "يقر المستخدم بأن جميع الوثائق المرفوعة (شهادة الباتنت، السجل التجاري، والبيانات التعريفية) صحيحة وحديثة. تحتفظ إدارة المنصة بحق التحقق من صحة الوثائق مع الجهات المختصة ورفض أو تعليق أي حساب غير مستوفٍ للشروط."
+        },
+        {
+          "id": 4,
+          "title": "المادة 4 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات",
+          "content": "يلتزم الصائغ بالدقة المتناهية في ذكر الأوزان الصافية بالغرام، نوع الأحجار الكريمة، والمواصفات الفنية، وتسليم القطع للمشتري مطابقة للصور والوصف المنشور، والالتزام بإتمام المزادات المنتهية لصالح الفائزين."
+        },
+        {
+          "id": 5,
+          "title": "المادة 5 : باقات الاشتراكات والعمولات",
+          "content": "يخضع عرض المجوهرات لباقات الاشتراك المختارة وتحدد كل باقة الحد الأقصى للمنتجات ونسب العمولة المستحقة للمنصة عن كل عملية بيع مؤكدة."
+        },
+        {
+          "id": 6,
+          "title": "المادة 6 : حماية المعطيات والسرية المهنية (قانون 09-08)",
+          "content": "تلتزم المنصة بحماية وسرية البيانات والمعاملات التجارية الخاصة بالصاغة والمشتركين طبقاً لأحكام القانون المغربي رقم 09-08 المتعلق بحماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي (CNDP)."
+        },
+        {
+          "id": 7,
+          "title": "المادة 7 : الجزاءات وإنهاء الحساب",
+          "content": "يحق لإدارة المنصة إيقاف أو فسخ حساب أي عضو بصورة فورية ونهائية في حال الإخلال بشروط الأمان، التلاعب بالأسعار أو العيارات، أو الإخلال بتسليم الطلبات."
+        }
+      ]
+    }
+  }
 }

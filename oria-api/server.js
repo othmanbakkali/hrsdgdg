@@ -387,24 +387,49 @@ app.post('/api/translate', async (req, res) => {
   }
 });
 
-// Authentication
+// Authentication (Supports Phone number, Email, or Username + Password)
 app.post('/api/auth/login', (req, res) => {
-  const { email, password, rememberMe } = req.body;
+  const { email, phone, identifier, password, mot_de_passe: inputPassword, rememberMe } = req.body;
   const db = readDB();
   
-  const normalizedEmail = (email || '').trim().toLowerCase();
-  const baseUserPart = normalizedEmail.split('@')[0];
-  const allowedDomains = ['hrsdgdg.com', 'oria.com', 'jewelia.com'];
+  const loginPass = (password || inputPassword || '').trim();
+  const rawInput = (identifier || phone || email || '').trim();
+  const normalizedInput = rawInput.toLowerCase();
+  
+  // Extract phone digits for flexible Moroccan phone matching
+  const rawDigits = rawInput.replace(/\D/g, '');
+  const phoneLast9 = rawDigits.length >= 9 ? rawDigits.slice(-9) : null;
+  const baseUserPart = normalizedInput.includes('@') ? normalizedInput.split('@')[0] : '';
+  const allowedDomains = ['hrsdgdg.ma', 'hrsdgdg.com', 'oria.com', 'jewelia.com'];
 
   const user = db.users.find(u => {
+    if (u.mot_de_passe !== loginPass) return false;
+
+    // 1. Phone number match (matches +2126..., 06..., 6..., etc.)
+    if (phoneLast9) {
+      const uPhone = (u.phone || u.telephone || '').replace(/\D/g, '');
+      if (uPhone && uPhone.endsWith(phoneLast9)) return true;
+      // Also match auto-generated pro emails: pro_${phoneDigits}@hrsdgdg.ma
+      const uEmail = (u.email || '').toLowerCase();
+      if (uEmail.includes(phoneLast9)) return true;
+    }
+
+    // 2. Direct email or username match
     const uEmail = (u.email || '').toLowerCase();
-    const uBase = uEmail.split('@')[0];
-    const matchEmail = uEmail === normalizedEmail || (uBase === baseUserPart && allowedDomains.some(d => normalizedEmail.endsWith('@' + d)));
-    return matchEmail && u.mot_de_passe === password;
+    if (uEmail === normalizedInput) return true;
+    if (baseUserPart && allowedDomains.some(d => normalizedInput.endsWith('@' + d))) {
+      const uBase = uEmail.split('@')[0];
+      if (uBase === baseUserPart) return true;
+    }
+
+    // 3. Direct phone string match
+    if (u.phone && (u.phone === rawInput || u.telephone === rawInput)) return true;
+
+    return false;
   });
 
   if (!user) {
-    return res.status(401).json({ message: 'Identifiants incorrects' });
+    return res.status(401).json({ message: 'Numéro de téléphone / identifiant ou mot de passe incorrect' });
   }
 
   // Account status validation (Admin accounts always bypass)
@@ -601,7 +626,23 @@ app.post('/api/auth/register', (req, res) => {
     patente_document,
     patenteDocument,
     patente_filename,
-    patenteFileName
+    patenteFileName,
+    numero_bureau_garantie,
+    numeroBureauGarantie,
+    bureau_garantie_document,
+    bureauGarantieDocument,
+    bureau_garantie_filename,
+    bureauGarantieFileName,
+    numero_cin,
+    numeroCin,
+    cin_recto_document,
+    cinRectoDocument,
+    cin_recto_filename,
+    cinRectoFileName,
+    cin_verso_document,
+    cinVersoDocument,
+    cin_verso_filename,
+    cinVersoFileName
   } = req.body;
   const db = readDB();
   
@@ -614,6 +655,16 @@ app.post('/api/auth/register', (req, res) => {
   const savedDocUrl = processDocument(rawDoc, 'patente');
   const numPatente = (numero_patente || numeroPatente || '').trim();
 
+  const rawGarantieDoc = bureau_garantie_document || bureauGarantieDocument || '';
+  const savedGarantieUrl = processDocument(rawGarantieDoc, 'bureau_garantie');
+  const numGarantie = (numero_bureau_garantie || numeroBureauGarantie || '').trim();
+
+  const rawCinRecto = cin_recto_document || cinRectoDocument || '';
+  const savedCinRectoUrl = processDocument(rawCinRecto, 'cin_recto');
+  const rawCinVerso = cin_verso_document || cinVersoDocument || '';
+  const savedCinVersoUrl = processDocument(rawCinVerso, 'cin_verso');
+  const numCin = (numero_cin || numeroCin || '').trim();
+
   // If phone/email already submitted, update the existing pending request
   const existingUser = db.users.find(u => u.email === userEmail || (cleanPhone && (u.phone || '').replace(/\D/g, '') === cleanPhone));
   if (existingUser) {
@@ -625,6 +676,15 @@ app.post('/api/auth/register', (req, res) => {
     existingUser.ville = city || existingUser.ville;
     existingUser.numero_patente = numPatente || existingUser.numero_patente;
     if (savedDocUrl) existingUser.patente_document = savedDocUrl;
+    if (patente_filename) existingUser.patente_filename = patente_filename;
+    existingUser.numero_bureau_garantie = numGarantie || existingUser.numero_bureau_garantie;
+    if (savedGarantieUrl) existingUser.bureau_garantie_document = savedGarantieUrl;
+    if (bureau_garantie_filename || bureauGarantieFileName) existingUser.bureau_garantie_filename = bureau_garantie_filename || bureauGarantieFileName;
+    existingUser.numero_cin = numCin || existingUser.numero_cin;
+    if (savedCinRectoUrl) existingUser.cin_recto_document = savedCinRectoUrl;
+    if (cin_recto_filename || cinRectoFileName) existingUser.cin_recto_filename = cin_recto_filename || cinRectoFileName;
+    if (savedCinVersoUrl) existingUser.cin_verso_document = savedCinVersoUrl;
+    if (cin_verso_filename || cinVersoFileName) existingUser.cin_verso_filename = cin_verso_filename || cinVersoFileName;
     existingUser.account_status = 'en_attente';
     existingUser.verification_status = 'en_attente_validation';
     writeDB(db);
@@ -648,13 +708,21 @@ app.post('/api/auth/register', (req, res) => {
     numero_patente: numPatente,
     patente_document: savedDocUrl,
     patente_filename: patente_filename || patenteFileName || (numPatente ? `Patente_${numPatente}` : 'Patente_Officielle.pdf'),
+    numero_bureau_garantie: numGarantie,
+    bureau_garantie_document: savedGarantieUrl,
+    bureau_garantie_filename: bureau_garantie_filename || bureauGarantieFileName || (numGarantie ? `Garantie_${numGarantie}` : 'Bureau_Garantie.jpg'),
+    numero_cin: numCin,
+    cin_recto_document: savedCinRectoUrl,
+    cin_recto_filename: cin_recto_filename || cinRectoFileName || (numCin ? `CIN_Recto_${numCin}` : 'CIN_Recto.jpg'),
+    cin_verso_document: savedCinVersoUrl,
+    cin_verso_filename: cin_verso_filename || cinVersoFileName || (numCin ? `CIN_Verso_${numCin}` : 'CIN_Verso.jpg'),
     account_status: 'en_attente', // Tout compte créé doit être activé par un administrateur
     is_active: false,
     is_blocked: false,
     block_reason: '',
     verification_status: 'en_attente_validation',
     created_at: new Date().toISOString(),
-    badges: ['Professionnel Agréé', 'Patente Déposée'],
+    badges: ['Professionnel Agréé', 'Patente Déposée', 'Bureau de Garantie'],
     favoris: [],
     premier_login: true,
     doit_changer_mot_de_passe: true,
@@ -736,7 +804,20 @@ app.post('/api/users', (req, res) => {
     numeroPatente,
     patente_document,
     patenteDocument,
-    patente_filename
+    patente_filename,
+    numero_bureau_garantie,
+    numeroBureauGarantie,
+    bureau_garantie_document,
+    bureauGarantieDocument,
+    bureau_garantie_filename,
+    numero_cin,
+    numeroCin,
+    cin_recto_document,
+    cinRectoDocument,
+    cin_recto_filename,
+    cin_verso_document,
+    cinVersoDocument,
+    cin_verso_filename
   } = req.body;
   const db = readDB();
   
@@ -747,6 +828,16 @@ app.post('/api/users', (req, res) => {
   const rawDoc = patente_document || patenteDocument || '';
   const savedDocUrl = processDocument(rawDoc, 'patente');
   const numPatente = (numero_patente || numeroPatente || '').trim();
+
+  const rawGarantieDoc = bureau_garantie_document || bureauGarantieDocument || '';
+  const savedGarantieUrl = processDocument(rawGarantieDoc, 'bureau_garantie');
+  const numGarantie = (numero_bureau_garantie || numeroBureauGarantie || '').trim();
+
+  const rawCinRecto = cin_recto_document || cinRectoDocument || '';
+  const savedCinRectoUrl = processDocument(rawCinRecto, 'cin_recto');
+  const rawCinVerso = cin_verso_document || cinVersoDocument || '';
+  const savedCinVersoUrl = processDocument(rawCinVerso, 'cin_verso');
+  const numCin = (numero_cin || numeroCin || '').trim();
 
   const newUser = {
     id: 'u_' + Math.random().toString(36).substr(2, 9),
@@ -760,6 +851,14 @@ app.post('/api/users', (req, res) => {
     numero_patente: numPatente,
     patente_document: savedDocUrl,
     patente_filename: patente_filename || (numPatente ? `Patente_${numPatente}` : 'Patente_Officielle.pdf'),
+    numero_bureau_garantie: numGarantie,
+    bureau_garantie_document: savedGarantieUrl,
+    bureau_garantie_filename: bureau_garantie_filename || (numGarantie ? `Garantie_${numGarantie}` : 'Bureau_Garantie.jpg'),
+    numero_cin: numCin,
+    cin_recto_document: savedCinRectoUrl,
+    cin_recto_filename: cin_recto_filename || (numCin ? `CIN_Recto_${numCin}` : 'CIN_Recto.jpg'),
+    cin_verso_document: savedCinVersoUrl,
+    cin_verso_filename: cin_verso_filename || (numCin ? `CIN_Verso_${numCin}` : 'CIN_Verso.jpg'),
     favoris: [],
     premier_login: true,
     doit_changer_mot_de_passe: true,
@@ -842,7 +941,20 @@ app.put('/api/users/:id', (req, res) => {
     numeroPatente,
     patente_document,
     patenteDocument,
-    patente_filename
+    patente_filename,
+    numero_bureau_garantie,
+    numeroBureauGarantie,
+    bureau_garantie_document,
+    bureauGarantieDocument,
+    bureau_garantie_filename,
+    numero_cin,
+    numeroCin,
+    cin_recto_document,
+    cinRectoDocument,
+    cin_recto_filename,
+    cin_verso_document,
+    cinVersoDocument,
+    cin_verso_filename
   } = req.body;
   const db = readDB();
   const user = db.users.find(u => u.id === req.params.id);
@@ -873,6 +985,35 @@ app.put('/api/users/:id', (req, res) => {
   }
   if (patente_filename !== undefined) {
     user.patente_filename = patente_filename;
+  }
+
+  if (numero_bureau_garantie !== undefined || numeroBureauGarantie !== undefined) {
+    user.numero_bureau_garantie = (numero_bureau_garantie || numeroBureauGarantie || '').trim();
+  }
+  if (bureau_garantie_document !== undefined || bureauGarantieDocument !== undefined) {
+    const rawGarantie = bureau_garantie_document || bureauGarantieDocument || '';
+    user.bureau_garantie_document = processDocument(rawGarantie, 'bureau_garantie');
+  }
+  if (bureau_garantie_filename !== undefined) {
+    user.bureau_garantie_filename = bureau_garantie_filename;
+  }
+
+  if (numero_cin !== undefined || numeroCin !== undefined) {
+    user.numero_cin = (numero_cin || numeroCin || '').trim();
+  }
+  if (cin_recto_document !== undefined || cinRectoDocument !== undefined) {
+    const rawRecto = cin_recto_document || cinRectoDocument || '';
+    user.cin_recto_document = processDocument(rawRecto, 'cin_recto');
+  }
+  if (cin_recto_filename !== undefined) {
+    user.cin_recto_filename = cin_recto_filename;
+  }
+  if (cin_verso_document !== undefined || cinVersoDocument !== undefined) {
+    const rawVerso = cin_verso_document || cinVersoDocument || '';
+    user.cin_verso_document = processDocument(rawVerso, 'cin_verso');
+  }
+  if (cin_verso_filename !== undefined) {
+    user.cin_verso_filename = cin_verso_filename;
   }
 
   user.email = email || user.email;
@@ -2014,7 +2155,7 @@ app.get('/api/encheres/:id/bids', (req, res) => {
 // Configurations
 app.get('/api/config', async (req, res) => {
   const defaultPermissions = {
-    admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products'],
+    admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products', 'manage_gold_rates', 'manage_terms'],
     commercant: ['publish_listings', 'edit_products', 'create_products', 'view_shop_analytics', 'manage_orders', 'chat_with_clients'],
     client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
   };
@@ -2065,6 +2206,144 @@ app.put('/api/config', async (req, res) => {
   writeDB(db);
   res.json(db.config);
 });
+
+// Terms & Conditions (Default Clauses & Management)
+const defaultTermsAndConditions = {
+  version: "1.0",
+  lastUpdated: new Date().toISOString().split('T')[0],
+  fr: {
+    title: "Conditions Générales d'Utilisation",
+    subtitle: "Plateforme Numérique Joaillerie & Bijouterie au Maroc",
+    preamble: "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès, l'inscription et l'exploitation des services de la plateforme numérique HRSDGDG, exclusivement réservée aux professionnels de la bijouterie et joaillerie au Royaume du Maroc.",
+    articles: [
+      {
+        id: 1,
+        title: "Article 1 : Éligibilité & Inscription Réservée aux Professionnels",
+        content: "La création d'un compte commerçant / atelier est strictement réservée aux personnes physiques ou morales exerçant légalement le métier de bijoutier-joaillier au Maroc, détentrices d'une patente professionnelle active et d'un Registre de Commerce (RC) valide."
+      },
+      {
+        id: 2,
+        title: "Article 2 : Garantie de Titre Or 18K & Poinçons Légaux",
+        content: "Tous les bijoux et ouvrages mis en vente ou en enchères doivent être obligatoirement en or titré 18 carats (750‰) et revêtus des poinçons légaux conformes aux dispositions de l'Administration des Douanes et Impôts Indirects (Bureau de Garantie). Toute défaillance de titre engage la responsabilité civile et pénale exclusive du vendeur."
+      },
+      {
+        id: 3,
+        title: "Article 3 : Vérification de la Patente et Conformité Documentaire",
+        content: "L'adhérent garantit l'authenticité de l'attestation de patente et des pièces administratives téléversées. L'administration de HRSDGDG se réserve le droit d'auditer ces pièces et de suspendre tout compte dont les justificatifs s'avèrent non conformes."
+      },
+      {
+        id: 4,
+        title: "Article 4 : Exactitude des Descriptions, Poids et Enchères",
+        content: "Le professionnel s'engage à fournir des descriptions rigoureusement exactes (poids net en grammes, pureté, pierres serties) et à livrer des pièces strictement identiques aux photos et caractéristiques publiées, ainsi qu'à honorer l'ensemble des adjudications d'enchères."
+      },
+      {
+        id: 5,
+        title: "Article 5 : Forfaits, Quotas & Commissions",
+        content: "L'utilisation de la plateforme est régie par les formules d'abonnements souscrites. Les quotas de dépôts de bijoux et les commissions sur ventes sont appliqués conformément à la grille tarifaire en vigueur."
+      },
+      {
+        id: 6,
+        title: "Article 6 : Protection des Données Personnelles (Loi 09-08)",
+        content: "Les données collectées font l'objet d'un traitement hautement sécurisé et chiffré, dans le strict respect de la Loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel (CNDP)."
+      },
+      {
+        id: 7,
+        title: "Article 7 : Sanctions, Suspension & Résiliation",
+        content: "Tout manquement aux présentes conditions, tentative de fraude, fausse déclaration sur le titre d'or ou refus d'honorer une vente conclue entraîne la suspension immédiate et irrévocable du compte professionnel."
+      }
+    ]
+  },
+  ar: {
+    title: "شروط وأحكام استخدام المنصة",
+    subtitle: "منصة HRSDGDG الرسمية لتجار وصاغة المجوهرات بالمغرب",
+    preamble: "تُحدد هذه الشروط والأحكام القواعد الملزمة لإنشاء الحسابات واستخدام خدمات منصة HRSDGDG الرقمية المخصصة حصرياً للمحترفين والصاغة المعتمدين لممارسة تجارة وصياغة المعادن الثمينة بالمملكة المغربية.",
+    articles: [
+      {
+        id: 1,
+        title: "المادة 1 : الأهلية والتسجيل الحصري للمهنيين",
+        content: "يقتصر إنشاء حساب Commerçant / صائغ معتمد على أصحاب المحلات، الورشات، والمؤسسات الحاصلة على رقم باتنت مهني وسجل تجاري (RC) ساري المفعول بالمغرب وفقاً للقوانين المنظمة لمهنة الصياغة."
+      },
+      {
+        id: 2,
+        title: "المادة 2 : ضمان أصالة الذهب عيار 18 قيراط والدمغة القانونية",
+        content: "يلتزم الصائغ المسجل بأن تكون كافة المجوهرات والمعروضات مصنوعة من الذهب القانوني عيار 18 قيراط (750 بالألف)، ومدموغة بالدمغة الرسمية لمكتب الضمانة المغربي وبدمغة الصانع، وتتحمل المؤسسة العارضة المسؤولية القانونية التامة في حالة ثبوت أي مخالفة للعيار."
+      },
+      {
+        id: 3,
+        title: "المادة 3 : التحقق من وثيقة الباتنت والسجل التجاري",
+        content: "يقر المستخدم بأن جميع الوثائق المرفوعة (شهادة الباتنت، السجل التجاري، والبيانات التعريفية) صحيحة وحديثة. تحتفظ إدارة المنصة بحق التحقق من صحة الوثائق مع الجهات المختصة ورفض أو تعليق أي حساب غير مستوفٍ للشروط."
+      },
+      {
+        id: 4,
+        title: "المادة 4 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات",
+        content: "يلتزم الصائغ بالدقة المتناهية في ذكر الأوزان الصافية بالغرام، نوع الأحجار الكريمة، والمواصفات الفنية، وتسليم القطع للمشتري مطابقة للصور والوصف المنشور، والالتزام بإتمام المزادات المنتهية لصالح الفائزين."
+      },
+      {
+        id: 5,
+        title: "المادة 5 : باقات الاشتراكات والعمولات",
+        content: "يخضع عرض المجوهرات لباقات الاشتراك المختارة وتحدد كل باقة الحد الأقصى للمنتجات ونسب العمولة المستحقة للمنصة عن كل عملية بيع مؤكدة."
+      },
+      {
+        id: 6,
+        title: "المادة 6 : حماية المعطيات والسرية المهنية (قانون 09-08)",
+        content: "تلتزم المنصة بحماية وسرية البيانات والمعاملات التجارية الخاصة بالصاغة والمشتركين طبقاً لأحكام القانون المغربي رقم 09-08 المتعلق بحماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي (CNDP)."
+      },
+      {
+        id: 7,
+        title: "المادة 7 : الجزاءات وإنهاء الحساب",
+        content: "يحق لإدارة المنصة إيقاف أو فسخ حساب أي عضو بصورة فورية ونهائية في حال الإخلال بشروط الأمان، التلاعب بالأسعار أو العيارات، أو الإخلال بتسليم الطلبات."
+      }
+    ]
+  }
+};
+
+app.get('/api/terms-and-conditions', async (req, res) => {
+  try {
+    if (isPostgresAvailable) {
+      const pgRes = await query(`SELECT value FROM system_config WHERE key = 'terms_and_conditions'`);
+      if (pgRes && pgRes.rows && pgRes.rows.length > 0) {
+        return res.json(pgRes.rows[0].value);
+      }
+    }
+  } catch (err) {
+    console.error('Error reading terms from PostgreSQL:', err.message);
+  }
+
+  const db = readDB();
+  if (!db.terms_and_conditions) {
+    db.terms_and_conditions = defaultTermsAndConditions;
+    writeDB(db);
+  }
+  res.json(db.terms_and_conditions);
+});
+
+app.put('/api/terms-and-conditions', async (req, res) => {
+  const updatedTerms = req.body;
+  if (!updatedTerms || !updatedTerms.fr || !updatedTerms.ar) {
+    return res.status(400).json({ error: 'Structure des termes invalide (fr et ar requis).' });
+  }
+
+  updatedTerms.lastUpdated = new Date().toISOString().split('T')[0];
+
+  try {
+    if (isPostgresAvailable) {
+      await query(`
+        INSERT INTO system_config (key, value, updated_at) 
+        VALUES ('terms_and_conditions', $1, CURRENT_TIMESTAMP)
+        ON CONFLICT (key) DO UPDATE 
+        SET value = $1, updated_at = CURRENT_TIMESTAMP
+      `, [JSON.stringify(updatedTerms)]);
+    }
+  } catch (err) {
+    console.error('Error writing terms to PostgreSQL:', err.message);
+  }
+
+  const db = readDB();
+  db.terms_and_conditions = updatedTerms;
+  writeDB(db);
+  res.json(db.terms_and_conditions);
+});
+
 
 // Messages
 app.get('/api/messages', (req, res) => {
@@ -2508,6 +2787,15 @@ app.put('/api/subscriptions/:merchantId/status', (req, res) => {
 // Public: Get current precious metals rates (Or 18K & Argent 1000) and history
 app.get('/api/gold-rates', (req, res) => {
   const db = readDB();
+  const defaultSilverHistory = [
+    { id: 'sh_1', date: '2026-10-18 09:30', priceSilver: 13.80, change: '0.0%', source: 'Marché National Argent', note: 'Fixation matinale Ag 1000' },
+    { id: 'sh_2', date: '2026-10-20 11:15', priceSilver: 13.95, change: '+1.1%', source: 'Bourse Casablanca', note: 'Raffinement lingots 1000' },
+    { id: 'sh_3', date: '2026-10-22 10:00', priceSilver: 14.10, change: '+1.1%', source: 'Marché National Argent', note: 'Hausse demande industrielle & bijouterie' },
+    { id: 'sh_4', date: '2026-10-24 15:45', priceSilver: 14.25, change: '+1.1%', source: 'Fixation Officielle Maroc', note: 'Cours certifié Ag 1000‰' },
+    { id: 'sh_5', date: '2026-10-25 10:30', priceSilver: 14.40, change: '+1.1%', source: 'Bourse Casablanca', note: 'Progression continue de l\'argent pur' },
+    { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: 'Fixation Officielle Maroc', note: 'Cours actuel du jour (Ag 1000)' }
+  ];
+
   const goldRates = db.goldRates || {
     currentPrice18k: 1045,
     currentPriceSilver: 14.50,
@@ -2516,11 +2804,15 @@ app.get('/api/gold-rates', (req, res) => {
     silverUnit: 'MAD/g',
     lastUpdated: new Date().toISOString(),
     updatedBy: 'Admin',
-    history: []
+    history: [],
+    silverHistory: defaultSilverHistory
   };
 
   const currentPrice18k = Number(goldRates.currentPrice18k) || 1045;
   const currentPriceSilver = Number(goldRates.currentPriceSilver) || 14.50;
+  const silverHistory = (Array.isArray(goldRates.silverHistory) && goldRates.silverHistory.length > 0)
+    ? goldRates.silverHistory
+    : defaultSilverHistory;
 
   res.json({
     success: true,
@@ -2531,7 +2823,8 @@ app.get('/api/gold-rates', (req, res) => {
     silverUnit: goldRates.silverUnit || 'MAD/g',
     lastUpdated: goldRates.lastUpdated,
     updatedBy: goldRates.updatedBy || 'Administration',
-    history: goldRates.history || []
+    history: goldRates.history || [],
+    silverHistory
   });
 });
 
@@ -2548,7 +2841,8 @@ app.post('/api/admin/gold-rates', requireAdminSession, (req, res) => {
       silverUnit: 'MAD/g',
       lastUpdated: new Date().toISOString(),
       updatedBy: 'Admin',
-      history: []
+      history: [],
+      silverHistory: []
     };
   }
 
@@ -2563,8 +2857,28 @@ app.post('/api/admin/gold-rates', requireAdminSession, (req, res) => {
     if (isNaN(numSilver) || numSilver <= 0) {
       return res.status(400).json({ error: 'Le prix de l\'argent doit être un nombre positif valide (ex: 14.50).' });
     }
+
+    const oldSilver = Number(db.goldRates.currentPriceSilver) || numSilver;
+    const silverDiff = numSilver - oldSilver;
+    const silverPct = oldSilver > 0 ? ((silverDiff / oldSilver) * 100).toFixed(1) : '0.0';
+    const silverChangeStr = silverDiff > 0 ? `+${silverPct}%` : (silverDiff < 0 ? `${silverPct}%` : '0.0%');
+
+    const newSilverEntry = {
+      id: `sh_${Date.now()}`,
+      date: dateFormatted,
+      priceSilver: numSilver,
+      change: silverChangeStr,
+      source: source ? source.trim() : 'Fixation Argent Maroc',
+      note: note ? note.trim() : 'Mise à jour du cours de l\'argent'
+    };
+
+    if (!Array.isArray(db.goldRates.silverHistory)) {
+      db.goldRates.silverHistory = [];
+    }
+    db.goldRates.silverHistory.push(newSilverEntry);
     db.goldRates.currentPriceSilver = numSilver;
     db.goldRates.silverUnit = 'MAD/g';
+    updatedRates.newSilverEntry = newSilverEntry;
     updatedRates.currentPriceSilver = numSilver;
   }
 
@@ -2599,6 +2913,8 @@ app.post('/api/admin/gold-rates', requireAdminSession, (req, res) => {
     }
     db.goldRates.history.push(newHistoryEntry);
     updatedRates.newEntry = newHistoryEntry;
+  } else if (!priceSilver) {
+    return res.status(400).json({ error: 'Veuillez renseigner au moins le prix de l\'or 18K ou de l\'argent.' });
   }
 
   db.goldRates.lastUpdated = now.toISOString();
@@ -2613,28 +2929,43 @@ app.post('/api/admin/gold-rates', requireAdminSession, (req, res) => {
     currentPriceSilver: db.goldRates.currentPriceSilver,
     carat: '18K',
     history: db.goldRates.history,
+    silverHistory: db.goldRates.silverHistory,
     ...updatedRates
   });
 });
 
-// Admin: Delete history record
+// Admin: Delete history record (Gold or Silver)
 app.delete('/api/admin/gold-rates/history/:id', requireAdminSession, (req, res) => {
   const { id } = req.params;
   const db = readDB();
 
-  if (!db.goldRates || !Array.isArray(db.goldRates.history)) {
+  if (!db.goldRates) {
     return res.status(404).json({ error: 'Historique introuvable' });
   }
 
-  const initialLen = db.goldRates.history.length;
-  db.goldRates.history = db.goldRates.history.filter(item => item.id !== id);
+  let deleted = false;
+  if (Array.isArray(db.goldRates.history)) {
+    const initialLen = db.goldRates.history.length;
+    db.goldRates.history = db.goldRates.history.filter(item => item.id !== id);
+    if (db.goldRates.history.length < initialLen) deleted = true;
+  }
+  if (Array.isArray(db.goldRates.silverHistory)) {
+    const initialLen = db.goldRates.silverHistory.length;
+    db.goldRates.silverHistory = db.goldRates.silverHistory.filter(item => item.id !== id);
+    if (db.goldRates.silverHistory.length < initialLen) deleted = true;
+  }
 
-  if (db.goldRates.history.length === initialLen) {
+  if (!deleted) {
     return res.status(404).json({ error: 'Entrée introuvable' });
   }
 
   writeDB(db);
-  res.json({ success: true, message: 'Entrée supprimée avec succès', history: db.goldRates.history });
+  res.json({ 
+    success: true, 
+    message: 'Entrée supprimée avec succès', 
+    history: db.goldRates.history,
+    silverHistory: db.goldRates.silverHistory 
+  });
 });
 
 // Sync with external PrixOr Railway backend

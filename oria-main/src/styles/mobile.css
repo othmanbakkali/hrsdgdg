@@ -2056,36 +2056,51 @@ body.dark-theme .sell-btn-inner {
 /* Budget Presets Row */
 .sheet-budget-presets-row {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  margin-top: 8px;
+  margin-top: 6px;
+  padding: 4px 1px;
   -webkit-overflow-scrolling: touch;
 }
 .sheet-budget-presets-row::-webkit-scrollbar {
   display: none;
 }
 .sheet-budget-preset-btn {
-  padding: 5px 10px;
-  border-radius: 8px;
-  background: var(--bg-surface-elevated, #f4f4f6);
-  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
-  font-size: 0.74rem;
+  flex: 1;
+  min-width: fit-content;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1.5px solid rgba(212, 175, 55, 0.28);
+  font-size: 0.76rem;
   font-weight: 700;
-  color: var(--text-dark, #1a1a1f);
+  color: #1e293b;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.sheet-budget-preset-btn:hover {
+  border-color: var(--primary-gold, #b38728);
+  background: rgba(212, 175, 55, 0.08);
+  color: #926915;
+  transform: translateY(-1px);
 }
 .sheet-budget-preset-btn:active {
   transform: scale(0.96);
 }
 .sheet-budget-preset-btn.active {
-  background: rgba(212, 175, 55, 0.15);
-  border-color: var(--primary-gold, #b38728);
-  color: var(--primary-gold, #b38728);
+  background: linear-gradient(135deg, #d4af37 0%, #b38728 100%);
+  border-color: #b38728;
+  color: #ffffff !important;
   font-weight: 800;
+  box-shadow: 0 3px 10px rgba(179, 135, 40, 0.35);
+  transform: translateY(-1px);
 }
 
 .filter-sheet-body {
@@ -2164,22 +2179,142 @@ body.dark-theme .sell-btn-inner {
   cursor: pointer;
 }
 
+/* Luxury Price Display Badge */
+.sheet-luxury-price-badge,
 .sheet-price-tag {
-  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(179, 135, 40, 0.22) 100%);
+  border: 1.5px solid rgba(212, 175, 55, 0.45);
+  padding: 4px 12px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(179, 135, 40, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  font-family: var(--font-sans);
+  color: var(--primary-gold, #b38728);
+  transition: all 0.25s ease;
+}
+
+.sheet-luxury-price-badge:hover {
+  border-color: var(--primary-gold, #b38728);
+  box-shadow: 0 3px 12px rgba(179, 135, 40, 0.28);
+  transform: translateY(-1px);
+}
+
+.sheet-luxury-price-badge .badge-prefix {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  opacity: 0.95;
+}
+
+.sheet-luxury-price-badge .badge-amount {
+  font-size: 1.08rem;
   font-weight: 800;
-  color: var(--primary-gold);
-  font-family: var(--font-serif);
+  color: #926915;
+  letter-spacing: 0.2px;
+  font-family: var(--font-serif, 'Playfair Display', serif);
 }
+
+.sheet-luxury-price-badge .badge-currency {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--primary-gold, #b38728);
+}
+
+.sheet-luxury-price-badge.max-unlimited {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.2) 100%);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #059669;
+}
+
+.sheet-luxury-price-badge.max-unlimited .badge-unlimited {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #059669;
+}
+
+/* Luxury Range Slider Track & Thumb */
 .sheet-range-slider {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  accent-color: var(--primary-gold);
-  height: 6px;
+  height: 8px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  margin: 12px 0 6px 0;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background 0.05s linear;
 }
+
+.sheet-range-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.sheet-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff9e6 0%, #d4af37 55%, #996515 100%);
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 3px 10px rgba(179, 135, 40, 0.45), 0 0 0 1px rgba(179, 135, 40, 0.35);
+  cursor: grab;
+  margin-top: -9px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sheet-range-slider::-webkit-slider-thumb:hover,
+.sheet-range-slider::-webkit-slider-thumb:active {
+  transform: scale(1.18);
+  box-shadow: 0 4px 14px rgba(179, 135, 40, 0.65), 0 0 0 4px rgba(212, 175, 55, 0.25);
+  cursor: grabbing;
+}
+
+.sheet-range-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+}
+
+.sheet-range-slider::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff9e6 0%, #d4af37 55%, #996515 100%);
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 3px 10px rgba(179, 135, 40, 0.45);
+  cursor: grab;
+}
+
+/* Range Min/Max Bounds */
+.sheet-range-bounds,
 .range-min-max-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.7rem;
-  color: var(--text-muted);
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  padding: 0 2px;
+  margin-bottom: 6px;
+}
+
+.sheet-range-bounds .bound-mid {
+  opacity: 0.65;
+  font-size: 0.68rem;
+}
+
+.sheet-range-bounds .bound-min,
+.sheet-range-bounds .bound-max {
+  font-weight: 700;
+  color: var(--text-dark, #334155);
 }
 
 .sheet-toggles-list {
@@ -3262,18 +3397,54 @@ body.dark-theme .mobile-pages-summary {
   }
 }
 
-/* Gold Luxury Card Widget Mobile Responsiveness */
+/* Gold & Silver Luxury Card Widget Mobile Responsiveness */
 @media (max-width: 768px) {
   .gold-ribbon-placement-container {
     padding: 0 10px !important;
     margin: 6px auto 10px !important;
   }
   .gold-luxury-card-widget {
-    padding: 12px 16px !important;
+    padding: 14px 14px !important;
     margin: 4px auto 10px !important;
-    border-radius: 14px !important;
+    border-radius: 16px !important;
+  }
+  .precious-metals-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .metal-card {
+    padding: 12px 14px !important;
   }
 }
 
+/* ==========================================================================
+   MOBILE SCROLLING REFINEMENTS (TOP & BOTTOM SPACING)
+   ========================================================================== */
+.filter-sheet-body,
+.cities-scroll-list,
+.mobile-drawer-body,
+.mobile-chat-messages,
+.sheet-budget-presets-row {
+  scroll-padding-top: 18px;
+  scroll-padding-bottom: 28px;
+  overscroll-behavior-y: contain;
+}
 
+.filter-sheet-body::-webkit-scrollbar-track,
+.cities-scroll-list::-webkit-scrollbar-track,
+.mobile-drawer-body::-webkit-scrollbar-track,
+.mobile-chat-messages::-webkit-scrollbar-track {
+  background: transparent !important;
+  margin-top: 14px !important;
+  margin-bottom: 14px !important;
+}
 
+.filter-sheet-body::-webkit-scrollbar-thumb,
+.cities-scroll-list::-webkit-scrollbar-thumb,
+.mobile-drawer-body::-webkit-scrollbar-thumb,
+.mobile-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.45) !important;
+  border-radius: 9999px !important;
+  border: 1.5px solid transparent !important;
+  background-clip: padding-box !important;
+}

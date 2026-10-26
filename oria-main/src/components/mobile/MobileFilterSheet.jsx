@@ -97,7 +97,9 @@ export default function MobileFilterSheet({
                 onChangePriceMax(nextBudget);
               }}
             >
-              <span>💰 {isAr ? `أقصى حد ${priceMax.toLocaleString()} د.م` : `Max ${priceMax.toLocaleString()} DH`}</span>
+              <span>💰 {isAr 
+                ? (priceMax >= 35000 ? 'جميع الميزانيات' : `ميزانية حتى ${priceMax.toLocaleString('fr-FR')} د.م`) 
+                : (priceMax >= 35000 ? 'Tous les budgets' : `Max ${priceMax.toLocaleString('fr-FR')} DH`)}</span>
             </button>
 
             {/* 18k Gold Quick Chip */}
@@ -191,9 +193,18 @@ export default function MobileFilterSheet({
           <div className="sheet-filter-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <label className="sheet-filter-label" style={{ margin: 0 }}>💰 {isAr ? 'الميزانية القصوى' : 'Budget Maximum'}</label>
-              <span className="sheet-price-tag" dir="ltr">
-                {priceMax.toLocaleString()} {t('currency') || 'DH'}
-              </span>
+              
+              <div className={`sheet-luxury-price-badge ${priceMax >= 35000 ? 'max-unlimited' : ''}`} dir={isAr ? 'rtl' : 'ltr'}>
+                {priceMax >= 35000 ? (
+                  <span className="badge-unlimited">{isAr ? '✨ الكل (بدون سقف)' : '✨ Illimité (Tous)'}</span>
+                ) : (
+                  <>
+                    <span className="badge-prefix">{isAr ? 'حتى' : 'Jusqu\'à'}</span>
+                    <strong className="badge-amount">{String(Math.round(priceMax || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}</strong>
+                    <span className="badge-currency">{isAr ? 'د.م' : 'DH'}</span>
+                  </>
+                )}
+              </div>
             </div>
             
             <input 
@@ -204,20 +215,35 @@ export default function MobileFilterSheet({
               value={priceMax}
               onChange={e => onChangePriceMax(parseFloat(e.target.value))}
               className="sheet-range-slider"
+              dir="ltr"
+              style={{
+                background: `linear-gradient(to right, #d4af37 0%, #d4af37 ${Math.min(100, Math.max(0, ((priceMax - 500) / 34500) * 100))}%, #e2e8f0 ${Math.min(100, Math.max(0, ((priceMax - 500) / 34500) * 100))}%, #e2e8f0 100%)`
+              }}
             />
+
+            {/* Range Bounds */}
+            <div className="sheet-range-bounds" dir="ltr">
+              <span className="bound-min">500 {isAr ? 'د.م' : 'DH'}</span>
+              <span className="bound-mid">15 000 {isAr ? 'د.م' : 'DH'}</span>
+              <span className="bound-max">35 000+ {isAr ? 'د.م' : 'DH'}</span>
+            </div>
             
             {/* Quick Budget Presets */}
             <div className="sheet-budget-presets-row">
-              {budgetPresets.map(b => (
-                <button 
-                  key={b.value}
-                  type="button"
-                  className={`sheet-budget-preset-btn ${priceMax === b.value ? 'active' : ''}`}
-                  onClick={() => onChangePriceMax(b.value)}
-                >
-                  {b.label}
-                </button>
-              ))}
+              {budgetPresets.map(b => {
+                const isActive = priceMax === b.value;
+                return (
+                  <button 
+                    key={b.value}
+                    type="button"
+                    className={`sheet-budget-preset-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => onChangePriceMax(b.value)}
+                  >
+                    {isActive && <span style={{ fontSize: '0.75rem', lineHeight: 1 }}>✓</span>}
+                    <span>{b.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
