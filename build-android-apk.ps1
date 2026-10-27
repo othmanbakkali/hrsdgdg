@@ -57,8 +57,8 @@ $manifestXml = @"
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ma.sdbo.hrsdgdg"
-    android:versionCode="1"
-    android:versionName="1.0">
+    android:versionCode="13"
+    android:versionName="1.3.0">
 
     <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="34" />
 
@@ -167,7 +167,7 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
-        s.setUserAgentString(s.getUserAgentString() + " HRSDGDG_Mobile_App/1.0");
+        s.setUserAgentString(s.getUserAgentString() + " HRSDGDG_Mobile_App/1.3.0 (vCode:13)");
 
         mWebView.setWebViewClient(new MyClient(this, mProgressBar));
         mWebView.setWebChromeClient(new MyChromeClient(this, mProgressBar));

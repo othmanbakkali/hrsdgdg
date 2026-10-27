@@ -16,6 +16,8 @@ import AIAssistantModal from './components/AIAssistantModal';
 import GoldPriceHistoryModal from './components/GoldPriceHistoryModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import MobileAppModal from './components/MobileAppModal';
+import ForcedUpdateModal from './components/ForcedUpdateModal';
+import PostUpdateBanner from './components/PostUpdateBanner';
 import PWAInstallBanner from './pwa/PWAInstallBanner';
 import PWAInstallButton from './pwa/PWAInstallButton';
 
@@ -808,6 +810,12 @@ function MainLayout() {
         isOpen={isMobileAppModalOpen} 
         onClose={() => setIsMobileAppModalOpen(false)} 
       />
+
+      {/* Mandatory / Forced Update Modal */}
+      <ForcedUpdateModal />
+
+      {/* Post-Update Celebration Banner */}
+      <PostUpdateBanner />
     </div>
   );
 

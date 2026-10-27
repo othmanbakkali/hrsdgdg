@@ -1,5 +1,5 @@
-const CACHE_NAME = 'oria-pwa-v15';
-const API_CACHE_NAME = 'oria-pwa-api-v15';
+const CACHE_NAME = 'oria-pwa-v16';
+const API_CACHE_NAME = 'oria-pwa-api-v16';
 
 const PRECACHE_URLS = [
   '/',
@@ -12,7 +12,7 @@ const PRECACHE_URLS = [
   '/apple-touch-icon.png'
 ];
 
-// Install Event
+// Install Event - skip waiting immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -25,16 +25,32 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate Event - purge outdated caches
+// Activate Event - purge outdated caches and notify all clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME && name !== API_CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .map((name) => {
+            console.log('[ORIA SW] Purging obsolete cache:', name);
+            return caches.delete(name);
+          })
       );
-    }).then(() => self.clients.claim())
+    })
+    .then(() => self.clients.claim())
+    .then(() => {
+      // Notify all open clients that a new version has been activated
+      return self.clients.matchAll({ type: 'window' }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'SW_VERSION_UPDATED',
+            version: CACHE_NAME,
+            versionCode: 16
+          });
+        });
+      });
+    })
   );
 });
 

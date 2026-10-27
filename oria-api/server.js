@@ -3009,6 +3009,38 @@ const staticOptions = {
   }
 };
 
+// Centralized Application Version & Mandatory Update Configuration
+const APP_VERSION_CONFIG = {
+  version: '1.3.0',
+  versionCode: 13,
+  minSupportedVersion: '1.3.0',
+  minSupportedVersionCode: 13,
+  forceUpdate: true,
+  releaseDate: '2026-10-27',
+  pwaCacheVersion: 'oria-pwa-v16',
+  title_fr: 'Mise à jour obligatoire disponible',
+  title_ar: 'تحديث إجباري مطلوب متوفر',
+  message_fr: 'Une nouvelle version majeure (v1.3.0) de HRSDGDG est disponible. Pour garantir la sécurité de vos transactions, l\'accès aux enchères en direct et la conformité, la mise à niveau est obligatoire.',
+  message_ar: 'يتوفر إصدار رئيسي جديد (v1.3.0) لتطبيق HRSDGDG. لضمان أمان معاملاتكم والوصول إلى المزادات المباشرة، من الضروري تحديث التطبيق الآن.',
+  changelog_fr: [
+    'Amélioration des performances et fluidité accrue',
+    'Nouveau système d\'installation mobile Android APK et iPhone',
+    'Sécurité renforcée et synchronisation temps réel'
+  ],
+  changelog_ar: [
+    'أداء أسرع واستجابة فورية على جميع الأجهزة',
+    'نظام تحميل وتثبيت جديد لتطبيقات أندرويد وآيفون',
+    'حماية متقدمة ومزامنة فورية للأسعار والمزادات'
+  ],
+  apkUrl: '/downloads/hrsdgdg.apk',
+  apkSize: '65 Ko'
+};
+
+app.get('/api/app-version', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.json(APP_VERSION_CONFIG);
+});
+
 // Dedicated Android APK direct download endpoint
 app.get('/downloads/hrsdgdg.apk', (req, res) => {
   const possiblePaths = [
