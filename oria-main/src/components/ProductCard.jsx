@@ -179,17 +179,20 @@ Merci.`;
                   borderRadius: '50%',
                   width: '24px',
                   height: '24px',
-                  fontSize: '13px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   zIndex: 3,
-                  transition: 'background 0.2s ease'
+                  transition: 'background 0.2s ease',
+                  direction: 'ltr'
                 }}
                 title={lang === 'ar' ? 'الصورة السابقة' : 'Photo précédente'}
+                aria-label={lang === 'ar' ? 'الصورة السابقة' : 'Photo précédente'}
               >
-                ‹
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
               </button>
               <button
                 type="button"
@@ -208,17 +211,20 @@ Merci.`;
                   borderRadius: '50%',
                   width: '24px',
                   height: '24px',
-                  fontSize: '13px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   zIndex: 3,
-                  transition: 'background 0.2s ease'
+                  transition: 'background 0.2s ease',
+                  direction: 'ltr'
                 }}
                 title={lang === 'ar' ? 'الصورة التالية' : 'Photo suivante'}
+                aria-label={lang === 'ar' ? 'الصورة التالية' : 'Photo suivante'}
               >
-                ›
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
               </button>
             </>
           )}
