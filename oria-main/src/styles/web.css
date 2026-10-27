@@ -259,6 +259,123 @@ footer .pwa-nav-install-btn:hover .pwa-btn-label {
   color: #12131a !important;
 }
 
+/* Jewel Finder Wizard Option Cards & High-Contrast Typography */
+.finder-option-card {
+  padding: 20px 14px;
+  background: var(--bg-surface-elevated, #faf9f6);
+  border: 1.5px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+  border-radius: var(--radius-md, 14px);
+  color: var(--text-dark, #111827) !important;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.finder-option-card .finder-opt-title {
+  color: var(--text-dark, #111827) !important;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.finder-option-card .finder-opt-desc {
+  color: var(--text-gray, #4b5563) !important;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.finder-option-card:hover {
+  border-color: var(--primary-gold, #b38728);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(179, 135, 40, 0.16);
+}
+
+.finder-option-card.selected {
+  background: linear-gradient(135deg, rgba(179, 135, 40, 0.16) 0%, rgba(179, 135, 40, 0.07) 100%) !important;
+  border: 2px solid var(--primary-gold, #b38728) !important;
+  box-shadow: 0 6px 20px rgba(179, 135, 40, 0.24) !important;
+  transform: translateY(-2px);
+}
+
+.finder-option-card.selected .finder-opt-title {
+  color: #785814 !important;
+  font-weight: 800;
+}
+
+/* Dark mode overrides for Finder Cards */
+[data-theme="dark"] .finder-option-card,
+.dark-theme .finder-option-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f3f4f6 !important;
+}
+
+[data-theme="dark"] .finder-option-card .finder-opt-title,
+.dark-theme .finder-option-card .finder-opt-title {
+  color: #f3f4f6 !important;
+}
+
+[data-theme="dark"] .finder-option-card .finder-opt-desc,
+.dark-theme .finder-option-card .finder-opt-desc {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .finder-option-card.selected,
+.dark-theme .finder-option-card.selected {
+  background: rgba(212, 175, 55, 0.2) !important;
+  border-color: var(--primary-gold, #d4af37) !important;
+}
+
+[data-theme="dark"] .finder-option-card.selected .finder-opt-title,
+.dark-theme .finder-option-card.selected .finder-opt-title {
+  color: #fef08a !important;
+}
+
+/* Recommendation Results Cards */
+.finder-result-card {
+  background: var(--bg-surface, #ffffff);
+  border: 1.5px solid var(--border-gold, rgba(179, 135, 40, 0.3));
+  border-radius: var(--radius-md, 14px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-card, 0 4px 16px rgba(0, 0, 0, 0.06));
+  transition: all 0.2s ease;
+}
+
+.finder-result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover, 0 10px 24px rgba(179, 135, 40, 0.2));
+  border-color: var(--primary-gold);
+}
+
+.finder-result-card .result-title {
+  color: var(--text-dark, #111827);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+[data-theme="dark"] .finder-result-card,
+.dark-theme .finder-result-card {
+  background: #181924;
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+[data-theme="dark"] .finder-result-card .result-title,
+.dark-theme .finder-result-card .result-title {
+  color: #f3f4f6;
+}
+
 .badge-count {
   position: absolute;
   top: -6px;

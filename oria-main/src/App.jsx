@@ -759,6 +759,7 @@ function MainLayout() {
       <JewelFinderWizard 
         isOpen={isFinderOpen} 
         onClose={() => setIsFinderOpen(false)} 
+        products={allProducts}
         onSelectProduct={(p) => setSelectedProduct(p)}
       />
       <SellJewelModal 
