@@ -28,33 +28,15 @@ export default function PWAInstallButton({ variant = 'default', style = {} }) {
     return (
       <>
         <button
+          type="button"
           onClick={handleClick}
-          style={{
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
-            border: '1px solid rgba(212, 175, 55, 0.4)',
-            color: '#FFF2C6',
-            borderRadius: '20px',
-            padding: '6px 14px',
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s ease',
-            ...style
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#D4AF37';
-            e.currentTarget.style.boxShadow = '0 0 12px rgba(212, 175, 55, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+          className="pwa-nav-install-btn"
+          style={style}
+          title={isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'application"}
+          aria-label={isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'application"}
         >
-          <span>📲</span>
-          <span>{isAr ? 'تثبيت التطبيق' : "Installer l'App"}</span>
+          <span style={{ fontSize: '1rem', lineHeight: 1 }}>📲</span>
+          <span className="pwa-btn-label">{isAr ? 'تثبيت التطبيق' : "Installer l'App"}</span>
         </button>
 
         {showIOSModal && (

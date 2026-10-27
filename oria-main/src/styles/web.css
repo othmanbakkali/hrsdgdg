@@ -192,6 +192,73 @@
   box-shadow: 0 4px 14px rgba(5, 150, 105, 0.2);
 }
 
+/* PWA Nav Install Button — High Contrast & Luxury Styling */
+.pwa-nav-install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(179, 135, 40, 0.08);
+  border: 1.5px solid rgba(179, 135, 40, 0.45);
+  border-radius: var(--radius-full, 9999px);
+  color: #785814 !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.pwa-nav-install-btn .pwa-btn-label {
+  color: #785814 !important;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.pwa-nav-install-btn:hover {
+  background: var(--primary-gold, #b38728) !important;
+  border-color: var(--primary-gold, #b38728) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(179, 135, 40, 0.28);
+  transform: translateY(-1px);
+}
+
+.pwa-nav-install-btn:hover .pwa-btn-label {
+  color: #ffffff !important;
+}
+
+/* Dark theme & Footer contextual contrast */
+[data-theme="dark"] .pwa-nav-install-btn,
+.dark-theme .pwa-nav-install-btn,
+footer .pwa-nav-install-btn {
+  background: rgba(212, 175, 55, 0.15) !important;
+  border-color: rgba(212, 175, 55, 0.5) !important;
+  color: #fef08a !important;
+}
+
+[data-theme="dark"] .pwa-nav-install-btn .pwa-btn-label,
+.dark-theme .pwa-nav-install-btn .pwa-btn-label,
+footer .pwa-nav-install-btn .pwa-btn-label {
+  color: #fef08a !important;
+}
+
+[data-theme="dark"] .pwa-nav-install-btn:hover,
+.dark-theme .pwa-nav-install-btn:hover,
+footer .pwa-nav-install-btn:hover {
+  background: #d4af37 !important;
+  border-color: #d4af37 !important;
+  color: #12131a !important;
+}
+
+[data-theme="dark"] .pwa-nav-install-btn:hover .pwa-btn-label,
+.dark-theme .pwa-nav-install-btn:hover .pwa-btn-label,
+footer .pwa-nav-install-btn:hover .pwa-btn-label {
+  color: #12131a !important;
+}
+
 .badge-count {
   position: absolute;
   top: -6px;
