@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import OriaLogo from './OriaLogo';
 import PWAInstallButton from '../pwa/PWAInstallButton';
+import MobileAppModal from './MobileAppModal';
 
 export default function Footer({ onNavigate, user }) {
   const { lang, isRtl } = useLanguage();
   const isAr = lang === 'ar';
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isAppModalOpen, setIsAppModalOpen] = useState(false);
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -101,6 +103,27 @@ export default function Footer({ onNavigate, user }) {
             <li><a href="#deals" onClick={() => onNavigate && onNavigate('deals')} style={{ color: 'var(--text-light-gray)', textDecoration: 'none' }}>{isAr ? '🔥 عروض وتخفيضات' : '🔥 Bonnes Affaires'}</a></li>
             <li><a href="#sell" onClick={() => onNavigate && onNavigate('sell')} style={{ color: 'var(--text-light-gray)', textDecoration: 'none' }}>{isAr ? '💎 بيع مجوهراتي' : '💎 Vendre mon bijou'}</a></li>
             <li><a href="#finder" onClick={() => onNavigate && onNavigate('finder')} style={{ color: 'var(--text-light-gray)', textDecoration: 'none' }}>{isAr ? '🔍 المساعد الذكي' : '🔍 Trouver mon bijou'}</a></li>
+            <li>
+              <button
+                type="button"
+                onClick={() => setIsAppModalOpen(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  color: 'var(--primary-gold)',
+                  cursor: 'pointer',
+                  fontSize: '0.88rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>📱</span>
+                <span>{isAr ? 'تطبيق الهاتف (Android & iPhone)' : 'Application Mobile (Android & iPhone)'}</span>
+              </button>
+            </li>
           </ul>
         </div>
 
@@ -157,6 +180,11 @@ export default function Footer({ onNavigate, user }) {
           <>Copyright © 2026 HRSDGDG — Marketplace de Joaillerie & Bijoux Première & Seconde Main. Tous droits réservés.</>
         )}
       </div>
+      {/* Mobile App Modal */}
+      <MobileAppModal 
+        isOpen={isAppModalOpen} 
+        onClose={() => setIsAppModalOpen(false)} 
+      />
     </footer>
   );
 }

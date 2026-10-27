@@ -3001,8 +3001,31 @@ const staticOptions = {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Service-Worker-Allowed', '/');
     }
+    if (filePath.endsWith('.apk')) {
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      res.setHeader('Content-Disposition', 'attachment; filename="hrsdgdg.apk"');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
   }
 };
+
+// Dedicated Android APK direct download endpoint
+app.get('/downloads/hrsdgdg.apk', (req, res) => {
+  const possiblePaths = [
+    path.join(mainDistPath, 'downloads', 'hrsdgdg.apk'),
+    path.join(__dirname, '..', 'oria-main', 'public', 'downloads', 'hrsdgdg.apk'),
+    path.join(__dirname, 'downloads', 'hrsdgdg.apk'),
+    path.join(__dirname, '..', 'android-build', 'bin', 'hrsdgdg.apk')
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      res.setHeader('Content-Disposition', 'attachment; filename="hrsdgdg.apk"');
+      return res.sendFile(p);
+    }
+  }
+  res.status(404).send('HRSDGDG Android APK non trouvé sur le serveur');
+});
 
 // 1. Serve Admin SPA at /admin
 if (fs.existsSync(adminDistPath)) {

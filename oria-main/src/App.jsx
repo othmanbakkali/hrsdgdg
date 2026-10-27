@@ -15,6 +15,7 @@ import ProductComparatorModal from './components/ProductComparatorModal';
 import AIAssistantModal from './components/AIAssistantModal';
 import GoldPriceHistoryModal from './components/GoldPriceHistoryModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
+import MobileAppModal from './components/MobileAppModal';
 import PWAInstallBanner from './pwa/PWAInstallBanner';
 import PWAInstallButton from './pwa/PWAInstallButton';
 
@@ -92,6 +93,7 @@ function MainLayout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isFirstLoginChange, setIsFirstLoginChange] = useState(false);
+  const [isMobileAppModalOpen, setIsMobileAppModalOpen] = useState(false);
 
   // Automatically prompt user to change password upon first authentication
   useEffect(() => {
@@ -682,6 +684,7 @@ function MainLayout() {
           onChangeTab={handleMobileNavTabChange}
           onOpenSell={() => setIsSellModalOpen(true)}
           onOpenFinder={() => setIsFinderOpen(true)}
+          onOpenMobileApp={() => setIsMobileAppModalOpen(true)}
         />
       </div>
 
@@ -799,6 +802,12 @@ function MainLayout() {
       />
       {/* PWA Install Banner & Offline / Update notifications */}
       <PWAInstallBanner />
+
+      {/* Global Mobile App Modal */}
+      <MobileAppModal 
+        isOpen={isMobileAppModalOpen} 
+        onClose={() => setIsMobileAppModalOpen(false)} 
+      />
     </div>
   );
 

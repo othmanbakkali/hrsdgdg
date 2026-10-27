@@ -6,10 +6,12 @@ export default function MobileBottomNav({
   activeTab, // 'home', 'explore', 'sell', 'account'
   onChangeTab,
   onOpenSell,
-  onOpenFinder
+  onOpenFinder,
+  onOpenMobileApp
 }) {
   const { user } = useAuth();
   const { lang, t } = useLanguage();
+  const isAr = lang === 'ar';
 
   return (
     <div className="mobile-avito-bottom-nav">
@@ -44,6 +46,31 @@ export default function MobileBottomNav({
         <span className="nav-text">{t('search')}</span>
       </button>
 
+      {/* 3. Mobile App (Android APK & iPhone) */}
+      <button 
+        className="mobile-nav-item"
+        onClick={() => onOpenMobileApp && onOpenMobileApp()}
+        title={isAr ? 'تطبيق الهاتف (أندرويد وآيفون)' : "Application Mobile (Android & iPhone)"}
+      >
+        <span className="nav-icon-wrap" style={{ position: 'relative' }}>
+          <span style={{ fontSize: '1.25rem' }}>📲</span>
+          <span style={{
+            position: 'absolute',
+            top: '-3px',
+            right: '-6px',
+            background: 'var(--primary-gold)',
+            color: '#0B0C10',
+            fontSize: '0.52rem',
+            fontWeight: 800,
+            borderRadius: '6px',
+            padding: '1px 3px',
+            lineHeight: 1
+          }}>APK</span>
+        </span>
+        <span className="nav-text" style={{ color: 'var(--primary-gold)', fontWeight: 700 }}>
+          {isAr ? 'التطبيق' : 'App'}
+        </span>
+      </button>
 
       {/* 4. Mon Compte */}
       <button 

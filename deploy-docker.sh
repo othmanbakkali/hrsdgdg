@@ -25,8 +25,7 @@ if command -v pm2 &> /dev/null; then
 fi
 
 # 2. Build Docker Image & Start Containers
-echo "🐳 Building Docker image 'hrsdgdg-platform:latest'..."
-docker compose build --no-cache hrsdgdg-platform
+docker compose build hrsdgdg-platform
 
 echo "🚀 Starting Docker Compose stack (Platform + PostgreSQL)..."
 docker compose up -d --remove-orphans

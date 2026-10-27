@@ -1,27 +1,15 @@
 import React, { useState } from 'react';
-import { usePWA } from './usePWA';
 import { useLanguage } from '../context/LanguageContext';
+import MobileAppModal from '../components/MobileAppModal';
 
 export default function PWAInstallButton({ variant = 'default', style = {} }) {
-  const { isInstallable, isInstalled, isIOS, promptInstall } = usePWA();
-  const [showIOSModal, setShowIOSModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const { lang } = useLanguage();
   const isAr = lang === 'ar';
 
-  if (isInstalled) {
-    return null;
-  }
-
-  const handleClick = async (e) => {
+  const handleClick = (e) => {
     e.preventDefault();
-    if (isIOS) {
-      setShowIOSModal(true);
-    } else {
-      const success = await promptInstall();
-      if (!success) {
-        setShowIOSModal(true);
-      }
-    }
+    setShowModal(true);
   };
 
   if (variant === 'nav-item') {
@@ -32,100 +20,50 @@ export default function PWAInstallButton({ variant = 'default', style = {} }) {
           onClick={handleClick}
           className="pwa-nav-install-btn"
           style={style}
-          title={isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'application"}
-          aria-label={isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'application"}
+          title={isAr ? 'تطبيق الهاتف (أندرويد وآيفون)' : "Application Mobile (Android & iPhone)"}
+          aria-label={isAr ? 'تطبيق الهاتف (أندرويد وآيفون)' : "Application Mobile (Android & iPhone)"}
         >
           <span style={{ fontSize: '1rem', lineHeight: 1 }}>📲</span>
-          <span className="pwa-btn-label">{isAr ? 'تثبيت التطبيق' : "Installer l'App"}</span>
+          <span className="pwa-btn-label">{isAr ? 'تطبيق الهاتف' : "App Mobile"}</span>
         </button>
 
-        {showIOSModal && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="pwa-install-title"
-            onClick={() => setShowIOSModal(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 99999,
-              background: 'rgba(0, 0, 0, 0.8)',
-              backdropFilter: 'blur(8px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px'
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: '#121218',
-                border: '1px solid #D4AF37',
-                borderRadius: '20px',
-                padding: '24px',
-                maxWidth: '400px',
-                width: '100%',
-                color: '#fff',
-                textAlign: 'center'
-              }}
-            >
-              <img src="/icons/pwa-192x192.png" alt="HRSDGDG" style={{ width: '56px', height: '56px', borderRadius: '14px', border: '1px solid #D4AF37', marginBottom: '12px' }} />
-              <h3 id="pwa-install-title" style={{ fontSize: '1.2rem', color: '#FFF2C6', margin: '0 0 8px 0', fontFamily: 'Cinzel, Georgia, serif' }}>
-                {isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'App HRSDGDG"}
-              </h3>
-              <p style={{ fontSize: '0.86rem', color: '#ccc', marginBottom: '16px', lineHeight: 1.5 }}>
-                {isIOS 
-                  ? (isAr 
-                      ? "على متصفح Safari iOS: اضغط على أيقونة المشاركة ⎙ ثم اختر «إضافة إلى الشاشة الرئيسية» ➕ لتثبيت التطبيق."
-                      : "Sur Safari iOS : Touchez l'icône Partager ⎙ puis « Sur l'écran d'accueil » ➕ pour installer l'application.")
-                  : (isAr
-                      ? "افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»."
-                      : "Ouvrez le menu de votre navigateur et sélectionnez « Installer l'application » ou « Ajouter à l'écran d'accueil ».")
-                }
-              </p>
-              <button
-                onClick={() => setShowIOSModal(false)}
-                style={{
-                  background: 'linear-gradient(135deg, #FFF2C6 0%, #D4AF37 100%)',
-                  color: '#121217',
-                  border: 'none',
-                  borderRadius: '10px',
-                  padding: '10px 20px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                {isAr ? 'إغلاق' : 'Fermer'}
-              </button>
-            </div>
-          </div>
-        )}
+        <MobileAppModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+        />
       </>
     );
   }
 
   return (
-    <button
-      onClick={handleClick}
-      style={{
-        background: 'linear-gradient(135deg, #FFF2C6 0%, #D4AF37 100%)',
-        color: '#121217',
-        border: 'none',
-        borderRadius: '12px',
-        padding: '10px 18px',
-        fontSize: '0.88rem',
-        fontWeight: 700,
-        cursor: 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '8px',
-        boxShadow: '0 4px 14px rgba(212, 175, 55, 0.35)',
-        ...style
-      }}
-    >
-      <span>📲</span>
-      <span>{isAr ? 'تثبيت تطبيق HRSDGDG' : "Installer l'App HRSDGDG"}</span>
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        style={{
+          background: 'linear-gradient(135deg, #FFF2C6 0%, #D4AF37 100%)',
+          color: '#121217',
+          border: 'none',
+          borderRadius: '12px',
+          padding: '10px 18px',
+          fontSize: '0.88rem',
+          fontWeight: 700,
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 14px rgba(212, 175, 55, 0.35)',
+          ...style
+        }}
+      >
+        <span>📲</span>
+        <span>{isAr ? 'تحميل تطبيق الهاتف (Android & iOS)' : "Télécharger l'App (Android & iOS)"}</span>
+      </button>
+
+      <MobileAppModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+      />
+    </>
   );
 }
