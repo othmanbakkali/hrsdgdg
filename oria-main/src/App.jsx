@@ -351,13 +351,6 @@ function MainLayout() {
               <span className="hide-mobile">{lang === 'ar' ? 'البحث الذكي' : 'Trouver mon bijou'}</span>
             </button>
 
-            <button 
-              onClick={() => setIsSellModalOpen(true)}
-              className="jewelia-action-btn cta-sell"
-            >
-              <span>♻️</span>
-              <span className="hide-mobile">{lang === 'ar' ? 'بيع مجوهراتي' : 'Vendre mon bijou'}</span>
-            </button>
 
             <button 
               onClick={() => setIsAIOpen(true)}
@@ -563,17 +556,6 @@ function MainLayout() {
               <span className="jewelia-nav-badge second">{lang === 'ar' ? 'مستعمل' : 'Occasion'}</span>
             </button>
 
-            <button 
-              className={`jewelia-nav-link ${saleUniverse === 'AUCTION' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('marketplace');
-                setSaleUniverse('AUCTION');
-                setDealsOnly(false);
-              }}
-            >
-              <span>{lang === 'ar' ? '🔨 المزادات' : '🔨 Enchères'}</span>
-              <span className="jewelia-nav-badge first" style={{ background: '#ef4444', color: '#fff' }}>{lang === 'ar' ? 'مباشر' : 'En Direct'}</span>
-            </button>
 
             <button 
               className={`jewelia-nav-link ${dealsOnly ? 'active' : ''}`}
@@ -597,19 +579,6 @@ function MainLayout() {
               </span>
             </button>
 
-            <button 
-              className="jewelia-nav-link"
-              onClick={() => setIsFinderOpen(true)}
-            >
-              {t('findJewel')}
-            </button>
-
-            <button 
-              className="jewelia-nav-link"
-              onClick={() => setIsSellModalOpen(true)}
-            >
-              {t('sellJewel')}
-            </button>
 
             <button 
               className={`jewelia-nav-link ${activeView === 'client-dashboard' ? 'active' : ''}`}
