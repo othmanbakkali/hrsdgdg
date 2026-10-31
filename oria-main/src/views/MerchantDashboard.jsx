@@ -1034,8 +1034,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })}
                     />
                     {/* اقتراحات سريعة للعنوان */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ اقتراحات :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ اقتراحات :</span>
                       {[
                         '💍 خاتم سوليتير ألماس 18k',
                         '📿 قلادة سلسلة فاخرة 18k',
@@ -1049,13 +1049,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                           type="button"
                           onClick={() => setProductForm({ ...productForm, titre_ar: sug })}
                           style={{
-                            background: 'rgba(212, 175, 55, 0.1)',
-                            border: '1px solid rgba(212, 175, 55, 0.3)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.74rem',
-                            color: 'var(--primary-gold)',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1.5px solid #d4af37',
+                            borderRadius: '14px',
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: '#8a6410',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           {sug}
@@ -1076,8 +1078,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       style={{ resize: 'vertical' }}
                     />
                     {/* اقتراحات سريعة للوصف */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ أضف للوصف :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ أضف للوصف :</span>
                       {[
                         '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
                         '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
@@ -1092,13 +1094,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                             description_ar: productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug
                           })}
                           style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
-                            color: '#e5e7eb',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '14px',
+                            padding: '5px 12px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           + {sug}
@@ -1115,7 +1119,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   <div style={{ marginBottom: '14px' }}>
                     <label className="filter-label" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <span>Titre en Français 🇫🇷</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Obligatoire</span>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Obligatoire</span>
                     </label>
                     <input
                       type="text"
@@ -1125,8 +1129,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })}
                     />
                     {/* Suggestions Titre */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Suggestions :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ Suggestions :</span>
                       {[
                         '💍 Bague Solitaire Diamant 18K',
                         '📿 Collier Chaine Forçat 18K',
@@ -1140,13 +1144,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                           type="button"
                           onClick={() => setProductForm({ ...productForm, titre_fr: sug, titre: sug })}
                           style={{
-                            background: 'rgba(212, 175, 55, 0.1)',
-                            border: '1px solid rgba(212, 175, 55, 0.3)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.74rem',
-                            color: 'var(--primary-gold)',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1.5px solid #d4af37',
+                            borderRadius: '14px',
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: '#8a6410',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           {sug}
@@ -1166,8 +1172,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       style={{ resize: 'vertical' }}
                     />
                     {/* Suggestions Description */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Insérer dans le texte :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ Insérer dans le texte :</span>
                       {[
                         '✨ Or 18K certifié avec poinçon d\'état officiel.',
                         '💎 Finition artisanale marocaine haute joaillerie.',
@@ -1183,13 +1189,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                             description: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug
                           })}
                           style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
-                            color: '#e5e7eb',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '14px',
+                            padding: '5px 12px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           + {sug}

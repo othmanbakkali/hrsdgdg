@@ -6127,8 +6127,8 @@ function AdminLayout() {
                       onChange={e => setProductForm({ ...productForm, description_ar: e.target.value })} 
                     />
                     {/* اقتراحات سريعة للوصف */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ أضف للوصف :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ أضف للوصف :</span>
                       {[
                         '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
                         '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
@@ -6143,13 +6143,15 @@ function AdminLayout() {
                             description_ar: productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug 
                           })}
                           style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
-                            color: '#e5e7eb',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '14px',
+                            padding: '5px 12px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           + {sug}
@@ -6215,8 +6217,8 @@ function AdminLayout() {
                       onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })} 
                     />
                     {/* Suggestions Description Rapide */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Insérer dans le texte :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ Insérer dans le texte :</span>
                       {[
                         '✨ Or 18K certifié avec poinçon d\'état officiel.',
                         '💎 Finition artisanale marocaine haute joaillerie.',
@@ -6232,13 +6234,15 @@ function AdminLayout() {
                             description: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug
                           })}
                           style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
-                            color: '#e5e7eb',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '14px',
+                            padding: '5px 12px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           + {sug}
