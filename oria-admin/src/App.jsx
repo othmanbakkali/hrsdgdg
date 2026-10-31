@@ -6087,8 +6087,8 @@ function AdminLayout() {
                       onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })} 
                     />
                     {/* اقتراحات سريعة للعنوان */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ اقتراحات :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ اقتراحات :</span>
                       {[
                         '💍 خاتم سوليتير ألماس 18k',
                         '📿 قلادة سلسلة فاخرة 18k',
@@ -6102,13 +6102,15 @@ function AdminLayout() {
                           type="button"
                           onClick={() => setProductForm({ ...productForm, titre_ar: sug })}
                           style={{
-                            background: 'rgba(212, 175, 55, 0.1)',
-                            border: '1px solid rgba(212, 175, 55, 0.3)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.74rem',
-                            color: 'var(--admin-gold)',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1.5px solid #d4af37',
+                            borderRadius: '14px',
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: '#8a6410',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           {sug}
@@ -6178,8 +6180,8 @@ function AdminLayout() {
                       required 
                     />
                     {/* Suggestions Titre Rapide */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Suggestions :</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ Suggestions :</span>
                       {[
                         '💍 Bague Solitaire Diamant 18K',
                         '📿 Collier Chaine Forçat 18K',
@@ -6193,13 +6195,15 @@ function AdminLayout() {
                           type="button"
                           onClick={() => setProductForm({ ...productForm, titre_fr: sug, titre: sug })}
                           style={{
-                            background: 'rgba(212, 175, 55, 0.1)',
-                            border: '1px solid rgba(212, 175, 55, 0.3)',
-                            borderRadius: '12px',
-                            padding: '3px 8px',
-                            fontSize: '0.74rem',
-                            color: 'var(--admin-gold)',
-                            cursor: 'pointer'
+                            background: '#ffffff',
+                            border: '1.5px solid #d4af37',
+                            borderRadius: '14px',
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: '#8a6410',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                           }}
                         >
                           {sug}
