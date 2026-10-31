@@ -2997,9 +2997,13 @@ const staticOptions = {
     if (filePath.endsWith('.webmanifest')) {
       res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
     }
-    if (filePath.endsWith('sw.js')) {
+    if (filePath.endsWith('sw.js') || filePath.endsWith('index.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Service-Worker-Allowed', '/');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      if (filePath.endsWith('sw.js')) {
+        res.setHeader('Service-Worker-Allowed', '/');
+      }
     }
     if (filePath.endsWith('.apk')) {
       res.setHeader('Content-Type', 'application/vnd.android.package-archive');
@@ -3062,7 +3066,10 @@ app.get('/downloads/hrsdgdg.apk', (req, res) => {
 // 1. Serve Admin SPA at /admin
 if (fs.existsSync(adminDistPath)) {
   app.use('/admin', express.static(adminDistPath, staticOptions));
-  app.get('/admin/*', (req, res) => {
+  app.get(['/admin', '/admin/*'], (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(adminDistPath, 'index.html'));
   });
 }
@@ -3074,6 +3081,9 @@ if (fs.existsSync(mainDistPath)) {
     if (req.path.startsWith('/api') || req.path.startsWith('/admin') || req.path.startsWith('/uploads')) {
       return next();
     }
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(mainDistPath, 'index.html'));
   });
 }
