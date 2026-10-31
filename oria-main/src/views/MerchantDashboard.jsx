@@ -1110,72 +1110,65 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               padding: '16px'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>🌐</span>
-                  <strong style={{ fontSize: '0.95rem', color: 'var(--primary-gold)' }}>محتوى الإعلان (عربي / فرنسي)</strong>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  {/* زر الترجمة التلقائية الذكية */}
+                {/* التبديل بين اللغات */}
+                <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
                   <button
                     type="button"
-                    onClick={() => handleAutoTranslateProduct(productLangTab)}
-                    disabled={isTranslating}
+                    onClick={() => switchProductLangTab('ar')}
                     style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      background: 'linear-gradient(135deg, #d4af37, #b8860b)',
-                      color: '#07090b',
-                      fontWeight: 700,
-                      fontSize: '0.8rem',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
                       border: 'none',
-                      cursor: isTranslating ? 'wait' : 'pointer',
-                      boxShadow: '0 2px 8px rgba(212, 175, 55, 0.25)'
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: productLangTab === 'ar' ? 'var(--primary-gold)' : 'transparent',
+                      color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
                     }}
-                    title="ترجمة تلقائية للمحتوى فوراً"
                   >
-                    {isTranslating ? '⏳ جاري الترجمة...' : '✨ ترجمة تلقائية (عربي ⇄ فرنسي)'}
+                    🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
                   </button>
-
-                  {/* التبديل بين اللغات */}
-                  <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => switchProductLangTab('ar')}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        background: productLangTab === 'ar' ? 'var(--primary-gold)' : 'transparent',
-                        color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
-                      }}
-                    >
-                      🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => switchProductLangTab('fr')}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        background: productLangTab === 'fr' ? 'var(--primary-gold)' : 'transparent',
-                        color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
-                      }}
-                    >
-                      🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => switchProductLangTab('fr')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: productLangTab === 'fr' ? 'var(--primary-gold)' : 'transparent',
+                      color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
+                    }}
+                  >
+                    🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
+                  </button>
                 </div>
+
+                {/* زر الترجمة التلقائية الذكية */}
+                <button
+                  type="button"
+                  onClick={() => handleAutoTranslateProduct(productLangTab)}
+                  disabled={isTranslating}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                    color: '#07090b',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    border: 'none',
+                    cursor: isTranslating ? 'wait' : 'pointer',
+                    boxShadow: '0 2px 8px rgba(212, 175, 55, 0.25)'
+                  }}
+                  title="ترجمة تلقائية للمحتوى فوراً"
+                >
+                  {isTranslating ? '⏳ جاري الترجمة...' : '✨ ترجمة تلقائية (عربي ⇄ فرنسي)'}
+                </button>
               </div>
 
               {translateSuccessMsg && (

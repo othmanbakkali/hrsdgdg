@@ -635,7 +635,7 @@ function AdminLayout() {
 
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
-    setProductLangTab('fr');
+    setProductLangTab('ar');
     const defaultMerchant = isMerchant ? adminUser?.id : (adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin');
     const defaultCategory = categories[0]?.id || '';
     setProductForm({
@@ -670,7 +670,7 @@ function AdminLayout() {
 
   const handleOpenAddAuction = () => {
     setEditingProduct(null);
-    setProductLangTab('fr');
+    setProductLangTab('ar');
     const defaultMerchant = adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin';
     const defaultCategory = categories[0]?.id || '';
     setProductForm({
@@ -704,7 +704,7 @@ function AdminLayout() {
 
   const handleOpenEditProduct = (p) => {
     setEditingProduct(p);
-    setProductLangTab('fr');
+    setProductLangTab('ar');
     setProductForm({
       titre: p.titre || p.titre_fr || '',
       titre_fr: p.titre_fr || p.titre || '',
@@ -1077,7 +1077,19 @@ function AdminLayout() {
     const method = editingProduct ? 'PUT' : 'POST';
 
     // Prepare body with fallback synchronization
+    const activeTitle = (productForm.titre_ar || productForm.titre_fr || productForm.titre || '').trim();
+    if (!activeTitle) {
+      triggerNotif(lang === 'ar' ? 'يرجى إدخال عنوان للقطعة.' : 'Veuillez saisir un titre pour le bijou.');
+      setIsSubmittingProduct(false);
+      return;
+    }
+
     const defaultMerchant = isMerchant ? adminUser?.id : (adminUser?.id || users.find(u => u.role === 'commercant')?.id || 'admin');
+    const finalTitreAr = (productForm.titre_ar || productForm.titre || productForm.titre_fr || '').trim();
+    const finalTitreFr = (productForm.titre_fr || productForm.titre || productForm.titre_ar || '').trim();
+    const finalDescAr = (productForm.description_ar || productForm.description || productForm.description_fr || '').trim();
+    const finalDescFr = (productForm.description_fr || productForm.description || productForm.description_ar || '').trim();
+
     const bodyData = { 
       ...productForm,
       purete: productForm.purete || '18k',
@@ -1086,10 +1098,12 @@ function AdminLayout() {
       commercant_id: isMerchant ? adminUser.id : (productForm.commercant_id || defaultMerchant),
       vendeur_nom: isMerchant ? (adminUser?.shopName || adminUser?.nom) : (productForm.vendeur_nom || ''),
       etat: productForm.etat || 'Neuf',
-      titre: productForm.titre_fr || productForm.titre || productForm.titre_en || productForm.titre_ar || '',
-      titre_fr: productForm.titre_fr || productForm.titre || '',
-      description: productForm.description_fr || productForm.description || productForm.description_en || productForm.description_ar || '',
-      description_fr: productForm.description_fr || productForm.description || ''
+      titre: finalTitreAr || finalTitreFr,
+      titre_ar: finalTitreAr,
+      titre_fr: finalTitreFr,
+      description: finalDescAr || finalDescFr,
+      description_ar: finalDescAr,
+      description_fr: finalDescFr
     };
     if (productForm.type_vente === 'enchere') {
       bodyData.prix = parseFloat(productForm.prix_depart) || parseFloat(productForm.prix) || 1000;
@@ -6162,75 +6176,68 @@ function AdminLayout() {
               marginBottom: '20px' 
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>🌐</span>
-                  <strong style={{ fontSize: '0.95rem', color: 'var(--admin-gold)' }}>Contenu en 3 Langues</strong>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  {/* Magic Auto-Translate Button */}
+                {/* Language Switcher Tabs */}
+                <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
                   <button
                     type="button"
-                    onClick={() => handleAutoTranslateProduct(productLangTab)}
-                    disabled={isTranslating}
+                    onClick={() => switchProductLangTab('ar')}
                     style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      background: 'linear-gradient(135deg, #d4af37, #b8860b)',
-                      color: '#07090b',
-                      fontWeight: 700,
-                      fontSize: '0.8rem',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
                       border: 'none',
-                      cursor: isTranslating ? 'wait' : 'pointer',
-                      boxShadow: '0 2px 8px rgba(212, 175, 55, 0.25)'
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: productLangTab === 'ar' ? 'var(--admin-gold)' : 'transparent',
+                      color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
                     }}
-                    title="Traduit automatiquement le contenu renseigné vers les 2 autres langues"
                   >
-                    {isTranslating 
-                      ? (lang === 'ar' ? '⏳ جاري الترجمة...' : '⏳ Traduction en cours...') 
-                      : (lang === 'ar' ? '✨ ترجمة تلقائية (عربي ⇄ فرنسي)' : '✨ Traduction automatique (Arabe ⇄ Français)')
-                    }
+                    🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
                   </button>
-                  
-                  {/* Language Switcher Tabs */}
-                  <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => switchProductLangTab('ar')}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        background: productLangTab === 'ar' ? 'var(--admin-gold)' : 'transparent',
-                        color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
-                      }}
-                    >
-                      🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => switchProductLangTab('fr')}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        background: productLangTab === 'fr' ? 'var(--admin-gold)' : 'transparent',
-                        color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
-                      }}
-                    >
-                      🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => switchProductLangTab('fr')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: productLangTab === 'fr' ? 'var(--admin-gold)' : 'transparent',
+                      color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
+                    }}
+                  >
+                    🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
+                  </button>
                 </div>
+
+                {/* Magic Auto-Translate Button */}
+                <button
+                  type="button"
+                  onClick={() => handleAutoTranslateProduct(productLangTab)}
+                  disabled={isTranslating}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                    color: '#07090b',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    border: 'none',
+                    cursor: isTranslating ? 'wait' : 'pointer',
+                    boxShadow: '0 2px 8px rgba(212, 175, 55, 0.25)'
+                  }}
+                  title="Traduit automatiquement le contenu renseigné vers l'autre langue"
+                >
+                  {isTranslating 
+                    ? (lang === 'ar' ? '⏳ جاري الترجمة...' : '⏳ Traduction en cours...') 
+                    : (lang === 'ar' ? '✨ ترجمة تلقائية (عربي ⇄ فرنسي)' : '✨ Traduction automatique (Arabe ⇄ Français)')
+                  }
+                </button>
               </div>
 
               {translateSuccessMsg && (
@@ -6357,7 +6364,6 @@ function AdminLayout() {
                       placeholder="ex: Bague Solitaire Diamant Or Blanc 18K"
                       value={productForm.titre_fr} 
                       onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })} 
-                      required 
                     />
                     {/* Suggestions Titre Rapide */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
