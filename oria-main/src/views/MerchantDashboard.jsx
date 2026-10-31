@@ -829,20 +829,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           </h3>
 
           <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {/* 1. نوع البيع (Sale Type) */}
-            <div className="form-group">
-              <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>نوع البيع</label>
-              <select
-                className="filter-select-control"
-                value={productForm.type_vente}
-                onChange={e => setProductForm({ ...productForm, type_vente: e.target.value })}
-              >
-                <option value="direct">شراء مباشر</option>
-                <option value="enchere">مزاد علني</option>
-              </select>
-            </div>
-
-            {/* 2. PHOTOS DU BIJOU (MULTI-PHOTOS AVEC COMPRESSION) */}
+            {/* 1. PHOTOS DU BIJOU (MULTI-PHOTOS AVEC COMPRESSION) */}
             <div style={{
               background: 'rgba(212, 175, 55, 0.05)',
               border: '1.5px dashed var(--primary-gold)',
@@ -1453,37 +1440,20 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 </div>
               </div>
 
-              {productForm.type_vente === 'enchere' ? (
-                <div>
-                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
-                    سعر بداية المزاد (درهم / MAD) *
-                  </label>
-                  <input
-                    type="number"
-                    min="100"
-                    placeholder="مثال: 5000"
-                    className="filter-select-control"
-                    value={productForm.prix_depart}
-                    onChange={e => handleTotalPriceChange(e.target.value)}
-                    required
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
-                    سعر القطعة (درهم / MAD) *
-                  </label>
-                  <input
-                    type="number"
-                    min="100"
-                    placeholder="مثال: 6400"
-                    className="filter-select-control"
-                    value={productForm.prix}
-                    onChange={e => handleTotalPriceChange(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
+              <div>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
+                  سعر القطعة (درهم / MAD) *
+                </label>
+                <input
+                  type="number"
+                  min="100"
+                  placeholder="مثال: 6400"
+                  className="filter-select-control"
+                  value={productForm.prix}
+                  onChange={e => handleTotalPriceChange(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             {/* مؤشر الحساب التلقائي لسعر القطعة: سعر الغرام × الوزن */}
@@ -1596,23 +1566,6 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 })}
               </div>
             </div>
-
-            {/* تفاصيل المزاد إذا كان نوع البيع مزاد */}
-            {productForm.type_vente === 'enchere' && (
-              <div style={{ marginBottom: '4px' }}>
-                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>مدة المزاد (ساعات)</label>
-                <select
-                  className="filter-select-control"
-                  value={productForm.duree || 24}
-                  onChange={e => setProductForm({ ...productForm, duree: parseInt(e.target.value) || 24 })}
-                >
-                  <option value={24}>⏱️ 24 ساعة (مزاد خاطف سريع)</option>
-                  <option value={48}>⏱️ 48 ساعة (موصى به)</option>
-                  <option value={72}>⏱️ 72 ساعة (3 أيام)</option>
-                  <option value={168}>⏱️ 7 أيام (أسبوع - مزاد برستيج)</option>
-                </select>
-              </div>
-            )}
 
             {/* تفاصيل وزن مكونات الطقم إذا كانت الفئة أطقم (Parures) */}
             {productForm.category_id === 'cat_sets' && (

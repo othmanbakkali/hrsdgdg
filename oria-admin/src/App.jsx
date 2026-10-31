@@ -5880,22 +5880,6 @@ function AdminLayout() {
               {editingProduct ? t('editProduct') : t('newProduct')}
             </h3>
 
-            {!editingProduct && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '15px' }}>
-                <div className="form-group">
-                  <label className="form-label">{t('saleType')}</label>
-                  <select
-                    className="form-input"
-                    value={productForm.type_vente}
-                    onChange={e => setProductForm({ ...productForm, type_vente: e.target.value })}
-                  >
-                    <option value="direct">{t('directPurchase')}</option>
-                    <option value="enchere">{t('auction')}</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
             {/* ======================================================== */}
             {/* 📸🎥 PHOTOS ET VIDÉO DU BIJOU (MULTI-PHOTOS & VIDÉO 10S MAX) */}
             {/* ======================================================== */}
@@ -6505,33 +6489,18 @@ function AdminLayout() {
                 </div>
               </div>
 
-              {productForm.type_vente === 'enchere' ? (
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">{t('startingPrice')} (MAD) *</label>
-                  <input 
-                    type="number" 
-                    min="100"
-                    placeholder="ex: 5000"
-                    className="form-input" 
-                    value={productForm.prix_depart} 
-                    onChange={e => handleAdminTotalPriceChange(e.target.value)} 
-                    required 
-                  />
-                </div>
-              ) : (
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">{lang === 'ar' ? 'سعر القطعة (درهم / MAD) *' : `${t('price')} (MAD) *`}</label>
-                  <input 
-                    type="number" 
-                    min="100"
-                    placeholder="ex: 6400"
-                    className="form-input" 
-                    value={productForm.prix} 
-                    onChange={e => handleAdminTotalPriceChange(e.target.value)} 
-                    required 
-                  />
-                </div>
-              )}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">{lang === 'ar' ? 'سعر القطعة (درهم / MAD) *' : `${t('price')} (MAD) *`}</label>
+                <input 
+                  type="number" 
+                  min="100"
+                  placeholder="ex: 6400"
+                  className="form-input" 
+                  value={productForm.prix} 
+                  onChange={e => handleAdminTotalPriceChange(e.target.value)} 
+                  required 
+                />
+              </div>
             </div>
 
             {/* Calculateur de prix live: gramme * prix_gramme */}
@@ -6637,20 +6606,6 @@ function AdminLayout() {
             </div>
 
             {/* Si enchère : Durée */}
-            {productForm.type_vente === 'enchere' && (
-              <div className="form-group" style={{ marginBottom: '18px' }}>
-                <label className="form-label">{t('durationHours')}</label>
-                <input 
-                  type="number" 
-                  min="1"
-                  className="form-input" 
-                  value={productForm.duree} 
-                  onChange={e => setProductForm({ ...productForm, duree: parseInt(e.target.value) || 24 })} 
-                  required 
-                />
-              </div>
-            )}
-
             <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button type="button" className="btn-outline-gold" style={{ padding: '10px 20px' }} onClick={() => setShowProductModal(false)}>
                 {t('cancel')}
