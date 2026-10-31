@@ -6467,26 +6467,6 @@ function AdminLayout() {
                   value={productForm.prix_gramme || ''} 
                   onChange={e => handleAdminPrixGrammeChange(e.target.value)} 
                 />
-                <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
-                  {['750', '800', '850', '900'].map(p => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => handleAdminPrixGrammeChange(p)}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '0.68rem',
-                        background: 'rgba(212, 175, 55, 0.1)',
-                        border: '1px solid rgba(212, 175, 55, 0.3)',
-                        borderRadius: '6px',
-                        color: 'var(--admin-gold)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>

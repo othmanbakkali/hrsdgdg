@@ -1418,26 +1418,6 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   value={productForm.prix_gramme || ''}
                   onChange={e => handlePrixGrammeChange(e.target.value)}
                 />
-                <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
-                  {['750', '800', '850', '900'].map(p => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => handlePrixGrammeChange(p)}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '0.68rem',
-                        background: 'rgba(212, 175, 55, 0.1)',
-                        border: '1px solid rgba(212, 175, 55, 0.3)',
-                        borderRadius: '6px',
-                        color: 'var(--primary-gold)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {p} د.م
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div>
