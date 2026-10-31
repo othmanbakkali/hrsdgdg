@@ -6,9 +6,7 @@ import ProductCard from '../components/ProductCard';
 import { ALL_MOROCCAN_CITIES } from '../utils/moroccanCities';
 
 export default function MerchantDashboard({ onOpenSellModal, onOpenChangePassword }) {
-  const { t, lang } = useLanguage();
   const { user } = useAuth();
-  const isAr = lang === 'ar';
 
   const [activeTab, setActiveTab] = useState('listings'); // 'listings', 'orders', 'add-product', 'sales-history', 'verifications'
   const [stats, setStats] = useState({ totalSales: 0, totalCommission: 0, netEarnings: 0, itemsSold: 0 });
@@ -17,31 +15,32 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   const [orders, setOrders] = useState([]);
   const [salesHistory, setSalesHistory] = useState([]);
 
-  // New product form
-  const [newProduct, setNewProduct] = useState({
+  // Multi-image and translation states for the Add Product form
+  const [customImageUrl, setCustomImageUrl] = useState('');
+  const [productLangTab, setProductLangTab] = useState('ar'); // 'ar' or 'fr'
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateSuccessMsg, setTranslateSuccessMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // New product form (mirrors admin product modal)
+  const [productForm, setProductForm] = useState({
+    type_vente: 'direct', // 'direct' or 'enchere'
+    images: [],
+    titre_ar: '',
+    description_ar: '',
+    titre_fr: '',
+    description_fr: '',
     titre: '',
     description: '',
+    gramme: '4.5',
     prix: '',
-    ancien_prix: '',
     prix_depart: '',
-    duree_enchere: '48',
-    type_vente: 'FIRST_HAND',
-    matiere: 'Or',
-    purete: '18k',
-    poids: '4.5',
-    pierre: 'Aucune',
-    taille: '54',
-    etat: 'Neuf',
-    annee: '2026',
+    duree: 24,
+    category_id: 'cat_rings',
     city: user?.city || 'Casablanca',
     adresse: '',
-    stock: '1',
-    category_id: 'cat_rings',
-    images: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80',
-    facture: true,
-    certificat: true,
-    boite: true,
-    garantie: true,
+    etat: 'Neuf',
+    matiere: 'Or',
     composants_poids: {
       collier: '',
       bracelet: '',
@@ -49,8 +48,6 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       boucles: ''
     }
   });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchMerchantData = async () => {
     if (!user) return;
@@ -100,20 +97,179 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     return () => clearInterval(interval);
   }, [user]);
 
+  // Image compressor (converts to lightweight JPEG data URL max 1200px)
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = () => resolve(e.target.result);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFilesSelected = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    for (const file of files) {
+      const compressed = await compressImage(file);
+      if (compressed) {
+        setProductForm(prev => ({
+          ...prev,
+          images: [...(prev.images || []), compressed]
+        }));
+      }
+    }
+    e.target.value = '';
+  };
+
+  const handleAddImageUrl = () => {
+    if (!customImageUrl.trim()) return;
+    setProductForm(prev => ({
+      ...prev,
+      images: [...(prev.images || []), customImageUrl.trim()]
+    }));
+    setCustomImageUrl('');
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setProductForm(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleSetPrimaryImage = (indexToPrimary) => {
+    setProductForm(prev => {
+      const imgs = [...(prev.images || [])];
+      const selected = imgs.splice(indexToPrimary, 1)[0];
+      return {
+        ...prev,
+        images: [selected, ...imgs]
+      };
+    });
+  };
+
+  // Auto-translate between Arabic and French
+  const handleAutoTranslateProduct = async (sourceLang = productLangTab) => {
+    const title = sourceLang === 'fr' 
+      ? (productForm.titre_fr || productForm.titre || '') 
+      : (productForm.titre_ar || '');
+    const desc = sourceLang === 'fr' 
+      ? (productForm.description_fr || productForm.description || '') 
+      : (productForm.description_ar || '');
+
+    if (!title.trim() && !desc.trim()) {
+      alert('يرجى ملء العنوان أو الوصف أولاً لبدء الترجمة التلقائية.');
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const targetLang = sourceLang === 'ar' ? 'fr' : 'ar';
+      const res = await fetch(`${API_URL}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: sourceLang,
+          targets: [targetLang],
+          fields: {
+            title,
+            description: desc
+          }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.translations) {
+          setProductForm(prev => {
+            const updated = { ...prev };
+            if (data.translations.ar) {
+              if (data.translations.ar.title) updated.titre_ar = data.translations.ar.title;
+              if (data.translations.ar.description) updated.description_ar = data.translations.ar.description;
+            }
+            if (data.translations.fr) {
+              if (data.translations.fr.title) {
+                updated.titre_fr = data.translations.fr.title;
+                if (!updated.titre) updated.titre = data.translations.fr.title;
+              }
+              if (data.translations.fr.description) {
+                updated.description_fr = data.translations.fr.description;
+                if (!updated.description) updated.description = data.translations.fr.description;
+              }
+            }
+            return updated;
+          });
+          setTranslateSuccessMsg('✓ تمت الترجمة التلقائية بنجاح!');
+          setTimeout(() => setTranslateSuccessMsg(''), 4000);
+        }
+      }
+    } catch (err) {
+      console.error('Translation error:', err);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const switchProductLangTab = (targetTab) => {
+    const prevTab = productLangTab;
+    setProductLangTab(targetTab);
+
+    const prevTitle = prevTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm.titre_ar || '');
+    const prevDesc = prevTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm.description_ar || '');
+    const targetTitle = targetTab === 'fr' ? (productForm.titre_fr || productForm.titre || '') : (productForm.titre_ar || '');
+    const targetDesc = targetTab === 'fr' ? (productForm.description_fr || productForm.description || '') : (productForm.description_ar || '');
+
+    if ((prevTitle.trim() || prevDesc.trim()) && (!targetTitle.trim() && !targetDesc.trim())) {
+      handleAutoTranslateProduct(prevTab);
+    }
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    const effectivePrice = newProduct.type_vente === 'AUCTION' ? newProduct.prix_depart : newProduct.prix;
-    if (!newProduct.titre || !effectivePrice) return;
+    const isAuction = productForm.type_vente === 'enchere';
+    const effectivePrice = isAuction ? productForm.prix_depart : productForm.prix;
+    const finalTitle = productForm.titre_ar || productForm.titre_fr || productForm.titre;
+
+    if (!finalTitle || !effectivePrice) {
+      alert('يرجى ملء عنوان القطعة والسعر.');
+      return;
+    }
+
+    if (!productForm.images || productForm.images.length === 0) {
+      alert('يرجى إضافة صورة واحدة على الأقل للقطعة (عبر رفع الملفات أو الرابط).');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      const isAuction = newProduct.type_vente === 'AUCTION';
-      
-      // Clean up parure components weight if provided
       let cleanComposants = null;
-      if (newProduct.category_id === 'cat_sets' && newProduct.composants_poids) {
+      if (productForm.category_id === 'cat_sets' && productForm.composants_poids) {
         cleanComposants = {};
-        for (const [key, val] of Object.entries(newProduct.composants_poids)) {
+        for (const [key, val] of Object.entries(productForm.composants_poids)) {
           if (val && parseFloat(val) > 0) {
             cleanComposants[key] = parseFloat(val);
           }
@@ -122,18 +278,24 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       }
 
       const payload = {
-        ...newProduct,
+        ...productForm,
+        titre: finalTitle,
+        titre_ar: productForm.titre_ar || finalTitle,
+        titre_fr: productForm.titre_fr || finalTitle,
+        description: productForm.description_ar || productForm.description_fr || productForm.description || '',
+        description_ar: productForm.description_ar || productForm.description || '',
+        description_fr: productForm.description_fr || productForm.description || '',
         prix: parseFloat(effectivePrice),
-        ancien_prix: newProduct.ancien_prix ? parseFloat(newProduct.ancien_prix) : null,
-        poids: parseFloat(newProduct.poids || 0),
-        gramme: parseFloat(newProduct.poids || 0),
+        gramme: parseFloat(productForm.gramme || 0),
+        poids: parseFloat(productForm.gramme || 0),
         composants_poids: cleanComposants,
-        type_vente: isAuction ? 'SECOND_HAND' : newProduct.type_vente,
+        type_vente: isAuction ? 'SECOND_HAND' : (productForm.etat === 'Neuf' ? 'FIRST_HAND' : 'SECOND_HAND'),
         disponibilite: isAuction ? 'enchere' : 'disponible',
-        stock: parseInt(newProduct.stock || 1),
-        city: newProduct.city || user.city || 'Casablanca',
-        adresse: newProduct.adresse || '',
-        images: [newProduct.images],
+        stock: 1,
+        city: productForm.city || user.city || 'Casablanca',
+        adresse: productForm.adresse || '',
+        images: productForm.images,
+        image: productForm.images[0],
         commercant_id: user.id,
         vendeur_nom: user.shopName || user.nom,
         vendeur_phone: user.phone || user.telephone || '',
@@ -150,40 +312,62 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       if (res.ok) {
         const createdBijou = await res.json();
 
-        // If auction, post to /api/encheres
         if (isAuction) {
-          const durationHours = parseInt(newProduct.duree_enchere) || 48;
+          const durationHours = parseInt(productForm.duree) || 48;
           await fetch(`${API_URL}/encheres`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               bijou_id: createdBijou.id,
-              prix_depart: parseFloat(newProduct.prix_depart || newProduct.prix),
+              prix_depart: parseFloat(productForm.prix_depart || productForm.prix),
               date_debut: new Date().toISOString(),
               date_fin: new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString(),
               increment_min: 50,
-              prix_reserve: parseFloat(newProduct.prix_depart || newProduct.prix)
+              prix_reserve: parseFloat(productForm.prix_depart || productForm.prix)
             })
           });
         }
 
-        alert(isAuction ? '🔨 Enchère en direct créée et publiée avec succès !' : '✨ Bijou ajouté avec succès au catalogue JEWELIA !');
+        alert(isAuction ? '🔨 تم إنشاء ونشر المزاد المباشر بنجاح!' : '✨ تمت إضافة قطعة المجوهرات ونشرها بنجاح في المتجر!');
+        
+        // Reset form
+        setProductForm({
+          type_vente: 'direct',
+          images: [],
+          titre_ar: '',
+          description_ar: '',
+          titre_fr: '',
+          description_fr: '',
+          titre: '',
+          description: '',
+          gramme: '4.5',
+          prix: '',
+          prix_depart: '',
+          duree: 24,
+          category_id: 'cat_rings',
+          city: user?.city || 'Casablanca',
+          adresse: '',
+          etat: 'Neuf',
+          matiere: 'Or',
+          composants_poids: { collier: '', bracelet: '', bague: '', boucles: '' }
+        });
+
         fetchMerchantData();
         setActiveTab('listings');
-        setIsSubmitting(false);
       } else {
         const errData = await res.json();
-        alert(errData.message || 'Erreur lors de la publication du bijou.');
-        setIsSubmitting(false);
+        alert(errData.message || 'حدث خطأ أثناء حفظ القطعة.');
       }
     } catch (err) {
       console.error(err);
+      alert('حدث خطأ في الاتصال بالخادم.');
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleMarkAsSold = async (productId) => {
-    if (!confirm('Confirmer le passage de cet article à l\'état « Vendu » ?\n\nConformément aux règles YAZ, l\'article restera visible avec le badge "Vendu" pendant 12 heures avant masquage automatique du catalogue public.')) return;
+    if (!confirm('تأكيد تسجيل هذه القطعة كـ «مباعة» ؟\n\nوفقاً لنظام المنصة، ستظل القطعة ظاهرة مع شارة «مباع» لمدة 12 ساعة قبل إخفائها تلقائياً من الكتالوج العام.')) return;
     try {
       const res = await fetch(`${API_URL}/bijoux/${productId}/vendre`, {
         method: 'POST',
@@ -195,14 +379,14 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       });
       const data = await res.json();
       if (res.ok) {
-        alert('✓ Vente confirmée ! L\'article est maintenant marqué comme "Vendu". Il sera masqué automatiquement après 12 heures.');
+        alert('✓ تم تأكيد البيع بنجاح! القطعة الآن مؤشرة كـ «مباعة» وستُحفظ في السجل التجاري.');
         fetchMerchantData();
       } else {
-        alert(data.message || 'Impossible de marquer cet article comme vendu.');
+        alert(data.message || 'تعذر تسجيل القطعة كمباعة.');
       }
     } catch (err) {
       console.error('Error marking as sold:', err);
-      alert('Erreur réseau lors de la validation de la vente.');
+      alert('خطأ في الاتصال بالشبكة.');
     }
   };
 
@@ -222,7 +406,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   };
 
   const handleDeleteProduct = async (productId) => {
-    if (!confirm('Supprimer ce bijou du catalogue ?')) return;
+    if (!confirm('هل أنت متأكد من حذف هذه القطعة من الكتالوج ؟')) return;
     try {
       await fetch(`${API_URL}/bijoux/${productId}`, { method: 'DELETE' });
       fetchMerchantData();
@@ -232,7 +416,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   };
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '36px 24px 60px' }}>
+    <div dir="rtl" style={{ maxWidth: '1440px', margin: '0 auto', padding: '36px 24px 60px', textAlign: 'right' }}>
       {/* 1. SELLER HEADER */}
       <div style={{
         background: 'var(--bg-card)',
@@ -250,7 +434,9 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '1.8rem' }}>🏪</span>
-            <h2 style={{ fontSize: '1.6rem', color: 'var(--text-white)' }}>{user?.shopName || user?.nom || 'Maison Joaillière'}</h2>
+            <h2 style={{ fontSize: '1.6rem', color: 'var(--text-white)' }}>
+              {user?.shopName || user?.nom || 'دار المجوهرات'}
+            </h2>
             
             <span style={{
               padding: '4px 12px',
@@ -261,12 +447,11 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               fontWeight: 700,
               border: '1px solid rgba(16, 185, 129, 0.3)'
             }}>
-              ✓ Vendeur Agréé
+              ✓ تاجر معتمد وموثق
             </span>
-
           </div>
           <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-            Espace Vendeur Professionnel • Gestion du catalogue, commandes clients et traçabilité des ventes
+            فضاء التاجر المهني • إدارة الكتالوج، طلبيات الزبائن وتتبع المبيعات
           </p>
         </div>
 
@@ -276,9 +461,9 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               onClick={onOpenChangePassword}
               className="btn-jewelia-secondary"
               style={{ padding: '10px 18px', fontSize: '0.88rem' }}
-              title={isAr ? 'تغيير كلمة المرور' : 'Changer mot de passe'}
+              title="تغيير كلمة المرور"
             >
-              🔐 {isAr ? 'كلمة المرور' : 'Mot de passe'}
+              🔐 كلمة المرور
             </button>
           )}
 
@@ -287,7 +472,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             className="btn-jewelia-secondary"
             style={{ padding: '10px 20px', fontSize: '0.88rem' }}
           >
-            📜 Historique des Ventes
+            📜 سجل المبيعات
           </button>
 
           <button 
@@ -295,7 +480,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             className="btn-jewelia-primary"
             style={{ padding: '10px 22px', fontSize: '0.88rem' }}
           >
-            ➕ Déposer un bijou
+            ➕ إضافة قطعة مجوهرات
           </button>
         </div>
       </div>
@@ -303,53 +488,67 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       {/* 2. KPIS ROW */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Ventes Totales</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            إجمالي المبيعات
+          </span>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.totalSales?.toLocaleString()} MAD
+            {stats.totalSales?.toLocaleString()} درهم
           </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--success-green)', fontWeight: 600 }}>Volume commercial réalisé</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--success-green)', fontWeight: 600 }}>
+            حجم المعاملات المنجزة
+          </span>
         </div>
 
-        {/* INDICATEUR ARGENT (REVENUS NETS REELS DB) */}
+        {/* INDICATEUR ARGENT (REVENUS NETS) */}
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Argent (Revenus Nets)</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            صافي الأرباح (المدخول الصافي)
+          </span>
           <h3 style={{ fontSize: '1.75rem', color: '#10b981', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.netEarnings?.toLocaleString()} MAD
+            {stats.netEarnings?.toLocaleString()} درهم
           </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Solde net disponible • Vendeur vérifié</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
+            الرصيد المتاح • تاجر موثق
+          </span>
         </div>
 
         {/* ARTICLES VENDUS & TRACABILITE */}
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Articles Vendus</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>✓ Actif</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              القطع المباعة
+            </span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>✓ نشط</span>
           </div>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {salesHistory.length} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>transactions</span>
+            {salesHistory.length} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>معاملة</span>
           </h3>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '6px' }}>
-            Articles conservés en historique après 12h
+            يتم حفظ وأرشفة القطع تلقائياً بعد البيع
           </div>
         </div>
 
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '1px' }}>Commandes Reçues</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            الطلبيات الواردة
+          </span>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
             {orders.length}
           </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--primary-gold)' }}>⭐ Note vendeur 4.9/5</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--primary-gold)' }}>
+            ⭐ تقييم التاجر 4.9/5
+          </span>
         </div>
       </div>
 
       {/* 3. NAVIGATION TABS */}
       <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '28px', overflowX: 'auto', paddingBottom: '6px' }}>
         {[
-          { id: 'listings', label: '💎 Mes Produits en Ligne', count: products.length },
-          { id: 'orders', label: '📦 Commandes Reçues', count: orders.length },
-          { id: 'add-product', label: '➕ Déposer un Bijou', count: null },
-          { id: 'sales-history', label: '📜 Historique des Ventes', count: salesHistory.length, highlight: true },
-          { id: 'verifications', label: '🛡️ Certifications & Preuves', count: products.filter(p => p.type_vente === 'SECOND_HAND').length }
+          { id: 'listings', label: '💎 معروضاتي في المتجر', count: products.length },
+          { id: 'orders', label: '📦 الطلبيات الواردة', count: orders.length },
+          { id: 'add-product', label: '➕ إضافة قطعة مجوهرات', count: null },
+          { id: 'sales-history', label: '📜 سجل المبيعات', count: salesHistory.length, highlight: true },
+          { id: 'verifications', label: '🛡️ التوثيق والشهادات', count: products.filter(p => p.type_vente === 'SECOND_HAND').length }
         ].map(tab => (
           <button
             key={tab.id}
@@ -381,12 +580,14 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           {products.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--border-gold)' }}>
               <span style={{ fontSize: '3rem', display: 'block', marginBottom: '14px' }}>💍</span>
-              <h3 style={{ fontSize: '1.3rem', color: 'var(--text-white)', marginBottom: '8px' }}>Aucun bijou déposé pour le moment</h3>
+              <h3 style={{ fontSize: '1.3rem', color: 'var(--text-white)', marginBottom: '8px' }}>
+                لا توجد أي قطع مجوهرات معروضة حالياً
+              </h3>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '20px' }}>
-                Commencez dès maintenant à publier vos créations et bijoux sur JEWELIA.
+                ابدأ الآن بإضافة وعرض إبداعاتك ومجوهراتك الفاخرة للزبائن.
               </p>
               <button onClick={() => setActiveTab('add-product')} className="btn-jewelia-primary">
-                ➕ Déposer mon premier bijou
+                ➕ إضافة أول قطعة مجوهرات
               </button>
             </div>
           ) : (
@@ -399,22 +600,22 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       {isSold ? (
                         <div style={{ padding: '8px 10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          ✓ Vendu {p.sold_at ? `(${new Date(p.sold_at).toLocaleDateString('fr-FR')})` : ''}
+                          ✓ تم البيع {p.sold_at ? `(${new Date(p.sold_at).toLocaleDateString('ar-MA')})` : ''}
                         </div>
                       ) : (
                         <button 
                           onClick={() => handleMarkAsSold(p.id)}
                           style={{ padding: '8px 10px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#fff', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
-                          title="Marquer l'article comme vendu (conservé 12h en catalogue puis masqué)"
+                          title="تسجيل القطعة كمباعة (تظل 12 ساعة ثم تؤرشف)"
                         >
-                          🏷️ Marquer Vendu
+                          🏷️ تسجيل كـ مباع
                         </button>
                       )}
                       <button 
                         onClick={() => handleDeleteProduct(p.id)}
                         style={{ padding: '8px 10px', background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
                       >
-                        🗑️ Retirer
+                        🗑️ حذف القطعة
                       </button>
                     </div>
                   </div>
@@ -431,9 +632,11 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           {orders.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--border-gold)' }}>
               <span style={{ fontSize: '3rem', display: 'block', marginBottom: '14px' }}>📦</span>
-              <h3 style={{ fontSize: '1.3rem', color: 'var(--text-white)', marginBottom: '8px' }}>Aucune commande en attente</h3>
+              <h3 style={{ fontSize: '1.3rem', color: 'var(--text-white)', marginBottom: '8px' }}>
+                لا توجد أي طلبيات في الانتظار
+              </h3>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-                Vos commandes apparaîtront ici dès que les acheteurs valideront leur panier.
+                ستظهر طلبيات الزبائن وتفاصيل الشراء هنا بمجرد تأكيد طلباتهم.
               </p>
             </div>
           ) : (
@@ -442,25 +645,25 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
                     <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary-gold)' }}>
-                      Commande #{order.id}
+                      طلب رقم #{order.id}
                     </span>
-                    <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginLeft: '12px' }}>
-                      Client : <strong style={{ color: 'var(--text-white)' }}>{order.client_nom}</strong> (<span dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate' }}>{order.client_telephone}</span>) • {order.client_ville}
+                    <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginRight: '12px' }}>
+                      الزبون : <strong style={{ color: 'var(--text-white)' }}>{order.client_nom}</strong> (<span dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate' }}>{order.client_telephone}</span>) • {order.client_ville}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }}>Statut :</span>
+                    <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }}>الحالة :</span>
                     <select 
                       value={order.statut} 
                       onChange={e => handleUpdateOrderStatus(order.id, e.target.value)}
                       style={{ padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border-gold)', color: 'var(--text-white)', borderRadius: '6px', fontSize: '0.84rem', outline: 'none' }}
                     >
-                      <option value="Confirmed">Confirmée</option>
-                      <option value="In Preparation">En préparation</option>
-                      <option value="Shipped">Expédiée 🚚</option>
-                      <option value="Delivered">Livrée ✓</option>
-                      <option value="Cancelled">Annulée</option>
+                      <option value="Confirmed">مؤكدة (Confirmed)</option>
+                      <option value="In Preparation">قيد التجهيز (In Preparation)</option>
+                      <option value="Shipped">تم الشحن 🚚 (Shipped)</option>
+                      <option value="Delivered">تم التوصيل ✓ (Delivered)</option>
+                      <option value="Cancelled">ملغاة (Cancelled)</option>
                     </select>
                   </div>
                 </div>
@@ -469,7 +672,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   {(order.items || []).map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', padding: '8px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
                       <span>{item.titre} (x{item.quantite})</span>
-                      <strong style={{ color: 'var(--primary-gold)' }}>{(item.prix * item.quantite).toLocaleString()} DH</strong>
+                      <strong style={{ color: 'var(--primary-gold)' }}>{(item.prix * item.quantite).toLocaleString()} درهم</strong>
                     </div>
                   ))}
                 </div>
@@ -479,307 +682,686 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         </div>
       )}
 
-      {/* TAB 3: ADD PRODUCT */}
+      {/* TAB 3: ADD PRODUCT (EXACTEMENT COMME LE BLOC D'ADMINISTRATION) */}
       {activeTab === 'add-product' && (
-        <div style={{ maxWidth: '820px', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '32px', boxShadow: 'var(--shadow-card)' }}>
-          <h3 style={{ fontSize: '1.35rem', color: 'var(--primary-gold)', marginBottom: '20px', fontFamily: 'var(--font-serif)' }}>
-            Ajouter un Nouveau Bijou ou Lancer une Enchère
+        <div style={{ maxWidth: '650px', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '28px', boxShadow: 'var(--shadow-card)' }}>
+          <h3 style={{ color: 'var(--primary-gold)', marginBottom: '22px', fontFamily: 'var(--font-serif)', fontSize: '1.5rem', textAlign: 'center' }}>
+            قطعة مجوهرات جديدة
           </h3>
 
           <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
-              <div>
-                <label className="filter-label">Univers de Vente</label>
-                <select 
-                  value={newProduct.type_vente} 
-                  onChange={e => setNewProduct({ ...newProduct, type_vente: e.target.value })}
-                  className="filter-select-control"
-                >
-                  <option value="FIRST_HAND">✨ Première Main (Neuf)</option>
-                  <option value="SECOND_HAND">♻️ Seconde Main (Occasion)</option>
-                  <option value="AUCTION">🔨 Enchère en Direct (Vente aux Enchères)</option>
-                </select>
+            {/* 1. نوع البيع (Sale Type) */}
+            <div className="form-group">
+              <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>نوع البيع</label>
+              <select
+                className="filter-select-control"
+                value={productForm.type_vente}
+                onChange={e => setProductForm({ ...productForm, type_vente: e.target.value })}
+              >
+                <option value="direct">شراء مباشر</option>
+                <option value="enchere">مزاد علني</option>
+              </select>
+            </div>
+
+            {/* 2. PHOTOS DU BIJOU (MULTI-PHOTOS AVEC COMPRESSION) */}
+            <div style={{
+              background: 'rgba(212, 175, 55, 0.05)',
+              border: '1.5px dashed var(--primary-gold)',
+              borderRadius: '12px',
+              padding: '16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <label style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-white)' }}>
+                  <span style={{ fontSize: '1.2rem' }}>📷</span>
+                  <span>صور القطعة (أضف صورة أو عدة صور)</span>
+                </label>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'rgba(0,0,0,0.3)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-gold)' }}>
+                  {(productForm.images || []).length} صورة
+                </span>
               </div>
 
-              <div>
-                <label className="filter-label">Catégorie / Type de bijou</label>
-                <select 
-                  value={newProduct.category_id} 
-                  onChange={e => setNewProduct({ ...newProduct, category_id: e.target.value })}
-                  className="filter-select-control"
+              {/* معرض الصور المصغرة */}
+              {(productForm.images || []).length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(85px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                  {productForm.images.map((img, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        position: 'relative', 
+                        aspectRatio: '1/1', 
+                        borderRadius: '8px', 
+                        overflow: 'hidden', 
+                        border: idx === 0 ? '2.5px solid var(--primary-gold)' : '1px solid var(--border-gold)',
+                        boxShadow: idx === 0 ? '0 0 8px rgba(212, 175, 55, 0.35)' : 'none',
+                        background: '#07090b'
+                      }}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`صورة ${idx + 1}`} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+
+                      {/* شارة الصورة الرئيسية */}
+                      {idx === 0 ? (
+                        <span style={{
+                          position: 'absolute',
+                          top: '4px',
+                          left: '4px',
+                          background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                          color: '#000',
+                          fontSize: '0.58rem',
+                          fontWeight: 800,
+                          padding: '2px 4px',
+                          borderRadius: '4px'
+                        }}>
+                          ★ الرئيسية
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryImage(idx)}
+                          title="تعيين كصورة رئيسية"
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            left: '4px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '0.6rem',
+                            cursor: 'pointer',
+                            padding: '2px 4px'
+                          }}
+                        >
+                          ★ تعيين
+                        </button>
+                      )}
+
+                      {/* زر الحذف */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        title="حذف هذه الصورة"
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(220, 38, 38, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* أزرار اختيار الملفات وإضافة الرابط */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/*" 
+                  id="merchant-multi-photo-input"
+                  style={{ display: 'none' }}
+                  onChange={handleFilesSelected}
+                />
+                <label 
+                  htmlFor="merchant-multi-photo-input" 
+                  className="btn-jewelia-primary"
+                  style={{ 
+                    cursor: 'pointer', 
+                    fontSize: '0.8rem', 
+                    padding: '7px 14px', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '6px',
+                    margin: 0
+                  }}
                 >
+                  📁 اختيار صورة أو عدة صور
+                </label>
+
+                <div style={{ display: 'flex', flex: 1, minWidth: '220px', gap: '6px' }}>
+                  <input 
+                    type="text"
+                    placeholder="أو الصق رابط صورة..."
+                    value={customImageUrl}
+                    onChange={e => setCustomImageUrl(e.target.value)}
+                    className="filter-select-control"
+                    style={{ fontSize: '0.82rem', padding: '6px 10px', margin: 0 }}
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleAddImageUrl}
+                    className="btn-jewelia-secondary"
+                    style={{ padding: '6px 12px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+                  >
+                    ➕ إضافة
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. MULTILINGUAL CONTENT SECTION (CONTENU EN 3 LANGUES) */}
+            <div style={{ 
+              background: 'rgba(212, 175, 55, 0.06)', 
+              border: '1.5px solid var(--primary-gold)', 
+              borderRadius: '12px', 
+              padding: '16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>🌐</span>
+                  <strong style={{ fontSize: '0.95rem', color: 'var(--primary-gold)' }}>محتوى الإعلان (عربي / فرنسي)</strong>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {/* زر الترجمة التلقائية الذكية */}
+                  <button
+                    type="button"
+                    onClick={() => handleAutoTranslateProduct(productLangTab)}
+                    disabled={isTranslating}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                      color: '#07090b',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      border: 'none',
+                      cursor: isTranslating ? 'wait' : 'pointer',
+                      boxShadow: '0 2px 8px rgba(212, 175, 55, 0.25)'
+                    }}
+                    title="ترجمة تلقائية للمحتوى فوراً"
+                  >
+                    {isTranslating ? '⏳ جاري الترجمة...' : '✨ ترجمة تلقائية (عربي ⇄ فرنسي)'}
+                  </button>
+                  
+                  {/* التبديل بين اللغات */}
+                  <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => switchProductLangTab('ar')}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        background: productLangTab === 'ar' ? 'var(--primary-gold)' : 'transparent',
+                        color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
+                      }}
+                    >
+                      🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchProductLangTab('fr')}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        background: productLangTab === 'fr' ? 'var(--primary-gold)' : 'transparent',
+                        color: productLangTab === 'fr' ? '#000' : 'var(--text-gray)'
+                      }}
+                    >
+                      🇫🇷 Français {productForm.titre_fr ? '✓' : ''}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {translateSuccessMsg && (
+                <div style={{ 
+                  background: 'rgba(16, 185, 129, 0.15)', 
+                  border: '1px solid rgba(16, 185, 129, 0.4)', 
+                  borderRadius: '6px', 
+                  padding: '6px 12px', 
+                  fontSize: '0.82rem', 
+                  color: '#10b981', 
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>✓</span> {translateSuccessMsg}
+                </div>
+              )}
+
+              {/* حقول اللغة العربية */}
+              {productLangTab === 'ar' && (
+                <div dir="rtl">
+                  <div style={{ marginBottom: '14px' }}>
+                    <label className="filter-label" style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'right', marginBottom: '6px' }}>
+                      <span>العنوان باللغة العربية 🇲🇦</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>مطلوب</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="filter-select-control" 
+                      dir="rtl"
+                      placeholder="مثال: خاتم سوليتير ألماس ذهب أبيض 18 قيراط"
+                      value={productForm.titre_ar} 
+                      onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })} 
+                    />
+                    {/* اقتراحات سريعة للعنوان */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ اقتراحات :</span>
+                      {[
+                        '💍 خاتم سوليتير ألماس 18k',
+                        '📿 قلادة سلسلة فاخرة 18k',
+                        '🔗 سوار رويال أنيق 18k',
+                        '✨ ميدالية ذهبية عيار 18k',
+                        '💎 أقراط دائرية عيار 18k',
+                        '👑 طقم عرائسي ملكي 18k'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ ...productForm, titre_ar: sug })}
+                          style={{
+                            background: 'rgba(212, 175, 55, 0.1)',
+                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.74rem',
+                            color: 'var(--primary-gold)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="filter-label" style={{ textAlign: 'right', marginBottom: '6px', display: 'block' }}>الوصف باللغة العربية 🇲🇦</label>
+                    <textarea 
+                      className="filter-select-control" 
+                      rows="3"
+                      dir="rtl"
+                      placeholder="وصف تفصيلي للقطعة باللغة العربية..."
+                      value={productForm.description_ar} 
+                      onChange={e => setProductForm({ ...productForm, description_ar: e.target.value })} 
+                      style={{ resize: 'vertical' }}
+                    />
+                    {/* اقتراحات سريعة للوصف */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ أضف للوصف :</span>
+                      {[
+                        '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
+                        '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
+                        '📦 مرفق بشهادة أصالة معتمدة وعلبة فاخرة.',
+                        '🔒 قفل أمان محكم ومفحوص بدقة من خبير معتمد.'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ 
+                            ...productForm, 
+                            description_ar: productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug 
+                          })}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.72rem',
+                            color: '#e5e7eb',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* حقول اللغة الفرنسية */}
+              {productLangTab === 'fr' && (
+                <div dir="ltr" style={{ textAlign: 'left' }}>
+                  <div style={{ marginBottom: '14px' }}>
+                    <label className="filter-label" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span>Titre en Français 🇫🇷</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Obligatoire</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="filter-select-control" 
+                      placeholder="ex: Bague Solitaire Diamant Or Blanc 18K"
+                      value={productForm.titre_fr} 
+                      onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })} 
+                    />
+                    {/* Suggestions Titre */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Suggestions :</span>
+                      {[
+                        '💍 Bague Solitaire Diamant 18K',
+                        '📿 Collier Chaine Forçat 18K',
+                        '🔗 Bracelet Gourmette Royale 18K',
+                        '✨ Pendentif Médaille Oria 18K',
+                        '💎 Boucles d\'Oreilles Créoles 18K',
+                        '👑 Parure Traditionnelle 18K'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ ...productForm, titre_fr: sug, titre: sug })}
+                          style={{
+                            background: 'rgba(212, 175, 55, 0.1)',
+                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.74rem',
+                            color: 'var(--primary-gold)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>Description en Français 🇫🇷</label>
+                    <textarea 
+                      className="filter-select-control" 
+                      rows="3"
+                      placeholder="Description détaillée du bijou en français..."
+                      value={productForm.description_fr} 
+                      onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })} 
+                      style={{ resize: 'vertical' }}
+                    />
+                    {/* Suggestions Description */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>⚡ Insérer dans le texte :</span>
+                      {[
+                        '✨ Or 18K certifié avec poinçon d\'état officiel.',
+                        '💎 Finition artisanale marocaine haute joaillerie.',
+                        '📦 Livré avec certificat d\'authenticité et écrin de luxe.',
+                        '🔒 Fermoir de sécurité renforcé et contrôle bijoutier.'
+                      ].map(sug => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setProductForm({ 
+                            ...productForm, 
+                            description_fr: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug,
+                            description: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug
+                          })}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            fontSize: '0.72rem',
+                            color: '#e5e7eb',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. POIDS EN PREMIER SUIVI DU PRIX (الوزن والسعر) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>الوزن (غ / g) *</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  min="0.1"
+                  placeholder="مثال: 4.5"
+                  className="filter-select-control" 
+                  value={productForm.gramme} 
+                  onChange={e => setProductForm({ ...productForm, gramme: e.target.value })} 
+                  required 
+                />
+              </div>
+
+              {productForm.type_vente === 'enchere' ? (
+                <div>
+                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>سعر بداية المزاد (درهم / MAD) *</label>
+                  <input 
+                    type="number" 
+                    min="100"
+                    placeholder="مثال: 5000"
+                    className="filter-select-control" 
+                    value={productForm.prix_depart} 
+                    onChange={e => setProductForm({ ...productForm, prix_depart: e.target.value })} 
+                    required 
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>السعر (درهم / MAD) *</label>
+                  <input 
+                    type="number" 
+                    min="100"
+                    placeholder="مثال: 6400"
+                    className="filter-select-control" 
+                    value={productForm.prix} 
+                    onChange={e => setProductForm({ ...productForm, prix: e.target.value })} 
+                    required 
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 5. الفئة وقائمة المدن المغربية */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>فئة المجوهرات *</label>
+                <select 
+                  className="filter-select-control" 
+                  value={productForm.category_id} 
+                  onChange={e => setProductForm({ ...productForm, category_id: e.target.value })}
+                  required
+                >
+                  <option value="">-- اختر الفئة --</option>
                   {categories && categories.length > 0 ? (
                     categories.map(c => (
                       <option key={c.id} value={c.id}>
-                        {c.icon || '💎'} {c.nom_fr || c.nom_ar || c.nom}
+                        {c.icon || '💎'} {c.nom_ar || c.nom_fr || c.nom}
                       </option>
                     ))
                   ) : (
                     <>
-                      <option value="cat_rings">💍 Bagues</option>
-                      <option value="cat_necklaces">📿 Colliers</option>
-                      <option value="cat_bracelets">🔗 Bracelets</option>
-                      <option value="cat_earrings">👂 Boucles d'oreilles</option>
-                      <option value="cat_sets">💎 Parures</option>
-                      <option value="cat_men">⌚ Bijoux Homme</option>
-                      <option value="cat_boxes">🎁 Coffrets & Cadeaux</option>
-                      <option value="cat_traditional">👑 Bijoux Traditionnels</option>
-                      <option value="cat_artisanal">🏺 Pièce Artisanale</option>
+                      <option value="cat_rings">💍 خواتم (Bagues)</option>
+                      <option value="cat_necklaces">📿 قلادات وسلاسل (Colliers)</option>
+                      <option value="cat_bracelets">🔗 أساور (Bracelets)</option>
+                      <option value="cat_earrings">👂 أقراط وحلق (Boucles d'oreilles)</option>
+                      <option value="cat_sets">💎 أطقم كاملة (Parures)</option>
+                      <option value="cat_men">⌚ مجوهرات رجالية (Bijoux Homme)</option>
+                      <option value="cat_boxes">🎁 علب وهدايا فاخرة (Coffrets)</option>
+                      <option value="cat_traditional">👑 مجوهرات تقليدية (Traditionnels)</option>
+                      <option value="cat_artisanal">🏺 قطعة حرفية نادرة (Artisanal)</option>
                     </>
                   )}
                 </select>
               </div>
-            </div>
 
-            {newProduct.type_vente === 'AUCTION' && (
-              <div style={{ padding: '12px 16px', background: 'rgba(179, 135, 40, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-gold)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '1.4rem' }}>🔨</span>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-dark)' }}>
-                  <strong>Mode Vente aux Enchères activé :</strong> Les acheteurs pourront surenchérir en temps réel à partir de votre prix de départ avec un pas d'enchère minimal de 50 DH.
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="filter-label">Titre du bijou</label>
-              <input 
-                type="text" 
-                required
-                placeholder="Ex: Solitaire Or Blanc 18K & Diamant 0.50ct"
-                value={newProduct.titre}
-                onChange={e => setNewProduct({ ...newProduct, titre: e.target.value })}
-                className="filter-select-control"
-              />
-            </div>
-
-            <div>
-              <label className="filter-label">Description & Spécifications</label>
-              <textarea 
-                rows="3"
-                placeholder="Détails du bijou, poinçon d'État, certificat de gemmologie, histoire de la pièce..."
-                value={newProduct.description}
-                onChange={e => setNewProduct({ ...newProduct, description: e.target.value })}
-                className="filter-select-control"
-                style={{ resize: 'vertical' }}
-              />
-            </div>
-
-            {newProduct.type_vente === 'AUCTION' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-                <div>
-                  <label className="filter-label">Grammage (g) *</label>
-                  <input 
-                    type="number"
-                    step="0.1"
-                    placeholder="4.5"
-                    value={newProduct.poids}
-                    onChange={e => setNewProduct({ ...newProduct, poids: e.target.value })}
-                    className="filter-select-control"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="filter-label">Prix de Départ (DH) *</label>
-                  <input 
-                    type="number"
-                    required
-                    placeholder="Mise de départ (ex: 4500)"
-                    value={newProduct.prix_depart || newProduct.prix}
-                    onChange={e => setNewProduct({ ...newProduct, prix_depart: e.target.value, prix: e.target.value })}
-                    className="filter-select-control"
-                  />
-                </div>
-
-                <div>
-                  <label className="filter-label">Durée de l'Enchère</label>
-                  <select 
-                    value={newProduct.duree_enchere || '48'}
-                    onChange={e => setNewProduct({ ...newProduct, duree_enchere: e.target.value })}
-                    className="filter-select-control"
-                  >
-                    <option value="24">⏱️ 24 Heures (Flash)</option>
-                    <option value="48">⏱️ 48 Heures (Recommandé)</option>
-                    <option value="72">⏱️ 72 Heures (3 Jours)</option>
-                    <option value="168">⏱️ 7 Jours (Prestige)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="filter-label">Matière</label>
-                  <select 
-                    value={newProduct.matiere}
-                    onChange={e => setNewProduct({ ...newProduct, matiere: e.target.value })}
-                    className="filter-select-control"
-                  >
-                    <option value="Or">Or</option>
-                    <option value="Argent">Argent</option>
-                    <option value="Piece Rare">Pièce rare</option>
-                    <option value="Diamant">Diamant</option>
-                  </select>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-                <div>
-                  <label className="filter-label">Grammage (g) *</label>
-                  <input 
-                    type="number"
-                    step="0.1"
-                    placeholder="4.5"
-                    value={newProduct.poids}
-                    onChange={e => setNewProduct({ ...newProduct, poids: e.target.value })}
-                    className="filter-select-control"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="filter-label">Prix de Vente (DH) *</label>
-                  <input 
-                    type="number"
-                    required
-                    placeholder="3890"
-                    value={newProduct.prix}
-                    onChange={e => setNewProduct({ ...newProduct, prix: e.target.value })}
-                    className="filter-select-control"
-                  />
-                </div>
-
-                <div>
-                  <label className="filter-label">Matière</label>
-                  <select 
-                    value={newProduct.matiere}
-                    onChange={e => setNewProduct({ ...newProduct, matiere: e.target.value })}
-                    className="filter-select-control"
-                  >
-                    <option value="Or">Or</option>
-                    <option value="Argent">Argent</option>
-                    <option value="Piece Rare">Pièce rare</option>
-                    <option value="Diamant">Diamant</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {/* DÉTAIL DU GRAMMAGE POUR LES PARURES */}
-            {newProduct.category_id === 'cat_sets' && (
-              <div style={{ background: 'rgba(212, 175, 55, 0.05)', border: '1px dashed var(--border-gold)', borderRadius: 'var(--radius-sm)', padding: '16px' }}>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--primary-gold)', marginBottom: '4px' }}>
-                  💎 Grammage par composant de la parure (Optionnel)
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginBottom: '12px' }}>
-                  Enregistrez le poids individuel des éléments pour une transparence totale envers les acheteurs.
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
-                  <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Collier (g)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Ex: 14.5"
-                      value={newProduct.composants_poids?.collier || ''}
-                      onChange={e => setNewProduct({
-                        ...newProduct,
-                        composants_poids: { ...newProduct.composants_poids, collier: e.target.value }
-                      })}
-                      className="filter-select-control"
-                    />
-                  </div>
-                  <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Bracelet (g)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Ex: 8.2"
-                      value={newProduct.composants_poids?.bracelet || ''}
-                      onChange={e => setNewProduct({
-                        ...newProduct,
-                        composants_poids: { ...newProduct.composants_poids, bracelet: e.target.value }
-                      })}
-                      className="filter-select-control"
-                    />
-                  </div>
-                  <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Bague (g)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Ex: 4.1"
-                      value={newProduct.composants_poids?.bague || ''}
-                      onChange={e => setNewProduct({
-                        ...newProduct,
-                        composants_poids: { ...newProduct.composants_poids, bague: e.target.value }
-                      })}
-                      className="filter-select-control"
-                    />
-                  </div>
-                  <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>Boucles (g)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Ex: 5.0"
-                      value={newProduct.composants_poids?.boucles || ''}
-                      onChange={e => setNewProduct({
-                        ...newProduct,
-                        composants_poids: { ...newProduct.composants_poids, boucles: e.target.value }
-                      })}
-                      className="filter-select-control"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* REGROUPEMENT VILLE & LOCALISATION */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
               <div>
-                <label className="filter-label">📍 Ville de l'Atelier / Boutique *</label>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>المدينة *</label>
                 <select 
-                  value={newProduct.city} 
-                  onChange={e => setNewProduct({ ...newProduct, city: e.target.value })}
-                  className="filter-select-control"
+                  className="filter-select-control" 
+                  value={productForm.city || 'Casablanca'} 
+                  onChange={e => setProductForm({ ...productForm, city: e.target.value })} 
+                  required 
                 >
-                  {ALL_MOROCCAN_CITIES.map(c => (
-                    <option key={c.key} value={c.key}>
-                      {isAr ? `${c.ar} (${c.fr})` : `${c.fr} (${c.ar})`}
+                  {ALL_MOROCCAN_CITIES.map(city => (
+                    <option key={city.key} value={city.key}>
+                      {`${city.ar} (${city.fr})`}
                     </option>
                   ))}
-                  <option value="Autre">{isAr ? 'مدينة أخرى' : 'Autre Ville'}</option>
+                  <option value="Autre">مدينة أخرى</option>
                 </select>
               </div>
+            </div>
 
-              <div>
-                <label className="filter-label">🏢 Quartier / Emplacement</label>
-                <input 
-                  type="text"
-                  placeholder="Ex: Kissariat El Korra, Maarif"
-                  value={newProduct.adresse}
-                  onChange={e => setNewProduct({ ...newProduct, adresse: e.target.value })}
-                  className="filter-select-control"
-                />
+            {/* 6. حالة القطعة (ÉTAT DU BIJOU) */}
+            <div style={{ marginBottom: '4px' }}>
+              <label className="filter-label" style={{ marginBottom: '8px', display: 'block' }}>حالة القطعة</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {[
+                  { value: 'Neuf', label: '✨ جديد' },
+                  { value: 'Occasion', label: '🏷️ مستعمل ممتازة' },
+                  { value: 'Artisanal', label: '🏺 قطعة حرفية' }
+                ].map(item => {
+                  const isActive = (productForm.etat || 'Neuf') === item.value;
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setProductForm({ ...productForm, etat: item.value })}
+                      style={{
+                        padding: '10px 4px',
+                        minHeight: '46px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '8px',
+                        border: isActive ? '1.5px solid var(--primary-gold)' : '1px solid rgba(255,255,255,0.12)',
+                        background: isActive ? 'rgba(212, 175, 55, 0.16)' : 'rgba(255,255,255,0.03)',
+                        color: isActive ? 'var(--primary-gold)' : 'var(--text-gray)',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div>
-              <label className="filter-label">URL de la photo principale</label>
-              <input 
-                type="url"
-                required
-                value={newProduct.images}
-                onChange={e => setNewProduct({ ...newProduct, images: e.target.value })}
-                className="filter-select-control"
-              />
-            </div>
+            {/* تفاصيل المزاد إذا كان نوع البيع مزاد */}
+            {productForm.type_vente === 'enchere' && (
+              <div style={{ marginBottom: '4px' }}>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>مدة المزاد (ساعات)</label>
+                <select 
+                  className="filter-select-control"
+                  value={productForm.duree || 24}
+                  onChange={e => setProductForm({ ...productForm, duree: parseInt(e.target.value) || 24 })}
+                >
+                  <option value={24}>⏱️ 24 ساعة (مزاد خاطف سريع)</option>
+                  <option value={48}>⏱️ 48 ساعة (موصى به)</option>
+                  <option value={72}>⏱️ 72 ساعة (3 أيام)</option>
+                  <option value={168}>⏱️ 7 أيام (أسبوع - مزاد برستيج)</option>
+                </select>
+              </div>
+            )}
 
+            {/* تفاصيل وزن مكونات الطقم إذا كانت الفئة أطقم (Parures) */}
+            {productForm.category_id === 'cat_sets' && (
+              <div style={{ background: 'rgba(212, 175, 55, 0.05)', border: '1px dashed var(--primary-gold)', borderRadius: 'var(--radius-sm)', padding: '16px' }}>
+                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--primary-gold)', marginBottom: '4px' }}>
+                  💎 تفصيل وزن مكونات الطقم (اختياري)
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginBottom: '12px' }}>
+                  سجل الوزن الفردي لكل عنصر لتوفير أقصى قدر من الشفافية للمشترين.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>قلادة (غ)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="14.5"
+                      value={productForm.composants_poids?.collier || ''}
+                      onChange={e => setProductForm({
+                        ...productForm,
+                        composants_poids: { ...productForm.composants_poids, collier: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>سوار (غ)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="8.2"
+                      value={productForm.composants_poids?.bracelet || ''}
+                      onChange={e => setProductForm({
+                        ...productForm,
+                        composants_poids: { ...productForm.composants_poids, bracelet: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>خاتم (غ)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="4.1"
+                      value={productForm.composants_poids?.bague || ''}
+                      onChange={e => setProductForm({
+                        ...productForm,
+                        composants_poids: { ...productForm.composants_poids, bague: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>أقراط (غ)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="5.0"
+                      value={productForm.composants_poids?.boucles || ''}
+                      onChange={e => setProductForm({
+                        ...productForm,
+                        composants_poids: { ...productForm.composants_poids, boucles: e.target.value }
+                      })}
+                      className="filter-select-control"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* زر الحفظ والنشر */}
             <button 
               type="submit" 
               disabled={isSubmitting} 
               className="btn-jewelia-primary" 
-              style={{ marginTop: '10px' }}
+              style={{ marginTop: '10px', padding: '12px 24px', fontSize: '1rem', fontWeight: 800 }}
             >
-              {isSubmitting ? 'Publication en cours...' : '✨ Déposer & Publier le bijou'}
+              {isSubmitting ? '⏳ جاري الحفظ والنشر...' : '✨ حفظ ونشر القطعة في المتجر'}
             </button>
           </form>
         </div>
@@ -791,19 +1373,19 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '22px' }}>
             <div>
               <div className="hero-pill-badge" style={{ background: 'rgba(212, 175, 55, 0.15)', borderColor: 'var(--primary-gold)', color: 'var(--primary-gold)', marginBottom: '8px' }}>
-                📜 REGISTRE COMMERCIAL DES VENTES
+                📜 السجل التجاري للمبيعات
               </div>
               <h3 style={{ fontSize: '1.4rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', margin: 0 }}>
-                Historique des Ventes & Transactions
+                سجل المبيعات والصفقات المكتملة
               </h3>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', margin: '4px 0 0' }}>
-                Traçabilité des articles vendus. Conformément aux règles YAZ, les pièces vendues restent enregistrées ici pour l'historique vendeur.
+                تتبع دقيق لجميع القطع المباعة في المتجر. يتم الاحتفاظ بها لأرشفة معاملات التاجر وتوثيقها.
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase' }}>Volume Vendu Total</span>
+            <div style={{ textAlign: 'left' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase' }}>إجمالي حجم المبيعات</span>
               <div style={{ fontSize: '1.6rem', color: 'var(--primary-gold)', fontWeight: 800 }}>
-                {salesHistory.reduce((sum, s) => sum + (Number(s.prix_vente) || 0), 0).toLocaleString()} MAD
+                {salesHistory.reduce((sum, s) => sum + (Number(s.prix_vente) || 0), 0).toLocaleString()} درهم
               </div>
             </div>
           </div>
@@ -811,46 +1393,46 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           {salesHistory.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '50px 20px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-gold)' }}>
               <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '10px' }}>📦</span>
-              <h4 style={{ color: 'var(--text-white)', fontSize: '1.1rem', marginBottom: '6px' }}>Aucune vente enregistrée</h4>
+              <h4 style={{ color: 'var(--text-white)', fontSize: '1.1rem', marginBottom: '6px' }}>لا توجد أي مبيعات مسجلة حتى الآن</h4>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem' }}>
-                Lorsqu'un article est vendu ou marqué comme vendu, ses informations complètes (référence, prix, date et heure) sont archivées ici.
+                عند بيع أي قطعة أو تسجيلها كمباعة، ستتم أرشفة كامل معلوماتها (المرجع، السعر، التاريخ ورقم العملية) هنا.
               </p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'right' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-gold)', textAlign: 'left', color: 'var(--text-gray)' }}>
-                    <th style={{ padding: '12px 14px' }}>Réf. Article</th>
-                    <th style={{ padding: '12px 14px' }}>Nom de l'article</th>
-                    <th style={{ padding: '12px 14px' }}>Vendeur</th>
-                    <th style={{ padding: '12px 14px' }}>Prix de Vente</th>
-                    <th style={{ padding: '12px 14px' }}>Date & Heure</th>
-                    <th style={{ padding: '12px 14px' }}>État</th>
-                    <th style={{ padding: '12px 14px' }}>N° Transaction</th>
+                  <tr style={{ borderBottom: '1px solid var(--border-gold)', color: 'var(--text-gray)' }}>
+                    <th style={{ padding: '12px 14px' }}>مرجع القطعة</th>
+                    <th style={{ padding: '12px 14px' }}>اسم القطعة</th>
+                    <th style={{ padding: '12px 14px' }}>التاجر</th>
+                    <th style={{ padding: '12px 14px' }}>سعر البيع</th>
+                    <th style={{ padding: '12px 14px' }}>التاريخ والوقت</th>
+                    <th style={{ padding: '12px 14px' }}>الحالة</th>
+                    <th style={{ padding: '12px 14px' }}>رقم المعاملة</th>
                   </tr>
                 </thead>
                 <tbody>
                   {salesHistory.map((s, idx) => (
                     <tr key={s.id || idx} style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-white)' }}>
                       <td style={{ padding: '12px 14px', fontFamily: 'monospace', color: 'var(--primary-gold)', fontWeight: 700 }}>
-                        {s.reference || s.article_id || 'YAZ-ART'}
+                        {s.reference || s.article_id || 'ORIA-ART'}
                       </td>
                       <td style={{ padding: '12px 14px', fontWeight: 600 }}>
                         {s.titre || s.article_nom}
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-gray)' }}>
-                        {s.vendeur_nom || 'Atelier YAZ'}
+                        {s.vendeur_nom || 'متجر معتمد'}
                       </td>
                       <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--primary-gold)' }}>
-                        {(Number(s.prix_vente) || 0).toLocaleString()} MAD
+                        {(Number(s.prix_vente) || 0).toLocaleString()} درهم
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-gray)', fontSize: '0.82rem' }}>
-                        {s.sold_at ? new Date(s.sold_at).toLocaleString('fr-FR') : 'Confirmé'}
+                        {s.sold_at ? new Date(s.sold_at).toLocaleString('ar-MA') : 'مؤكد'}
                       </td>
                       <td style={{ padding: '12px 14px' }}>
                         <span style={{ padding: '3px 10px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontSize: '0.75rem', fontWeight: 800, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                          ✓ Vendu
+                          ✓ مباع
                         </span>
                       </td>
                       <td style={{ padding: '12px 14px', fontFamily: 'monospace', color: 'var(--text-gray)', fontSize: '0.78rem' }}>
@@ -865,19 +1447,17 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         </div>
       )}
 
-
-
       {/* TAB 5: AUTHENTIFICATION */}
       {activeTab === 'verifications' && (
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '30px', boxShadow: 'var(--shadow-card)' }}>
           <div className="hero-pill-badge" style={{ background: 'rgba(6, 182, 212, 0.15)', borderColor: '#06b6d4', color: '#0891b2' }}>
-            🛡️ LABORATOIRE D'EXPERTISE & AUTHENTIFICATION
+            🛡️ مختبر الخبرة والتوثيق المعتمد
           </div>
           <h3 style={{ fontSize: '1.4rem', color: 'var(--text-white)', marginBottom: '10px' }}>
-            Suivi des Vérifications de vos Pièces
+            متابعة توثيق وفحص القطع الخاصة بك
           </h3>
           <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '24px' }}>
-            Chaque bijou d'occasion reçoit un certificat numérique inviolable après contrôle spectrométrique de pureté d'or et test des pierres.
+            تحصل كل قطعة مجوهرات مستعملة على شهادة رقمية موثقة بعد الفحص والتأكد من نقاء الذهب والأحجار الكريمة.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -886,12 +1466,12 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 <div>
                   <strong style={{ color: 'var(--text-white)' }}>{p.titre}</strong>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-gray)', marginTop: '2px' }}>
-                    État : {p.etat} • Année : {p.annee || '2015'} • Certificat : {p.certificat ? 'Fourni' : 'En attente'}
+                    الحالة : {p.etat} • السنة : {p.annee || '2026'} • الشهادة : {p.certificat ? 'متوفرة' : 'قيد الفحص'}
                   </div>
                 </div>
 
                 <span style={{ padding: '4px 12px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: '#059669', fontWeight: 700, fontSize: '0.8rem', border: '1px solid #10b981' }}>
-                  ✓ {p.authentifie || 'Vérifié'}
+                  ✓ {p.authentifie || 'تم التوثيق'}
                 </span>
               </div>
             ))}
