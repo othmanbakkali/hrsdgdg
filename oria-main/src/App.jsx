@@ -207,10 +207,8 @@ function MainLayout() {
     } else if (tab === 'account') {
       if (!user) {
         setIsAuthModalOpen(true);
-      } else if (user.role === 'commercant') {
-        setActiveView('merchant-dashboard');
       } else {
-        setActiveView('client-dashboard');
+        setActiveView('merchant-dashboard');
       }
     }
   };
@@ -442,16 +440,6 @@ function MainLayout() {
 
                       <button 
                         onClick={() => {
-                          setActiveView('client-dashboard');
-                          setUserMenuOpen(false);
-                        }}
-                        style={{ padding: '8px 10px', background: 'none', border: 'none', color: 'var(--text-white)', textAlign: lang === 'ar' ? 'right' : 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}
-                      >
-                        📦 {lang === 'ar' ? 'فضاء الزبون' : 'Mon Espace Client'}
-                      </button>
-
-                      <button 
-                        onClick={() => {
                           setActiveView('merchant-dashboard');
                           setUserMenuOpen(false);
                         }}
@@ -583,13 +571,6 @@ function MainLayout() {
               </span>
             </button>
 
-
-            <button 
-              className={`jewelia-nav-link ${activeView === 'client-dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveView('client-dashboard')}
-            >
-              👤 {lang === 'ar' ? 'فضاء الزبون' : 'Espace Client'}
-            </button>
 
             <button 
               className={`jewelia-nav-link ${activeView === 'merchant-dashboard' ? 'active' : ''}`}

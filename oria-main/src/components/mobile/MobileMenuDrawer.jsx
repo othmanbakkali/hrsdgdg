@@ -322,14 +322,6 @@ export default function MobileMenuDrawer({
                   )}
                   {onNavigate && (
                     <button 
-                      className="user-quick-btn"
-                      onClick={() => handleSelectNav(() => onNavigate('client-dashboard'))}
-                    >
-                      📦 {isAr ? 'فضاء الزبون' : 'Espace Client'}
-                    </button>
-                  )}
-                  {onNavigate && (
-                    <button 
                       className="user-quick-btn merchant"
                       onClick={() => handleSelectNav(() => onNavigate('merchant-dashboard'))}
                     >

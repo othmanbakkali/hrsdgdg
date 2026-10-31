@@ -1,23 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
+import { ALL_MOROCCAN_CITIES } from '../utils/moroccanCities';
 
 export default function SellJewelModal({ isOpen, onClose, onProductPublished }) {
   const { lang, isRtl } = useLanguage();
   const { user } = useAuth();
-
-  // Current Gold rate for live intrinsic calculation (MAD/g for 18k)
-  const [goldRate18k, setGoldRate18k] = useState(1045);
 
   const [formData, setFormData] = useState({
     titre: '',
     description: '',
     type_vente: 'SECOND_HAND', // 'FIRST_HAND', 'SECOND_HAND', 'AUCTION'
     category_id: 'cat_rings',
-    matiere: 'Or Jaune',
+    matiere: 'Or',
     purete: '18k',
-    poids: '4.5',
+    poids: '',
     pierre: 'Diamant',
     taille: '54',
     etat: 'Excellent état',
@@ -40,23 +38,10 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [customImageUrl, setCustomImageUrl] = useState('');
-  const [showCustomWeight, setShowCustomWeight] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [videoError, setVideoError] = useState('');
   const [videoDuration, setVideoDuration] = useState(null);
   const [showHallmarkGuide, setShowHallmarkGuide] = useState(false);
-
-  // Fetch current live gold rates
-  useEffect(() => {
-    fetch(`${API_URL}/gold-rates`)
-      .then(res => res.json())
-      .then(data => {
-        if (data?.currentPrice18k) {
-          setGoldRate18k(data.currentPrice18k);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   // Preset Catalog Samples
   const sampleJewelPresets = [
@@ -64,7 +49,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
       labelAr: '💍 خاتم سوليتير ألماس 18k',
       labelFr: '💍 Bague Solitaire Diamant 18K',
       category_id: 'cat_rings',
-      matiere: 'Or Blanc',
+      matiere: 'Or',
       purete: '18k',
       poids: '3.8',
       pierre: 'Diamant',
@@ -75,10 +60,10 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
       images: ['https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=800&auto=format&fit=crop&q=80']
     },
     {
-      labelAr: '📿 قلادة ملكية ذهب أصفر 18k',
-      labelFr: '📿 Collier Royal Or Jaune 18K',
+      labelAr: '📿 قلادة ملكية ذهب 18k',
+      labelFr: '📿 Collier Royal Or 18K',
       category_id: 'cat_necklaces',
-      matiere: 'Or Jaune',
+      matiere: 'Or',
       purete: '18k',
       poids: '8.5',
       pierre: 'Aucune',
@@ -90,9 +75,9 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     },
     {
       labelAr: '🔗 سوار كارتييه فاخر 18k',
-      labelFr: '🔗 Bracelet Chic Or Rose 18K',
+      labelFr: '🔗 Bracelet Chic Or 18K',
       category_id: 'cat_bracelets',
-      matiere: 'Or Rose',
+      matiere: 'Or',
       purete: '18k',
       poids: '12.0',
       pierre: 'Diamant',
@@ -106,7 +91,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
       labelAr: '🔨 مزاد: طقم ملكي ألماس وزمرد',
       labelFr: '🔨 Enchère : Parure Émeraude & Or',
       category_id: 'cat_sets',
-      matiere: 'Or Jaune',
+      matiere: 'Or',
       purete: '18k',
       poids: '24.5',
       pierre: 'Émeraude',
@@ -128,9 +113,6 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     { key: 'Agadir', ar: 'أكادير', fr: 'Agadir' }
   ];
 
-  // Quick weight pills
-  const weightPresets = ['1.5', '2.5', '3.8', '5.0', '7.5', '10.0', '15.0', '25.0'];
-
   // Categories list
   const categoryOptions = [
     { id: 'cat_rings', ar: '💍 خواتم', fr: '💍 Bagues' },
@@ -146,19 +128,9 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
 
   // Materials
   const materialOptions = [
-    { id: 'Or Jaune', ar: '🟡 ذهب أصفر', fr: '🟡 Or Jaune' },
-    { id: 'Or Blanc', ar: '⚪ ذهب أبيض', fr: '⚪ Or Blanc' },
-    { id: 'Or Rose', ar: '🌸 ذهب وردي', fr: '🌸 Or Rose' },
-    { id: 'Argent', ar: '▫️ فضة 1000', fr: '▫️ Argent 1000' },
-    { id: 'Platine', ar: '✨ بلاتين', fr: '✨ Platine' }
-  ];
-
-  // Purity
-  const purityOptions = [
-    { id: '18k', ar: '⭐ عيار 18k (المغربي الرسمي)', fr: '⭐ 18 Carats (750‰)' },
-    { id: '21k', ar: '⭐⭐ عيار 21k (875‰)', fr: '⭐⭐ 21 Carats (875‰)' },
-    { id: '24k', ar: '👑 عيار 24k (ذهب خالص 999‰)', fr: '👑 24 Carats (Pur 999‰)' },
-    { id: '1000', ar: '▫️ فضة خالصة 1000', fr: '▫️ Argent Massif 1000' }
+    { id: 'Or', ar: '🟡 ذهب', fr: '🟡 Or' },
+    { id: 'Argent', ar: '▫️ فضة', fr: '▫️ Argent' },
+    { id: 'Piece Rare', ar: '🪙 قطعة نادرة', fr: '🪙 Pièce rare' }
   ];
 
   // Gemstones
@@ -199,12 +171,25 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     let generatedTitle = '';
     let generatedDesc = '';
 
+    const matLabelAr = formData.matiere === 'Argent' ? 'الفضة' : formData.matiere === 'Piece Rare' ? 'قطعة نادرة' : 'الذهب';
+    const matLabelFr = formData.matiere === 'Argent' ? 'Argent' : formData.matiere === 'Piece Rare' ? 'Pièce rare' : 'Or';
+
     if (lang === 'ar') {
-      generatedTitle = `${cleanCat} راقٍ من ${formData.matiere} عيار ${formData.purete} ${stoneStr} (${weightStr})`.trim();
-      generatedDesc = `قطعة مجوهرات راقية مصنوعة بعناية من ${formData.matiere} عيار ${formData.purete} بوزن ${weightStr}. ${stoneStr ? 'مرصعة بأجود الأحجار الكريمة المنتقاة بدقة.' : 'تصميم نقي من الذهب الخالص.'} الحالة: ${formData.etat}. القطعة مرفقة بـ: ${formData.certificat ? 'شهادة الأصالة، ' : ''}${formData.facture ? 'فاتورة معتمدة، ' : ''}${formData.boite ? 'علبة فاخرة.' : ''} توصيل مؤمن ومضمون في جميع أنحاء المغرب.`;
+      if (formData.matiere === 'Piece Rare') {
+        generatedTitle = `${cleanCat} - قطعة نادرة استثنائية ${stoneStr} (${weightStr})`.trim();
+        generatedDesc = `قطعة نادرة وثمينة لهواة التميز، بوزن ${weightStr}. ${stoneStr ? 'مرصعة بأحجار كريمة.' : 'تصميم أصيل ومميز.'} الحالة: ${formData.etat}. القطعة مرفقة بـ: ${formData.certificat ? 'شهادة الأصالة، ' : ''}${formData.facture ? 'فاتورة معتمدة، ' : ''}${formData.boite ? 'علبة فاخرة.' : ''} توصيل مؤمن ومضمون في جميع أنحاء المغرب.`;
+      } else {
+        generatedTitle = `${cleanCat} راقٍ من ${matLabelAr} ${stoneStr} (${weightStr})`.trim();
+        generatedDesc = `قطعة مجوهرات راقية مصنوعة بعناية من ${matLabelAr} بوزن ${weightStr}. ${stoneStr ? 'مرصعة بأجود الأحجار الكريمة المنتقاة بدقة.' : 'تصميم نقي وجذاب.'} الحالة: ${formData.etat}. القطعة مرفقة بـ: ${formData.certificat ? 'شهادة الأصالة، ' : ''}${formData.facture ? 'فاتورة معتمدة، ' : ''}${formData.boite ? 'علبة فاخرة.' : ''} توصيل مؤمن ومضمون في جميع أنحاء المغرب.`;
+      }
     } else {
-      generatedTitle = `${cleanCat} Élégant en ${formData.matiere} ${formData.purete} ${stoneStr} (${weightStr})`.trim();
-      generatedDesc = `Magnifique bijou confectionné en ${formData.matiere} ${formData.purete} avec un poids de ${weightStr}. ${stoneStr ? 'Sublimé par des pierres de qualité supérieure.' : 'Design épuré et intemporel.'} État : ${formData.etat}. Fourni avec : ${formData.certificat ? 'certificat d\'authenticité, ' : ''}${formData.facture ? 'facture officielle, ' : ''}${formData.boite ? 'écrin de luxe.' : ''} Expédition rapide et sécurisée avec remise en main propre.`;
+      if (formData.matiere === 'Piece Rare') {
+        generatedTitle = `${cleanCat} - Pièce rare de collection ${stoneStr} (${weightStr})`.trim();
+        generatedDesc = `Exceptionnelle pièce rare et authentique, avec un poids de ${weightStr}. ${stoneStr ? 'Sublimée par des pierres de qualité supérieure.' : 'Pièce unique pour connaisseurs.'} État : ${formData.etat}. Fourni avec : ${formData.certificat ? 'certificat d\'authenticité, ' : ''}${formData.facture ? 'facture officielle, ' : ''}${formData.boite ? 'écrin de luxe.' : ''} Expédition rapide et sécurisée avec remise en main propre.`;
+      } else {
+        generatedTitle = `${cleanCat} Élégant en ${matLabelFr} ${stoneStr} (${weightStr})`.trim();
+        generatedDesc = `Magnifique bijou confectionné en ${matLabelFr} avec un poids de ${weightStr}. ${stoneStr ? 'Sublimé par des pierres de qualité supérieure.' : 'Design épuré et intemporel.'} État : ${formData.etat}. Fourni avec : ${formData.certificat ? 'certificat d\'authenticité, ' : ''}${formData.facture ? 'facture officielle, ' : ''}${formData.boite ? 'écrin de luxe.' : ''} Expédition rapide et sécurisée avec remise en main propre.`;
+      }
     }
 
     setFormData(prev => ({
@@ -236,21 +221,6 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
 
     setToastMessage(lang === 'ar' ? `✨ تم تطبيق نموذج ${preset.labelAr} بنجاح !` : `✨ Modèle ${preset.labelFr} appliqué !`);
     setTimeout(() => setToastMessage(''), 3500);
-  };
-
-  // Calculate intrinsic gold raw value
-  const numPoids = parseFloat(formData.poids) || 0;
-  const rawGoldValue = Math.round(numPoids * goldRate18k);
-
-  // Apply suggested pricing based on raw gold value
-  const applySuggestedPrice = (multiplier) => {
-    const suggested = Math.round(rawGoldValue * multiplier);
-    if (formData.type_vente === 'AUCTION') {
-      setFormData(prev => ({ ...prev, prix_depart: suggested.toString() }));
-    } else {
-      const oldP = Math.round(suggested * 1.15);
-      setFormData(prev => ({ ...prev, prix: suggested.toString(), ancien_prix: oldP.toString() }));
-    }
   };
 
   // Image handlers
@@ -944,12 +914,12 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
             </div>
 
             {/* ========================================================
-                4. MATIERE & PURETE (CARAT CHOICES)
+                4. CHOIX DU METAL
                 ======================================================== */}
             <div className="sell-section-box">
               <label className="sell-section-label">
                 <span className="section-label-num">4</span>
-                <span>{lang === 'ar' ? 'المعدن والعيار' : 'Métal Précieux & Pureté'}</span>
+                <span>{lang === 'ar' ? 'نوع المعدن' : 'Métal Précieux'}</span>
               </label>
 
               {/* Matiere */}
@@ -968,125 +938,36 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                   ))}
                 </div>
               </div>
-
-              {/* Purete */}
-              <div className="sub-section-row" style={{ marginTop: '10px' }}>
-                <span className="sub-label">{lang === 'ar' ? 'العيار :' : 'Carat :'}</span>
-                <div className="choice-pills-wrap">
-                  {purityOptions.map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className={`choice-chip ${formData.purete === p.id ? 'active' : ''}`}
-                      onClick={() => setFormData({ ...formData, purete: p.id })}
-                    >
-                      {lang === 'ar' ? p.ar : p.fr}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* ========================================================
-                5. POIDS & ESTIMATEUR DE VALEUR EN DIRECT
+                5. POIDS DU BIJOU (GRAMMAGE)
                 ======================================================== */}
             <div className="sell-section-box">
               <label className="sell-section-label">
                 <span className="section-label-num">5</span>
-                <span>{lang === 'ar' ? 'الوزن وحاسبة قيمة الذهب' : 'Poids & Estimateur de Valeur Or'}</span>
+                <span>{lang === 'ar' ? 'الوزن (بالغرام)' : 'Poids du bijou (en grammes)'}</span>
               </label>
 
-              {/* Quick Weight Chips */}
-              <div className="choice-pills-wrap">
-                {weightPresets.map(w => (
-                  <button
-                    key={w}
-                    type="button"
-                    className={`weight-chip ${formData.poids === w ? 'active' : ''}`}
-                    onClick={() => {
-                      setFormData({ ...formData, poids: w });
-                      setShowCustomWeight(false);
-                    }}
-                  >
-                    <span>{w}g</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className={`weight-chip ${showCustomWeight ? 'active' : ''}`}
-                  onClick={() => setShowCustomWeight(!showCustomWeight)}
-                >
-                  <span>{lang === 'ar' ? '✎ وزن آخر...' : '✎ Autre poids...'}</span>
-                </button>
+              <div className="custom-weight-input-wrap" style={{ marginTop: '8px' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px', display: 'block', fontWeight: 500 }}>
+                  {lang === 'ar' ? 'أدخل الوزن الدقيق للقطعة بالغرام :' : 'Poids précis de la pièce en grammes :'}
+                </label>
+                <div className="input-with-unit">
+                  <input 
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={formData.poids}
+                    onChange={e => setFormData({ ...formData, poids: e.target.value })}
+                    placeholder={lang === 'ar' ? 'مثال: 4.50' : 'Ex: 4.50'}
+                    className="auth-text-input"
+                    style={{ fontSize: '1.1rem', fontWeight: 600 }}
+                  />
+                  <span className="unit-badge">{lang === 'ar' ? 'غرام (g)' : 'Grammes (g)'}</span>
+                </div>
               </div>
-
-              {/* Custom Weight Input */}
-              {showCustomWeight && (
-                <div className="custom-weight-input-wrap animate-slide-down">
-                  <label>{lang === 'ar' ? 'أدخل الوزن بالغرام بدقة :' : 'Poids précis en grammes :'}</label>
-                  <div className="input-with-unit">
-                    <input 
-                      type="number"
-                      step="0.05"
-                      min="0.1"
-                      value={formData.poids}
-                      onChange={e => setFormData({ ...formData, poids: e.target.value })}
-                      placeholder="Ex: 6.85"
-                      className="auth-text-input"
-                    />
-                    <span className="unit-badge">g (غرام)</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Live Gold Intrinsic Value Calculator */}
-              {numPoids > 0 && (
-                <div className="gold-estimate-box animate-slide-down">
-                  <div className="gold-estimate-header">
-                    <div className="est-info">
-                      <span className="est-icon">💡</span>
-                      <div>
-                        <div className="est-title">
-                          {lang === 'ar' 
-                            ? `القيمة التقديرية للذهب الصافي عيار 18k (${goldRate18k} د.م/غ) :` 
-                            : `Valeur brute or 18k estimée (${goldRate18k} DH/g) :`}
-                        </div>
-                        <div className="est-calc-formula">
-                          {numPoids} {lang === 'ar' ? 'غ' : 'g'} × {goldRate18k} {lang === 'ar' ? 'د.م' : 'DH'} = <span className="est-price-val">~{rawGoldValue.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="quick-price-helper-row">
-                    <span className="helper-label">{lang === 'ar' ? 'اقتراح سعر بنقرة واحدة :' : 'Appliquer un prix conseillé :'}</span>
-                    <button
-                      type="button"
-                      className="suggest-price-btn"
-                      onClick={() => applySuggestedPrice(1.0)}
-                      title="Prix de l'or brut"
-                    >
-                      {lang === 'ar' ? 'الذهب الصافي' : 'Or brut'} (~{rawGoldValue} {lang === 'ar' ? 'د.م' : 'DH'})
-                    </button>
-                    <button
-                      type="button"
-                      className="suggest-price-btn gold"
-                      onClick={() => applySuggestedPrice(1.20)}
-                      title="+20% pour la façon et l'artisanat"
-                    >
-                      +20% {lang === 'ar' ? 'مصنعية وإتقان' : 'Façon'} (~{Math.round(rawGoldValue * 1.20)} {lang === 'ar' ? 'د.م' : 'DH'})
-                    </button>
-                    <button
-                      type="button"
-                      className="suggest-price-btn premium"
-                      onClick={() => applySuggestedPrice(1.40)}
-                      title="+40% pour joaillerie haut de gamme"
-                    >
-                      +40% {lang === 'ar' ? 'مجوهرات راقية' : 'Haute Joaillerie'} (~{Math.round(rawGoldValue * 1.40)} {lang === 'ar' ? 'د.م' : 'DH'})
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ========================================================
@@ -1254,12 +1135,12 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                 </div>
               )}
 
-              {/* City Selection with Quick Pills */}
-              <div className="auth-field-group" style={{ marginTop: '8px' }}>
+              {/* City Selection with Quick Pills and Full Dropdown of All Moroccan Cities */}
+              <div className="auth-field-group" style={{ marginTop: '12px' }}>
                 <label className="auth-field-label">
                   <span>📍 {lang === 'ar' ? 'مدينة تواجد القطعة' : 'Ville de localisation'}</span>
                 </label>
-                <div className="quick-city-pills-row">
+                <div className="quick-city-pills-row" style={{ marginBottom: '8px' }}>
                   {topCities.map(c => (
                     <button
                       key={c.key}
@@ -1270,6 +1151,26 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                       {lang === 'ar' ? c.ar : c.fr}
                     </button>
                   ))}
+                </div>
+                <div className="auth-input-container">
+                  <select
+                    className="auth-text-input auth-select-input"
+                    value={formData.city}
+                    onChange={e => setFormData({ ...formData, city: e.target.value })}
+                    style={{ cursor: 'pointer', fontSize: '0.95rem' }}
+                  >
+                    <option value="" disabled>
+                      {lang === 'ar' ? '🔍 اختر من قائمة جميع مدن المغرب...' : '🔍 Choisissez parmi toutes les villes du Maroc...'}
+                    </option>
+                    {ALL_MOROCCAN_CITIES.map(c => (
+                      <option key={c.key} value={c.key}>
+                        {lang === 'ar' ? `${c.ar} (${c.fr})` : `${c.fr} (${c.ar})`}
+                      </option>
+                    ))}
+                    <option value="Autre">
+                      {lang === 'ar' ? '✨ مدينة أخرى' : '✨ Autre Ville'}
+                    </option>
+                  </select>
                 </div>
               </div>
             </div>

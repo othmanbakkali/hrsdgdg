@@ -698,9 +698,9 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     onChange={e => setNewProduct({ ...newProduct, matiere: e.target.value })}
                     className="filter-select-control"
                   >
-                    <option value="Or">Or 18K (750‰)</option>
-                    <option value="Argent">Argent 1000</option>
-                    <option value="Platine">Platine</option>
+                    <option value="Or">Or</option>
+                    <option value="Argent">Argent</option>
+                    <option value="Piece Rare">Pièce rare</option>
                     <option value="Diamant">Diamant</option>
                   </select>
                 </div>
@@ -739,9 +739,9 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     onChange={e => setNewProduct({ ...newProduct, matiere: e.target.value })}
                     className="filter-select-control"
                   >
-                    <option value="Or">Or 18K (750‰)</option>
-                    <option value="Argent">Argent 1000</option>
-                    <option value="Platine">Platine</option>
+                    <option value="Or">Or</option>
+                    <option value="Argent">Argent</option>
+                    <option value="Piece Rare">Pièce rare</option>
                     <option value="Diamant">Diamant</option>
                   </select>
                 </div>

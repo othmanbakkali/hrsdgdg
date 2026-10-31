@@ -135,20 +135,23 @@ Merci.`;
   };
 
   const formatMaterial = (mat, purity) => {
+    const mLower = (mat || '').toLowerCase();
     if (lang === 'ar') {
+      if (mLower.includes('piece') || mLower.includes('pièce') || mLower.includes('rare')) return 'قطعة نادرة';
+      if (mLower.includes('argent')) return 'فضة';
       let m = mat || '';
-      const mLower = m.toLowerCase();
       if (mLower.includes('or jaune')) m = 'ذهب أصفر';
       else if (mLower.includes('or blanc')) m = 'ذهب أبيض';
       else if (mLower.includes('or rose')) m = 'ذهب وردي';
       else if (mLower.includes('or')) m = 'ذهب';
-      else if (mLower.includes('argent')) m = 'فضة';
       else if (mLower.includes('platine')) m = 'بلاتين';
       else if (mLower.includes('diamant')) m = 'ألماس';
       const pure = purity || '18K';
       const pureAr = pure.toLowerCase().includes('18') ? '18 قيراط' : pure.toLowerCase().includes('24') ? '24 قيراط' : pure.toLowerCase().includes('22') ? '22 قيراط' : pure;
       return `${m} ${pureAr}`;
     }
+    if (mLower.includes('piece') || mLower.includes('pièce') || mLower.includes('rare')) return 'Pièce rare';
+    if (mLower.includes('argent')) return 'Argent';
     return `${mat || 'Or'} ${purity || '18K'}`;
   };
 

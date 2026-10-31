@@ -1764,12 +1764,12 @@
     }
   ],
   "goldRates": {
-    "currentPrice18k": 1032,
+    "currentPrice18k": 1034,
     "currentPriceSilver": 15,
     "carat": "18K",
     "unit": "MAD/g",
     "silverUnit": "MAD/g",
-    "lastUpdated": "2026-10-26T13:35:30.165Z",
+    "lastUpdated": "2026-10-27T14:17:00.869Z",
     "updatedBy": "PrixOr Railway (dllal)",
     "history": [
       {
@@ -3273,6 +3273,14 @@
         "date": "2026-10-26 14:35",
         "price18k": 1032,
         "change": "-0.3%",
+        "source": "Fixation dllal",
+        "note": "Synchronisé via PrixOr (Railway)"
+      },
+      {
+        "id": "gh_railway_189",
+        "date": "2026-10-27 15:17",
+        "price18k": 1034,
+        "change": "+0.2%",
         "source": "Fixation dllal",
         "note": "Synchronisé via PrixOr (Railway)"
       }

@@ -247,14 +247,15 @@ export default function MobileFilterSheet({
             </div>
           </div>
 
-          {/* 4. Matière & Or 18K */}
+          {/* 4. Matière & Métal */}
           <div className="sheet-filter-group">
-            <label className="sheet-filter-label">🥇 {isAr ? 'المعدن والعيار' : 'Matière & Pureté'}</label>
+            <label className="sheet-filter-label">🥇 {isAr ? 'المعدن والمادة' : 'Matière & Métal'}</label>
             <div className="sheet-chips-grid">
               {[
                 { id: 'ALL', label: isAr ? 'جميع المعادن' : 'Toutes les matières' },
-                { id: 'Or', label: isAr ? '🥇 ذهب 18 قيراط (750‰)' : '🥇 Or 18K (750‰)' },
-                { id: 'Argent', label: isAr ? '▫️ فضة 1000' : '▫️ Argent 1000' },
+                { id: 'Or', label: isAr ? '🥇 ذهب' : '🥇 Or' },
+                { id: 'Argent', label: isAr ? '▫️ فضة' : '▫️ Argent' },
+                { id: 'Piece Rare', label: isAr ? '🪙 قطعة نادرة' : '🪙 Pièce rare' },
                 { id: 'Diamant', label: isAr ? '💠 ألماس وأحجار كريمة' : '💠 Diamants' },
                 { id: 'Plaqué or', label: isAr ? '✨ مطلي بالذهب' : '✨ Plaqué or' }
               ].map(mat => (

@@ -391,8 +391,9 @@ export default function Marketplace({
               className="filter-select-control"
             >
               <option value="ALL">{lang === 'ar' ? 'جميع المواد' : 'Toutes les matières'}</option>
-              <option value="Or">{lang === 'ar' ? '🥇 ذهب 18 / 24 قيراط' : '🥇 Or 18k / 24k'}</option>
-              <option value="Argent">{lang === 'ar' ? '▫️ فضة 1000' : '▫️ Argent 1000'}</option>
+              <option value="Or">{lang === 'ar' ? '🥇 ذهب' : '🥇 Or'}</option>
+              <option value="Argent">{lang === 'ar' ? '▫️ فضة' : '▫️ Argent'}</option>
+              <option value="Piece Rare">{lang === 'ar' ? '🪙 قطعة نادرة' : '🪙 Pièce rare'}</option>
               <option value="Diamant">{lang === 'ar' ? '💠 ألماس وسوليتير' : '💠 Diamant & Solitaire'}</option>
               <option value="Plaqué or">{lang === 'ar' ? '✨ مطلي بالذهب' : '✨ Plaqué or'}</option>
               <option value="Acier">{lang === 'ar' ? '⚙️ فولاذ مقاوم للصدأ' : '⚙️ Acier inoxydable'}</option>

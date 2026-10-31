@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import OriaLogo from './components/OriaLogo';
@@ -64,6 +64,41 @@ function AdminLayout() {
     }
     localStorage.setItem('hrsdgdg-theme', themeMode);
   }, [themeMode]);
+
+  // Roles and permissions management state
+  const [rolePermissions, setRolePermissions] = useState(() => {
+    const saved = localStorage.getItem('role_permissions');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.admin && !parsed.admin.includes('manage_gold_rates')) {
+            parsed.admin.push('manage_gold_rates');
+          }
+          if (parsed.admin && !parsed.admin.includes('manage_terms')) {
+            parsed.admin.push('manage_terms');
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Error parsing role_permissions from localStorage', e);
+      }
+    }
+    return {
+      admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products', 'manage_gold_rates', 'manage_terms'],
+      commercant: ['publish_listings', 'manage_orders', 'view_shop_analytics', 'chat_with_clients'],
+      client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
+    };
+  });
+
+  const hasPermission = useCallback((permKey) => {
+    const currentRole = adminUser?.role || 'admin';
+    const rolePerms = rolePermissions?.[currentRole];
+    if (Array.isArray(rolePerms)) {
+      return rolePerms.includes(permKey);
+    }
+    return currentRole === 'admin';
+  }, [adminUser?.role, rolePermissions]);
   
   const isMerchant = adminUser?.role === 'commercant';
   const [activeTab, setActiveTab] = useState(() => (adminUser?.role === 'commercant' ? 'products' : 'dashboard'));
@@ -77,7 +112,7 @@ function AdminLayout() {
     } else if (activeTab === 'terms' && !hasPermission('manage_terms')) {
       setActiveTab('dashboard');
     }
-  }, [isMerchant, activeTab, rolePermissions, adminUser]);
+  }, [isMerchant, activeTab, hasPermission]);
   const [stats, setStats] = useState({ totalSales: 0, totalCommissions: 0, totalMerchants: 0, totalClients: 0, totalProducts: 0, merchantsBreakdown: [] });
   const [pendingProducts, setPendingProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -166,6 +201,10 @@ function AdminLayout() {
 
   // Notification Banner
   const [notif, setNotif] = useState(null);
+  const triggerNotif = (msg) => {
+    setNotif(msg);
+    setTimeout(() => setNotif(null), 4000);
+  };
 
   // Terms & Conditions Management State
   const [termsData, setTermsData] = useState(null);
@@ -174,41 +213,7 @@ function AdminLayout() {
   const [isSavingTerms, setIsSavingTerms] = useState(false);
   const [termsDirty, setTermsDirty] = useState(false);
 
-  // Roles and permissions management state
-  const [rolePermissions, setRolePermissions] = useState(() => {
-    const saved = localStorage.getItem('role_permissions');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          if (parsed.admin && !parsed.admin.includes('manage_gold_rates')) {
-            parsed.admin.push('manage_gold_rates');
-          }
-          if (parsed.admin && !parsed.admin.includes('manage_terms')) {
-            parsed.admin.push('manage_terms');
-          }
-          return parsed;
-        }
-      } catch (e) {
-        console.error('Error parsing role_permissions from localStorage', e);
-      }
-    }
-    return {
-      admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products', 'manage_gold_rates', 'manage_terms'],
-      commercant: ['publish_listings', 'manage_orders', 'view_shop_analytics', 'chat_with_clients'],
-      client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
-    };
-  });
-
-  const hasPermission = (permKey) => {
-    const currentRole = adminUser?.role || 'admin';
-    const rolePerms = rolePermissions?.[currentRole];
-    if (Array.isArray(rolePerms)) {
-      return rolePerms.includes(permKey);
-    }
-    return currentRole === 'admin';
-  };
-
+  // Roles and permissions management action state
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
   const [permissionsDirty, setPermissionsDirty] = useState(false);
 
@@ -451,11 +456,6 @@ function AdminLayout() {
       console.error(err);
       triggerNotif(t('notifServerError'));
     }
-  };
-
-  const triggerNotif = (msg) => {
-    setNotif(msg);
-    setTimeout(() => setNotif(null), 4000);
   };
 
   // BiDi-safe Phone Formatter & Link Helpers for RTL and LTR
