@@ -1575,32 +1575,27 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">المادة 2 : ضمان أصالة الذهب عيار 18 قيراط والدمغة القانونية</h4>
-                    <p>يلتزم الصائغ المسجل بأن تكون كافة المجوهرات والمعروضات مصنوعة من الذهب القانوني عيار 18 قيراط (750 بالألف)، ومدموغة بالدمغة الرسمية لمكتب الضمانة المغربي وبدمغة الصانع، وتتحمل المؤسسة العارضة المسؤولية القانونية التامة في حالة ثبوت أي مخالفة للعيار.</p>
-                  </div>
-
-                  <div className="terms-article-item">
-                    <h4 className="terms-article-title">المادة 3 : التحقق من وثيقة الباتنت والسجل التجاري</h4>
+                    <h4 className="terms-article-title">المادة 2 : التحقق من وثيقة الباتنت والسجل التجاري</h4>
                     <p>يقر المستخدم بأن جميع الوثائق المرفوعة (شهادة الباتنت، السجل التجاري، والبيانات التعريفية) صحيحة وحديثة. تحتفظ إدارة المنصة بحق التحقق من صحة الوثائق مع الجهات المختصة ورفض أو تعليق أي حساب غير مستوفٍ للشروط.</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">المادة 4 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات</h4>
+                    <h4 className="terms-article-title">المادة 3 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات</h4>
                     <p>يلتزم الصائغ بالدقة المتناهية في ذكر الأوزان الصافية بالغرام، نوع الأحجار الكريمة، والمواصفات الفنية، وتسليم القطع للمشتري مطابقة للصور والوصف المنشور، والالتزام بإتمام المزادات المنتهية لصالح الفائزين.</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">المادة 5 : باقات الاشتراكات والعمولات</h4>
+                    <h4 className="terms-article-title">المادة 4 : باقات الاشتراكات والعمولات</h4>
                     <p>يخضع عرض المجوهرات لباقات الاشتراك المختارة وتحدد كل باقة الحد الأقصى للمنتجات ونسب العمولة المستحقة للمنصة عن كل عملية بيع مؤكدة.</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">المادة 6 : حماية المعطيات والسرية المهنية (قانون 09-08)</h4>
+                    <h4 className="terms-article-title">المادة 5 : حماية المعطيات والسرية المهنية (قانون 09-08)</h4>
                     <p>تلتزم المنصة بحماية وسرية البيانات والمعاملات التجارية الخاصة بالصاغة والمشتركين طبقاً لأحكام القانون المغربي رقم 09-08 المتعلق بحماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي (CNDP).</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">المادة 7 : الجزاءات وإنهاء الحساب</h4>
+                    <h4 className="terms-article-title">المادة 6 : الجزاءات وإنهاء الحساب</h4>
                     <p>يحق لإدارة المنصة إيقاف أو فسخ حساب أي عضو بصورة فورية ونهائية في حال الإخلال بشروط الأمان، التلاعب بالأسعار أو العيارات، أو الإخلال بتسليم الطلبات.</p>
                   </div>
                 </div>
@@ -1616,32 +1611,27 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">Article 2 : Garantie de Titre Or 18K & Poinçons Légaux</h4>
-                    <p>Tous les bijoux et ouvrages mis en vente ou en enchères doivent être obligatoirement en or titré 18 carats (750‰) et revêtus des poinçons légaux conformes aux dispositions de l'Administration des Douanes et Impôts Indirects (Bureau de Garantie). Toute défaillance de titre engage la responsabilité civile et pénale exclusive du vendeur.</p>
-                  </div>
-
-                  <div className="terms-article-item">
-                    <h4 className="terms-article-title">Article 3 : Vérification de la Patente et Conformité Documentaire</h4>
+                    <h4 className="terms-article-title">Article 2 : Vérification de la Patente et Conformité Documentaire</h4>
                     <p>L'adhérent garantit l'authenticité de l'attestation de patente et des pièces administratives téléversées. L'administration de HRSDGDG se réserve le droit d'auditer ces pièces et de suspendre tout compte dont les justificatifs s'avèrent non conformes.</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">Article 4 : Exactitude des Descriptions, Poids et Enchères</h4>
+                    <h4 className="terms-article-title">Article 3 : Exactitude des Descriptions, Poids et Enchères</h4>
                     <p>Le professionnel s'engage à fournir des descriptions rigoureusement exactes (poids net en grammes, pureté, pierres serties) et à livrer des pièces strictement identiques aux photos et caractéristiques publiées, ainsi qu'à honorer l'ensemble des adjudications d'enchères.</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">Article 5 : Forfaits, Quotas & Commissions</h4>
+                    <h4 className="terms-article-title">Article 4 : Forfaits, Quotas & Commissions</h4>
                     <p>L'utilisation de la plateforme est régie par les formules d'abonnements souscrites. Les quotas de dépôts de bijoux et les commissions sur ventes sont appliqués conformément à la grille tarifaire en vigueur.</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">Article 6 : Protection des Données Personnelles (Loi 09-08)</h4>
+                    <h4 className="terms-article-title">Article 5 : Protection des Données Personnelles (Loi 09-08)</h4>
                     <p>Les données collectées font l'objet d'un traitement hautement sécurisé et chiffré, dans le strict respect de la Loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel (CNDP).</p>
                   </div>
 
                   <div className="terms-article-item">
-                    <h4 className="terms-article-title">Article 7 : Sanctions, Suspension & Résiliation</h4>
+                    <h4 className="terms-article-title">Article 6 : Sanctions, Suspension & Résiliation</h4>
                     <p>Tout manquement aux présentes conditions, tentative de fraude, fausse déclaration sur le titre d'or ou refus d'honorer une vente conclue entraîne la suspension immédiate et irrévocable du compte professionnel.</p>
                   </div>
                 </div>

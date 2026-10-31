@@ -2223,32 +2223,27 @@ const defaultTermsAndConditions = {
       },
       {
         id: 2,
-        title: "Article 2 : Garantie de Titre Or 18K & Poinçons Légaux",
-        content: "Tous les bijoux et ouvrages mis en vente ou en enchères doivent être obligatoirement en or titré 18 carats (750‰) et revêtus des poinçons légaux conformes aux dispositions de l'Administration des Douanes et Impôts Indirects (Bureau de Garantie). Toute défaillance de titre engage la responsabilité civile et pénale exclusive du vendeur."
-      },
-      {
-        id: 3,
-        title: "Article 3 : Vérification de la Patente et Conformité Documentaire",
+        title: "Article 2 : Vérification de la Patente et Conformité Documentaire",
         content: "L'adhérent garantit l'authenticité de l'attestation de patente et des pièces administratives téléversées. L'administration de HRSDGDG se réserve le droit d'auditer ces pièces et de suspendre tout compte dont les justificatifs s'avèrent non conformes."
       },
       {
-        id: 4,
-        title: "Article 4 : Exactitude des Descriptions, Poids et Enchères",
+        id: 3,
+        title: "Article 3 : Exactitude des Descriptions, Poids et Enchères",
         content: "Le professionnel s'engage à fournir des descriptions rigoureusement exactes (poids net en grammes, pureté, pierres serties) et à livrer des pièces strictement identiques aux photos et caractéristiques publiées, ainsi qu'à honorer l'ensemble des adjudications d'enchères."
       },
       {
-        id: 5,
-        title: "Article 5 : Forfaits, Quotas & Commissions",
+        id: 4,
+        title: "Article 4 : Forfaits, Quotas & Commissions",
         content: "L'utilisation de la plateforme est régie par les formules d'abonnements souscrites. Les quotas de dépôts de bijoux et les commissions sur ventes sont appliqués conformément à la grille tarifaire en vigueur."
       },
       {
-        id: 6,
-        title: "Article 6 : Protection des Données Personnelles (Loi 09-08)",
+        id: 5,
+        title: "Article 5 : Protection des Données Personnelles (Loi 09-08)",
         content: "Les données collectées font l'objet d'un traitement hautement sécurisé et chiffré, dans le strict respect de la Loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel (CNDP)."
       },
       {
-        id: 7,
-        title: "Article 7 : Sanctions, Suspension & Résiliation",
+        id: 6,
+        title: "Article 6 : Sanctions, Suspension & Résiliation",
         content: "Tout manquement aux présentes conditions, tentative de fraude, fausse déclaration sur le titre d'or ou refus d'honorer une vente conclue entraîne la suspension immédiate et irrévocable du compte professionnel."
       }
     ]
@@ -2265,32 +2260,27 @@ const defaultTermsAndConditions = {
       },
       {
         id: 2,
-        title: "المادة 2 : ضمان أصالة الذهب عيار 18 قيراط والدمغة القانونية",
-        content: "يلتزم الصائغ المسجل بأن تكون كافة المجوهرات والمعروضات مصنوعة من الذهب القانوني عيار 18 قيراط (750 بالألف)، ومدموغة بالدمغة الرسمية لمكتب الضمانة المغربي وبدمغة الصانع، وتتحمل المؤسسة العارضة المسؤولية القانونية التامة في حالة ثبوت أي مخالفة للعيار."
-      },
-      {
-        id: 3,
-        title: "المادة 3 : التحقق من وثيقة الباتنت والسجل التجاري",
+        title: "المادة 2 : التحقق من وثيقة الباتنت والسجل التجاري",
         content: "يقر المستخدم بأن جميع الوثائق المرفوعة (شهادة الباتنت، السجل التجاري، والبيانات التعريفية) صحيحة وحديثة. تحتفظ إدارة المنصة بحق التحقق من صحة الوثائق مع الجهات المختصة ورفض أو تعليق أي حساب غير مستوفٍ للشروط."
       },
       {
-        id: 4,
-        title: "المادة 4 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات",
+        id: 3,
+        title: "المادة 3 : الالتزام بالمواصفات وتسليم المجوهرات والمزادات",
         content: "يلتزم الصائغ بالدقة المتناهية في ذكر الأوزان الصافية بالغرام، نوع الأحجار الكريمة، والمواصفات الفنية، وتسليم القطع للمشتري مطابقة للصور والوصف المنشور، والالتزام بإتمام المزادات المنتهية لصالح الفائزين."
       },
       {
-        id: 5,
-        title: "المادة 5 : باقات الاشتراكات والعمولات",
+        id: 4,
+        title: "المادة 4 : باقات الاشتراكات والعمولات",
         content: "يخضع عرض المجوهرات لباقات الاشتراك المختارة وتحدد كل باقة الحد الأقصى للمنتجات ونسب العمولة المستحقة للمنصة عن كل عملية بيع مؤكدة."
       },
       {
-        id: 6,
-        title: "المادة 6 : حماية المعطيات والسرية المهنية (قانون 09-08)",
+        id: 5,
+        title: "المادة 5 : حماية المعطيات والسرية المهنية (قانون 09-08)",
         content: "تلتزم المنصة بحماية وسرية البيانات والمعاملات التجارية الخاصة بالصاغة والمشتركين طبقاً لأحكام القانون المغربي رقم 09-08 المتعلق بحماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي (CNDP)."
       },
       {
-        id: 7,
-        title: "المادة 7 : الجزاءات وإنهاء الحساب",
+        id: 6,
+        title: "المادة 6 : الجزاءات وإنهاء الحساب",
         content: "يحق لإدارة المنصة إيقاف أو فسخ حساب أي عضو بصورة فورية ونهائية في حال الإخلال بشروط الأمان، التلاعب بالأسعار أو العيارات، أو الإخلال بتسليم الطلبات."
       }
     ]
@@ -2302,7 +2292,31 @@ app.get('/api/terms-and-conditions', async (req, res) => {
     if (isPostgresAvailable) {
       const pgRes = await query(`SELECT value FROM system_config WHERE key = 'terms_and_conditions'`);
       if (pgRes && pgRes.rows && pgRes.rows.length > 0) {
-        return res.json(pgRes.rows[0].value);
+        let val = pgRes.rows[0].value;
+        if (typeof val === 'string') {
+          try { val = JSON.parse(val); } catch (e) {}
+        }
+        let changed = false;
+        if (val && val.ar && Array.isArray(val.ar.articles)) {
+          const beforeLen = val.ar.articles.length;
+          val.ar.articles = val.ar.articles.filter(a => !(a.title && (a.title.includes('ضمان أصالة الذهب') || a.title.includes('الدمغة القانونية') || (a.content && a.content.includes('الذهب القانوني عيار 18')))));
+          if (val.ar.articles.length !== beforeLen) {
+            val.ar.articles = val.ar.articles.map((a, idx) => ({ ...a, id: idx + 1, title: a.title.replace(/المادة \d+/, `المادة ${idx + 1}`) }));
+            changed = true;
+          }
+        }
+        if (val && val.fr && Array.isArray(val.fr.articles)) {
+          const beforeLen = val.fr.articles.length;
+          val.fr.articles = val.fr.articles.filter(a => !(a.title && (a.title.includes('Garantie de Titre') || (a.content && a.content.includes('titré 18 carats')))));
+          if (val.fr.articles.length !== beforeLen) {
+            val.fr.articles = val.fr.articles.map((a, idx) => ({ ...a, id: idx + 1, title: a.title.replace(/Article \d+/, `Article ${idx + 1}`) }));
+            changed = true;
+          }
+        }
+        if (changed) {
+          await query(`UPDATE system_config SET value = $1, updated_at = CURRENT_TIMESTAMP WHERE key = 'terms_and_conditions'`, [JSON.stringify(val)]);
+        }
+        return res.json(val);
       }
     }
   } catch (err) {
@@ -2313,6 +2327,27 @@ app.get('/api/terms-and-conditions', async (req, res) => {
   if (!db.terms_and_conditions) {
     db.terms_and_conditions = defaultTermsAndConditions;
     writeDB(db);
+  } else {
+    let changed = false;
+    if (db.terms_and_conditions.ar && Array.isArray(db.terms_and_conditions.ar.articles)) {
+      const beforeLen = db.terms_and_conditions.ar.articles.length;
+      db.terms_and_conditions.ar.articles = db.terms_and_conditions.ar.articles.filter(a => !(a.title && (a.title.includes('ضمان أصالة الذهب') || a.title.includes('الدمغة القانونية') || (a.content && a.content.includes('الذهب القانوني عيار 18')))));
+      if (db.terms_and_conditions.ar.articles.length !== beforeLen) {
+        db.terms_and_conditions.ar.articles = db.terms_and_conditions.ar.articles.map((a, idx) => ({ ...a, id: idx + 1, title: a.title.replace(/المادة \d+/, `المادة ${idx + 1}`) }));
+        changed = true;
+      }
+    }
+    if (db.terms_and_conditions.fr && Array.isArray(db.terms_and_conditions.fr.articles)) {
+      const beforeLen = db.terms_and_conditions.fr.articles.length;
+      db.terms_and_conditions.fr.articles = db.terms_and_conditions.fr.articles.filter(a => !(a.title && (a.title.includes('Garantie de Titre') || (a.content && a.content.includes('titré 18 carats')))));
+      if (db.terms_and_conditions.fr.articles.length !== beforeLen) {
+        db.terms_and_conditions.fr.articles = db.terms_and_conditions.fr.articles.map((a, idx) => ({ ...a, id: idx + 1, title: a.title.replace(/Article \d+/, `Article ${idx + 1}`) }));
+        changed = true;
+      }
+    }
+    if (changed) {
+      writeDB(db);
+    }
   }
   res.json(db.terms_and_conditions);
 });
