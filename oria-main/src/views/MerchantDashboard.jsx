@@ -33,6 +33,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     titre: '',
     description: '',
     gramme: '4.5',
+    prix_gramme: '',
     prix: '',
     prix_depart: '',
     duree: 24,
@@ -175,11 +176,11 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
   // Auto-translate between Arabic and French
   const handleAutoTranslateProduct = async (sourceLang = productLangTab) => {
-    const title = sourceLang === 'fr' 
-      ? (productForm.titre_fr || productForm.titre || '') 
+    const title = sourceLang === 'fr'
+      ? (productForm.titre_fr || productForm.titre || '')
       : (productForm.titre_ar || '');
-    const desc = sourceLang === 'fr' 
-      ? (productForm.description_fr || productForm.description || '') 
+    const desc = sourceLang === 'fr'
+      ? (productForm.description_fr || productForm.description || '')
       : (productForm.description_ar || '');
 
     if (!title.trim() && !desc.trim()) {
@@ -246,6 +247,72 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     if ((prevTitle.trim() || prevDesc.trim()) && (!targetTitle.trim() && !targetDesc.trim())) {
       handleAutoTranslateProduct(prevTab);
     }
+  };
+
+  // Calcul automatique du prix: prix du gramme * gramme
+  const handleGrammeChange = (val) => {
+    setProductForm(prev => {
+      const g = parseFloat(val);
+      const pg = parseFloat(prev.prix_gramme);
+      let newPrix = prev.prix;
+      let newPrixDepart = prev.prix_depart;
+
+      if (!isNaN(g) && g > 0 && !isNaN(pg) && pg > 0) {
+        const total = Math.round(g * pg);
+        if (prev.type_vente === 'enchere') {
+          newPrixDepart = total;
+        } else {
+          newPrix = total;
+        }
+      }
+      return {
+        ...prev,
+        gramme: val,
+        prix: newPrix,
+        prix_depart: newPrixDepart
+      };
+    });
+  };
+
+  const handlePrixGrammeChange = (val) => {
+    setProductForm(prev => {
+      const pg = parseFloat(val);
+      const g = parseFloat(prev.gramme);
+      let newPrix = prev.prix;
+      let newPrixDepart = prev.prix_depart;
+
+      if (!isNaN(pg) && pg > 0 && !isNaN(g) && g > 0) {
+        const total = Math.round(g * pg);
+        if (prev.type_vente === 'enchere') {
+          newPrixDepart = total;
+        } else {
+          newPrix = total;
+        }
+      }
+      return {
+        ...prev,
+        prix_gramme: val,
+        prix: newPrix,
+        prix_depart: newPrixDepart
+      };
+    });
+  };
+
+  const handleTotalPriceChange = (val) => {
+    setProductForm(prev => {
+      const p = parseFloat(val);
+      const g = parseFloat(prev.gramme);
+      let newPrixGramme = prev.prix_gramme;
+      if (!isNaN(p) && p > 0 && !isNaN(g) && g > 0) {
+        newPrixGramme = (p / g).toFixed(2);
+      }
+      return {
+        ...prev,
+        prix: val,
+        prix_depart: prev.type_vente === 'enchere' ? val : prev.prix_depart,
+        prix_gramme: newPrixGramme
+      };
+    });
   };
 
   const handleCreateProduct = async (e) => {
@@ -329,7 +396,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         }
 
         alert(isAuction ? '🔨 تم إنشاء ونشر المزاد المباشر بنجاح!' : '✨ تمت إضافة قطعة المجوهرات ونشرها بنجاح في المتجر!');
-        
+
         // Reset form
         setProductForm({
           type_vente: 'direct',
@@ -341,6 +408,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           titre: '',
           description: '',
           gramme: '4.5',
+          prix_gramme: '',
           prix: '',
           prix_depart: '',
           duree: 24,
@@ -437,7 +505,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             <h2 style={{ fontSize: '1.6rem', color: 'var(--text-white)' }}>
               {user?.shopName || user?.nom || 'دار المجوهرات'}
             </h2>
-            
+
             <span style={{
               padding: '4px 12px',
               borderRadius: 'var(--radius-full)',
@@ -457,7 +525,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {onOpenChangePassword && (
-            <button 
+            <button
               onClick={onOpenChangePassword}
               className="btn-jewelia-secondary"
               style={{ padding: '10px 18px', fontSize: '0.88rem' }}
@@ -467,7 +535,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             </button>
           )}
 
-          <button 
+          <button
             onClick={() => setActiveTab('sales-history')}
             className="btn-jewelia-secondary"
             style={{ padding: '10px 20px', fontSize: '0.88rem' }}
@@ -475,7 +543,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             📜 سجل المبيعات
           </button>
 
-          <button 
+          <button
             onClick={() => setActiveTab('add-product')}
             className="btn-jewelia-primary"
             style={{ padding: '10px 22px', fontSize: '0.88rem' }}
@@ -555,8 +623,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             onClick={() => setActiveTab(tab.id)}
             style={{
               padding: '12px 20px',
-              background: activeTab === tab.id 
-                ? (tab.highlight ? 'linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(179,135,40,0.15) 100%)' : 'rgba(179, 135, 40, 0.12)') 
+              background: activeTab === tab.id
+                ? (tab.highlight ? 'linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(179,135,40,0.15) 100%)' : 'rgba(179, 135, 40, 0.12)')
                 : 'transparent',
               border: 'none',
               borderBottom: activeTab === tab.id ? '3px solid var(--primary-gold)' : '3px solid transparent',
@@ -603,7 +671,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                           ✓ تم البيع {p.sold_at ? `(${new Date(p.sold_at).toLocaleDateString('ar-MA')})` : ''}
                         </div>
                       ) : (
-                        <button 
+                        <button
                           onClick={() => handleMarkAsSold(p.id)}
                           style={{ padding: '8px 10px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#fff', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
                           title="تسجيل القطعة كمباعة (تظل 12 ساعة ثم تؤرشف)"
@@ -611,7 +679,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                           🏷️ تسجيل كـ مباع
                         </button>
                       )}
-                      <button 
+                      <button
                         onClick={() => handleDeleteProduct(p.id)}
                         style={{ padding: '8px 10px', background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
                       >
@@ -654,8 +722,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }}>الحالة :</span>
-                    <select 
-                      value={order.statut} 
+                    <select
+                      value={order.statut}
                       onChange={e => handleUpdateOrderStatus(order.id, e.target.value)}
                       style={{ padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border-gold)', color: 'var(--text-white)', borderRadius: '6px', fontSize: '0.84rem', outline: 'none' }}
                     >
@@ -724,22 +792,22 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               {(productForm.images || []).length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(85px, 1fr))', gap: '10px', marginBottom: '14px' }}>
                   {productForm.images.map((img, idx) => (
-                    <div 
-                      key={idx} 
-                      style={{ 
-                        position: 'relative', 
-                        aspectRatio: '1/1', 
-                        borderRadius: '8px', 
-                        overflow: 'hidden', 
+                    <div
+                      key={idx}
+                      style={{
+                        position: 'relative',
+                        aspectRatio: '1/1',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
                         border: idx === 0 ? '2.5px solid var(--primary-gold)' : '1px solid var(--border-gold)',
                         boxShadow: idx === 0 ? '0 0 8px rgba(212, 175, 55, 0.35)' : 'none',
                         background: '#07090b'
                       }}
                     >
-                      <img 
-                        src={img} 
-                        alt={`صورة ${idx + 1}`} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      <img
+                        src={img}
+                        alt={`صورة ${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
 
                       {/* شارة الصورة الرئيسية */}
@@ -811,23 +879,23 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
               {/* أزرار اختيار الملفات وإضافة الرابط */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-                <input 
-                  type="file" 
-                  multiple 
-                  accept="image/*" 
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
                   id="merchant-multi-photo-input"
                   style={{ display: 'none' }}
                   onChange={handleFilesSelected}
                 />
-                <label 
-                  htmlFor="merchant-multi-photo-input" 
+                <label
+                  htmlFor="merchant-multi-photo-input"
                   className="btn-jewelia-primary"
-                  style={{ 
-                    cursor: 'pointer', 
-                    fontSize: '0.8rem', 
-                    padding: '7px 14px', 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    padding: '7px 14px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
                     gap: '6px',
                     margin: 0
                   }}
@@ -836,7 +904,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 </label>
 
                 <div style={{ display: 'flex', flex: 1, minWidth: '220px', gap: '6px' }}>
-                  <input 
+                  <input
                     type="text"
                     placeholder="أو الصق رابط صورة..."
                     value={customImageUrl}
@@ -844,7 +912,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     className="filter-select-control"
                     style={{ fontSize: '0.82rem', padding: '6px 10px', margin: 0 }}
                   />
-                  <button 
+                  <button
                     type="button"
                     onClick={handleAddImageUrl}
                     className="btn-jewelia-secondary"
@@ -857,10 +925,10 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             </div>
 
             {/* 3. MULTILINGUAL CONTENT SECTION (CONTENU EN 3 LANGUES) */}
-            <div style={{ 
-              background: 'rgba(212, 175, 55, 0.06)', 
-              border: '1.5px solid var(--primary-gold)', 
-              borderRadius: '12px', 
+            <div style={{
+              background: 'rgba(212, 175, 55, 0.06)',
+              border: '1.5px solid var(--primary-gold)',
+              borderRadius: '12px',
               padding: '16px'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
@@ -893,7 +961,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   >
                     {isTranslating ? '⏳ جاري الترجمة...' : '✨ ترجمة تلقائية (عربي ⇄ فرنسي)'}
                   </button>
-                  
+
                   {/* التبديل بين اللغات */}
                   <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '8px' }}>
                     <button
@@ -933,13 +1001,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               </div>
 
               {translateSuccessMsg && (
-                <div style={{ 
-                  background: 'rgba(16, 185, 129, 0.15)', 
-                  border: '1px solid rgba(16, 185, 129, 0.4)', 
-                  borderRadius: '6px', 
-                  padding: '6px 12px', 
-                  fontSize: '0.82rem', 
-                  color: '#10b981', 
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '0.82rem',
+                  color: '#10b981',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -957,13 +1025,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       <span>العنوان باللغة العربية 🇲🇦</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>مطلوب</span>
                     </label>
-                    <input 
-                      type="text" 
-                      className="filter-select-control" 
+                    <input
+                      type="text"
+                      className="filter-select-control"
                       dir="rtl"
                       placeholder="مثال: خاتم سوليتير ألماس ذهب أبيض 18 قيراط"
-                      value={productForm.titre_ar} 
-                      onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })} 
+                      value={productForm.titre_ar}
+                      onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })}
                     />
                     {/* اقتراحات سريعة للعنوان */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
@@ -998,13 +1066,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
                   <div>
                     <label className="filter-label" style={{ textAlign: 'right', marginBottom: '6px', display: 'block' }}>الوصف باللغة العربية 🇲🇦</label>
-                    <textarea 
-                      className="filter-select-control" 
+                    <textarea
+                      className="filter-select-control"
                       rows="3"
                       dir="rtl"
                       placeholder="وصف تفصيلي للقطعة باللغة العربية..."
-                      value={productForm.description_ar} 
-                      onChange={e => setProductForm({ ...productForm, description_ar: e.target.value })} 
+                      value={productForm.description_ar}
+                      onChange={e => setProductForm({ ...productForm, description_ar: e.target.value })}
                       style={{ resize: 'vertical' }}
                     />
                     {/* اقتراحات سريعة للوصف */}
@@ -1019,9 +1087,9 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         <button
                           key={sug}
                           type="button"
-                          onClick={() => setProductForm({ 
-                            ...productForm, 
-                            description_ar: productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug 
+                          onClick={() => setProductForm({
+                            ...productForm,
+                            description_ar: productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug
                           })}
                           style={{
                             background: 'rgba(255, 255, 255, 0.05)',
@@ -1049,12 +1117,12 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       <span>Titre en Français 🇫🇷</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Obligatoire</span>
                     </label>
-                    <input 
-                      type="text" 
-                      className="filter-select-control" 
+                    <input
+                      type="text"
+                      className="filter-select-control"
                       placeholder="ex: Bague Solitaire Diamant Or Blanc 18K"
-                      value={productForm.titre_fr} 
-                      onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })} 
+                      value={productForm.titre_fr}
+                      onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })}
                     />
                     {/* Suggestions Titre */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
@@ -1089,12 +1157,12 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
                   <div>
                     <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>Description en Français 🇫🇷</label>
-                    <textarea 
-                      className="filter-select-control" 
+                    <textarea
+                      className="filter-select-control"
                       rows="3"
                       placeholder="Description détaillée du bijou en français..."
-                      value={productForm.description_fr} 
-                      onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })} 
+                      value={productForm.description_fr}
+                      onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })}
                       style={{ resize: 'vertical' }}
                     />
                     {/* Suggestions Description */}
@@ -1109,8 +1177,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         <button
                           key={sug}
                           type="button"
-                          onClick={() => setProductForm({ 
-                            ...productForm, 
+                          onClick={() => setProductForm({
+                            ...productForm,
                             description_fr: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug,
                             description: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug
                           })}
@@ -1133,58 +1201,121 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               )}
             </div>
 
-            {/* 4. POIDS EN PREMIER SUIVI DU PRIX (الوزن والسعر) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            {/* 4. POIDS, PRIX DU GRAMME ET PRIX TOTAL CALCULÉ (الوزن، سعر الغرام وحساب سعر القطعة) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
               <div>
-                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>الوزن (غ / g) *</label>
-                <input 
-                  type="number" 
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
+                  الوزن (غ / g) *
+                </label>
+                <input
+                  type="number"
                   step="0.01"
                   min="0.1"
                   placeholder="مثال: 4.5"
-                  className="filter-select-control" 
-                  value={productForm.gramme} 
-                  onChange={e => setProductForm({ ...productForm, gramme: e.target.value })} 
-                  required 
+                  className="filter-select-control"
+                  value={productForm.gramme}
+                  onChange={e => handleGrammeChange(e.target.value)}
+                  required
                 />
+              </div>
+
+              <div>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
+                  سعر الغرام (درهم / غ)
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  placeholder="مثال: 850"
+                  className="filter-select-control"
+                  value={productForm.prix_gramme || ''}
+                  onChange={e => handlePrixGrammeChange(e.target.value)}
+                />
+                <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
+                  {['750', '800', '850', '900'].map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => handlePrixGrammeChange(p)}
+                      style={{
+                        padding: '2px 6px',
+                        fontSize: '0.68rem',
+                        background: 'rgba(212, 175, 55, 0.1)',
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                        borderRadius: '6px',
+                        color: 'var(--primary-gold)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {p} د.م
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {productForm.type_vente === 'enchere' ? (
                 <div>
-                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>سعر بداية المزاد (درهم / MAD) *</label>
-                  <input 
-                    type="number" 
+                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
+                    سعر بداية المزاد (درهم / MAD) *
+                  </label>
+                  <input
+                    type="number"
                     min="100"
                     placeholder="مثال: 5000"
-                    className="filter-select-control" 
-                    value={productForm.prix_depart} 
-                    onChange={e => setProductForm({ ...productForm, prix_depart: e.target.value })} 
-                    required 
+                    className="filter-select-control"
+                    value={productForm.prix_depart}
+                    onChange={e => handleTotalPriceChange(e.target.value)}
+                    required
                   />
                 </div>
               ) : (
                 <div>
-                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>السعر (درهم / MAD) *</label>
-                  <input 
-                    type="number" 
+                  <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
+                    سعر القطعة (درهم / MAD) *
+                  </label>
+                  <input
+                    type="number"
                     min="100"
                     placeholder="مثال: 6400"
-                    className="filter-select-control" 
-                    value={productForm.prix} 
-                    onChange={e => setProductForm({ ...productForm, prix: e.target.value })} 
-                    required 
+                    className="filter-select-control"
+                    value={productForm.prix}
+                    onChange={e => handleTotalPriceChange(e.target.value)}
+                    required
                   />
                 </div>
               )}
             </div>
 
+            {/* مؤشر الحساب التلقائي لسعر القطعة: سعر الغرام × الوزن */}
+            {(parseFloat(productForm.gramme) > 0 && parseFloat(productForm.prix_gramme) > 0) && (
+              <div style={{
+                background: 'rgba(212, 175, 55, 0.12)',
+                border: '1px solid var(--primary-gold)',
+                borderRadius: '10px',
+                padding: '10px 16px',
+                fontSize: '0.88rem',
+                color: 'var(--primary-gold)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}>
+                <span style={{ fontSize: '1.2rem' }}>🧮</span>
+                <span>
+                  <strong>سعر القطعة المحسوب : </strong>
+                  {productForm.gramme} غرام × {productForm.prix_gramme} درهم/غ = <strong style={{ color: '#fff', fontSize: '1.05rem', textDecoration: 'underline' }}>{Math.round(parseFloat(productForm.gramme) * parseFloat(productForm.prix_gramme)).toLocaleString()} درهم</strong>
+                </span>
+              </div>
+            )}
+
             {/* 5. الفئة وقائمة المدن المغربية */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
                 <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>فئة المجوهرات *</label>
-                <select 
-                  className="filter-select-control" 
-                  value={productForm.category_id} 
+                <select
+                  className="filter-select-control"
+                  value={productForm.category_id}
                   onChange={e => setProductForm({ ...productForm, category_id: e.target.value })}
                   required
                 >
@@ -1213,11 +1344,11 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
               <div>
                 <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>المدينة *</label>
-                <select 
-                  className="filter-select-control" 
-                  value={productForm.city || 'Casablanca'} 
-                  onChange={e => setProductForm({ ...productForm, city: e.target.value })} 
-                  required 
+                <select
+                  className="filter-select-control"
+                  value={productForm.city || 'Casablanca'}
+                  onChange={e => setProductForm({ ...productForm, city: e.target.value })}
+                  required
                 >
                   {ALL_MOROCCAN_CITIES.map(city => (
                     <option key={city.key} value={city.key}>
@@ -1271,7 +1402,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             {productForm.type_vente === 'enchere' && (
               <div style={{ marginBottom: '4px' }}>
                 <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>مدة المزاد (ساعات)</label>
-                <select 
+                <select
                   className="filter-select-control"
                   value={productForm.duree || 24}
                   onChange={e => setProductForm({ ...productForm, duree: parseInt(e.target.value) || 24 })}
@@ -1355,10 +1486,10 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             )}
 
             {/* زر الحفظ والنشر */}
-            <button 
-              type="submit" 
-              disabled={isSubmitting} 
-              className="btn-jewelia-primary" 
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-jewelia-primary"
               style={{ marginTop: '10px', padding: '12px 24px', fontSize: '1rem', fontWeight: 800 }}
             >
               {isSubmitting ? '⏳ جاري الحفظ والنشر...' : '✨ حفظ ونشر القطعة في المتجر'}

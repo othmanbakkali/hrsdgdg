@@ -151,6 +151,7 @@ function AdminLayout() {
     description_ar: '',
     description_en: '',
     prix: '', 
+    prix_gramme: '',
     gramme: '', 
     purete: '18k', 
     city: '', 
@@ -707,6 +708,7 @@ function AdminLayout() {
       description_ar: p.description_ar || '',
       description_en: p.description_en || '',
       prix: p.prix || '',
+      prix_gramme: (p.prix && (p.gramme || p.poids)) ? (p.prix / (p.gramme || p.poids)).toFixed(2) : '',
       gramme: p.gramme || p.poids || '',
       purete: p.purete || '18k',
       city: p.city || p.ville || 'Casablanca',
@@ -795,6 +797,72 @@ function AdminLayout() {
       return {
         ...prev,
         images: [selected, ...imgs]
+      };
+    });
+  };
+
+  // Calcul automatique du prix: prix du gramme * gramme
+  const handleAdminGrammeChange = (val) => {
+    setProductForm(prev => {
+      const g = parseFloat(val);
+      const pg = parseFloat(prev.prix_gramme);
+      let newPrix = prev.prix;
+      let newPrixDepart = prev.prix_depart;
+
+      if (!isNaN(g) && g > 0 && !isNaN(pg) && pg > 0) {
+        const total = Math.round(g * pg);
+        if (prev.type_vente === 'enchere') {
+          newPrixDepart = total;
+        } else {
+          newPrix = total;
+        }
+      }
+      return {
+        ...prev,
+        gramme: val,
+        prix: newPrix,
+        prix_depart: newPrixDepart
+      };
+    });
+  };
+
+  const handleAdminPrixGrammeChange = (val) => {
+    setProductForm(prev => {
+      const pg = parseFloat(val);
+      const g = parseFloat(prev.gramme);
+      let newPrix = prev.prix;
+      let newPrixDepart = prev.prix_depart;
+
+      if (!isNaN(pg) && pg > 0 && !isNaN(g) && g > 0) {
+        const total = Math.round(g * pg);
+        if (prev.type_vente === 'enchere') {
+          newPrixDepart = total;
+        } else {
+          newPrix = total;
+        }
+      }
+      return {
+        ...prev,
+        prix_gramme: val,
+        prix: newPrix,
+        prix_depart: newPrixDepart
+      };
+    });
+  };
+
+  const handleAdminTotalPriceChange = (val) => {
+    setProductForm(prev => {
+      const p = parseFloat(val);
+      const g = parseFloat(prev.gramme);
+      let newPrixGramme = prev.prix_gramme;
+      if (!isNaN(p) && p > 0 && !isNaN(g) && g > 0) {
+        newPrixGramme = (p / g).toFixed(2);
+      }
+      return {
+        ...prev,
+        prix: val,
+        prix_depart: prev.type_vente === 'enchere' ? val : prev.prix_depart,
+        prix_gramme: newPrixGramme
       };
     });
   };
@@ -6182,10 +6250,10 @@ function AdminLayout() {
               )}
             </div>
 
-            {/* 1. POIDS EN PREMIER SUIVI DU PRIX */}
-            <div className="admin-form-grid-2">
-              <div className="form-group">
-                <label className="form-label">{t('weight')} (غ / g)</label>
+            {/* 1. POIDS, PRIX DU GRAMME ET PRIX TOTAL CALCULÉ */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px', marginBottom: '14px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">{t('weight')} (غ / g) *</label>
                 <input 
                   type="number" 
                   step="0.01"
@@ -6193,39 +6261,94 @@ function AdminLayout() {
                   placeholder="ex: 4.5"
                   className="form-input" 
                   value={productForm.gramme} 
-                  onChange={e => setProductForm({ ...productForm, gramme: e.target.value })} 
+                  onChange={e => handleAdminGrammeChange(e.target.value)} 
                   required 
                 />
               </div>
 
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">{lang === 'ar' ? 'سعر الغرام (درهم / غ)' : 'Prix du gramme (MAD/g)'}</label>
+                <input 
+                  type="number" 
+                  step="1"
+                  min="0"
+                  placeholder="ex: 850"
+                  className="form-input" 
+                  value={productForm.prix_gramme || ''} 
+                  onChange={e => handleAdminPrixGrammeChange(e.target.value)} 
+                />
+                <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
+                  {['750', '800', '850', '900'].map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => handleAdminPrixGrammeChange(p)}
+                      style={{
+                        padding: '2px 6px',
+                        fontSize: '0.68rem',
+                        background: 'rgba(212, 175, 55, 0.1)',
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                        borderRadius: '6px',
+                        color: 'var(--admin-gold)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {productForm.type_vente === 'enchere' ? (
-                <div className="form-group">
-                  <label className="form-label">{t('startingPrice')} (MAD)</label>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">{t('startingPrice')} (MAD) *</label>
                   <input 
                     type="number" 
                     min="100"
                     placeholder="ex: 5000"
                     className="form-input" 
                     value={productForm.prix_depart} 
-                    onChange={e => setProductForm({ ...productForm, prix_depart: e.target.value })} 
+                    onChange={e => handleAdminTotalPriceChange(e.target.value)} 
                     required 
                   />
                 </div>
               ) : (
-                <div className="form-group">
-                  <label className="form-label">{t('price')} (MAD)</label>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">{lang === 'ar' ? 'سعر القطعة (درهم / MAD) *' : `${t('price')} (MAD) *`}</label>
                   <input 
                     type="number" 
                     min="100"
                     placeholder="ex: 6400"
                     className="form-input" 
                     value={productForm.prix} 
-                    onChange={e => setProductForm({ ...productForm, prix: e.target.value })} 
+                    onChange={e => handleAdminTotalPriceChange(e.target.value)} 
                     required 
                   />
                 </div>
               )}
             </div>
+
+            {/* Calculateur de prix live: gramme * prix_gramme */}
+            {(parseFloat(productForm.gramme) > 0 && parseFloat(productForm.prix_gramme) > 0) && (
+              <div style={{
+                background: 'rgba(212, 175, 55, 0.12)',
+                border: '1px solid var(--admin-gold)',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontSize: '0.84rem',
+                color: 'var(--admin-gold)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '15px'
+              }}>
+                <span>🧮</span>
+                <span>
+                  <strong>{lang === 'ar' ? 'سعر القطعة المحسوب : ' : 'Prix calculé : '}</strong>
+                  {productForm.gramme}g × {productForm.prix_gramme} MAD/g = <strong style={{ color: '#fff', fontSize: '0.98rem', textDecoration: 'underline' }}>{Math.round(parseFloat(productForm.gramme) * parseFloat(productForm.prix_gramme)).toLocaleString()} MAD</strong>
+                </span>
+              </div>
+            )}
 
             {/* 2. CATÉGORIE & LISTE DES VILLES */}
             <div className="admin-form-grid-2">
