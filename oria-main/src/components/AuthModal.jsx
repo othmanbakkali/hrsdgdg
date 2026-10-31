@@ -287,14 +287,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       setErrorMsg(lang === 'ar' ? 'يرجى إدخال اسم متجر المجوهرات أو الورشة.' : 'Veuillez saisir le nom de votre bijouterie / atelier.');
       return;
     }
-    if (!numeroPatente.trim()) {
-      setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم الباتنت أو السجل التجاري.' : 'Veuillez saisir votre numéro de Patente ou Registre de Commerce (RC).');
-      return;
-    }
-    if (!patenteDocBase64) {
-      setErrorMsg(lang === 'ar' ? 'يرجى تحميل وثيقة الباتنت أو السجل التجاري لتفعيل حسابكم المهني.' : 'Veuillez joindre votre attestation de Patente (Image ou PDF).');
-      return;
-    }
     if (!numeroBureauGarantie.trim()) {
       setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم الاعتماد والتسجيل بمكتب الضمانة.' : 'Veuillez saisir votre numéro d\'immatriculation au Bureau de Garantie.');
       return;
@@ -788,108 +780,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                     onChange={e => setShopName(e.target.value)}
                     placeholder={lang === 'ar' ? "مثال: مجوهرات التازي الملكية" : "Ex: Joaillerie Royale Fès"}
                   />
-                </div>
-              </div>
-
-              {/* 4b. NUMÉRO DE PATENTE & RC */}
-              <div className="auth-field-group animate-slide-down">
-                <label className="auth-field-label">
-                  <span className="auth-label-icon">📜</span>
-                  <span>{t.patenteNumberLabel}</span>
-                  <span className="auth-required-mark">*</span>
-                </label>
-                <div className="auth-input-container">
-                  <input
-                    type="text"
-                    required
-                    className="auth-text-input"
-                    value={numeroPatente}
-                    onChange={e => setNumeroPatente(e.target.value)}
-                    placeholder={lang === 'ar' ? "مثال: 40289134 (الباتنت أو السجل التجاري)" : "Ex: 40289134 (N° Patente ou RC)"}
-                  />
-                </div>
-              </div>
-
-              {/* 4c. TÉLÉCHARGER LA PATENTE (DOCUMENT UPLOAD) */}
-              <div className="auth-field-group animate-slide-down">
-                <label className="auth-field-label">
-                  <span className="auth-label-icon">📄</span>
-                  <span>{t.patenteDocLabel}</span>
-                  <span className="auth-required-mark">*</span>
-                </label>
-
-                <div style={{
-                  border: patenteDocBase64 ? '1.5px solid #10b981' : '1.5px dashed var(--border-gold)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '14px 18px',
-                  background: patenteDocBase64 ? 'rgba(16, 185, 129, 0.07)' : 'rgba(212, 175, 55, 0.04)',
-                  transition: 'all 0.2s',
-                  textAlign: 'center'
-                }}>
-                  {patenteDocBase64 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: isRtl ? 'right' : 'left' }}>
-                        <span style={{ fontSize: '1.8rem' }}>📄</span>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#10b981' }}>
-                            {patenteDocName || (lang === 'ar' ? 'وثيقة الباتنت مرفقة' : 'Attestation de Patente jointe')}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
-                            {patenteDocSize || 'Document vérifié'} • {t.patenteUploadedSuccess}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleRemovePatenteDoc}
-                        style={{
-                          background: '#ef4444',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '0.78rem',
-                          cursor: 'pointer',
-                          fontWeight: 700
-                        }}
-                      >
-                        {lang === 'ar' ? 'إلغاء وتغيير' : 'Changer'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <input
-                        type="file"
-                        id="patente-upload-input"
-                        accept=".pdf,image/png,image/jpeg,image/webp,image/jpg"
-                        style={{ display: 'none' }}
-                        onChange={handlePatenteFileChange}
-                      />
-                      <label
-                        htmlFor="patente-upload-input"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          background: 'linear-gradient(135deg, var(--primary-gold), #b8860b)',
-                          color: '#fff',
-                          padding: '10px 20px',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontWeight: 700,
-                          fontSize: '0.88rem',
-                          boxShadow: '0 2px 10px rgba(184, 134, 11, 0.25)',
-                          marginBottom: '6px'
-                        }}
-                      >
-                        <span>📎</span>
-                        <span>{t.patenteUploadBtn}</span>
-                      </label>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
-                        {t.patenteDocHint}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
