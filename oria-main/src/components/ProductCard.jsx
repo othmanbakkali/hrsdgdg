@@ -120,10 +120,10 @@ Merci.`;
   const etatDisplay = isSold 
     ? (isAr ? 'تم البيع' : 'Vendu') 
     : (isAr
-        ? (product.etat && (product.etat.toLowerCase().includes('art') || product.etat.includes('حرف') || product.etat.includes('تقليد'))
-            ? '🏺 قطعة حرفية'
+        ? (product.etat && (product.etat.toLowerCase().includes('art') || product.etat.toLowerCase().includes('ant') || product.etat.includes('أثر') || product.etat.includes('حرف') || product.etat.includes('تقليد'))
+            ? '🏺 قطعة أثرية'
             : (product.etat && (product.etat.toLowerCase().includes('occ') || product.etat.includes('مستعمل')) ? 'مستعمل ممتازة' : (isSecondHand ? 'مستعمل ممتازة' : 'جديد 100%')))
-        : (product.etat && product.etat.toLowerCase().includes('art') ? '🏺 Pièce artisanale' : (product.etat || (isSecondHand ? 'Occasion' : 'Neuf'))));
+        : (product.etat && (product.etat.toLowerCase().includes('art') || product.etat.toLowerCase().includes('ant')) ? '🏺 Pièce antique' : (product.etat || (isSecondHand ? 'Occasion' : 'Neuf'))));
 
   return (
     <div 

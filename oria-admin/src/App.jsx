@@ -6562,14 +6562,14 @@ function AdminLayout() {
               </div>
             </div>
 
-            {/* 3. ÉTAT DU BIJOU : Neuf, Bonne occasion & Pièce artisanale */}
+            {/* 3. ÉTAT DU BIJOU : Neuf, Bonne occasion & Pièce antique */}
             <div className="form-group" style={{ marginBottom: '18px' }}>
               <label className="form-label">{lang === 'ar' ? 'حالة القطعة' : 'État du Bijou'}</label>
               <div className="product-condition-grid">
                 {[
                   { value: 'Neuf', fr: '✨ Neuf', ar: '✨ جديد' },
                   { value: 'Occasion', fr: '🏷️ Bonne occasion', ar: '🏷️ مستعمل ممتازة' },
-                  { value: 'Artisanal', fr: '🏺 Pièce artisanale', ar: '🏺 قطعة حرفية' }
+                  { value: 'Artisanal', fr: '🏺 Pièce antique', ar: '🏺 قطعة أثرية' }
                 ].map(item => {
                   const isActive = (productForm.etat || 'Neuf') === item.value;
                   return (

@@ -123,7 +123,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     { id: 'cat_men', ar: '⌚ ساعات ومجوهرات رجالية', fr: '⌚ Montres & Homme' },
     { id: 'cat_boxes', ar: '🎁 هدايا وتحف', fr: '🎁 Coffrets' },
     { id: 'cat_traditional', ar: '👑 مجوهرات تقليدية', fr: '👑 Bijoux Traditionnels' },
-    { id: 'cat_artisanal', ar: '🏺 قطعة تقليدية وحرفية', fr: '🏺 Pièce artisanale' }
+    { id: 'cat_artisanal', ar: '🏺 قطع وتحف أثرية نادرة', fr: '🏺 Pièce antique' }
   ];
 
   // Materials

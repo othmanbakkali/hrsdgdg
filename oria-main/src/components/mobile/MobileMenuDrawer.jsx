@@ -65,7 +65,7 @@ export default function MobileMenuDrawer({
     { id: 'cat_watches', nom_ar: 'ساعات فاخرة', nom_fr: 'Montres de Luxe', icon: '⌚' },
     { id: 'cat_sets', nom_ar: 'أطقم ومجوهرات كاملة', nom_fr: 'Parures Complètes', icon: '💎' },
     { id: 'cat_traditional', nom_ar: 'مجوهرات تقليدية', nom_fr: 'Bijoux Traditionnels', icon: '👑' },
-    { id: 'cat_artisanal', nom_ar: 'مجوهرات حرفية', nom_fr: 'Bijoux Artisanaux', icon: '🏺' },
+    { id: 'cat_artisanal', nom_ar: 'قطع أثرية نادرة', nom_fr: 'Pièces Antiques', icon: '🏺' },
     { id: 'cat_stones', nom_ar: 'أحجار كريمة وألماس', nom_fr: 'Diamants & Pierres', icon: '❇️' }
   ];
 

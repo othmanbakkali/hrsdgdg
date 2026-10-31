@@ -1505,7 +1505,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       <option value="cat_men">⌚ مجوهرات رجالية (Bijoux Homme)</option>
                       <option value="cat_boxes">🎁 علب وهدايا فاخرة (Coffrets)</option>
                       <option value="cat_traditional">👑 مجوهرات تقليدية (Traditionnels)</option>
-                      <option value="cat_artisanal">🏺 قطعة حرفية نادرة (Artisanal)</option>
+                      <option value="cat_artisanal">🏺 قطعة أثرية نادرة (Pièce antique)</option>
                     </>
                   )}
                 </select>
@@ -1536,7 +1536,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 {[
                   { value: 'Neuf', label: '✨ جديد' },
                   { value: 'Occasion', label: '🏷️ مستعمل ممتازة' },
-                  { value: 'Artisanal', label: '🏺 قطعة حرفية' }
+                  { value: 'Artisanal', label: '🏺 قطعة أثرية' }
                 ].map(item => {
                   const isActive = (productForm.etat || 'Neuf') === item.value;
                   return (

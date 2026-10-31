@@ -193,7 +193,7 @@ Merci.`;
     if (!etat) return '';
     const e = etat.toLowerCase();
     if (lang === 'ar') {
-      if (e.includes('art') || e.includes('حرف') || e.includes('تقليد')) return '🏺 قطعة تقليدية / حرفية';
+      if (e.includes('art') || e.includes('ant') || e.includes('أثر') || e.includes('حرف') || e.includes('تقليد')) return '🏺 قطعة أثرية';
       if (e.includes('comme neuf')) return t('condLikeNew') || 'كالجديد تماماً';
       if (e.includes('neuf')) return t('condNew') || 'جديد';
       if (e.includes('occasion')) return 'مستعمل بحالة ممتازة';
@@ -202,7 +202,7 @@ Merci.`;
       if (e.includes('bon')) return t('condGood') || 'حالة جيدة';
       if (e.includes('restaur')) return t('condRestore') || 'يحتاج صيانة';
     } else {
-      if (e.includes('art')) return '🏺 Pièce artisanale';
+      if (e.includes('art') || e.includes('ant')) return '🏺 Pièce antique';
       if (e.includes('occasion')) return 'Occasion (Très bon état)';
     }
     return etat;
