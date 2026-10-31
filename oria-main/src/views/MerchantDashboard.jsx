@@ -21,11 +21,14 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateSuccessMsg, setTranslateSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(null);
+  const [videoError, setVideoError] = useState('');
 
   // New product form (mirrors admin product modal)
   const [productForm, setProductForm] = useState({
     type_vente: 'direct', // 'direct' or 'enchere'
     images: [],
+    video: null,
     titre_ar: '',
     description_ar: '',
     titre_fr: '',
@@ -148,12 +151,78 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   };
 
   const handleAddImageUrl = () => {
-    if (!customImageUrl.trim()) return;
-    setProductForm(prev => ({
-      ...prev,
-      images: [...(prev.images || []), customImageUrl.trim()]
-    }));
+    const trimmed = customImageUrl.trim();
+    if (!trimmed) return;
+    const isVideo = /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(trimmed) || trimmed.startsWith('data:video/');
+    if (isVideo) {
+      setProductForm(prev => ({
+        ...prev,
+        video: trimmed
+      }));
+      setVideoDuration('10');
+      setVideoError('');
+    } else {
+      setProductForm(prev => ({
+        ...prev,
+        images: [...(prev.images || []), trimmed]
+      }));
+    }
     setCustomImageUrl('');
+  };
+
+  // Video 10s max handlers
+  const handleVideoSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      setVideoError('⚠️ حجم ملف الفيديو كبير جداً (أقصى حد هو 50 ميغابايت).');
+      e.target.value = '';
+      return;
+    }
+
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'metadata';
+    const blobUrl = URL.createObjectURL(file);
+
+    tempVideo.onloadedmetadata = () => {
+      URL.revokeObjectURL(blobUrl);
+      const duration = tempVideo.duration;
+
+      if (duration > 10.9) {
+        setVideoError(`⚠️ مدة هذا الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى المسموح به (10 ثوانٍ). يرجى اختيار مقطع لا يتعدى 10 ثوانٍ.`);
+        return;
+      }
+
+      setVideoError('');
+      const cleanDuration = Math.round(duration * 10) / 10;
+      setVideoDuration(cleanDuration);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setProductForm(prev => ({
+            ...prev,
+            video: reader.result
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    tempVideo.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      setVideoError('تعذر قراءة صيغة الفيديو. يرجى تجربة ملف آخر (MP4/WebM/MOV).');
+    };
+
+    tempVideo.src = blobUrl;
+    e.target.value = '';
+  };
+
+  const handleRemoveVideo = () => {
+    setProductForm(prev => ({ ...prev, video: null }));
+    setVideoDuration(null);
+    setVideoError('');
   };
 
   const handleRemoveImage = (indexToRemove) => {
@@ -363,6 +432,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         adresse: productForm.adresse || '',
         images: productForm.images,
         image: productForm.images[0],
+        video: productForm.video || null,
         commercant_id: user.id,
         vendeur_nom: user.shopName || user.nom,
         vendeur_phone: user.phone || user.telephone || '',
@@ -401,6 +471,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         setProductForm({
           type_vente: 'direct',
           images: [],
+          video: null,
           titre_ar: '',
           description_ar: '',
           titre_fr: '',
@@ -780,17 +851,91 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                 <label style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-white)' }}>
-                  <span style={{ fontSize: '1.2rem' }}>📷</span>
-                  <span>صور القطعة (أضف صورة أو عدة صور)</span>
+                  <span style={{ fontSize: '1.2rem' }}>📷🎥</span>
+                  <span>صور وفيديو القطعة (أضف صور أو فيديو 10 ثوانٍ كحد أقصى)</span>
                 </label>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'rgba(0,0,0,0.3)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-gold)' }}>
-                  {(productForm.images || []).length} صورة
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'rgba(0,0,0,0.3)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-gold)' }}>
+                    {(productForm.images || []).length} صورة
+                  </span>
+                  {productForm.video && (
+                    <span style={{ fontSize: '0.78rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', padding: '3px 8px', borderRadius: '12px', border: '1px solid #10b981', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      🎥 فيديو ({videoDuration ? `${videoDuration}s` : '10s max'})
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* معرض الصور المصغرة */}
-              {(productForm.images || []).length > 0 && (
+              {/* معرض الصور والفيديو المصغرة */}
+              {((productForm.images || []).length > 0 || productForm.video) && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(85px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                  {/* معاينة الفيديو إذا كان مرفقاً */}
+                  {productForm.video && (
+                    <div
+                      style={{
+                        position: 'relative',
+                        aspectRatio: '1/1',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '2px solid #10b981',
+                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.45)',
+                        background: '#07090b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <video
+                        src={productForm.video}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        muted
+                        playsInline
+                        loop
+                        controls={false}
+                      />
+                      <span style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: '4px',
+                        background: 'rgba(16, 185, 129, 0.95)',
+                        color: '#fff',
+                        fontSize: '0.6rem',
+                        fontWeight: 800,
+                        padding: '2px 5px',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}>
+                        ▶ {videoDuration ? `${videoDuration}s` : '10s'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveVideo}
+                        title="حذف الفيديو"
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(220, 38, 38, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
                   {productForm.images.map((img, idx) => (
                     <div
                       key={idx}
@@ -877,7 +1022,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 </div>
               )}
 
-              {/* أزرار اختيار الملفات وإضافة الرابط */}
+              {/* أزرار اختيار الملفات، تصوير/رفع الفيديو، وإضافة الرابط */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
                 <input
                   type="file"
@@ -903,10 +1048,37 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   📁 اختيار صورة أو عدة صور
                 </label>
 
+                {/* زر رفع فيديو 10 ثوانٍ كحد أقصى */}
+                <input
+                  type="file"
+                  accept="video/*"
+                  id="merchant-video-upload-input"
+                  style={{ display: 'none' }}
+                  onChange={handleVideoSelected}
+                />
+                <label
+                  htmlFor="merchant-video-upload-input"
+                  className="btn-jewelia-secondary"
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    padding: '7px 14px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    margin: 0,
+                    background: productForm.video ? 'rgba(16, 185, 129, 0.2)' : undefined,
+                    borderColor: productForm.video ? '#10b981' : undefined,
+                    color: productForm.video ? '#10b981' : undefined
+                  }}
+                >
+                  🎥 {productForm.video ? 'تغيير فيديو القطعة (10s max)' : 'فيديو القطعة (10s max)'}
+                </label>
+
                 <div style={{ display: 'flex', flex: 1, minWidth: '220px', gap: '6px' }}>
                   <input
                     type="text"
-                    placeholder="أو الصق رابط صورة..."
+                    placeholder="أو الصق رابط صورة/فيديو..."
                     value={customImageUrl}
                     onChange={e => setCustomImageUrl(e.target.value)}
                     className="filter-select-control"
@@ -922,6 +1094,25 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   </button>
                 </div>
               </div>
+
+              {/* تنبيه خطأ الفيديو إن وجد */}
+              {videoError && (
+                <div style={{
+                  marginTop: '10px',
+                  padding: '8px 12px',
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  border: '1px solid #dc2626',
+                  borderRadius: '8px',
+                  color: '#f87171',
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span>⚠️</span>
+                  <span>{videoError}</span>
+                </div>
+              )}
             </div>
 
             {/* 3. MULTILINGUAL CONTENT SECTION (CONTENU EN 3 LANGUES) */}

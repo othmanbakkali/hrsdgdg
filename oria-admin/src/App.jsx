@@ -141,6 +141,8 @@ function AdminLayout() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateSuccessMsg, setTranslateSuccessMsg] = useState('');
   const [adminCustomImageUrl, setAdminCustomImageUrl] = useState('');
+  const [adminVideoDuration, setAdminVideoDuration] = useState(null);
+  const [adminVideoError, setAdminVideoError] = useState('');
   const [productForm, setProductForm] = useState({ 
     titre: '', 
     titre_fr: '',
@@ -162,7 +164,8 @@ function AdminLayout() {
     type_vente: 'direct',
     prix_depart: '',
     duree: 24,
-    images: []
+    images: [],
+    video: null
   });
 
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
@@ -659,8 +662,11 @@ function AdminLayout() {
       type_vente: 'direct',
       prix_depart: '',
       duree: 24,
-      images: []
+      images: [],
+      video: null
     });
+    setAdminVideoDuration(null);
+    setAdminVideoError('');
     setShowProductModal(true);
   };
 
@@ -690,8 +696,11 @@ function AdminLayout() {
       type_vente: 'enchere',
       prix_depart: '5000',
       duree: 48,
-      images: []
+      images: [],
+      video: null
     });
+    setAdminVideoDuration(null);
+    setAdminVideoError('');
     setShowProductModal(true);
   };
 
@@ -720,8 +729,11 @@ function AdminLayout() {
       type_vente: (p.disponibilite === 'enchere' || p.type_vente === 'AUCTION') ? 'enchere' : 'direct',
       prix_depart: p.prix || '',
       duree: 24,
-      images: Array.isArray(p.images) ? p.images : (p.image ? [p.image] : [])
+      images: Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []),
+      video: p.video || null
     });
+    setAdminVideoDuration(p.video ? 10 : null);
+    setAdminVideoError('');
     setShowProductModal(true);
   };
 
@@ -774,12 +786,79 @@ function AdminLayout() {
     e.target.value = '';
   };
 
+  const handleAdminVideoSelected = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    setAdminVideoError('');
+
+    // Limite de taille max 50Mo
+    if (file.size > 50 * 1024 * 1024) {
+      setAdminVideoError('حجم الفيديو يتجاوز 50 ميغابايت. يرجى اختيار ملف أصغر.');
+      e.target.value = '';
+      return;
+    }
+
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'metadata';
+    const blobUrl = URL.createObjectURL(file);
+
+    tempVideo.onloadedmetadata = () => {
+      URL.revokeObjectURL(blobUrl);
+      const duration = tempVideo.duration;
+
+      // Validation stricte 10 secondes max (tolérance 0.9s pour l'encodage mobile)
+      if (duration > 10.9) {
+        setAdminVideoError(`مدة الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى المسموح به (10 ثوانٍ). يرجى تقصير الفيديو إلى 10 ثوانٍ.`);
+        setProductForm(prev => ({ ...prev, video: null }));
+        setAdminVideoDuration(null);
+        return;
+      }
+
+      setAdminVideoDuration(Math.round(duration));
+      setAdminVideoError('');
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setProductForm(prev => ({
+            ...prev,
+            video: reader.result
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    tempVideo.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      setAdminVideoError('تعذر قراءة صيغة الفيديو. يرجى تجربة ملف آخر (MP4/WebM/MOV).');
+    };
+
+    tempVideo.src = blobUrl;
+    e.target.value = '';
+  };
+
+  const handleAdminRemoveVideo = () => {
+    setProductForm(prev => ({ ...prev, video: null }));
+    setAdminVideoDuration(null);
+    setAdminVideoError('');
+  };
+
   const handleAdminAddImageUrl = () => {
     if (!adminCustomImageUrl.trim()) return;
-    setProductForm(prev => ({
-      ...prev,
-      images: [...(prev.images || []), adminCustomImageUrl.trim()]
-    }));
+    const url = adminCustomImageUrl.trim();
+    const isVideo = /\.(mp4|webm|mov|ogg)($|\?)/i.test(url) || url.startsWith('data:video/');
+    if (isVideo) {
+      setProductForm(prev => ({ ...prev, video: url }));
+      setAdminVideoDuration(10);
+      setAdminVideoError('');
+    } else {
+      setProductForm(prev => ({
+        ...prev,
+        images: [...(prev.images || []), url]
+      }));
+    }
     setAdminCustomImageUrl('');
   };
 
@@ -5818,7 +5897,7 @@ function AdminLayout() {
             )}
 
             {/* ======================================================== */}
-            {/* 📸 PHOTOS DU BIJOU (EN HAUT DU FORMULAIRE - MULTI-PHOTOS) */}
+            {/* 📸🎥 PHOTOS ET VIDÉO DU BIJOU (MULTI-PHOTOS & VIDÉO 10S MAX) */}
             {/* ======================================================== */}
             <div style={{
               background: 'rgba(212, 175, 55, 0.05)',
@@ -5829,17 +5908,90 @@ function AdminLayout() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                 <label className="form-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-dark)' }}>
-                  <span style={{ fontSize: '1.2rem' }}>📸</span>
-                  <span>Photos du Bijou (Ajoutez une ou plusieurs photos)</span>
+                  <span style={{ fontSize: '1.2rem' }}>📸🎥</span>
+                  <span>Photos et Vidéo du Bijou (Photos ou vidéo de 10s max)</span>
                 </label>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'var(--bg-surface-elevated)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-                  {(productForm.images || []).length} photo{((productForm.images || []).length > 1) ? 's' : ''}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'var(--bg-surface-elevated)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                    {(productForm.images || []).length} photo{((productForm.images || []).length > 1) ? 's' : ''}
+                  </span>
+                  {productForm.video && (
+                    <span style={{ fontSize: '0.78rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', padding: '3px 8px', borderRadius: '12px', border: '1px solid #10b981', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      🎥 Vidéo ({adminVideoDuration ? `${adminVideoDuration}s` : '10s max'})
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Galerie des images sélectionnées */}
-              {(productForm.images || []).length > 0 && (
+              {/* Galerie des images et vidéo sélectionnées */}
+              {((productForm.images || []).length > 0 || productForm.video) && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(85px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                  {/* Prévisualisation Vidéo */}
+                  {productForm.video && (
+                    <div 
+                      style={{ 
+                        position: 'relative', 
+                        aspectRatio: '1/1', 
+                        borderRadius: '8px', 
+                        overflow: 'hidden', 
+                        border: '2px solid #10b981',
+                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.45)',
+                        background: '#07090b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <video 
+                        src={productForm.video} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        muted 
+                        playsInline 
+                        loop
+                      />
+                      <span style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: '4px',
+                        background: 'rgba(16, 185, 129, 0.95)',
+                        color: '#fff',
+                        fontSize: '0.6rem',
+                        fontWeight: 800,
+                        padding: '2px 5px',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}>
+                        ▶ {adminVideoDuration ? `${adminVideoDuration}s` : '10s'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAdminRemoveVideo}
+                        title="Supprimer cette vidéo"
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(220, 38, 38, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
                   {productForm.images.map((img, idx) => (
                     <div 
                       key={idx} 
@@ -5926,7 +6078,7 @@ function AdminLayout() {
                 </div>
               )}
 
-              {/* Bouton d'ajout de fichiers multiples & URL */}
+              {/* Bouton d'ajout de fichiers multiples, vidéo 10s & URL */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
                 <input 
                   type="file" 
@@ -5949,13 +6101,40 @@ function AdminLayout() {
                     margin: 0
                   }}
                 >
-                  📁 Choisir une ou plusieurs photos
+                  📁 Choisir des photos
+                </label>
+
+                {/* Bouton Ajout / Changement Vidéo 10s */}
+                <input 
+                  type="file" 
+                  accept="video/*" 
+                  id="admin-video-input"
+                  style={{ display: 'none' }}
+                  onChange={handleAdminVideoSelected}
+                />
+                <label 
+                  htmlFor="admin-video-input" 
+                  className="btn-outline-gold"
+                  style={{ 
+                    cursor: 'pointer', 
+                    fontSize: '0.8rem', 
+                    padding: '7px 14px', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '6px',
+                    margin: 0,
+                    background: productForm.video ? 'rgba(16, 185, 129, 0.15)' : undefined,
+                    borderColor: productForm.video ? '#10b981' : undefined,
+                    color: productForm.video ? '#10b981' : undefined
+                  }}
+                >
+                  🎥 {productForm.video ? 'Changer la vidéo (10s max)' : 'Vidéo du bijou (10s max)'}
                 </label>
 
                 <div style={{ display: 'flex', flex: 1, minWidth: '220px', gap: '6px' }}>
                   <input 
                     type="text"
-                    placeholder="Ou collez une URL d'image..."
+                    placeholder="Ou collez une URL d'image ou vidéo..."
                     value={adminCustomImageUrl}
                     onChange={e => setAdminCustomImageUrl(e.target.value)}
                     className="form-input"
@@ -5971,6 +6150,25 @@ function AdminLayout() {
                   </button>
                 </div>
               </div>
+
+              {/* Message d'erreur vidéo */}
+              {adminVideoError && (
+                <div style={{
+                  marginTop: '10px',
+                  padding: '8px 12px',
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  border: '1px solid #dc2626',
+                  borderRadius: '8px',
+                  color: '#f87171',
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span>⚠️</span>
+                  <span>{adminVideoError}</span>
+                </div>
+              )}
             </div>
 
             {/* Multilingual 3-Language Content Section */}
