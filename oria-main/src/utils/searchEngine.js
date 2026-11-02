@@ -98,7 +98,9 @@ const SYNONYM_GROUPS = [
   ['oujda', 'وجدة', 'وجده'],
   ['tetouan', 'تطوان'],
   ['kenitra', 'القنيطرة', 'قنيطرة'],
-  ['sale', 'سلا']
+  ['sale', 'سلا'],
+  // Authenticité & Garantie légale marocaine
+  ['authentique', 'certifie', 'certifiee', 'poincon', 'poinconne', 'garanti', 'officiel', 'marocain', 'موثق', 'معتمد', 'ختم', 'الختم', 'دمغة', 'الدمغة', 'طابع', 'رسمي', 'الرسمي', 'مغربي', 'المغربي', 'قانوني']
 ];
 
 // Pre-normalize synonyms groups for fast lookup
@@ -149,8 +151,8 @@ export function parseQueryConstraints(rawQuery) {
     cleaned = cleaned.replace(gramMatch[0], ' ');
   }
 
-  // Remove common filler words: "dh", "درهم", "pour", "من أجل", "de"
-  cleaned = cleaned.replace(/\b(?:dh|dhs|درهم|pour|de|en|avec|في|من|مع)\b/gi, ' ');
+  // Remove search intent prefixes & filler words
+  cleaned = cleaned.replace(/\b(?:je|cherche|chercher|recherche|trouver|veux|souhaite|ابحث|كنقلب|كنبحث|بغيت|بدي|عن|على|ديال|dh|dhs|درهم|pour|de|en|avec|le|la|les|du|des|un|une|في|من|مع)\b/gi, ' ');
 
   return {
     cleanedQuery: cleaned.trim(),
@@ -208,6 +210,9 @@ export function matchProduct(product, rawQuery) {
     product.type_vente === 'SECOND_HAND' ? 'seconde main occasion مستعمل vintage' : '',
     product.type_vente === 'FIRST_HAND' ? 'premiere main neuf جديد' : '',
     product.type_vente === 'AUCTION' || product.disponibilite === 'enchere' ? 'enchere مزاد' : '',
+    (!product.matiere || String(product.matiere).toLowerCase().includes('or') || (product.purete && String(product.purete).includes('18')) || !String(product.matiere).toLowerCase().includes('argent'))
+      ? 'ذهب موثق عيار 18k مع الختم الرسمي المغربي دمغة رسمية قانونية or 18k certifie poincon officiel marocain'
+      : '',
     product.carats ? `${product.carats} 18k ذهب` : '',
     product.gramme ? `${product.gramme}g ${product.gramme} غرام` : '',
     product.poids ? `${product.poids}g ${product.poids} غرام` : '',
@@ -216,17 +221,21 @@ export function matchProduct(product, rawQuery) {
 
   // 4. Tokenize the query
   const queryTokens = normalizeSearchText(cleanedQuery).split(/\s+/).filter(t => t.length > 0);
+  if (queryTokens.length === 0) return true;
 
-  // 5. Every query token (or any of its synonyms) must match the searchable text
-  return queryTokens.every(token => {
-    // If token is very short (1 char), ignore unless it's a digit
+  // 5. Match tokens against searchable text
+  const checkToken = (token) => {
     if (token.length < 2 && !/\d/.test(token)) return true;
-
-    // Check direct substring
     if (searchableText.includes(token)) return true;
-
-    // Check expanded synonyms
     const synonyms = expandWordSynonyms(token);
     return synonyms.some(syn => syn && syn.length >= 2 && searchableText.includes(syn));
-  });
+  };
+
+  if (queryTokens.length <= 2) {
+    return queryTokens.every(checkToken);
+  }
+
+  // Multi-word natural query: match if at least 60% of tokens match
+  const matchedTokensCount = queryTokens.filter(checkToken).length;
+  return (matchedTokensCount / queryTokens.length) >= 0.6;
 }
