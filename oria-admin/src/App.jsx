@@ -1047,7 +1047,7 @@ function AdminLayout() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: sourceLang,
-          targets: [targetLang],
+          targets: [targetLang, 'en'],
           fields: { name }
         })
       });
@@ -1061,7 +1061,7 @@ function AdminLayout() {
             if (data.translations.en?.name) updated.nom_en = data.translations.en.name;
             return updated;
           });
-          triggerNotif("✨ Catégorie traduite en 3 langues !");
+          triggerNotif(lang === 'ar' ? '✨ تمت ترجمة الفئة بنجاح !' : '✨ Catégorie traduite avec succès !');
         }
       }
     } catch (err) {
@@ -1721,21 +1721,37 @@ function AdminLayout() {
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
-    if (!newCat.nom_fr || !newCat.nom_ar || !newCat.nom_en) return;
+    const finalNomAr = (newCat.nom_ar || '').trim();
+    const finalNomFr = (newCat.nom_fr || '').trim();
+    const finalNomEn = (newCat.nom_en || '').trim() || finalNomFr || finalNomAr;
+
+    if (!finalNomAr && !finalNomFr) {
+      triggerNotif(lang === 'ar' ? 'يرجى كتابة اسم الفئة بالعربية أو الفرنسية.' : 'Veuillez renseigner le nom de la catégorie.');
+      return;
+    }
+
+    const payload = {
+      nom_ar: finalNomAr || finalNomFr,
+      nom_fr: finalNomFr || finalNomAr,
+      nom_en: finalNomEn
+    };
 
     try {
       const res = await fetch(`${API_URL}/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCat)
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         setNewCat({ nom_fr: '', nom_ar: '', nom_en: '' });
-        triggerNotif('Catégorie ajoutée avec succès.');
+        triggerNotif(lang === 'ar' ? 'تمت إضافة الفئة بنجاح.' : 'Catégorie ajoutée avec succès.');
         fetchData();
+      } else {
+        triggerNotif(lang === 'ar' ? 'حدث خطأ أثناء إضافة الفئة.' : 'Erreur lors de l\'ajout de la catégorie.');
       }
     } catch (e) {
       console.error(e);
+      triggerNotif(lang === 'ar' ? 'حدث خطأ في الاتصال.' : 'Erreur de connexion.');
     }
   };
 
@@ -6332,11 +6348,14 @@ function AdminLayout() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ أضف للوصف :</span>
                       {[
-                        '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
-                        '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
-                        '📦 مرفق بشهادة أصالة معتمدة وعلبة فاخرة.',
-                        '🔒 قفل أمان محكم ومفحوص بدقة من خبير معتمد.'
-                      ].map(sug => (
+                        '✨ ذهب موثق عيار 18k.',
+                        '💎 حلي بلدية .'    ,  
+                        '💎 حلي عصرية .'    , 
+                        '💎 رافينتي '    , 
+                        '💎 مستوردة.'    , 
+                        '💎    تحفة ' , 
+                        '💎    حلي انتبكة ' , 
+                                    ].map(sug => (
                         <button
                           key={sug}
                           type="button"

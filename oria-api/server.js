@@ -1147,11 +1147,19 @@ app.get('/api/categories', (req, res) => {
 app.post('/api/categories', (req, res) => {
   const { nom_fr, nom_ar, nom_en } = req.body;
   const db = readDB();
+  const finalFr = (nom_fr || nom_ar || '').trim();
+  const finalAr = (nom_ar || nom_fr || '').trim();
+  const finalEn = (nom_en || nom_fr || nom_ar || '').trim();
+
+  if (!finalFr && !finalAr) {
+    return res.status(400).json({ message: 'Nom de catégorie requis' });
+  }
+
   const newCat = {
     id: 'cat_' + Math.random().toString(36).substr(2, 9),
-    nom_fr,
-    nom_ar,
-    nom_en
+    nom_fr: finalFr,
+    nom_ar: finalAr,
+    nom_en: finalEn
   };
   db.categories.push(newCat);
   writeDB(db);
