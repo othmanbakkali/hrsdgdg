@@ -33,8 +33,11 @@ export const AuthProvider = ({ children }) => {
         })
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Erreur d\'authentification');
+        const errData = await res.json().catch(() => ({}));
+        const defaultMsg = (res.status === 502 || res.status === 503 || res.status === 504)
+          ? 'الخادم في طور التحديث، يرجى المحاولة بعد لحظات'
+          : (res.status === 401 ? 'رقم الهاتف أو كلمة المرور غير صحيحة' : `خطأ في الاتصال (${res.status})`);
+        throw new Error(errData.message || defaultMsg);
       }
       const data = await res.json();
       setUser(data);
@@ -54,8 +57,11 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(userData)
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Erreur d\'inscription');
+        const errData = await res.json().catch(() => ({}));
+        const defaultMsg = (res.status === 502 || res.status === 503 || res.status === 504)
+          ? 'الخادم في طور التحديث، يرجى المحاولة بعد لحظات'
+          : `خطأ في التسجيل (${res.status})`;
+        throw new Error(errData.message || defaultMsg);
       }
       const data = await res.json();
       const createdUser = data.user || data;
