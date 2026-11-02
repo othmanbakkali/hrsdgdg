@@ -56,21 +56,21 @@ export const DEFAULT_SUGGESTIONS = {
   ],
   description_ar: [
     '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
+    '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
+    '📦 مرفق بشهادة أصالة معتمدة وعلبة فاخرة.',
+    '🔒 قفل أمان محكم ومفحوص بدقة من خبير معتمد.',
     '💎 حلي بلدية مغربية أصيلة.',
     '💎 حلي عصرية راقية مع تشطيب دقيق.',
-    '💎 رافينتي إيطالية عيار 18k.',
-    '💎 قطعة مستوردة فاخرة.',
-    '💎 تحفة أثرية نادرة.',
-    '💎 حلي أنتيكة كلاسيكية.'
+    '💎 رافينتي إيطالية عيار 18k.'
   ],
   description_fr: [
     '✨ Or 18K certifié avec poinçon officiel marocain.',
+    '💎 Finition artisanale marocaine haute joaillerie.',
+    '📦 Livré avec certificat d\'authenticité et écrin de luxe.',
+    '🔒 Fermoir de sécurité renforcé et contrôle bijoutier.',
     '💎 Joaillerie traditionnelle marocaine authentique.',
     '💎 Bijou moderne raffiné avec finition soignée.',
-    '💎 Pièce italienne raffinée en or 18k.',
-    '💎 Pièce importée d\'exception.',
-    '💎 Chef-d\'œuvre antique rare.',
-    '💎 Bijou vintage de collection.'
+    '💎 Pièce italienne raffinée en or 18k.'
   ],
   prix_gramme: [750, 800, 850, 900]
 };

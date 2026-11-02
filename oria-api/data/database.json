@@ -1599,7 +1599,49 @@
   "config": {
     "commission_globale": 5,
     "commission_categories": {},
-    "commission_commercants": {}
+    "commission_commercants": {},
+    "product_suggestions": {
+      "titre_ar": [
+        "💍 خاتم سوليتير ألماس 18k",
+        "📿 قلادة سلسلة فاخرة 18k",
+        "🔗 سوار رويال أنيق 18k",
+        "✨ ميدالية ذهبية عيار 18k",
+        "💎 أقراط دائرية عيار 18k",
+        "👑 طقم عرائسي ملكي 18k"
+      ],
+      "titre_fr": [
+        "💍 Bague Solitaire Diamant 18K",
+        "📿 Collier Chaine Forçat 18K",
+        "🔗 Bracelet Gourmette Royale 18K",
+        "✨ Pendentif Médaille Oria 18K",
+        "💎 Boucles d'Oreilles Créoles 18K",
+        "👑 Parure Traditionnelle 18K"
+      ],
+      "description_ar": [
+        "✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.",
+        "💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.",
+        "📦 مرفق بشهادة أصالة معتمدة وعلبة فاخرة.",
+        "🔒 قفل أمان محكم ومفحوص بدقة من خبير معتمد.",
+        "💎 حلي بلدية مغربية أصيلة.",
+        "💎 حلي عصرية راقية مع تشطيب دقيق.",
+        "💎 رافينتي إيطالية عيار 18k."
+      ],
+      "description_fr": [
+        "✨ Or 18K certifié avec poinçon officiel marocain.",
+        "💎 Finition artisanale marocaine haute joaillerie.",
+        "📦 Livré avec certificat d'authenticité et écrin de luxe.",
+        "🔒 Fermoir de sécurité renforcé et contrôle bijoutier.",
+        "💎 Joaillerie traditionnelle marocaine authentique.",
+        "💎 Bijou moderne raffiné avec finition soignée.",
+        "💎 Pièce italienne raffinée en or 18k."
+      ],
+      "prix_gramme": [
+        750,
+        800,
+        850,
+        900
+      ]
+    }
   },
   "subscription_plans": [
     {
