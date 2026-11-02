@@ -59,10 +59,13 @@ if [ -s "${BACKUP_DIR}/database.json.latest" ]; then
     echo "⚠️ Detected corrupted '?????' in backup database.json! Using fresh clean UTF-8 database.json from repository..."
     cp -p "${WORK_TREE}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
   else
-    echo "🛡️ Restoring live production database (preserving all live users, products, categories)..."
+    echo "🛡️ Restoring live production database (preserving all live users, products, categories, gold & silver rates)..."
     cp -p "${BACKUP_DIR}/database.json.latest" "${WORK_TREE}/oria-api/data/database.json"
   fi
 fi
+
+# Protect database.json from future git checkouts
+git --work-tree="${WORK_TREE}" --git-dir="${GIT_DIR}" update-index --skip-worktree oria-api/data/database.json 2>/dev/null || true
 
 if [ -d "${BACKUP_DIR}/uploads" ]; then
   mkdir -p "${WORK_TREE}/oria-api/data/uploads"

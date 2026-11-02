@@ -31,6 +31,9 @@ if [ -d "${APP_DIR}/oria-api/data/uploads" ]; then
   cp -rn "${APP_DIR}/oria-api/data/uploads/"* "${BACKUP_DIR}/uploads/" 2>/dev/null || true
 fi
 
+# Protect database.json from git index changes
+git update-index --skip-worktree oria-api/data/database.json 2>/dev/null || true
+
 # 1. Stop standalone PM2 oria-api if active so port 5077 is freed for Docker container
 if command -v pm2 &> /dev/null; then
   if pm2 list | grep -q "oria-api"; then
@@ -55,7 +58,16 @@ sleep 5
 echo "🐘 Verifying PostgreSQL migration inside container..."
 docker compose exec -T hrsdgdg-platform node oria-api/db/migrate.js || true
 
-# 5. Verification & Health Check
+# 5. Database Safety Check: Ensure live database is 100% intact
+if [ -s "${BACKUP_DIR}/database.json.latest" ]; then
+  CURRENT_SIZE=$(stat -c%s "${APP_DIR}/oria-api/data/database.json" 2>/dev/null || echo "0")
+  if [ "$CURRENT_SIZE" -lt 50000 ]; then
+    echo "⚠️ Database size abnormal ($CURRENT_SIZE bytes)! Restoring from live backup..."
+    cp -p "${BACKUP_DIR}/database.json.latest" "${APP_DIR}/oria-api/data/database.json"
+  fi
+fi
+
+# 6. Verification & Health Check
 echo "🔍 Performing health check on http://127.0.0.1:5077/api/categories..."
 for i in {1..10}; do
   HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5077/api/categories || echo "000")

@@ -6,7 +6,7 @@ const dbPath = path.join(__dirname, '..', 'data', 'database.json');
 
 async function syncGoldRates() {
   try {
-    console.log('[GoldSync] Fetching from', RAILWAY_GOLD_API, '...');
+    console.log('[GoldSync] Manual admin sync requested: Fetching from', RAILWAY_GOLD_API, '...');
     const [priceRes, historyRes] = await Promise.all([
       fetch(`${RAILWAY_GOLD_API}/api/price`),
       fetch(`${RAILWAY_GOLD_API}/api/price/history`)
@@ -59,32 +59,56 @@ async function syncGoldRates() {
       { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: 'Fixation Officielle Maroc', note: 'Cours actuel du jour (Ag 1000)' }
     ];
 
+    if (!fs.existsSync(dbPath)) {
+      throw new Error('database.json does not exist');
+    }
+
     const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    const existingSilver = (db.goldRates && db.goldRates.currentPriceSilver) || 14.50;
+
+    // [DATA IMMUTABILITY & PRESERVATION]
+    // 1. Strictly preserve whatever silver price the admin has configured in the database
+    const existingSilver = (db.goldRates && db.goldRates.currentPriceSilver !== undefined)
+      ? db.goldRates.currentPriceSilver
+      : 15.00;
+
     const existingSilverUnit = (db.goldRates && db.goldRates.silverUnit) || 'MAD/g';
+
     const existingSilverHistory = (db.goldRates && Array.isArray(db.goldRates.silverHistory) && db.goldRates.silverHistory.length > 0)
       ? db.goldRates.silverHistory
       : defaultSilverHistory;
 
+    // 2. Preserve any custom entries added manually by admins
+    const customAdminEntries = (db.goldRates && Array.isArray(db.goldRates.history))
+      ? db.goldRates.history.filter(h => h && h.id && !h.id.startsWith('gh_railway_'))
+      : [];
+
+    const mergedHistory = [...formattedHistory, ...customAdminEntries];
+
     db.goldRates = {
+      ...db.goldRates,
       currentPrice18k: currentPrice,
-      currentPriceSilver: existingSilver,
+      currentPriceSilver: existingSilver, // 100% PRESERVED
       carat: '18K',
       unit: priceData.unit ? `${priceData.currency || 'MAD'}/${priceData.unit}` : 'MAD/g',
-      silverUnit: existingSilverUnit,
+      silverUnit: existingSilverUnit, // 100% PRESERVED
       lastUpdated: priceData.date || new Date().toISOString(),
       updatedBy: priceData.username ? `PrixOr Railway (${priceData.username})` : 'PrixOr Railway',
-      history: formattedHistory,
-      silverHistory: existingSilverHistory
+      history: mergedHistory,
+      silverHistory: existingSilverHistory // 100% PRESERVED
     };
 
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
-    console.log(`[GoldSync] SUCCESS! Updated gold rate to ${currentPrice} MAD/g with ${formattedHistory.length} history records.`);
+    // Atomic write to prevent file corruption
+    const tempPath = `${dbPath}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(db, null, 2), 'utf8');
+    fs.renameSync(tempPath, dbPath);
+
+    console.log(`[GoldSync] SUCCESS! Updated gold rate to ${currentPrice} MAD/g (Silver preserved at ${existingSilver} ${existingSilverUnit}).`);
     return {
       success: true,
       currentPrice18k: currentPrice,
+      currentPriceSilver: existingSilver,
       lastUpdated: db.goldRates.lastUpdated,
-      historyCount: formattedHistory.length
+      historyCount: mergedHistory.length
     };
   } catch (err) {
     console.error('[GoldSync] ERROR:', err.message);

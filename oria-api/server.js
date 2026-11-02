@@ -3290,9 +3290,8 @@ app.listen(PORT, HOST, () => {
   }
   console.log(`- REST API: http://localhost:${PORT}/api/`);
 
-  // Initial Sync from Railway + Periodic 15-min sync
-  syncGoldRates().catch(e => console.error('[GoldSync] Initial sync error:', e.message));
-  setInterval(() => {
-    syncGoldRates().catch(e => console.error('[GoldSync] Periodic sync error:', e.message));
-  }, 15 * 60 * 1000);
+  // [DATA IMMUTABILITY & SAFETY]
+  // Never automatically overwrite gold/silver rates or database records on server boot or interval!
+  // Rates saved in database.json (including silver price, gold price, and history) are preserved 100%
+  // and only updated when an administrator explicitly saves new rates or clicks manual sync.
 });
