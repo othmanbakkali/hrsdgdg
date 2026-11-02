@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
@@ -53,8 +53,11 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     }
   });
 
+  const isFetchingRef = useRef(false);
+
   const fetchMerchantData = async () => {
-    if (!user) return;
+    if (!user || isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       // Stats
       const statRes = await fetch(`${API_URL}/stats/merchant/${user.id}`);
@@ -92,12 +95,18 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       }
     } catch (err) {
       console.error('Error fetching merchant data:', err);
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 
   useEffect(() => {
     fetchMerchantData();
-    const interval = setInterval(fetchMerchantData, 6000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchMerchantData();
+      }
+    }, 15000);
     return () => clearInterval(interval);
   }, [user]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { matchProduct } from '../utils/searchEngine';
@@ -57,7 +57,11 @@ export default function Marketplace({
   const [showDesktopFilters, setShowDesktopFilters] = useState(true);
   const [gridDensity, setGridDensity] = useState('compact'); // 'compact' (dense: more items) or 'standard'
 
+  const isFetchingRef = useRef(false);
+
   const fetchData = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const res = await fetch(`${API_URL}/bijoux?status=Validated`);
       if (res.ok) {
@@ -78,12 +82,18 @@ export default function Marketplace({
     } catch (err) {
       console.error('Error fetching marketplace data:', err);
       setLoading(false);
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 6000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 

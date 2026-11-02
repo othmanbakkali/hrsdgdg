@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import OriaLogo from './components/OriaLogo';
@@ -1184,9 +1184,15 @@ function AdminLayout() {
     }
   };
 
-  const fetchData = async () => {
+  const isFetchingRef = useRef(false);
+  const initialLoadDoneRef = useRef(false);
+
+  const fetchData = async (isPeriodic = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const isMerchantUser = adminUser?.role === 'commercant';
+      const shouldFetchAll = !isPeriodic || !initialLoadDoneRef.current;
       const [
         statsRes,
         pendingRes,
@@ -1202,15 +1208,15 @@ function AdminLayout() {
       ] = await Promise.allSettled([
         isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/stats/admin`),
         isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/bijoux?status=Pending`),
-        authFetch(`${API_URL}/categories`),
-        authFetch(`${API_URL}/config`),
-        isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/users`),
+        shouldFetchAll ? authFetch(`${API_URL}/categories`) : Promise.resolve(null),
+        shouldFetchAll ? authFetch(`${API_URL}/config`) : Promise.resolve(null),
+        (shouldFetchAll && !isMerchantUser) ? authFetch(`${API_URL}/users`) : Promise.resolve(null),
         isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/encheres`),
         authFetch(`${API_URL}/bijoux?includeSold=true`),
-        isMerchantUser ? Promise.resolve(null) : authFetch(`${API_URL}/subscriptions/all`),
-        authFetch(`${API_URL}/gold-rates`),
+        (shouldFetchAll && !isMerchantUser) ? authFetch(`${API_URL}/subscriptions/all`) : Promise.resolve(null),
+        shouldFetchAll ? authFetch(`${API_URL}/gold-rates`) : Promise.resolve(null),
         authFetch(isMerchantUser && adminUser?.id ? `${API_URL}/sales-history?merchant_id=${adminUser.id}` : `${API_URL}/sales-history`),
-        authFetch(`${API_URL}/terms-and-conditions`)
+        shouldFetchAll ? authFetch(`${API_URL}/terms-and-conditions`) : Promise.resolve(null)
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value && statsRes.value.ok) {
@@ -1313,6 +1319,9 @@ function AdminLayout() {
 
     } catch (error) {
       console.error('Error fetching admin data:', error);
+    } finally {
+      isFetchingRef.current = false;
+      initialLoadDoneRef.current = true;
     }
   };
 
@@ -1551,9 +1560,13 @@ function AdminLayout() {
   };
 
   useEffect(() => {
-    fetchData();
-    // Poll every 3 seconds for live listings
-    const interval = setInterval(fetchData, 3000);
+    fetchData(false);
+    // Poll every 15 seconds for live dynamic listings when tab is visible
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchData(true);
+      }
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 

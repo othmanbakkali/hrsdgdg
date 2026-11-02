@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oria-admin-pwa-v2';
+const CACHE_NAME = 'oria-admin-pwa-v3';
 
 const PRECACHE_URLS = [
   '/admin/manifest.webmanifest',
@@ -34,6 +34,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Bypass API requests from Service Worker caching in Admin
+  if (url.pathname.startsWith('/api/')) {
     return;
   }
 
