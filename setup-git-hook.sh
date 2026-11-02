@@ -32,9 +32,36 @@ echo "💎 ========================================================"
 
 WORK_TREE="/var/www/hrsdgdg"
 GIT_DIR="/var/repo/hrsdgdg.git"
+BACKUP_DIR="/var/backups/hrsdgdg_data"
 
 mkdir -p "${WORK_TREE}"
+mkdir -p "${BACKUP_DIR}"
+
+# 1. CRITICAL: Preserve live database.json and user uploads before git checkout
+if [ -s "${WORK_TREE}/oria-api/data/database.json" ]; then
+  echo "🔒 Securing live production database before git update..."
+  cp -p "${WORK_TREE}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
+  cp -p "${WORK_TREE}/oria-api/data/database.json" "${BACKUP_DIR}/database_$(date +%Y%m%d_%H%M%S).json"
+fi
+
+if [ -d "${WORK_TREE}/oria-api/data/uploads" ]; then
+  mkdir -p "${BACKUP_DIR}/uploads"
+  cp -rn "${WORK_TREE}/oria-api/data/uploads/"* "${BACKUP_DIR}/uploads/" 2>/dev/null || true
+fi
+
+# 2. Checkout code updates
 git --work-tree="${WORK_TREE}" --git-dir="${GIT_DIR}" checkout -f main
+
+# 3. CRITICAL: Restore production live database so git checkout NEVER overwrites real data
+if [ -s "${BACKUP_DIR}/database.json.latest" ]; then
+  echo "🛡️ Restoring live production database (preserving all live users, products, categories)..."
+  cp -p "${BACKUP_DIR}/database.json.latest" "${WORK_TREE}/oria-api/data/database.json"
+fi
+
+if [ -d "${BACKUP_DIR}/uploads" ]; then
+  mkdir -p "${WORK_TREE}/oria-api/data/uploads"
+  cp -rn "${BACKUP_DIR}/uploads/"* "${WORK_TREE}/oria-api/data/uploads/" 2>/dev/null || true
+fi
 
 cd "${WORK_TREE}"
 chmod +x deploy-docker.sh

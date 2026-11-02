@@ -40,6 +40,14 @@ jobs:
             echo "💎 [HRSDGDG CI/CD] Starting automated deployment on server..."
             cd /var/www/hrsdgdg
             
+            # CRITICAL: Preserve live database & uploads before git sync
+            mkdir -p /var/backups/hrsdgdg_data
+            if [ -s "oria-api/data/database.json" ]; then
+              echo "🛡️  Backing up live database.json..."
+              cp -p oria-api/data/database.json /var/backups/hrsdgdg_data/database.json.latest
+              cp -p oria-api/data/database.json /var/backups/hrsdgdg_data/database_$(date +%Y%m%d_%H%M%S).json
+            fi
+
             # Fetch and sync latest code from GitHub repository
             if [ -d ".git" ]; then
               git remote set-url origin https://github.com/othmanbakkali/hrsdgdg.git 2>/dev/null || true
@@ -48,6 +56,12 @@ jobs:
             elif [ -d "/var/repo/hrsdgdg.git" ]; then
               git --git-dir=/var/repo/hrsdgdg.git --work-tree=/var/www/hrsdgdg fetch https://github.com/othmanbakkali/hrsdgdg.git main:main || true
               git --git-dir=/var/repo/hrsdgdg.git --work-tree=/var/www/hrsdgdg checkout -f main
+            fi
+
+            # Restore live database.json to ensure no data is lost
+            if [ -s "/var/backups/hrsdgdg_data/database.json.latest" ]; then
+              echo "🛡️  Restoring live database.json..."
+              cp -p /var/backups/hrsdgdg_data/database.json.latest oria-api/data/database.json
             fi
             
             # Execute automated docker deployment

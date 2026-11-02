@@ -37,6 +37,44 @@ const themes = {
   }
 };
 
+export const DEFAULT_SUGGESTIONS = {
+  titre_ar: [
+    '💍 خاتم سوليتير ألماس 18k',
+    '📿 قلادة سلسلة فاخرة 18k',
+    '🔗 سوار رويال أنيق 18k',
+    '✨ ميدالية ذهبية عيار 18k',
+    '💎 أقراط دائرية عيار 18k',
+    '👑 طقم عرائسي ملكي 18k'
+  ],
+  titre_fr: [
+    '💍 Bague Solitaire Diamant 18K',
+    '📿 Collier Chaine Forçat 18K',
+    '🔗 Bracelet Gourmette Royale 18K',
+    '✨ Pendentif Médaille Oria 18K',
+    '💎 Boucles d\'Oreilles Créoles 18K',
+    '👑 Parure Traditionnelle 18K'
+  ],
+  description_ar: [
+    '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
+    '💎 حلي بلدية مغربية أصيلة.',
+    '💎 حلي عصرية راقية مع تشطيب دقيق.',
+    '💎 رافينتي إيطالية عيار 18k.',
+    '💎 قطعة مستوردة فاخرة.',
+    '💎 تحفة أثرية نادرة.',
+    '💎 حلي أنتيكة كلاسيكية.'
+  ],
+  description_fr: [
+    '✨ Or 18K certifié avec poinçon officiel marocain.',
+    '💎 Joaillerie traditionnelle marocaine authentique.',
+    '💎 Bijou moderne raffiné avec finition soignée.',
+    '💎 Pièce italienne raffinée en or 18k.',
+    '💎 Pièce importée d\'exception.',
+    '💎 Chef-d\'œuvre antique rare.',
+    '💎 Bijou vintage de collection.'
+  ],
+  prix_gramme: [750, 800, 850, 900]
+};
+
 function AdminLayout() {
   const { t, lang, setLang } = useLanguage();
   const { adminUser, logout, authFetch } = useAuth();
@@ -122,8 +160,20 @@ function AdminLayout() {
   const [auctionBids, setAuctionBids] = useState([]);
   const [showBidsModal, setShowBidsModal] = useState(false);
   
-  // Commission settings state
-  const [commissionConfig, setCommissionConfig] = useState({ commission_globale: 5, commission_categories: {}, commission_commercants: {} });
+  // Commission & suggestions settings state
+  const [commissionConfig, setCommissionConfig] = useState({ 
+    commission_globale: 5, 
+    commission_categories: {}, 
+    commission_commercants: {},
+    product_suggestions: DEFAULT_SUGGESTIONS
+  });
+  
+  // Suggestion manager inputs
+  const [newSugTitleAr, setNewSugTitleAr] = useState('');
+  const [newSugTitleFr, setNewSugTitleFr] = useState('');
+  const [newSugDescAr, setNewSugDescAr] = useState('');
+  const [newSugDescFr, setNewSugDescFr] = useState('');
+  const [newSugPrixGramme, setNewSugPrixGramme] = useState('');
   
   // Categories inputs & edit
   const [newCat, setNewCat] = useState({ nom_fr: '', nom_ar: '', nom_en: '' });
@@ -1243,7 +1293,13 @@ function AdminLayout() {
       if (configRes.status === 'fulfilled' && configRes.value && configRes.value.ok) {
         try {
           const configData = await configRes.value.json();
-          setCommissionConfig(configData);
+          setCommissionConfig({
+            ...configData,
+            product_suggestions: {
+              ...DEFAULT_SUGGESTIONS,
+              ...(configData.product_suggestions || {})
+            }
+          });
           if (configData.role_permissions && typeof configData.role_permissions === 'object') {
             const perms = { ...configData.role_permissions };
             if (perms.admin && !perms.admin.includes('manage_gold_rates')) {
@@ -1707,9 +1763,15 @@ function AdminLayout() {
       if (res && res.ok) {
         const savedData = await res.json().catch(() => null);
         if (savedData) {
-          setCommissionConfig(savedData);
+          setCommissionConfig({
+            ...savedData,
+            product_suggestions: {
+              ...DEFAULT_SUGGESTIONS,
+              ...(savedData.product_suggestions || {})
+            }
+          });
         }
-        triggerNotif(t('commissionsSaved'));
+        triggerNotif(lang === 'ar' ? 'تم حفظ التعديلات والاقتراحات بنجاح!' : 'Modifications et suggestions enregistrées avec succès !');
       } else {
         triggerNotif(t('notifServerError'));
       }
@@ -1717,6 +1779,55 @@ function AdminLayout() {
       console.error(e);
       triggerNotif(t('notifServerError'));
     }
+  };
+
+  const handleAddSuggestion = (type, value) => {
+    if (!value || !value.toString().trim()) return;
+    const currentSug = commissionConfig.product_suggestions || DEFAULT_SUGGESTIONS;
+    const currentList = Array.isArray(currentSug[type]) ? currentSug[type] : (DEFAULT_SUGGESTIONS[type] || []);
+    const cleanVal = type === 'prix_gramme' ? Number(value) : value.toString().trim();
+    if (currentList.includes(cleanVal)) {
+      triggerNotif(lang === 'ar' ? 'هذا الاقتراح موجود مسبقاً.' : 'Cette suggestion existe déjà.');
+      return;
+    }
+    const updated = {
+      ...commissionConfig,
+      product_suggestions: {
+        ...currentSug,
+        [type]: [...currentList, cleanVal]
+      }
+    };
+    setCommissionConfig(updated);
+    if (type === 'titre_ar') setNewSugTitleAr('');
+    if (type === 'titre_fr') setNewSugTitleFr('');
+    if (type === 'description_ar') setNewSugDescAr('');
+    if (type === 'description_fr') setNewSugDescFr('');
+    if (type === 'prix_gramme') setNewSugPrixGramme('');
+    triggerNotif(lang === 'ar' ? 'تمت إضافة الاقتراح. لا تنس حفظ التغييرات!' : 'Suggestion ajoutée. N\'oubliez pas d\'enregistrer !');
+  };
+
+  const handleRemoveSuggestion = (type, index) => {
+    const currentSug = commissionConfig.product_suggestions || DEFAULT_SUGGESTIONS;
+    const currentList = Array.isArray(currentSug[type]) ? currentSug[type] : (DEFAULT_SUGGESTIONS[type] || []);
+    const updatedList = currentList.filter((_, i) => i !== index);
+    const updated = {
+      ...commissionConfig,
+      product_suggestions: {
+        ...currentSug,
+        [type]: updatedList
+      }
+    };
+    setCommissionConfig(updated);
+  };
+
+  const handleResetSuggestions = () => {
+    if (!window.confirm(lang === 'ar' ? 'هل أنت متأكد من استعادة الاقتراحات الافتراضية؟' : 'Voulez-vous restaurer les suggestions par défaut ?')) return;
+    const updated = {
+      ...commissionConfig,
+      product_suggestions: DEFAULT_SUGGESTIONS
+    };
+    setCommissionConfig(updated);
+    triggerNotif(lang === 'ar' ? 'تمت استعادة الاقتراحات الافتراضية.' : 'Suggestions par défaut restaurées.');
   };
 
   const handleAddCategory = async (e) => {
@@ -1950,6 +2061,11 @@ function AdminLayout() {
                     🗂️ {t('categories')}
                   </span>
                 </li>
+                <li>
+                  <span className={`nav-link ${activeTab === 'suggestions' ? 'active' : ''}`} onClick={() => { setActiveTab('suggestions'); setMobileMenuOpen(false); }}>
+                    ⚡ {lang === 'ar' ? 'إدارة الاقتراحات' : 'Gestion des Suggestions'}
+                  </span>
+                </li>
               </>
             )}
 
@@ -2020,6 +2136,7 @@ function AdminLayout() {
               activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل المبيعات والصفقات المكتملة' : '📜 Historique Général des Ventes') :
               activeTab === 'subscriptions' ? t('subscriptionsTitle') : 
               activeTab === 'terms' ? (lang === 'ar' ? '⚖️ إدارة شروط وأحكام الاستخدام' : "⚖️ Termes & Conditions d'Utilisation") :
+              activeTab === 'suggestions' ? (lang === 'ar' ? '⚡ إدارة اقتراحات المنتجات وسعر الغرام' : '⚡ Gestion des Suggestions de Titres & Prix') :
               t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))
             )
           }</h1>
@@ -2779,6 +2896,417 @@ function AdminLayout() {
                 </form>
               </div>
             )}
+          </div>
+        )}
+
+        {/* GESTION DES SUGGESTIONS */}
+        {activeTab === 'suggestions' && (
+          <div className="settings-panel" style={{ padding: '24px', maxWidth: '1200px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px', borderBottom: '1px solid rgba(212, 175, 55, 0.25)', paddingBottom: '18px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display', color: 'var(--admin-gold)', margin: '0 0 6px 0', fontSize: '1.45rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>⚡</span> {lang === 'ar' ? 'إدارة الاقتراحات السريعة للمنتجات والأسعار' : 'Gestion des Suggestions Rapides de Bijoux & Prix'}
+                </h2>
+                <p style={{ color: 'var(--text-gray)', margin: 0, fontSize: '0.88rem' }}>
+                  {lang === 'ar' 
+                    ? 'خصص أزرار الاقتراحات السريعة (العناوين، الأوصاف، وسعر الغرام) التي تظهر للمشرفين والتجار عند إضافة مجوهرات جديدة.' 
+                    : 'Personnalisez les puces de suggestions rapides (titres, descriptions et prix au gramme) affichées lors de l\'ajout de bijoux.'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button 
+                  type="button" 
+                  onClick={handleResetSuggestions}
+                  className="btn-outline-gold"
+                  style={{ fontSize: '0.85rem', padding: '8px 16px' }}
+                >
+                  🔄 {lang === 'ar' ? 'استعادة الافتراضي' : 'Réinitialiser'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={handleSaveCommissionConfig}
+                  className="btn-gold"
+                  style={{ fontSize: '0.88rem', padding: '9px 22px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
+                >
+                  💾 {lang === 'ar' ? 'حفظ التعديلات' : 'Enregistrer'}
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION 1: TITRES SUGGÉRÉS */}
+            <div style={{ marginBottom: '32px' }}>
+              <h3 style={{ color: 'var(--text-white, #fff)', fontSize: '1.15rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>💍</span> {lang === 'ar' ? 'اقتراحات عناوين المجوهرات (Titres)' : 'Suggestions des Titres de Bijoux'}
+              </h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                {/* Titres AR */}
+                <div style={{ background: 'var(--bg-card, #1e293b)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--admin-gold)', fontSize: '0.95rem' }}>العربية 🇲🇦</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                      {(commissionConfig.product_suggestions?.titre_ar || DEFAULT_SUGGESTIONS.titre_ar).length} {lang === 'ar' ? 'اقتراحات' : 'suggestions'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px', minHeight: '80px' }}>
+                    {(commissionConfig.product_suggestions?.titre_ar || DEFAULT_SUGGESTIONS.titre_ar).map((item, idx) => (
+                      <span 
+                        key={idx}
+                        style={{
+                          background: '#ffffff',
+                          border: '1.5px solid #d4af37',
+                          borderRadius: '16px',
+                          padding: '5px 12px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          color: '#8a6410',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        {item}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSuggestion('titre_ar', idx)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            padding: '0 2px',
+                            fontWeight: 900
+                          }}
+                          title={lang === 'ar' ? 'حذف' : 'Supprimer'}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      dir="rtl"
+                      placeholder="أضف عنواناً مقترحاً بالعربية..."
+                      value={newSugTitleAr}
+                      onChange={e => setNewSugTitleAr(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddSuggestion('titre_ar', newSugTitleAr); } }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-gold"
+                      style={{ padding: '6px 16px', margin: 0, whiteSpace: 'nowrap', fontSize: '0.82rem' }}
+                      onClick={() => handleAddSuggestion('titre_ar', newSugTitleAr)}
+                    >
+                      + {lang === 'ar' ? 'إضافة' : 'Ajouter'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Titres FR */}
+                <div style={{ background: 'var(--bg-card, #1e293b)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--admin-gold)', fontSize: '0.95rem' }}>Français 🇫🇷</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                      {(commissionConfig.product_suggestions?.titre_fr || DEFAULT_SUGGESTIONS.titre_fr).length} {lang === 'ar' ? 'اقتراحات' : 'suggestions'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px', minHeight: '80px' }}>
+                    {(commissionConfig.product_suggestions?.titre_fr || DEFAULT_SUGGESTIONS.titre_fr).map((item, idx) => (
+                      <span 
+                        key={idx}
+                        style={{
+                          background: '#ffffff',
+                          border: '1.5px solid #d4af37',
+                          borderRadius: '16px',
+                          padding: '5px 12px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          color: '#8a6410',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        {item}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSuggestion('titre_fr', idx)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            padding: '0 2px',
+                            fontWeight: 900
+                          }}
+                          title={lang === 'ar' ? 'حذف' : 'Supprimer'}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      placeholder="ex: Bague Solitaire Diamant 18K"
+                      value={newSugTitleFr}
+                      onChange={e => setNewSugTitleFr(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddSuggestion('titre_fr', newSugTitleFr); } }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-gold"
+                      style={{ padding: '6px 16px', margin: 0, whiteSpace: 'nowrap', fontSize: '0.82rem' }}
+                      onClick={() => handleAddSuggestion('titre_fr', newSugTitleFr)}
+                    >
+                      + {lang === 'ar' ? 'إضافة' : 'Ajouter'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 2: DESCRIPTIONS SUGGÉRÉES */}
+            <div style={{ marginBottom: '32px' }}>
+              <h3 style={{ color: 'var(--text-white, #fff)', fontSize: '1.15rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📜</span> {lang === 'ar' ? 'اقتراحات الأوصاف والمصادقة (Descriptions)' : 'Suggestions de Descriptions & Certifications'}
+              </h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                {/* Descriptions AR */}
+                <div style={{ background: 'var(--bg-card, #1e293b)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--admin-gold)', fontSize: '0.95rem' }}>العربية 🇲🇦</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                      {(commissionConfig.product_suggestions?.description_ar || DEFAULT_SUGGESTIONS.description_ar).length} {lang === 'ar' ? 'اقتراحات' : 'suggestions'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px', minHeight: '80px' }}>
+                    {(commissionConfig.product_suggestions?.description_ar || DEFAULT_SUGGESTIONS.description_ar).map((item, idx) => (
+                      <span 
+                        key={idx}
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '16px',
+                          padding: '5px 12px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          color: '#1e293b',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        {item}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSuggestion('description_ar', idx)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            padding: '0 2px',
+                            fontWeight: 900
+                          }}
+                          title={lang === 'ar' ? 'حذف' : 'Supprimer'}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      dir="rtl"
+                      placeholder="أضف وصفاً مقترحاً بالعربية..."
+                      value={newSugDescAr}
+                      onChange={e => setNewSugDescAr(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddSuggestion('description_ar', newSugDescAr); } }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-gold"
+                      style={{ padding: '6px 16px', margin: 0, whiteSpace: 'nowrap', fontSize: '0.82rem' }}
+                      onClick={() => handleAddSuggestion('description_ar', newSugDescAr)}
+                    >
+                      + {lang === 'ar' ? 'إضافة' : 'Ajouter'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Descriptions FR */}
+                <div style={{ background: 'var(--bg-card, #1e293b)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--admin-gold)', fontSize: '0.95rem' }}>Français 🇫🇷</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                      {(commissionConfig.product_suggestions?.description_fr || DEFAULT_SUGGESTIONS.description_fr).length} {lang === 'ar' ? 'اقتراحات' : 'suggestions'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px', minHeight: '80px' }}>
+                    {(commissionConfig.product_suggestions?.description_fr || DEFAULT_SUGGESTIONS.description_fr).map((item, idx) => (
+                      <span 
+                        key={idx}
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '16px',
+                          padding: '5px 12px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          color: '#1e293b',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        {item}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSuggestion('description_fr', idx)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            padding: '0 2px',
+                            fontWeight: 900
+                          }}
+                          title={lang === 'ar' ? 'حذف' : 'Supprimer'}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      placeholder="ex: ✨ Or 18K avec poinçon officiel marocain."
+                      value={newSugDescFr}
+                      onChange={e => setNewSugDescFr(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddSuggestion('description_fr', newSugDescFr); } }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-gold"
+                      style={{ padding: '6px 16px', margin: 0, whiteSpace: 'nowrap', fontSize: '0.82rem' }}
+                      onClick={() => handleAddSuggestion('description_fr', newSugDescFr)}
+                    >
+                      + {lang === 'ar' ? 'إضافة' : 'Ajouter'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: PRIX AU GRAMME SUGGÉRÉS */}
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ color: 'var(--text-white, #fff)', fontSize: '1.15rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>💰</span> {lang === 'ar' ? 'اقتراحات سعر الغرام (درهم / غ)' : 'Suggestions des Prix au Gramme (MAD/g)'}
+              </h3>
+
+              <div style={{ background: 'var(--bg-card, #1e293b)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: 0, marginBottom: '12px' }}>
+                  {lang === 'ar' 
+                    ? 'تظهر هذه الأسعار كأزرار سريعة تحت حقل سعر الغرام لملء السعر فوراً وحساب سعر القطعة الإجمالي تلقائياً.' 
+                    : 'Ces boutons apparaissent sous le champ Prix du gramme pour remplir instantanément le prix et recalculer le total.'}
+                </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+                  {(commissionConfig.product_suggestions?.prix_gramme || DEFAULT_SUGGESTIONS.prix_gramme).map((val, idx) => (
+                    <span 
+                      key={idx}
+                      style={{
+                        background: '#ffffff',
+                        border: '1.5px solid #d4af37',
+                        borderRadius: '16px',
+                        padding: '6px 14px',
+                        fontSize: '0.9rem',
+                        fontWeight: 800,
+                        color: '#8a6410',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {val} {lang === 'ar' ? 'د.م' : 'MAD'}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSuggestion('prix_gramme', idx)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          padding: '0 2px',
+                          fontWeight: 900
+                        }}
+                        title={lang === 'ar' ? 'حذف' : 'Supprimer'}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', maxWidth: '380px' }}>
+                  <input 
+                    type="number"
+                    step="1"
+                    min="100"
+                    className="form-input"
+                    placeholder="مثال: 950"
+                    value={newSugPrixGramme}
+                    onChange={e => setNewSugPrixGramme(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddSuggestion('prix_gramme', newSugPrixGramme); } }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-gold"
+                    style={{ padding: '6px 18px', margin: 0, whiteSpace: 'nowrap', fontSize: '0.84rem', fontWeight: 700 }}
+                    onClick={() => handleAddSuggestion('prix_gramme', newSugPrixGramme)}
+                  >
+                    + {lang === 'ar' ? 'إضافة سعر' : 'Ajouter prix'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
+              <button 
+                type="button" 
+                onClick={handleSaveCommissionConfig}
+                className="btn-gold"
+                style={{ padding: '12px 36px', fontSize: '1rem', fontWeight: 800, boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)' }}
+              >
+                💾 {lang === 'ar' ? 'حفظ كافة الاقتراحات والإعدادات' : 'Enregistrer toutes les suggestions'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -6305,14 +6833,7 @@ function AdminLayout() {
                     {/* اقتراحات سريعة للعنوان */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ اقتراحات :</span>
-                      {[
-                        '💍 خاتم سوليتير ألماس 18k',
-                        '📿 قلادة سلسلة فاخرة 18k',
-                        '🔗 سوار رويال أنيق 18k',
-                        '✨ ميدالية ذهبية عيار 18k',
-                        '💎 أقراط دائرية عيار 18k',
-                        '👑 طقم عرائسي ملكي 18k'
-                      ].map(sug => (
+                      {(commissionConfig.product_suggestions?.titre_ar || DEFAULT_SUGGESTIONS.titre_ar).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -6347,15 +6868,7 @@ function AdminLayout() {
                     {/* اقتراحات سريعة للوصف */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ أضف للوصف :</span>
-                      {[
-                        '✨ ذهب موثق عيار 18k.',
-                        '💎 حلي بلدية .'    ,  
-                        '💎 حلي عصرية .'    , 
-                        '💎 رافينتي '    , 
-                        '💎 مستوردة.'    , 
-                        '💎    تحفة ' , 
-                        '💎    حلي انتبكة ' , 
-                                    ].map(sug => (
+                      {(commissionConfig.product_suggestions?.description_ar || DEFAULT_SUGGESTIONS.description_ar).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -6400,14 +6913,7 @@ function AdminLayout() {
                     {/* Suggestions Titre Rapide */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ Suggestions :</span>
-                      {[
-                        '💍 Bague Solitaire Diamant 18K',
-                        '📿 Collier Chaine Forçat 18K',
-                        '🔗 Bracelet Gourmette Royale 18K',
-                        '✨ Pendentif Médaille Oria 18K',
-                        '💎 Boucles d\'Oreilles Créoles 18K',
-                        '👑 Parure Traditionnelle 18K'
-                      ].map(sug => (
+                      {(commissionConfig.product_suggestions?.titre_fr || DEFAULT_SUGGESTIONS.titre_fr).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -6441,12 +6947,7 @@ function AdminLayout() {
                     {/* Suggestions Description Rapide */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-white, #fff)' }}>⚡ Insérer dans le texte :</span>
-                      {[
-                        '✨ Or 18K certifié avec poinçon d\'état officiel.',
-                        '💎 Finition artisanale marocaine haute joaillerie.',
-                        '📦 Livré avec certificat d\'authenticité et écrin de luxe.',
-                        '🔒 Fermoir de sécurité renforcé et contrôle bijoutier.'
-                      ].map(sug => (
+                      {(commissionConfig.product_suggestions?.description_fr || DEFAULT_SUGGESTIONS.description_fr).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -6503,6 +7004,29 @@ function AdminLayout() {
                   value={productForm.prix_gramme || ''} 
                   onChange={e => handleAdminPrixGrammeChange(e.target.value)} 
                 />
+                {/* اقتراحات سريعة لسعر الغرام */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  {(commissionConfig.product_suggestions?.prix_gramme || DEFAULT_SUGGESTIONS.prix_gramme).map(pg => (
+                    <button
+                      key={pg}
+                      type="button"
+                      onClick={() => handleAdminPrixGrammeChange(pg)}
+                      style={{
+                        background: '#ffffff',
+                        border: '1.5px solid #d4af37',
+                        borderRadius: '12px',
+                        padding: '3px 10px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: '#8a6410',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      {pg} {lang === 'ar' ? 'د.م' : 'DH'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>

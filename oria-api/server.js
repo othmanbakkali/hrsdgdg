@@ -19,8 +19,9 @@ const DB_PATH = path.join(__dirname, 'data', 'database.json');
 // In-memory cache for ultra-fast response times (<1ms) and zero disk bottleneck
 let cachedDB = null;
 let cachedDBMtime = 0;
+const DB_BACKUP_PATH = DB_PATH + '.bak';
 
-// Helper to read database
+// Helper to read database with automatic fail-safe recovery
 function readDB() {
   try {
     if (fs.existsSync(DB_PATH)) {
@@ -29,30 +30,61 @@ function readDB() {
         return cachedDB;
       }
       const data = fs.readFileSync(DB_PATH, 'utf8');
-      const parsed = JSON.parse(data);
-      if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
+      if (data && data.trim().length > 2) {
+        const parsed = JSON.parse(data);
+        if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
+        cachedDB = parsed;
+        cachedDBMtime = stat.mtimeMs;
+        // Keep a rolling backup if valid data is present
+        if (Array.isArray(parsed.bijoux) && parsed.bijoux.length > 0 && (!fs.existsSync(DB_BACKUP_PATH) || fs.statSync(DB_BACKUP_PATH).size < stat.size)) {
+          try { fs.copyFileSync(DB_PATH, DB_BACKUP_PATH); } catch (e) {}
+        }
+        return cachedDB;
+      }
+    }
+    // Fail-safe: If DB_PATH is missing or empty, recover from backup
+    if (fs.existsSync(DB_BACKUP_PATH)) {
+      console.warn('⚠️  Primary database file missing or empty! Recovering from database.json.bak...');
+      const backupData = fs.readFileSync(DB_BACKUP_PATH, 'utf8');
+      const parsed = JSON.parse(backupData);
+      fs.writeFileSync(DB_PATH, backupData, 'utf8');
       cachedDB = parsed;
-      cachedDBMtime = stat.mtimeMs;
+      cachedDBMtime = fs.statSync(DB_PATH).mtimeMs;
       return cachedDB;
     }
     return { users: [], categories: [], bijoux: [], encheres: [], offresEncheres: [], commandes: [], messages: [], config: {}, sessions: [] };
   } catch (error) {
     if (cachedDB) return cachedDB;
     console.error('Error reading database file:', error);
+    if (fs.existsSync(DB_BACKUP_PATH)) {
+      try {
+        const backupData = fs.readFileSync(DB_BACKUP_PATH, 'utf8');
+        return JSON.parse(backupData);
+      } catch (e) {}
+    }
     return { users: [], categories: [], bijoux: [], encheres: [], offresEncheres: [], commandes: [], messages: [], config: {}, sessions: [] };
   }
 }
 
-// Helper to write database
+// Helper to write database safely using atomic write
 function writeDB(data) {
   try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    if (!data || typeof data !== 'object') return;
+    const content = JSON.stringify(data, null, 2);
+    const tempPath = DB_PATH + '.tmp';
+    fs.writeFileSync(tempPath, content, 'utf8');
+    fs.renameSync(tempPath, DB_PATH);
     if (fs.existsSync(DB_PATH)) {
       cachedDB = data;
       cachedDBMtime = fs.statSync(DB_PATH).mtimeMs;
     }
   } catch (error) {
-    console.error('Error writing database file:', error);
+    console.error('Error writing database file safely:', error);
+    try {
+      fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    } catch (fallbackErr) {
+      console.error('Fallback writeDB failed:', fallbackErr);
+    }
   }
 }
 
@@ -2179,13 +2211,57 @@ app.get('/api/encheres/:id/bids', (req, res) => {
 });
 
 // Configurations
+const defaultProductSuggestions = {
+  titre_ar: [
+    '💍 خاتم سوليتير ألماس 18k',
+    '📿 قلادة سلسلة فاخرة 18k',
+    '🔗 سوار رويال أنيق 18k',
+    '✨ ميدالية ذهبية عيار 18k',
+    '💎 أقراط دائرية عيار 18k',
+    '👑 طقم عرائسي ملكي 18k'
+  ],
+  titre_fr: [
+    '💍 Bague Solitaire Diamant 18K',
+    '📿 Collier Chaine Forçat 18K',
+    '🔗 Bracelet Gourmette Royale 18K',
+    '✨ Pendentif Médaille Oria 18K',
+    '💎 Boucles d\'Oreilles Créoles 18K',
+    '👑 Parure Traditionnelle 18K'
+  ],
+  description_ar: [
+    '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
+    '💎 حلي بلدية مغربية أصيلة.',
+    '💎 حلي عصرية راقية مع تشطيب دقيق.',
+    '💎 رافينتي إيطالية عيار 18k.',
+    '💎 قطعة مستوردة فاخرة.',
+    '💎 تحفة أثرية نادرة.',
+    '💎 حلي أنتيكة كلاسيكية.'
+  ],
+  description_fr: [
+    '✨ Or 18K certifié avec poinçon officiel marocain.',
+    '💎 Joaillerie traditionnelle marocaine authentique.',
+    '💎 Bijou moderne raffiné avec finition soignée.',
+    '💎 Pièce italienne raffinée en or 18k.',
+    '💎 Pièce importée d\'exception.',
+    '💎 Chef-d\'œuvre antique rare.',
+    '💎 Bijou vintage de collection.'
+  ],
+  prix_gramme: [750, 800, 850, 900]
+};
+
 app.get('/api/config', async (req, res) => {
   const defaultPermissions = {
     admin: ['view_dashboard', 'moderate_auctions', 'manage_commissions', 'manage_categories', 'manage_users', 'manage_roles', 'edit_products', 'create_products', 'delete_products', 'manage_gold_rates', 'manage_terms'],
     commercant: ['publish_listings', 'edit_products', 'create_products', 'view_shop_analytics', 'manage_orders', 'chat_with_clients'],
     client: ['browse_marketplace', 'place_bids', 'create_orders', 'inbox_chat']
   };
-  const defaultConfig = { commission_globale: 5, commission_categories: {}, commission_commercants: {}, role_permissions: defaultPermissions };
+  const defaultConfig = { 
+    commission_globale: 5, 
+    commission_categories: {}, 
+    commission_commercants: {}, 
+    role_permissions: defaultPermissions,
+    product_suggestions: defaultProductSuggestions
+  };
   try {
     if (isPostgresAvailable) {
       const pgRes = await query(`SELECT value FROM system_config WHERE key = 'platform_config'`);
@@ -2213,6 +2289,9 @@ app.put('/api/config', async (req, res) => {
 
   if (req.body.role_permissions) {
     newConfig.role_permissions = req.body.role_permissions;
+  }
+  if (req.body.product_suggestions) {
+    newConfig.product_suggestions = req.body.product_suggestions;
   }
 
   try {

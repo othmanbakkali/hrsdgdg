@@ -5,6 +5,44 @@ import { API_URL } from '../config/api';
 import ProductCard from '../components/ProductCard';
 import { ALL_MOROCCAN_CITIES } from '../utils/moroccanCities';
 
+const DEFAULT_SUGGESTIONS = {
+  titre_ar: [
+    '💍 خاتم سوليتير ألماس 18k',
+    '📿 قلادة سلسلة فاخرة 18k',
+    '🔗 سوار رويال أنيق 18k',
+    '✨ ميدالية ذهبية عيار 18k',
+    '💎 أقراط دائرية عيار 18k',
+    '👑 طقم عرائسي ملكي 18k'
+  ],
+  titre_fr: [
+    '💍 Bague Solitaire Diamant 18K',
+    '📿 Collier Chaine Forçat 18K',
+    '🔗 Bracelet Gourmette Royale 18K',
+    '✨ Pendentif Médaille Oria 18K',
+    '💎 Boucles d\'Oreilles Créoles 18K',
+    '👑 Parure Traditionnelle 18K'
+  ],
+  description_ar: [
+    '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
+    '💎 حلي بلدية مغربية أصيلة.',
+    '💎 حلي عصرية راقية مع تشطيب دقيق.',
+    '💎 رافينتي إيطالية عيار 18k.',
+    '💎 قطعة مستوردة فاخرة.',
+    '💎 تحفة أثرية نادرة.',
+    '💎 حلي أنتيكة كلاسيكية.'
+  ],
+  description_fr: [
+    '✨ Or 18K certifié avec poinçon officiel marocain.',
+    '💎 Joaillerie traditionnelle marocaine authentique.',
+    '💎 Bijou moderne raffiné avec finition soignée.',
+    '💎 Pièce italienne raffinée en or 18k.',
+    '💎 Pièce importée d\'exception.',
+    '💎 Chef-d\'œuvre antique rare.',
+    '💎 Bijou vintage de collection.'
+  ],
+  prix_gramme: [750, 800, 850, 900]
+};
+
 export default function MerchantDashboard({ onOpenSellModal, onOpenChangePassword }) {
   const { user } = useAuth();
 
@@ -13,6 +51,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [productSuggestions, setProductSuggestions] = useState(DEFAULT_SUGGESTIONS);
   const [salesHistory, setSalesHistory] = useState([]);
 
   // Multi-image and translation states for the Add Product form
@@ -93,6 +132,20 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         const salesData = await salesRes.json();
         setSalesHistory(salesData);
       }
+
+      // Platform Configuration & Suggestions
+      try {
+        const cfgRes = await fetch(`${API_URL}/config`);
+        if (cfgRes.ok) {
+          const cfg = await cfgRes.json();
+          if (cfg && cfg.product_suggestions) {
+            setProductSuggestions({
+              ...DEFAULT_SUGGESTIONS,
+              ...cfg.product_suggestions
+            });
+          }
+        }
+      } catch (e) {}
     } catch (err) {
       console.error('Error fetching merchant data:', err);
     } finally {
@@ -1216,14 +1269,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     {/* اقتراحات سريعة للعنوان */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ اقتراحات :</span>
-                      {[
-                        '💍 خاتم سوليتير ألماس 18k',
-                        '📿 قلادة سلسلة فاخرة 18k',
-                        '🔗 سوار رويال أنيق 18k',
-                        '✨ ميدالية ذهبية عيار 18k',
-                        '💎 أقراط دائرية عيار 18k',
-                        '👑 طقم عرائسي ملكي 18k'
-                      ].map(sug => (
+                      {(productSuggestions.titre_ar || DEFAULT_SUGGESTIONS.titre_ar).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -1260,12 +1306,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     {/* اقتراحات سريعة للوصف */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ أضف للوصف :</span>
-                      {[
-                        '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
-                        '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
-                        '📦 مرفق بشهادة أصالة معتمدة وعلبة فاخرة.',
-                        '🔒 قفل أمان محكم ومفحوص بدقة من خبير معتمد.'
-                      ].map(sug => (
+                      {(productSuggestions.description_ar || DEFAULT_SUGGESTIONS.description_ar).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -1311,14 +1352,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     {/* Suggestions Titre */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ Suggestions :</span>
-                      {[
-                        '💍 Bague Solitaire Diamant 18K',
-                        '📿 Collier Chaine Forçat 18K',
-                        '🔗 Bracelet Gourmette Royale 18K',
-                        '✨ Pendentif Médaille Oria 18K',
-                        '💎 Boucles d\'Oreilles Créoles 18K',
-                        '👑 Parure Traditionnelle 18K'
-                      ].map(sug => (
+                      {(productSuggestions.titre_fr || DEFAULT_SUGGESTIONS.titre_fr).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -1354,12 +1388,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     {/* Suggestions Description */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1a1a1f' }}>⚡ Insérer dans le texte :</span>
-                      {[
-                        '✨ Or 18K certifié avec poinçon d\'état officiel.',
-                        '💎 Finition artisanale marocaine haute joaillerie.',
-                        '📦 Livré avec certificat d\'authenticité et écrin de luxe.',
-                        '🔒 Fermoir de sécurité renforcé et contrôle bijoutier.'
-                      ].map(sug => (
+                      {(productSuggestions.description_fr || DEFAULT_SUGGESTIONS.description_fr).map(sug => (
                         <button
                           key={sug}
                           type="button"
@@ -1420,6 +1449,29 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   value={productForm.prix_gramme || ''}
                   onChange={e => handlePrixGrammeChange(e.target.value)}
                 />
+                {/* اقتراحات سريعة لسعر الغرام */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  {(productSuggestions.prix_gramme || DEFAULT_SUGGESTIONS.prix_gramme).map(pg => (
+                    <button
+                      key={pg}
+                      type="button"
+                      onClick={() => handlePrixGrammeChange(pg)}
+                      style={{
+                        background: '#ffffff',
+                        border: '1.5px solid #d4af37',
+                        borderRadius: '12px',
+                        padding: '3px 10px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: '#8a6410',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      {pg} {lang === 'ar' ? 'د.م' : 'DH'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>

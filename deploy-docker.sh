@@ -14,6 +14,19 @@ echo "=================================================================="
 APP_DIR="/var/www/hrsdgdg"
 cd "${APP_DIR}" || cd "$(dirname "$0")"
 
+# 0. CRITICAL: Safety Backup of Database & Live Data before update
+BACKUP_DIR="/var/backups/hrsdgdg_data"
+mkdir -p "${BACKUP_DIR}"
+if [ -s "${APP_DIR}/oria-api/data/database.json" ]; then
+  echo "🛡️  [DATA SAFETY] Backing up live database.json before container restart..."
+  cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database_$(date +%Y%m%d_%H%M%S).json"
+  cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
+fi
+if [ -d "${APP_DIR}/oria-api/data/uploads" ]; then
+  mkdir -p "${BACKUP_DIR}/uploads"
+  cp -rn "${APP_DIR}/oria-api/data/uploads/"* "${BACKUP_DIR}/uploads/" 2>/dev/null || true
+fi
+
 # 1. Stop standalone PM2 oria-api if active so port 5077 is freed for Docker container
 if command -v pm2 &> /dev/null; then
   if pm2 list | grep -q "oria-api"; then
