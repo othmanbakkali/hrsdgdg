@@ -18,9 +18,13 @@ cd "${APP_DIR}" || cd "$(dirname "$0")"
 BACKUP_DIR="/var/backups/hrsdgdg_data"
 mkdir -p "${BACKUP_DIR}"
 if [ -s "${APP_DIR}/oria-api/data/database.json" ]; then
-  echo "🛡️  [DATA SAFETY] Backing up live database.json before container restart..."
-  cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database_$(date +%Y%m%d_%H%M%S).json"
-  cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
+  if grep -q '?????' "${APP_DIR}/oria-api/data/database.json"; then
+    echo "⚠️ Detected corrupted '?????' in existing database.json! Checking for git repository clean copy..."
+  else
+    echo "🛡️  [DATA SAFETY] Backing up live database.json before container restart..."
+    cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database_$(date +%Y%m%d_%H%M%S).json"
+    cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
+  fi
 fi
 if [ -d "${APP_DIR}/oria-api/data/uploads" ]; then
   mkdir -p "${BACKUP_DIR}/uploads"

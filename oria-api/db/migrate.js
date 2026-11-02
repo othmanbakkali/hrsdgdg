@@ -70,7 +70,12 @@ async function runMigration() {
       await client.query(`
         INSERT INTO categories (id, nom_fr, nom_ar, nom_en, icon)
         VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE
+        SET nom_fr = EXCLUDED.nom_fr,
+            nom_ar = EXCLUDED.nom_ar,
+            nom_en = EXCLUDED.nom_en,
+            icon = EXCLUDED.icon
+        WHERE categories.nom_ar LIKE '%?%' OR categories.nom_fr LIKE '%?%'
       `, [
         c.id,
         c.nom_fr,

@@ -3228,9 +3228,58 @@ if (fs.existsSync(mainDistPath)) {
   });
 }
 
+// Database Integrity & UTF-8 Encoding Auto-Repair
+function checkAndRepairDatabaseIntegrity() {
+  try {
+    const db = readDB();
+    let hasChanges = false;
+
+    const categoryNameMap = {
+      'cat_rings': { nom_ar: 'خواتم', nom_fr: 'Bagues', icon: '💍' },
+      'cat_earrings': { nom_ar: 'كولي رومي', nom_fr: 'Rumi coli', icon: '📿' },
+      'cat_sets': { nom_ar: 'أطقم كاملة', nom_fr: 'Parures', icon: '💎' },
+      'cat_a4y7fuan7': { nom_ar: 'خراصات', nom_fr: 'Des rondelles', icon: '✨' },
+      'cat_y2od2qll9': { nom_ar: 'براسليات', nom_fr: 'Brassellate', icon: '🔗' },
+      'cat_q0euze9d3': { nom_ar: 'سناسل', nom_fr: 'Sanselah', icon: '📿' },
+      'cat_i754ll1yi': { nom_ar: 'قفل بلدي', nom_fr: 'Municipal verrouillé', icon: '🔒' },
+      'cat_1w9hmgxu5': { nom_ar: 'علاقات', nom_fr: 'Cintres', icon: '🏷️' }
+    };
+
+    if (Array.isArray(db.categories)) {
+      db.categories.forEach(cat => {
+        const canonical = categoryNameMap[cat.id];
+        if (canonical) {
+          if (!cat.nom_ar || cat.nom_ar.includes('?')) {
+            cat.nom_ar = canonical.nom_ar;
+            hasChanges = true;
+          }
+          if (!cat.nom_fr || cat.nom_fr.includes('?') || cat.nom_fr.startsWith('?')) {
+            cat.nom_fr = canonical.nom_fr;
+            hasChanges = true;
+          }
+          if (!cat.icon || cat.icon.includes('?')) {
+            cat.icon = canonical.icon;
+            hasChanges = true;
+          }
+        }
+      });
+    }
+
+    if (hasChanges) {
+      console.log('🛡️  [INTEGRITY] Repaired corrupted category names and accents to clean UTF-8.');
+      writeDB(db);
+    }
+  } catch (err) {
+    console.error('Integrity repair error:', err);
+  }
+}
+
 // Server Initialization
 const PORT = process.env.PORT || 5077;
 const HOST = process.env.HOST || '0.0.0.0';
+
+checkAndRepairDatabaseIntegrity();
+
 app.listen(PORT, HOST, () => {
   console.log(`HRSDGDG Unified Server is running on http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
   if (fs.existsSync(mainDistPath)) {

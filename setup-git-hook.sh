@@ -53,9 +53,15 @@ fi
 git --work-tree="${WORK_TREE}" --git-dir="${GIT_DIR}" checkout -f main
 
 # 3. CRITICAL: Restore production live database so git checkout NEVER overwrites real data
+# (If backup was corrupted with '?????', keep the clean UTF-8 database from git repository)
 if [ -s "${BACKUP_DIR}/database.json.latest" ]; then
-  echo "🛡️ Restoring live production database (preserving all live users, products, categories)..."
-  cp -p "${BACKUP_DIR}/database.json.latest" "${WORK_TREE}/oria-api/data/database.json"
+  if grep -q '?????' "${BACKUP_DIR}/database.json.latest"; then
+    echo "⚠️ Detected corrupted '?????' in backup database.json! Using fresh clean UTF-8 database.json from repository..."
+    cp -p "${WORK_TREE}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
+  else
+    echo "🛡️ Restoring live production database (preserving all live users, products, categories)..."
+    cp -p "${BACKUP_DIR}/database.json.latest" "${WORK_TREE}/oria-api/data/database.json"
+  fi
 fi
 
 if [ -d "${BACKUP_DIR}/uploads" ]; then
