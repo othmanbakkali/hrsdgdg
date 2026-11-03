@@ -45,6 +45,7 @@ const DEFAULT_SUGGESTIONS = {
 
 export default function MerchantDashboard({ onOpenSellModal, onOpenChangePassword }) {
   const { user } = useAuth();
+  const { lang, t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState('listings'); // 'listings', 'orders', 'add-product', 'sales-history', 'verifications'
   const [stats, setStats] = useState({ totalSales: 0, totalCommission: 0, netEarnings: 0, itemsSold: 0 });
