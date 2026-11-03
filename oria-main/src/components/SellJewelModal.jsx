@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { ALL_MOROCCAN_CITIES } from '../utils/moroccanCities';
+import VideoTrimModal from './VideoTrimModal';
 
 export default function SellJewelModal({ isOpen, onClose, onProductPublished }) {
   const { lang, isRtl } = useLanguage();
@@ -41,6 +42,8 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
   const [toastMessage, setToastMessage] = useState('');
   const [videoError, setVideoError] = useState('');
   const [videoDuration, setVideoDuration] = useState(null);
+  const [pendingVideoFile, setPendingVideoFile] = useState(null);
+  const [showTrimModal, setShowTrimModal] = useState(false);
   const [showHallmarkGuide, setShowHallmarkGuide] = useState(false);
 
   // Preset Catalog Samples
@@ -266,7 +269,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     });
   };
 
-  // Video handlers (10s max duration enforcement)
+  // Video handlers (10s max duration enforcement with trim tool)
   const handleVideoSelected = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -290,12 +293,14 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
       URL.revokeObjectURL(blobUrl);
       const duration = tempVideo.duration;
 
-      // Strictly enforce 10 seconds limit (allowing a tiny 0.9s tolerance for phone encoder rounding)
+      // If exceeds 10s, trigger trimmer modal!
       if (duration > 10.9) {
+        setPendingVideoFile(file);
+        setShowTrimModal(true);
         setVideoError(
           lang === 'ar'
-            ? `⚠️ مدة هذا الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى (10 ثوانٍ). يرجى تسجيل أو اختيار مقطع لا يتعدى 10 ثوانٍ.`
-            : `⚠️ La durée de la vidéo (${Math.round(duration)}s) dépasse le maximum autorisé (10 secondes). Veuillez choisir un extrait de 10s maximum.`
+            ? `⚠️ مدة هذا الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى (10 ثوانٍ). تم فتح أداة القص لاختيار مقطع 10 ثوانٍ.`
+            : `⚠️ La durée (${Math.round(duration)}s) dépasse 10 secondes. Vous pouvez découper un extrait de 10s.`
         );
         return;
       }
@@ -339,6 +344,8 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     setFormData(prev => ({ ...prev, video: null }));
     setVideoDuration(null);
     setVideoError('');
+    setPendingVideoFile(null);
+    setShowTrimModal(false);
   };
 
   const handleSubmit = async (e) => {
@@ -802,12 +809,71 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                 </div>
               </div>
 
-              {/* Video error alert */}
+              {/* Video error alert with cut/trim button */}
               {videoError && (
-                <div className="video-error-alert animate-slide-down">
-                  <span>⚠️</span>
-                  <span>{videoError}</span>
+                <div 
+                  className="video-error-alert animate-slide-down"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '10px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>✂️</span>
+                    <span>{videoError}</span>
+                  </div>
+                  {pendingVideoFile && (
+                    <button
+                      type="button"
+                      onClick={() => setShowTrimModal(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, #d4af37 0%, #aa771c 100%)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '6px 14px',
+                        fontWeight: 800,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>✂️</span>
+                      <span>{lang === 'ar' ? 'قص وتقصير الفيديو (10s)' : 'Découper la vidéo (10s)'}</span>
+                    </button>
+                  )}
                 </div>
+              )}
+
+              {/* Video Trim Modal */}
+              {showTrimModal && pendingVideoFile && (
+                <VideoTrimModal
+                  isOpen={showTrimModal}
+                  videoFile={pendingVideoFile}
+                  lang={lang}
+                  onClose={() => setShowTrimModal(false)}
+                  onTrimComplete={(trimmedDataUrl, duration) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      video: trimmedDataUrl
+                    }));
+                    setVideoDuration(duration);
+                    setVideoError('');
+                    setShowTrimModal(false);
+                    setPendingVideoFile(null);
+                    setToastMessage(
+                      lang === 'ar'
+                        ? `🎥 تم قص وإرفاق الفيديو بنجاح (${duration} ثوانٍ) !`
+                        : `🎥 Vidéo découpée et ajoutée avec succès (${duration}s) !`
+                    );
+                    setTimeout(() => setToastMessage(''), 3500);
+                  }}
+                />
               )}
 
               {/* Sample high quality photos to click */}

@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import ProductCard from '../components/ProductCard';
+import VideoTrimModal from '../components/VideoTrimModal';
 import { ALL_MOROCCAN_CITIES } from '../utils/moroccanCities';
 
 const DEFAULT_SUGGESTIONS = {
@@ -63,6 +64,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [videoDuration, setVideoDuration] = useState(null);
   const [videoError, setVideoError] = useState('');
+  const [pendingVideoFile, setPendingVideoFile] = useState(null);
+  const [showTrimModal, setShowTrimModal] = useState(false);
 
   // New product form (mirrors admin product modal)
   const [productForm, setProductForm] = useState({
@@ -233,13 +236,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     setCustomImageUrl('');
   };
 
-  // Video 10s max handlers
+  // Video 10s max handlers with automatic trim option
   const handleVideoSelected = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 50 * 1024 * 1024) {
-      setVideoError('⚠️ حجم ملف الفيديو كبير جداً (أقصى حد هو 50 ميغابايت).');
+      setVideoError(lang === 'ar' ? '⚠️ حجم ملف الفيديو كبير جداً (أقصى حد هو 50 ميغابايت).' : '⚠️ La vidéo est trop volumineuse (maximum 50 Mo).');
       e.target.value = '';
       return;
     }
@@ -252,8 +255,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       URL.revokeObjectURL(blobUrl);
       const duration = tempVideo.duration;
 
+      // If duration exceeds 10s, open the video trimming tool!
       if (duration > 10.9) {
-        setVideoError(`⚠️ مدة هذا الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى المسموح به (10 ثوانٍ). يرجى اختيار مقطع لا يتعدى 10 ثوانٍ.`);
+        setPendingVideoFile(file);
+        setShowTrimModal(true);
+        setVideoError(
+          lang === 'ar'
+            ? `⚠️ مدة هذا الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى (10 ثوانٍ). تم فتح أداة القص لاختيار مقطع 10 ثوانٍ.`
+            : `⚠️ La durée (${Math.round(duration)}s) dépasse 10 secondes. Vous pouvez découper un extrait de 10s.`
+        );
         return;
       }
 
@@ -275,7 +285,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
     tempVideo.onerror = () => {
       URL.revokeObjectURL(blobUrl);
-      setVideoError('تعذر قراءة صيغة الفيديو. يرجى تجربة ملف آخر (MP4/WebM/MOV).');
+      setVideoError(lang === 'ar' ? 'تعذر قراءة صيغة الفيديو. يرجى تجربة ملف آخر (MP4/WebM/MOV).' : 'Format vidéo non supporté. Essayez un autre fichier.');
     };
 
     tempVideo.src = blobUrl;
@@ -286,6 +296,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     setProductForm(prev => ({ ...prev, video: null }));
     setVideoDuration(null);
     setVideoError('');
+    setPendingVideoFile(null);
+    setShowTrimModal(false);
   };
 
   const handleRemoveImage = (indexToRemove) => {
@@ -1145,23 +1157,70 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 </div>
               </div>
 
-              {/* تنبيه خطأ الفيديو إن وجد */}
+              {/* تنبيه خطأ الفيديو إن وجد مع زر فتح أداة القص */}
               {videoError && (
                 <div style={{
                   marginTop: '10px',
-                  padding: '8px 12px',
-                  background: 'rgba(220, 38, 38, 0.15)',
-                  border: '1px solid #dc2626',
-                  borderRadius: '8px',
-                  color: '#f87171',
-                  fontSize: '0.82rem',
+                  padding: '10px 14px',
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  borderRadius: '10px',
+                  color: '#fbbf24',
+                  fontSize: '0.84rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px'
                 }}>
-                  <span>⚠️</span>
-                  <span>{videoError}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>✂️</span>
+                    <span>{videoError}</span>
+                  </div>
+                  {pendingVideoFile && (
+                    <button
+                      type="button"
+                      onClick={() => setShowTrimModal(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, #d4af37 0%, #aa771c 100%)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '6px 14px',
+                        fontWeight: 800,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
+                      }}
+                    >
+                      <span>✂️</span>
+                      <span>{lang === 'ar' ? 'قص وتقصير الفيديو (10s)' : 'Découper la vidéo (10s)'}</span>
+                    </button>
+                  )}
                 </div>
+              )}
+
+              {/* نافذة قص الفيديو المنبثقة */}
+              {showTrimModal && pendingVideoFile && (
+                <VideoTrimModal
+                  isOpen={showTrimModal}
+                  videoFile={pendingVideoFile}
+                  lang={lang}
+                  onClose={() => setShowTrimModal(false)}
+                  onTrimComplete={(trimmedDataUrl, trimmedDuration) => {
+                    setProductForm(prev => ({
+                      ...prev,
+                      video: trimmedDataUrl
+                    }));
+                    setVideoDuration(trimmedDuration);
+                    setVideoError('');
+                    setShowTrimModal(false);
+                    setPendingVideoFile(null);
+                  }}
+                />
               )}
             </div>
 

@@ -4,6 +4,7 @@ import { useAuth, AuthProvider } from './context/AuthContext';
 import OriaLogo from './components/OriaLogo';
 import AdminLogin from './components/AdminLogin';
 import SilverIcon from './components/SilverIcon';
+import VideoTrimModal from './components/VideoTrimModal';
 import './styles/admin.css';
 import { ALL_MOROCCAN_CITIES } from './utils/moroccanCities';
 
@@ -193,6 +194,8 @@ function AdminLayout() {
   const [adminCustomImageUrl, setAdminCustomImageUrl] = useState('');
   const [adminVideoDuration, setAdminVideoDuration] = useState(null);
   const [adminVideoError, setAdminVideoError] = useState('');
+  const [adminPendingVideoFile, setAdminPendingVideoFile] = useState(null);
+  const [showAdminTrimModal, setShowAdminTrimModal] = useState(false);
   const [productForm, setProductForm] = useState({ 
     titre: '', 
     titre_fr: '',
@@ -855,15 +858,15 @@ function AdminLayout() {
       URL.revokeObjectURL(blobUrl);
       const duration = tempVideo.duration;
 
-      // Validation stricte 10 secondes max (tolérance 0.9s pour l'encodage mobile)
+      // Si la durée dépasse 10s, ouvrir l'outil de découpage vidéo
       if (duration > 10.9) {
-        setAdminVideoError(`مدة الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى المسموح به (10 ثوانٍ). يرجى تقصير الفيديو إلى 10 ثوانٍ.`);
-        setProductForm(prev => ({ ...prev, video: null }));
-        setAdminVideoDuration(null);
+        setAdminPendingVideoFile(file);
+        setShowAdminTrimModal(true);
+        setAdminVideoError(`⚠️ مدة الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز 10 ثوانٍ. تم فتح أداة القص لاختيار مقطع 10 ثوانٍ.`);
         return;
       }
 
-      setAdminVideoDuration(Math.round(duration));
+      setAdminVideoDuration(Math.round(duration * 10) / 10);
       setAdminVideoError('');
 
       const reader = new FileReader();
@@ -891,6 +894,8 @@ function AdminLayout() {
     setProductForm(prev => ({ ...prev, video: null }));
     setAdminVideoDuration(null);
     setAdminVideoError('');
+    setAdminPendingVideoFile(null);
+    setShowAdminTrimModal(false);
   };
 
   const handleAdminAddImageUrl = () => {
@@ -6704,23 +6709,70 @@ function AdminLayout() {
                 </div>
               </div>
 
-              {/* Message d'erreur vidéo */}
+              {/* Message d'erreur vidéo avec bouton pour ouvrir l'outil de découpage */}
               {adminVideoError && (
                 <div style={{
                   marginTop: '10px',
-                  padding: '8px 12px',
-                  background: 'rgba(220, 38, 38, 0.15)',
-                  border: '1px solid #dc2626',
-                  borderRadius: '8px',
-                  color: '#f87171',
-                  fontSize: '0.82rem',
+                  padding: '10px 14px',
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  borderRadius: '10px',
+                  color: '#fbbf24',
+                  fontSize: '0.84rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px'
                 }}>
-                  <span>⚠️</span>
-                  <span>{adminVideoError}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>✂️</span>
+                    <span>{adminVideoError}</span>
+                  </div>
+                  {adminPendingVideoFile && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminTrimModal(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, #d4af37 0%, #aa771c 100%)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '6px 14px',
+                        fontWeight: 800,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
+                      }}
+                    >
+                      <span>✂️</span>
+                      <span>Découper la vidéo (10s max)</span>
+                    </button>
+                  )}
                 </div>
+              )}
+
+              {/* Modal de découpage vidéo */}
+              {showAdminTrimModal && adminPendingVideoFile && (
+                <VideoTrimModal
+                  isOpen={showAdminTrimModal}
+                  videoFile={adminPendingVideoFile}
+                  lang="fr"
+                  onClose={() => setShowAdminTrimModal(false)}
+                  onTrimComplete={(trimmedDataUrl, trimmedDuration) => {
+                    setProductForm(prev => ({
+                      ...prev,
+                      video: trimmedDataUrl
+                    }));
+                    setAdminVideoDuration(trimmedDuration);
+                    setAdminVideoError('');
+                    setShowAdminTrimModal(false);
+                    setAdminPendingVideoFile(null);
+                  }}
+                />
               )}
             </div>
 
