@@ -45,6 +45,13 @@ if command -v pm2 &> /dev/null; then
 fi
 
 # 2. Build Docker Image & Start Containers
+echo "=== [SERVER DIAGNOSTICS: NGINX SITES] ==="
+cat /etc/nginx/sites-enabled/* 2>/dev/null || cat /etc/nginx/conf.d/* 2>/dev/null || true
+echo "=== [SERVER DIAGNOSTICS: LISTENING PORTS] ==="
+ss -tulpn 2>/dev/null || netstat -tulpn 2>/dev/null || true
+echo "=== [SERVER DIAGNOSTICS: PM2 PROCESSES] ==="
+pm2 list 2>/dev/null || true
+
 docker compose build hrsdgdg-platform
 
 echo "🚀 Starting Docker Compose stack (Platform + PostgreSQL)..."
@@ -53,6 +60,21 @@ docker compose up -d --remove-orphans
 # 3. Wait for containers to be healthy
 echo "⏳ Waiting for services to initialize..."
 sleep 5
+
+# 3b. Sync compiled frontend dist from container to host (for direct Nginx static file serving)
+echo "📦 Syncing compiled frontend dist from container to host..."
+mkdir -p "${APP_DIR}/oria-main" "${APP_DIR}/oria-admin"
+docker compose cp hrsdgdg-platform:/app/oria-main/dist "${APP_DIR}/oria-main/" || true
+docker compose cp hrsdgdg-platform:/app/oria-admin/dist "${APP_DIR}/oria-admin/" || true
+
+# 3c. Reload Nginx if present
+if command -v nginx &> /dev/null; then
+  echo "🔄 Testing and reloading Nginx..."
+  nginx -t 2>/dev/null && (nginx -s reload 2>/dev/null || systemctl reload nginx 2>/dev/null) || true
+fi
+
+echo "=== [SERVER DIAGNOSTICS: DOCKER PORT 5077 RESPONSE] ==="
+curl -s http://127.0.0.1:5077/ | head -n 25 || true
 
 # 4. Run PostgreSQL schema migration and seed
 echo "🐘 Verifying PostgreSQL migration inside container..."
