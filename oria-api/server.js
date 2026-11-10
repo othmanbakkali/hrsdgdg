@@ -3155,26 +3155,26 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.3.0',
-  versionCode: 13,
-  minSupportedVersion: '1.3.0',
-  minSupportedVersionCode: 13,
-  forceUpdate: true,
-  releaseDate: '2026-10-27',
-  pwaCacheVersion: 'oria-pwa-v16',
-  title_fr: 'Mise à jour obligatoire disponible',
-  title_ar: 'تحديث إجباري مطلوب متوفر',
-  message_fr: 'Une nouvelle version majeure (v1.3.0) de HRSDGDG est disponible. Pour garantir la sécurité de vos transactions, l\'accès aux enchères en direct et la conformité, la mise à niveau est obligatoire.',
-  message_ar: 'يتوفر إصدار رئيسي جديد (v1.3.0) لتطبيق HRSDGDG. لضمان أمان معاملاتكم والوصول إلى المزادات المباشرة، من الضروري تحديث التطبيق الآن.',
+  version: '1.4.0',
+  versionCode: 14,
+  minSupportedVersion: '1.4.0',
+  minSupportedVersionCode: 14,
+  forceUpdate: false,
+  releaseDate: '2026-11-10',
+  pwaCacheVersion: 'oria-pwa-v17',
+  title_fr: 'Mise à jour disponible (Découpage Vidéo)',
+  title_ar: 'تحديث جديد متوفر (أداة قص الفيديو)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible avec le nouvel outil de découpage vidéo intégré (10s max) et des optimisations de performances.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG مع أداة قص وتقصير الفيديوهات المدمجة (10 ثوانٍ كحد أقصى) وتحسينات في سرعة التصفح.',
   changelog_fr: [
-    'Amélioration des performances et fluidité accrue',
-    'Nouveau système d\'installation mobile Android APK et iPhone',
-    'Sécurité renforcée et synchronisation temps réel'
+    'Nouvel outil intégré de découpage vidéo (10 secondes max)',
+    'Prévisualisation et ajustement fluide des extraits',
+    'Optimisation du cache PWA et des performances'
   ],
   changelog_ar: [
-    'أداء أسرع واستجابة فورية على جميع الأجهزة',
-    'نظام تحميل وتثبيت جديد لتطبيقات أندرويد وآيفون',
-    'حماية متقدمة ومزامنة فورية للأسعار والمزادات'
+    'أداة جديدة ومدمجة لقص وتقصير مقاطع الفيديو (10 ثوانٍ كحد أقصى)',
+    'معاينة مباشرة وضبط دقيق للمقاطع قبل النشر',
+    'تحديث تلقائي لذاكرة التخزين وسرعة التصفح'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '65 Ko'

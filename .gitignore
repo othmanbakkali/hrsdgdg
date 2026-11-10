@@ -43,5 +43,10 @@ scratch/
 oria-api/data/uploads/*
 !oria-api/data/uploads/.gitkeep
 
+# Database & runtime backups (strictly preserved on production, never overwritten by git)
+oria-api/data/database.json
+oria-api/data/*.bak
+oria-api/data/*.tmp
+
 # Mobile build artifacts
 android-build/

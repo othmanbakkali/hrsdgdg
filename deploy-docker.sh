@@ -18,13 +18,9 @@ cd "${APP_DIR}" || cd "$(dirname "$0")"
 BACKUP_DIR="/var/backups/hrsdgdg_data"
 mkdir -p "${BACKUP_DIR}"
 if [ -s "${APP_DIR}/oria-api/data/database.json" ]; then
-  if grep -q '?????' "${APP_DIR}/oria-api/data/database.json"; then
-    echo "⚠️ Detected corrupted '?????' in existing database.json! Checking for git repository clean copy..."
-  else
-    echo "🛡️  [DATA SAFETY] Backing up live database.json before container restart..."
-    cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database_$(date +%Y%m%d_%H%M%S).json"
-    cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
-  fi
+  echo "🛡️  [DATA SAFETY] Backing up live database.json before container restart..."
+  cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database_$(date +%Y%m%d_%H%M%S).json"
+  cp -p "${APP_DIR}/oria-api/data/database.json" "${BACKUP_DIR}/database.json.latest"
 fi
 if [ -d "${APP_DIR}/oria-api/data/uploads" ]; then
   mkdir -p "${BACKUP_DIR}/uploads"
@@ -81,12 +77,9 @@ echo "🐘 Verifying PostgreSQL migration inside container..."
 docker compose exec -T hrsdgdg-platform node oria-api/db/migrate.js || true
 
 # 5. Database Safety Check: Ensure live database is 100% intact
-if [ -s "${BACKUP_DIR}/database.json.latest" ]; then
-  CURRENT_SIZE=$(stat -c%s "${APP_DIR}/oria-api/data/database.json" 2>/dev/null || echo "0")
-  if [ "$CURRENT_SIZE" -lt 50000 ]; then
-    echo "⚠️ Database size abnormal ($CURRENT_SIZE bytes)! Restoring from live backup..."
-    cp -p "${BACKUP_DIR}/database.json.latest" "${APP_DIR}/oria-api/data/database.json"
-  fi
+if [ ! -s "${APP_DIR}/oria-api/data/database.json" ] && [ -s "${BACKUP_DIR}/database.json.latest" ]; then
+  echo "⚠️ Database missing! Restoring from latest safety backup..."
+  cp -p "${BACKUP_DIR}/database.json.latest" "${APP_DIR}/oria-api/data/database.json"
 fi
 
 # 6. Verification & Health Check

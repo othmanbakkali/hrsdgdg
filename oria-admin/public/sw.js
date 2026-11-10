@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oria-admin-pwa-v3';
+const CACHE_NAME = 'oria-admin-pwa-v4';
 
 const PRECACHE_URLS = [
   '/admin/manifest.webmanifest',
