@@ -143,16 +143,109 @@ export const TOP_MOROCCAN_CITIES = [
   { key: 'Dakhla', ar: 'الداخلة', fr: 'Dakhla' }
 ];
 
-// Helper to get localized city name
+// Normalization helper for accent-insensitive, whitespace-trimmed comparison
+export const normalizeCityStr = (str) => {
+  if (!str) return '';
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+};
+
+// Locate city metadata matching raw key, French name, Arabic name or accents
+export const findCityMeta = (cityName) => {
+  if (!cityName) return null;
+  const raw = String(cityName).trim();
+  const norm = normalizeCityStr(raw);
+  return ALL_MOROCCAN_CITIES.find(c => {
+    return (
+      c.key.toLowerCase() === raw.toLowerCase() ||
+      c.fr.toLowerCase() === raw.toLowerCase() ||
+      c.ar === raw ||
+      normalizeCityStr(c.key) === norm ||
+      normalizeCityStr(c.fr) === norm ||
+      c.ar.replace(/[\s\-_]/g, '') === raw.replace(/[\s\-_]/g, '')
+    );
+  }) || null;
+};
+
+// Robust bilingual city comparison (handles Casablanca / الدار البيضاء, Fès / فاس, etc.)
+export const isSameCity = (cityA, cityB) => {
+  if (!cityA || !cityB) return false;
+  const aRaw = String(cityA).trim();
+  const bRaw = String(cityB).trim();
+  if (!aRaw || !bRaw) return false;
+  if (aRaw === bRaw) return true;
+
+  const aNorm = normalizeCityStr(aRaw);
+  const bNorm = normalizeCityStr(bRaw);
+  if (aNorm === bNorm) return true;
+
+  // Check against ALL_MOROCCAN_CITIES catalog
+  const metaA = findCityMeta(aRaw);
+  const metaB = findCityMeta(bRaw);
+
+  if (metaA && metaB) {
+    return metaA.key.toLowerCase() === metaB.key.toLowerCase();
+  }
+  if (metaA) {
+    return (
+      metaA.key.toLowerCase() === bNorm ||
+      normalizeCityStr(metaA.fr) === bNorm ||
+      metaA.ar === bRaw ||
+      bRaw.includes(metaA.ar) ||
+      metaA.ar.includes(bRaw)
+    );
+  }
+  if (metaB) {
+    return (
+      metaB.key.toLowerCase() === aNorm ||
+      normalizeCityStr(metaB.fr) === aNorm ||
+      metaB.ar === aRaw ||
+      aRaw.includes(metaB.ar) ||
+      metaB.ar.includes(aRaw)
+    );
+  }
+
+  // Fallback checks for major Moroccan metropolitan areas
+  if ((aNorm.includes('casa') || aNorm.includes('dar') || aRaw.includes('بيضاء')) &&
+      (bNorm.includes('casa') || bNorm.includes('dar') || bRaw.includes('بيضاء'))) {
+    return true;
+  }
+  if ((aNorm.includes('rabat') || aRaw.includes('رباط')) &&
+      (bNorm.includes('rabat') || bRaw.includes('رباط'))) {
+    return true;
+  }
+  if ((aNorm.includes('marrak') || aRaw.includes('مراكش')) &&
+      (bNorm.includes('marrak') || bRaw.includes('مراكش'))) {
+    return true;
+  }
+  if ((aNorm.includes('fes') || aRaw.includes('فاس')) &&
+      (bNorm.includes('fes') || bRaw.includes('فاس'))) {
+    return true;
+  }
+  if ((aNorm.includes('tang') || aRaw.includes('طنجة')) &&
+      (bNorm.includes('tang') || bRaw.includes('طنجة'))) {
+    return true;
+  }
+
+  return false;
+};
+
+// Helper to get localized city name (French or Arabic)
 export const getCityDisplayName = (cityKey, lang = 'ar') => {
-  if (!cityKey) return lang === 'ar' ? 'الدار البيضاء' : 'Casablanca';
-  const found = ALL_MOROCCAN_CITIES.find(c => 
-    c.key.toLowerCase() === String(cityKey).toLowerCase() ||
-    c.fr.toLowerCase() === String(cityKey).toLowerCase() ||
-    c.ar === String(cityKey).trim()
-  );
+  if (!cityKey || cityKey === 'Toutes les villes' || cityKey === 'كل المدن' || cityKey === 'Tout le Maroc' || cityKey === 'كل المغرب') {
+    return lang === 'ar' ? 'كل المغرب' : 'Tout le Maroc';
+  }
+  const found = findCityMeta(cityKey);
   if (found) {
     return lang === 'ar' ? found.ar : found.fr;
+  }
+  // Fallback for Casablanca synonyms
+  const norm = normalizeCityStr(cityKey);
+  if (norm.includes('casa') || norm.includes('dar') || String(cityKey).includes('بيضاء')) {
+    return lang === 'ar' ? 'الدار البيضاء' : 'Casablanca';
   }
   return cityKey;
 };

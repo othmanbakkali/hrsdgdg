@@ -1,5 +1,5 @@
-const CACHE_NAME = 'oria-pwa-v17';
-const API_CACHE_NAME = 'oria-pwa-api-v17';
+const CACHE_NAME = 'oria-pwa-v18';
+const API_CACHE_NAME = 'oria-pwa-api-v18';
 
 const PRECACHE_URLS = [
   '/',
@@ -46,7 +46,7 @@ self.addEventListener('activate', (event) => {
           client.postMessage({
             type: 'SW_VERSION_UPDATED',
             version: CACHE_NAME,
-            versionCode: 17
+            versionCode: 18
           });
         });
       });

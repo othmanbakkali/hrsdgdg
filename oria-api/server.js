@@ -3155,24 +3155,27 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.0',
-  versionCode: 14,
+  version: '1.4.1',
+  versionCode: 15,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-10',
-  pwaCacheVersion: 'oria-pwa-v17',
-  title_fr: 'Mise à jour disponible (Découpage Vidéo)',
-  title_ar: 'تحديث جديد متوفر (أداة قص الفيديو)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible avec le nouvel outil de découpage vidéo intégré (10s max) et des optimisations de performances.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG مع أداة قص وتقصير الفيديوهات المدمجة (10 ثوانٍ كحد أقصى) وتحسينات في سرعة التصفح.',
+  pwaCacheVersion: 'oria-pwa-v18',
+  title_fr: 'Mise à jour disponible (Filtre par Ville & Optimisation)',
+  title_ar: 'تحديث جديد متوفر (تحسين تصفية المدن)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible avec la synchronisation bilingue du filtre par ville et des optimisations de performances.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG مع تحسين التصفية الجغرافية للمدن ثنائية اللغة وتحديثات في الأداء.',
   changelog_fr: [
+    'Correction et synchronisation bilingue du filtre par ville (Arabe / Français)',
     'Nouvel outil intégré de découpage vidéo (10 secondes max)',
-    'Prévisualisation et ajustement fluide des extraits',
     'Optimisation du cache PWA et des performances'
   ],
   changelog_ar: [
+    'إصلاح وتوافق كامل لتصفية المجوهرات حسب المدن المغربية بالعربية والفرنسية',
     'أداة جديدة ومدمجة لقص وتقصير مقاطع الفيديو (10 ثوانٍ كحد أقصى)',
+    'تحديث تلقائي لذاكرة التخزين وسرعة التصفح'
+  ],
     'معاينة مباشرة وضبط دقيق للمقاطع قبل النشر',
     'تحديث تلقائي لذاكرة التخزين وسرعة التصفح'
   ],

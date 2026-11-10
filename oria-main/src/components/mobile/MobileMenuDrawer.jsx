@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import OriaLogo from '../OriaLogo';
 import { useLanguage } from '../../context/LanguageContext';
+import { getCityDisplayName } from '../../utils/moroccanCities';
 
 export default function MobileMenuDrawer({
   isOpen,
@@ -102,7 +103,7 @@ export default function MobileMenuDrawer({
             title={isAr ? 'تغيير المدينة' : 'Changer de ville'}
           >
             <span className="strip-icon">📍</span>
-            <span className="strip-text">{selectedCity || (isAr ? 'كل المغرب' : 'Tout le Maroc')}</span>
+            <span className="strip-text">{getCityDisplayName(selectedCity, isAr ? 'ar' : 'fr')}</span>
             <span className="strip-chevron">▼</span>
           </button>
 

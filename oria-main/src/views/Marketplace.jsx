@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { matchProduct } from '../utils/searchEngine';
+import { isSameCity, getCityDisplayName } from '../utils/moroccanCities';
 import MobileProductCard from '../components/mobile/MobileProductCard';
 import ProductCard from '../components/ProductCard';
 import GoldPriceCard from '../components/GoldPriceCard';
@@ -20,6 +21,8 @@ export default function Marketplace({
   initialCategory = '',
   initialDealsOnly = false,
   selectedCity = '',
+  onSelectCity,
+  setSelectedCity,
   onOpenCityPicker,
   onOpenFilterSheet,
   onOpenChatWithSeller,
@@ -105,8 +108,8 @@ export default function Marketplace({
     }
 
     // 2. City Filter
-    if (selectedCity && selectedCity !== 'Toutes les villes') {
-      if ((product.city || '').toLowerCase() !== selectedCity.toLowerCase()) {
+    if (selectedCity && selectedCity !== 'Toutes les villes' && selectedCity !== 'كل المدن' && selectedCity !== 'Tout le Maroc' && selectedCity !== 'كل المغرب') {
+      if (!isSameCity(product.city, selectedCity)) {
         return false;
       }
     }
@@ -484,7 +487,29 @@ export default function Marketplace({
             <div className="products-count-text">
               <span className="results-badge">{sortedProducts.length}</span>
               <span>{lang === 'ar' ? 'قطعة مجوهرات متوفرة' : 'bijoux disponibles'}</span>
-              {selectedCity && <span className="city-filter-highlight"> {lang === 'ar' ? 'في' : 'à'} <strong>{selectedCity}</strong></span>}
+              {selectedCity && (
+                <span className="city-filter-highlight" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  {lang === 'ar' ? 'في' : 'à'} <strong>{getCityDisplayName(selectedCity, lang)}</strong>
+                  {(onSelectCity || setSelectedCity) && (
+                    <button
+                      type="button"
+                      onClick={() => (onSelectCity || setSelectedCity)('')}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        padding: '0 2px',
+                        fontSize: '0.85rem',
+                        fontWeight: 900
+                      }}
+                      title={lang === 'ar' ? 'إلغاء تصفية المدينة' : 'Supprimer le filtre ville'}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </span>
+              )}
               {saleUniverse === 'FIRST_HAND' && <span className="universe-tag-first"> • {lang === 'ar' ? '✨ مجوهرات جديدة' : '✨ Première Main'}</span>}
               {saleUniverse === 'SECOND_HAND' && <span className="universe-tag-second"> • {lang === 'ar' ? '♻️ مجوهرات مستعملة' : '♻️ Seconde Main'}</span>}
               {saleUniverse === 'AUCTION' && <span className="universe-tag-first" style={{ background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}> • {lang === 'ar' ? '🔨 مزادات مباشرة' : '🔨 Enchères en Direct'}</span>}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { ALL_MOROCCAN_CITIES } from '../../utils/moroccanCities';
+import { ALL_MOROCCAN_CITIES, isSameCity } from '../../utils/moroccanCities';
 
 const ALL_CITIES_OPTION = {
   key: '',
@@ -73,13 +73,13 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
           {filteredCities.map((city) => {
             const cityName = isAr ? city.ar : city.fr;
             const isAll = city.fr === 'Toutes les villes';
-            const isSelected = (selectedCity === city.fr) || (selectedCity === city.ar) || (selectedCity === city.key) || (!selectedCity && isAll);
+            const isSelected = isSameCity(selectedCity, city.key) || isSameCity(selectedCity, city.fr) || isSameCity(selectedCity, city.ar) || (!selectedCity && isAll);
             return (
               <div 
                 key={city.key || city.fr}
                 className={`city-list-item ${isSelected ? 'active' : ''}`}
                 onClick={() => {
-                  onSelectCity(isAll ? '' : (isAr ? city.ar : city.fr));
+                  onSelectCity(isAll ? '' : (city.key || city.fr));
                   onClose();
                 }}
               >

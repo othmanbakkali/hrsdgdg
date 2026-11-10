@@ -28,6 +28,7 @@ import MobileFilterSheet from './components/mobile/MobileFilterSheet';
 import MobileCityPicker from './components/mobile/MobileCityPicker';
 import MobileChatDrawer from './components/mobile/MobileChatDrawer';
 import DeviceSimulatorToggle from './components/mobile/DeviceSimulatorToggle';
+import { getCityDisplayName } from './utils/moroccanCities';
 
 import { API_URL } from './config/api';
 import './styles/theme.css';
@@ -326,7 +327,7 @@ function MainLayout() {
               title={lang === 'ar' ? "اختر مدينة في المغرب" : "Sélectionner une ville"}
             >
               <span>📍</span>
-              <span className="hide-tablet">{selectedCity || (lang === 'ar' ? 'كل المغرب' : 'Tout le Maroc')}</span>
+              <span className="hide-tablet">{getCityDisplayName(selectedCity, lang)}</span>
               <span style={{ fontSize: '0.62rem', color: 'var(--primary-gold)' }}>▼</span>
             </button>
             {/* Theme Toggle Button */}
@@ -601,6 +602,8 @@ function MainLayout() {
             initialCategory={selectedCategory}
             initialDealsOnly={dealsOnly}
             selectedCity={selectedCity}
+            setSelectedCity={setSelectedCity}
+            onSelectCity={setSelectedCity}
             onOpenCityPicker={() => setIsCityPickerOpen(true)}
             onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
             onOpenChatWithSeller={handleOpenChatWithSeller}

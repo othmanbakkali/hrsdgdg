@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { isSameCity, getCityDisplayName } from '../../utils/moroccanCities';
 
 export default function MobileFilterSheet({
   isOpen,
@@ -85,7 +86,7 @@ export default function MobileFilterSheet({
               className={`sheet-quick-summary-chip ${selectedCity ? 'active' : ''}`}
               onClick={onOpenCityPicker}
             >
-              <span>📍 {selectedCity || (isAr ? 'كل المغرب' : 'Tout le Maroc')}</span>
+              <span>📍 {getCityDisplayName(selectedCity, isAr ? 'ar' : 'fr')}</span>
               <span className="chip-chevron">▼</span>
             </button>
 
@@ -171,7 +172,7 @@ export default function MobileFilterSheet({
             {/* Quick City Pills */}
             <div className="sheet-chips-grid">
               {quickCities.map(city => {
-                const isActive = (selectedCity || '') === city.id;
+                const isActive = isSameCity(selectedCity, city.id) || (!selectedCity && !city.id);
                 return (
                   <button 
                     key={city.id || 'all'}

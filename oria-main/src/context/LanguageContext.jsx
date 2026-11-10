@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ALL_MOROCCAN_CITIES, TOP_MOROCCAN_CITIES, getCityDisplayName } from '../utils/moroccanCities';
+import { ALL_MOROCCAN_CITIES, TOP_MOROCCAN_CITIES, getCityDisplayName, isSameCity } from '../utils/moroccanCities';
 
-export { ALL_MOROCCAN_CITIES, TOP_MOROCCAN_CITIES, getCityDisplayName };
+export { ALL_MOROCCAN_CITIES, TOP_MOROCCAN_CITIES, getCityDisplayName, isSameCity };
 
 const LanguageContext = createContext();
 
