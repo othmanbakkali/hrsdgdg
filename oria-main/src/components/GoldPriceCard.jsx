@@ -38,7 +38,14 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
 
   const recordedAt = rateInfo.lastUpdated ? new Date(String(rateInfo.lastUpdated).replace(' ', 'T')) : null;
   const dateStr = recordedAt && !Number.isNaN(recordedAt.getTime())
-    ? recordedAt.toLocaleString(isAr ? 'ar-MA-u-nu-latn' : 'fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
+    ? (() => {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+        }).formatToParts(recordedAt);
+        const part = (type) => parts.find(item => item.type === type)?.value || '';
+        return `${part('year')}/${part('month')}/${part('day')} ${part('hour')}:${part('minute')}`;
+      })()
     : null;
   const formatRecordDate = (date) => {
     if (!date) return isAr ? 'التاريخ غير متاح' : 'date indisponible';
@@ -145,8 +152,9 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
             <span>🗓️</span>
             <span>{isAr ? 'آخر مزامنة:' : 'Dernière synchro :'}</span>
           </div>
-          <div 
+          <time
             dir="ltr"
+            dateTime={recordedAt && !Number.isNaN(recordedAt.getTime()) ? recordedAt.toISOString() : undefined}
             style={{
               fontSize: '0.82rem',
               color: '#94a3b8',
@@ -156,11 +164,12 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               border: '1px solid rgba(255, 255, 255, 0.08)',
               padding: '2px 8px',
               borderRadius: '6px',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.5px',
+              unicodeBidi: 'isolate'
             }}
           >
             {rateInfo.loading ? (isAr ? 'جاري التحميل…' : 'Chargement…') : (dateStr || (isAr ? 'غير متاح' : 'Date indisponible'))}
-          </div>
+          </time>
         </div>
 
         {/* Stored-rate status */}
