@@ -113,6 +113,90 @@ function MainLayout() {
   // Toast Notifications
   const [notifications, setNotifications] = useState([]);
 
+  // Extract product ID from URL query (?product=, ?id=, ?bijou=), hash (#product=, #/product/), or path (/product/)
+  const extractProductIdFromUrl = () => {
+    if (typeof window === 'undefined') return null;
+
+    // 1. Query parameters: ?product=... or ?id=... or ?bijou=...
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const queryId = params.get('product') || params.get('id') || params.get('bijou');
+      if (queryId && queryId.trim()) {
+        return queryId.trim().replace(/\/+$/, '');
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Hash routing: #product=b_... or #/product/b_... or #b_...
+    if (window.location.hash) {
+      const hash = window.location.hash;
+      const matchHash = hash.match(/#\/?(?:product|bijou)(?:=|\/)([a-zA-Z0-9_-]+)/i);
+      if (matchHash && matchHash[1]) return matchHash[1].trim();
+      const directMatch = hash.match(/^#(b_[a-zA-Z0-9_-]+)$/i);
+      if (directMatch && directMatch[1]) return directMatch[1].trim();
+    }
+
+    // 3. Pathname routing: /product/b_... or /bijou/b_...
+    if (window.location.pathname) {
+      const matchPath = window.location.pathname.match(/^\/(?:product|bijou)\/([a-zA-Z0-9_-]+)/i);
+      if (matchPath && matchPath[1]) return matchPath[1].trim();
+    }
+
+    return null;
+  };
+
+  const openProductById = async (targetId) => {
+    if (!targetId) return;
+
+    // 1. Check in already loaded products in memory
+    const existing = allProducts.find(p => p.id === targetId || String(p.id).toLowerCase() === String(targetId).toLowerCase());
+    if (existing) {
+      setSelectedProduct(existing);
+      return;
+    }
+
+    // 2. Fetch directly from API in case products are loading or item was accessed via direct deep link
+    try {
+      const res = await fetch(`${API_URL}/bijoux/${encodeURIComponent(targetId)}`);
+      if (res.ok) {
+        const item = await res.json();
+        if (item && item.id) {
+          setSelectedProduct(item);
+        }
+      }
+    } catch (err) {
+      console.warn('[ORIA] Could not fetch product for deep link:', err);
+    }
+  };
+
+  const handleSelectProduct = (p) => {
+    if (!p) {
+      handleCloseProductDetail();
+      return;
+    }
+    setSelectedProduct(p);
+    if (typeof window !== 'undefined' && p.id) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('product', p.id);
+      window.history.pushState({ productId: p.id }, '', url.toString());
+    }
+  };
+
+  const handleCloseProductDetail = () => {
+    setSelectedProduct(null);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('product') || url.searchParams.has('id') || url.searchParams.has('bijou')) {
+        url.searchParams.delete('product');
+        url.searchParams.delete('id');
+        url.searchParams.delete('bijou');
+        const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+        window.history.replaceState({}, '', cleanUrl);
+      }
+    }
+  };
+
   const navigateFromHash = (hash = window.location.hash) => {
     const destination = hash.replace(/^#/, '').toLowerCase();
     if (destination === 'first-hand' || destination === 'second-hand' || destination === 'deals') {
@@ -129,11 +213,32 @@ function MainLayout() {
   };
 
   useEffect(() => {
-    const syncHash = () => navigateFromHash();
-    if (window.location.hash) syncHash();
-    window.addEventListener('hashchange', syncHash);
-    return () => window.removeEventListener('hashchange', syncHash);
-  }, []);
+    const syncUrlState = () => {
+      const targetId = extractProductIdFromUrl();
+      if (targetId) {
+        openProductById(targetId);
+      } else {
+        setSelectedProduct(null);
+      }
+      navigateFromHash();
+    };
+
+    // On initial mount & whenever URL changes
+    const initialTargetId = extractProductIdFromUrl();
+    if (initialTargetId) {
+      openProductById(initialTargetId);
+    }
+    if (window.location.hash) {
+      navigateFromHash();
+    }
+
+    window.addEventListener('popstate', syncUrlState);
+    window.addEventListener('hashchange', syncUrlState);
+    return () => {
+      window.removeEventListener('popstate', syncUrlState);
+      window.removeEventListener('hashchange', syncUrlState);
+    };
+  }, [allProducts]);
 
   const addNotification = (message, type = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -613,7 +718,7 @@ function MainLayout() {
       <div style={{ flex: 1 }}>
         {activeView === 'marketplace' && (
           <Marketplace 
-            onSelectProduct={(p) => setSelectedProduct(p)}
+            onSelectProduct={handleSelectProduct}
             onOpenFinder={() => setIsFinderOpen(true)}
             onOpenSellModal={() => setIsSellModalOpen(true)}
             onOpenAIModal={() => setIsAIOpen(true)}
@@ -661,7 +766,7 @@ function MainLayout() {
 
         {activeView === 'client-dashboard' && (
           <ClientDashboard 
-            onSelectProduct={(p) => setSelectedProduct(p)}
+            onSelectProduct={handleSelectProduct}
             onOpenSellModal={() => setIsSellModalOpen(true)}
             onOpenChangePassword={() => {
               setIsFirstLoginChange(false);
@@ -778,7 +883,7 @@ function MainLayout() {
         isOpen={isFinderOpen} 
         onClose={() => setIsFinderOpen(false)} 
         products={allProducts}
-        onSelectProduct={(p) => setSelectedProduct(p)}
+        onSelectProduct={handleSelectProduct}
       />
       <SellJewelModal 
         isOpen={isSellModalOpen} 
@@ -789,7 +894,7 @@ function MainLayout() {
         isOpen={isAIOpen} 
         onClose={() => setIsAIOpen(false)} 
         products={allProducts}
-        onSelectProduct={(p) => setSelectedProduct(p)}
+        onSelectProduct={handleSelectProduct}
       />
       <GoldPriceHistoryModal 
         isOpen={isGoldModalOpen}
@@ -806,12 +911,14 @@ function MainLayout() {
       <ProductDetailModal 
         isOpen={Boolean(selectedProduct)}
         product={selectedProduct} 
-        onClose={() => setSelectedProduct(null)} 
+        onClose={handleCloseProductDetail} 
+        allProducts={allProducts}
+        onSelectProduct={handleSelectProduct}
         onToggleCompare={handleToggleCompare}
         isCompared={selectedProduct ? comparedProductIds.includes(selectedProduct.id) : false}
         onOpenChatWithSeller={() => {
           const target = selectedProduct;
-          setSelectedProduct(null);
+          handleCloseProductDetail();
           handleOpenChatWithSeller(target);
         }}
       />

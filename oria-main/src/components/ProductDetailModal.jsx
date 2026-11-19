@@ -50,9 +50,11 @@ export default function ProductDetailModal({
   const grammageDisplay = realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné');
   const cityDisplay = lang === 'ar' ? translateCityToArabic(product?.city) : (product?.city || 'Casablanca');
 
-  const productUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/?product=${product?.id}` 
-    : `https://hrsdgdg.ma/?product=${product?.id}`;
+  // Public direct canonical product URL
+  const productBaseUrl = (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost') && !window.location.origin.includes('127.0.0.1'))
+    ? window.location.origin
+    : 'https://hrsdgdg.sdbo.ma';
+  const productUrl = `${productBaseUrl}/?product=${encodeURIComponent(product?.id || '')}`;
 
   const sellerWhatsAppMsg = lang === 'ar'
     ? `السلام عليكم، أرغب في الحصول على معلومات حول هذه القطعة.

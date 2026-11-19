@@ -3175,26 +3175,26 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.2',
-  versionCode: 16,
+  version: '1.4.3',
+  versionCode: 17,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-19',
-  pwaCacheVersion: 'oria-pwa-v19',
-  title_fr: 'Mise à jour disponible (Isolation vidéo par offre & Performances)',
-  title_ar: 'تحديث جديد متوفر (تخصيص الفيديوهات لكل عرض بشكل مستقل)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible garantissant une vidéo exclusive pour chaque offre et optimisant l\'affichage.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن خصوصية كل فيديو لكل عرض مجوهرات بشكل منفصل مع تسريع التصفح.',
+  pwaCacheVersion: 'oria-pwa-v20',
+  title_fr: 'Mise à jour disponible (Routage direct WhatsApp & Liens fiches bijoux)',
+  title_ar: 'تحديث جديد متوفر (الفتح المباشر لروابط المجوهرات من واتساب)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible assurant l\'ouverture instantanée de la fiche du bijou sélectionné lors d\'un clic sur le lien WhatsApp.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن الفتح المباشر لبطاقة القطعة المختارة عند النقر على رابط طلب واتساب دون التوجيه للرئيسية.',
   changelog_fr: [
-    'Isolation stricte des vidéos : chaque vidéo est désormais propre à son offre unique',
-    'Réinitialisation automatique des états vidéo lors de la création d\'offres et des changements d\'onglets',
-    'Optimisation du cache PWA v19 et du lecteur multimédia'
+    'Routage direct et automatique des fiches bijoux depuis les liens WhatsApp (?product=...)',
+    'Génération canonicale des URL produits vers https://hrsdgdg.sdbo.ma/?product=...',
+    'Synchronisation complète avec l\'historique du navigateur (ouverture, fermeture et retour)'
   ],
   changelog_ar: [
-    'عزل تام لمقاطع الفيديو : كل فيديو يخص الآن عرضه المستقل دون تكرار بين العروض',
-    'إعادة ضبط تلقائية للنماذج ومقاطع الفيديو عند نشر القطع أو التنقل بين التبويبات',
-    'تحديث ذاكرة التخزين PWA v19 وتحسين أداء مشغل الفيديو'
+    'توجيه وفتح فوري وتلقائي لبطاقة المجوهرات مباشرة من روابط واتساب المختارة',
+    'توليد عناوين رسمية ومباشرة للقطع https://hrsdgdg.sdbo.ma/?product=...',
+    'مزامنة كاملة مع تاريخ المتصفح عند فتح وإغلاق بطاقة القطعة'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '65 Ko'
