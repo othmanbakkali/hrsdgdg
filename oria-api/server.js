@@ -3119,16 +3119,25 @@ app.delete('/api/admin/gold-rates/history/:id', requireAdminSession, (req, res) 
   });
 });
 
-// Sync with external PrixOr Railway backend
+// Sync with the PrixOrMaroc.com live price feed
 const { syncGoldRates } = require('./scripts/syncGoldRates');
+let goldRateSyncPromise = null;
+const runGoldRateSync = () => {
+  if (!goldRateSyncPromise) {
+    goldRateSyncPromise = syncGoldRates().finally(() => {
+      goldRateSyncPromise = null;
+    });
+  }
+  return goldRateSyncPromise;
+};
 app.post(['/api/gold-rates/sync', '/api/admin/gold-rates/sync'], async (req, res) => {
   try {
-    const result = await syncGoldRates();
+    const result = await runGoldRateSync();
     if (result.success) {
       const db = readDB();
       res.json({
         success: true,
-        message: `Synchronisation réussie avec Railway : ${result.currentPrice18k} MAD/g (${result.historyCount} entrées)`,
+        message: `Synchronisation réussie avec PrixOrMaroc.com : ${result.currentPrice18k} MAD/g`,
         goldRates: db.goldRates
       });
     } else {
@@ -3320,8 +3329,15 @@ app.listen(PORT, HOST, () => {
   }
   console.log(`- REST API: http://localhost:${PORT}/api/`);
 
-  // [DATA IMMUTABILITY & SAFETY]
-  // Never automatically overwrite gold/silver rates or database records on server boot or interval!
-  // Rates saved in database.json (including silver price, gold price, and history) are preserved 100%
-  // and only updated when an administrator explicitly saves new rates or clicks manual sync.
+  // Pull the latest PrixOrMaroc.com gold rate once after startup, then check hourly.
+  // Silver rates and administrator-entered history remain untouched by this source sync.
+  const startupGoldSync = setTimeout(() => {
+    runGoldRateSync();
+  }, 30 * 1000);
+  startupGoldSync.unref?.();
+
+  const hourlyGoldSync = setInterval(() => {
+    runGoldRateSync();
+  }, 60 * 60 * 1000);
+  hourlyGoldSync.unref?.();
 });

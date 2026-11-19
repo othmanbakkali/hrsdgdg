@@ -1586,7 +1586,7 @@ function AdminLayout() {
     }
   };
 
-  const handleSyncRailwayGold = async () => {
+  const handleSyncPrixOr = async () => {
     setIsUpdatingGold(true);
     try {
       const res = await authFetch(`${API_URL}/admin/gold-rates/sync`, {
@@ -1594,7 +1594,7 @@ function AdminLayout() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        triggerNotif(lang === 'ar' ? 'تمت المزامنة بنجاح مع PrixOr (Railway) !' : data.message || 'Synchronisation réussie avec Railway !');
+        triggerNotif(lang === 'ar' ? 'تمت المزامنة بنجاح مع PrixOrMaroc.com!' : data.message || 'Synchronisation réussie avec PrixOrMaroc.com !');
         fetchData();
       } else {
         triggerNotif(data.error || 'Erreur lors de la synchronisation.');
@@ -2275,11 +2275,11 @@ function AdminLayout() {
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--text-gray)' }}>
-                      {lang === 'ar' ? 'تحديث تلقائي عبر البورصة' : 'Mise à jour via PrixOr'}
+                      {lang === 'ar' ? 'السعر من PrixOrMaroc.com' : 'Cours source : PrixOrMaroc.com'}
                     </span>
                     <button
                       type="button"
-                      onClick={handleSyncRailwayGold}
+                      onClick={handleSyncPrixOr}
                       disabled={isUpdatingGold}
                       style={{
                         background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(212, 175, 55, 0.1))',
@@ -5135,7 +5135,7 @@ function AdminLayout() {
                   </div>
                   <button
                     type="button"
-                    onClick={handleSyncRailwayGold}
+                    onClick={handleSyncPrixOr}
                     disabled={isUpdatingGold}
                     style={{
                       background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.05))',
@@ -5151,10 +5151,10 @@ function AdminLayout() {
                       gap: '6px',
                       transition: 'all 0.2s'
                     }}
-                    title="Synchroniser avec le backend PrixOr Railway"
+                    title="Synchroniser avec PrixOrMaroc.com"
                   >
                     <span>{isUpdatingGold ? '⏳' : '🔄'}</span>
-                    <span>{isUpdatingGold ? (lang === 'ar' ? 'جاري المزامنة...' : 'Synchronisation...') : (lang === 'ar' ? 'مزامنة مع PrixOr' : 'Synchroniser PrixOr')}</span>
+                    <span>{isUpdatingGold ? (lang === 'ar' ? 'جاري المزامنة...' : 'Synchronisation...') : (lang === 'ar' ? 'مزامنة مع PrixOrMaroc.com' : 'Synchroniser PrixOrMaroc.com')}</span>
                   </button>
                 </div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-white)', marginBottom: '4px' }}>

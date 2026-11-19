@@ -1,108 +1,118 @@
 const fs = require('fs');
 const path = require('path');
 
-const RAILWAY_GOLD_API = 'https://goldprojectbackend-production.up.railway.app';
+// PrixOrMaroc.com publishes its live rate through this first-party API.
+const PRIXOR_API = 'https://goldprojectbackend-production.up.railway.app';
 const dbPath = path.join(__dirname, '..', 'data', 'database.json');
+
+function formatCasablancaDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Casablanca',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(date);
+  const part = (type) => parts.find(item => item.type === type)?.value || '';
+  return {
+    date,
+    formatted: `${part('year')}-${part('month')}-${part('day')} ${part('hour')}:${part('minute')}`
+  };
+}
 
 async function syncGoldRates() {
   try {
-    console.log('[GoldSync] Manual admin sync requested: Fetching from', RAILWAY_GOLD_API, '...');
     const [priceRes, historyRes] = await Promise.all([
-      fetch(`${RAILWAY_GOLD_API}/api/price`),
-      fetch(`${RAILWAY_GOLD_API}/api/price/history`)
+      fetch(`${PRIXOR_API}/api/price`, { signal: AbortSignal.timeout(15000) }),
+      fetch(`${PRIXOR_API}/api/price/history`, { signal: AbortSignal.timeout(15000) })
     ]);
 
-    if (!priceRes.ok) {
-      throw new Error(`Failed to fetch current price: HTTP ${priceRes.status}`);
+    if (!priceRes.ok) throw new Error(`PrixOrMaroc current price request failed: HTTP ${priceRes.status}`);
+    if (!historyRes.ok) throw new Error(`PrixOrMaroc history request failed: HTTP ${historyRes.status}`);
+
+    const [priceData, rawHistory] = await Promise.all([priceRes.json(), historyRes.json()]);
+    const currentPrice = Number(priceData?.price);
+    const currentTimestamp = formatCasablancaDate(priceData?.date);
+    if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error('PrixOrMaroc returned an invalid gold price');
     }
+    if (!currentTimestamp) throw new Error('PrixOrMaroc returned an invalid price timestamp');
+    if (!Array.isArray(rawHistory)) throw new Error('PrixOrMaroc returned an invalid price history');
 
-    const priceData = await priceRes.json();
-    let rawHistory = [];
-    if (historyRes.ok) {
-      rawHistory = await historyRes.json();
-    }
+    const sourceHistory = rawHistory
+      .map(item => {
+        const price = Number(item?.price);
+        const timestamp = formatCasablancaDate(item?.date);
+        return Number.isFinite(price) && price > 0 && timestamp ? { item, price, timestamp } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.timestamp.date - b.timestamp.date);
 
-    const currentPrice = Number(priceData.price) || 1035;
-
-    // Process history
-    let prevPrice = null;
-    const formattedHistory = Array.isArray(rawHistory) ? rawHistory.map((item, idx) => {
-      const d = new Date(item.date);
-      const dateFormatted = !isNaN(d.getTime())
-        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-        : item.date;
-
-      let changeStr = '0.0%';
-      if (prevPrice !== null && prevPrice > 0) {
-        const diff = item.price - prevPrice;
-        const pct = ((diff / prevPrice) * 100).toFixed(1);
-        changeStr = diff > 0 ? `+${pct}%` : (diff < 0 ? `${pct}%` : '0.0%');
+    let previousPrice = null;
+    const formattedHistory = sourceHistory.map(({ item, price, timestamp }) => {
+      let change = '0.0%';
+      if (previousPrice !== null) {
+        const difference = price - previousPrice;
+        const percent = ((difference / previousPrice) * 100).toFixed(1);
+        change = difference > 0 ? `+${percent}%` : difference < 0 ? `${percent}%` : '0.0%';
       }
-      prevPrice = item.price;
-
+      previousPrice = price;
+      const stableId = `${timestamp.date.getTime()}_${Math.round(price * 100)}`;
       return {
-        id: `gh_railway_${item.id || idx + 1}`,
-        date: dateFormatted,
-        price18k: item.price,
-        change: changeStr,
-        source: item.username ? `Fixation ${item.username}` : 'Fixation Officielle Maroc',
-        note: 'Synchronisé via PrixOr (Railway)'
+        id: `gh_prixor_${stableId}`,
+        date: timestamp.formatted,
+        price18k: price,
+        change,
+        source: 'PrixOrMaroc.com',
+        note: item.username ? `PrixOrMaroc.com — ${item.username}` : 'Synchronisé via PrixOrMaroc.com'
       };
-    }) : [];
+    });
 
-    const defaultSilverHistory = [
-      { id: 'sh_1', date: '2026-10-18 09:30', priceSilver: 13.80, change: '0.0%', source: 'Marché National Argent', note: 'Fixation matinale Ag 925' },
-      { id: 'sh_2', date: '2026-10-20 11:15', priceSilver: 13.95, change: '+1.1%', source: 'Bourse Casablanca', note: 'Raffinement lingots 1000' },
-      { id: 'sh_3', date: '2026-10-22 10:00', priceSilver: 14.10, change: '+1.1%', source: 'Marché National Argent', note: 'Hausse demande industrielle & bijouterie' },
-      { id: 'sh_4', date: '2026-10-24 15:45', priceSilver: 14.25, change: '+1.1%', source: 'Fixation Officielle Maroc', note: 'Cours certifié Ag 925' },
-      { id: 'sh_5', date: '2026-10-25 10:30', priceSilver: 14.40, change: '+1.1%', source: 'Bourse Casablanca', note: 'Progression continue de l\'argent 925' },
-      { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: 'Fixation Officielle Maroc', note: 'Cours actuel du jour (Ag 925)' }
-    ];
-
-    if (!fs.existsSync(dbPath)) {
-      throw new Error('database.json does not exist');
+    const currentId = `gh_prixor_${currentTimestamp.date.getTime()}_${Math.round(currentPrice * 100)}`;
+    if (!formattedHistory.some(item => item.id === currentId)) {
+      const previousEntry = formattedHistory[formattedHistory.length - 1];
+      const difference = previousEntry ? currentPrice - previousEntry.price18k : 0;
+      const percent = previousEntry && previousEntry.price18k > 0
+        ? ((difference / previousEntry.price18k) * 100).toFixed(1)
+        : '0.0';
+      formattedHistory.push({
+        id: currentId,
+        date: currentTimestamp.formatted,
+        price18k: currentPrice,
+        change: difference > 0 ? `+${percent}%` : difference < 0 ? `${percent}%` : '0.0%',
+        source: 'PrixOrMaroc.com',
+        note: priceData.username ? `PrixOrMaroc.com — ${priceData.username}` : 'Synchronisé via PrixOrMaroc.com'
+      });
     }
 
+    if (!fs.existsSync(dbPath)) throw new Error('database.json does not exist');
     const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-
-    // [DATA IMMUTABILITY & PRESERVATION]
-    // 1. Strictly preserve whatever silver price the admin has configured in the database
-    const existingSilver = (db.goldRates && db.goldRates.currentPriceSilver !== undefined)
-      ? db.goldRates.currentPriceSilver
-      : 15.00;
-
-    const existingSilverUnit = (db.goldRates && db.goldRates.silverUnit) || 'MAD/g';
-
-    const existingSilverHistory = (db.goldRates && Array.isArray(db.goldRates.silverHistory) && db.goldRates.silverHistory.length > 0)
-      ? db.goldRates.silverHistory
-      : defaultSilverHistory;
-
-    // 2. Preserve any custom entries added manually by admins
-    const customAdminEntries = (db.goldRates && Array.isArray(db.goldRates.history))
-      ? db.goldRates.history.filter(h => h && h.id && !h.id.startsWith('gh_railway_'))
+    const existingSilver = db.goldRates?.currentPriceSilver ?? null;
+    const existingSilverUnit = db.goldRates?.silverUnit || 'MAD/g';
+    const existingSilverHistory = Array.isArray(db.goldRates?.silverHistory) ? db.goldRates.silverHistory : [];
+    const customAdminEntries = Array.isArray(db.goldRates?.history)
+      ? db.goldRates.history.filter(item => item?.id && !String(item.id).startsWith('gh_prixor_') && !String(item.id).startsWith('gh_railway_'))
       : [];
 
     const mergedHistory = [...formattedHistory, ...customAdminEntries];
-
     db.goldRates = {
       ...db.goldRates,
       currentPrice18k: currentPrice,
-      currentPriceSilver: existingSilver, // 100% PRESERVED
+      currentPriceSilver: existingSilver,
       carat: '18K',
-      unit: priceData.unit ? `${priceData.currency || 'MAD'}/${priceData.unit}` : 'MAD/g',
-      silverUnit: existingSilverUnit, // 100% PRESERVED
-      lastUpdated: priceData.date || new Date().toISOString(),
-      updatedBy: priceData.username ? `PrixOr Railway (${priceData.username})` : 'PrixOr Railway',
+      unit: `${priceData.currency || 'MAD'}/${priceData.unit || 'g'}`,
+      silverUnit: existingSilverUnit,
+      lastUpdated: currentTimestamp.date.toISOString(),
+      updatedBy: priceData.username ? `PrixOrMaroc.com (${priceData.username})` : 'PrixOrMaroc.com',
       history: mergedHistory,
-      silverHistory: existingSilverHistory // 100% PRESERVED
+      silverHistory: existingSilverHistory
     };
 
-    // Atomic write to prevent file corruption
     const tempPath = `${dbPath}.tmp`;
     fs.writeFileSync(tempPath, JSON.stringify(db, null, 2), 'utf8');
     fs.renameSync(tempPath, dbPath);
 
-    console.log(`[GoldSync] SUCCESS! Updated gold rate to ${currentPrice} MAD/g (Silver preserved at ${existingSilver} ${existingSilverUnit}).`);
+    console.log(`[GoldSync] PrixOrMaroc.com: ${currentPrice} MAD/g, updated ${currentTimestamp.formatted} (Casablanca).`);
     return {
       success: true,
       currentPrice18k: currentPrice,
@@ -111,16 +121,11 @@ async function syncGoldRates() {
       historyCount: mergedHistory.length
     };
   } catch (err) {
-    console.error('[GoldSync] ERROR:', err.message);
-    return {
-      success: false,
-      error: err.message
-    };
+    console.error('[GoldSync] PrixOrMaroc.com sync failed:', err.message);
+    return { success: false, error: err.message };
   }
 }
 
 module.exports = { syncGoldRates };
 
-if (require.main === module) {
-  syncGoldRates();
-}
+if (require.main === module) syncGoldRates();
