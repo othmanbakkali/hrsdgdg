@@ -28,7 +28,9 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: 🚀 Deploy to Remote Production Server via SSH
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' }}
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        if: ${{ env.SSH_PRIVATE_KEY != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST || '198.199.75.86' }}
