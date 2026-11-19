@@ -3175,26 +3175,26 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.1',
-  versionCode: 15,
+  version: '1.4.2',
+  versionCode: 16,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
-  releaseDate: '2026-11-10',
-  pwaCacheVersion: 'oria-pwa-v18',
-  title_fr: 'Mise à jour disponible (Filtre par Ville & Optimisation)',
-  title_ar: 'تحديث جديد متوفر (تحسين تصفية المدن)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible avec la synchronisation bilingue du filtre par ville et des optimisations de performances.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG مع تحسين التصفية الجغرافية للمدن ثنائية اللغة وتحديثات في الأداء.',
+  releaseDate: '2026-11-19',
+  pwaCacheVersion: 'oria-pwa-v19',
+  title_fr: 'Mise à jour disponible (Isolation vidéo par offre & Performances)',
+  title_ar: 'تحديث جديد متوفر (تخصيص الفيديوهات لكل عرض بشكل مستقل)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible garantissant une vidéo exclusive pour chaque offre et optimisant l\'affichage.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن خصوصية كل فيديو لكل عرض مجوهرات بشكل منفصل مع تسريع التصفح.',
   changelog_fr: [
-    'Correction et synchronisation bilingue du filtre par ville (Arabe / Français)',
-    'Nouvel outil intégré de découpage vidéo (10 secondes max)',
-    'Optimisation du cache PWA et des performances'
+    'Isolation stricte des vidéos : chaque vidéo est désormais propre à son offre unique',
+    'Réinitialisation automatique des états vidéo lors de la création d\'offres et des changements d\'onglets',
+    'Optimisation du cache PWA v19 et du lecteur multimédia'
   ],
   changelog_ar: [
-    'إصلاح وتوافق كامل لتصفية المجوهرات حسب المدن المغربية بالعربية والفرنسية',
-    'أداة جديدة ومدمجة لقص وتقصير مقاطع الفيديو (10 ثوانٍ كحد أقصى)',
-    'تحديث تلقائي لذاكرة التخزين وسرعة التصفح'
+    'عزل تام لمقاطع الفيديو : كل فيديو يخص الآن عرضه المستقل دون تكرار بين العروض',
+    'إعادة ضبط تلقائية للنماذج ومقاطع الفيديو عند نشر القطع أو التنقل بين التبويبات',
+    'تحديث ذاكرة التخزين PWA v19 وتحسين أداء مشغل الفيديو'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '65 Ko'

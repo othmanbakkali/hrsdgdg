@@ -225,6 +225,8 @@ Merci.`;
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   React.useEffect(() => {
+    setActiveImageIndex(0);
+    setIsCurrentImage4k(false);
     if (!isModalOpen || !product?.id) return;
     let isActive = true;
     setReviewsList(Array.isArray(product.customer_reviews) ? product.customer_reviews : []);
@@ -562,6 +564,7 @@ Merci.`;
                 </div>
                 <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1.5px solid #3b82f6', background: '#0b0f19', boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)' }}>
                   <video 
+                    key={product.id || product.video}
                     src={product.video} 
                     controls 
                     playsInline 

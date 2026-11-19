@@ -1,40 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { ALL_MOROCCAN_CITIES } from '../utils/moroccanCities';
 import VideoTrimModal from './VideoTrimModal';
 
+const getInitialFormData = (userCity = 'Casablanca') => ({
+  titre: '',
+  description: '',
+  type_vente: 'SECOND_HAND', // 'FIRST_HAND', 'SECOND_HAND', 'AUCTION'
+  category_id: 'cat_rings',
+  matiere: 'Or',
+  purete: '18k',
+  poids: '',
+  pierre: 'Diamant',
+  taille: '54',
+  etat: 'Excellent état',
+  annee: '2024',
+  prix: '5900',
+  ancien_prix: '6800',
+  prix_depart: '4500',
+  duree_enchere: '48',
+  city: userCity || 'Casablanca',
+  facture: true,
+  certificat: true,
+  boite: true,
+  garantie: true,
+  video: null,
+  images: [
+    'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=800&auto=format&fit=crop&q=80'
+  ]
+});
+
 export default function SellJewelModal({ isOpen, onClose, onProductPublished }) {
   const { lang, isRtl } = useLanguage();
   const { user } = useAuth();
 
-  const [formData, setFormData] = useState({
-    titre: '',
-    description: '',
-    type_vente: 'SECOND_HAND', // 'FIRST_HAND', 'SECOND_HAND', 'AUCTION'
-    category_id: 'cat_rings',
-    matiere: 'Or',
-    purete: '18k',
-    poids: '',
-    pierre: 'Diamant',
-    taille: '54',
-    etat: 'Excellent état',
-    annee: '2024',
-    prix: '5900',
-    ancien_prix: '6800',
-    prix_depart: '4500',
-    duree_enchere: '48',
-    city: user?.city || 'Casablanca',
-    facture: true,
-    certificat: true,
-    boite: true,
-    garantie: true,
-    video: null,
-    images: [
-      'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=800&auto=format&fit=crop&q=80'
-    ]
-  });
+  const [formData, setFormData] = useState(() => getInitialFormData(user?.city));
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -45,6 +47,23 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
   const [pendingVideoFile, setPendingVideoFile] = useState(null);
   const [showTrimModal, setShowTrimModal] = useState(false);
   const [showHallmarkGuide, setShowHallmarkGuide] = useState(false);
+
+  const resetForm = () => {
+    setFormData(getInitialFormData(user?.city));
+    setCustomImageUrl('');
+    setToastMessage('');
+    setVideoError('');
+    setVideoDuration(null);
+    setPendingVideoFile(null);
+    setShowTrimModal(false);
+    setShowHallmarkGuide(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   // Preset Catalog Samples
   const sampleJewelPresets = [
@@ -211,11 +230,15 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
       const updated = {
         ...prev,
         ...preset,
+        video: null,
         titre: '',
         description: ''
       };
       return updated;
     });
+    setVideoDuration(null);
+    setVideoError('');
+    setPendingVideoFile(null);
 
     // Auto-generate title & description immediately
     setTimeout(() => {
@@ -427,6 +450,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
           if (onProductPublished) onProductPublished(createdBijou);
           setIsSubmitting(false);
           setSuccessMessage('');
+          resetForm();
           onClose();
         }, 1800);
       } else {

@@ -790,6 +790,16 @@ function AdminLayout() {
     setShowProductModal(true);
   };
 
+  const handleCloseProductModal = () => {
+    setShowProductModal(false);
+    setEditingProduct(null);
+    setAdminVideoDuration(null);
+    setAdminVideoError('');
+    setAdminPendingVideoFile(null);
+    setShowAdminTrimModal(false);
+    setProductForm(prev => ({ ...prev, video: null, images: [] }));
+  };
+
   // Multi-image handlers for admin product modal
   const compressImage = (file) => {
     return new Promise((resolve) => {
@@ -1202,14 +1212,14 @@ function AdminLayout() {
           });
           if (!auctionRes.ok) {
             triggerNotif("Article créé, mais échec du lancement de l'enchère.");
-            setShowProductModal(false);
+            handleCloseProductModal();
             fetchData();
             return;
           }
         }
 
         triggerNotif(editingProduct ? 'Article mis à jour avec succès !' : (productForm.type_vente === 'enchere' ? '🔨 Enchère créée et publiée en direct !' : 'Article créé avec succès !'));
-        setShowProductModal(false);
+        handleCloseProductModal();
         fetchData();
       } else {
         const errJson = await res.json().catch(() => ({}));
@@ -6456,7 +6466,7 @@ function AdminLayout() {
       {showProductModal && (
         <div className="modal-overlay">
           <form className="modal-content" onSubmit={handleProductSubmit} style={{ maxWidth: '600px' }}>
-            <button type="button" className="modal-close-btn" onClick={() => setShowProductModal(false)}>✕</button>
+            <button type="button" className="modal-close-btn" onClick={handleCloseProductModal}>✕</button>
             <h3 style={{ color: 'var(--admin-gold)', marginBottom: '25px', fontFamily: 'Playfair Display', fontSize: '1.6rem' }}>
               {editingProduct ? t('editProduct') : t('newProduct')}
             </h3>
@@ -7206,7 +7216,7 @@ function AdminLayout() {
 
             {/* Si enchère : Durée */}
             <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button type="button" className="btn-outline-gold" style={{ padding: '10px 20px' }} onClick={() => setShowProductModal(false)}>
+              <button type="button" className="btn-outline-gold" style={{ padding: '10px 20px' }} onClick={handleCloseProductModal}>
                 {t('cancel')}
               </button>
               <button 

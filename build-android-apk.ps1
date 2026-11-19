@@ -57,16 +57,16 @@ $manifestXml = @"
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ma.sdbo.hrsdgdg"
-    android:versionCode="13"
-    android:versionName="1.3.0">
+    android:versionCode="14"
+    android:versionName="1.3.1">
 
     <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="34" />
 
-    <uses-permission android:name="android:permission.INTERNET" />
-    <uses-permission android:name="android:permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android:permission.CAMERA" />
-    <uses-permission android:name="android:permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android:permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -167,7 +167,7 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
-        s.setUserAgentString(s.getUserAgentString() + " HRSDGDG_Mobile_App/1.3.0 (vCode:13)");
+        s.setUserAgentString(s.getUserAgentString() + " HRSDGDG_Mobile_App/1.3.1 (vCode:14)");
 
         mWebView.setWebViewClient(new MyClient(this, mProgressBar));
         mWebView.setWebChromeClient(new MyChromeClient(this, mProgressBar));

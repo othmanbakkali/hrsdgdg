@@ -69,8 +69,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   const [pendingVideoFile, setPendingVideoFile] = useState(null);
   const [showTrimModal, setShowTrimModal] = useState(false);
 
-  // New product form (mirrors admin product modal)
-  const [productForm, setProductForm] = useState({
+  // Initial product form template
+  const getInitialProductForm = () => ({
     type_vente: 'direct', // 'direct' or 'enchere'
     images: [],
     video: null,
@@ -97,6 +97,23 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       boucles: ''
     }
   });
+
+  // New product form (mirrors admin product modal)
+  const [productForm, setProductForm] = useState(getInitialProductForm);
+
+  const resetProductForm = () => {
+    setProductForm(getInitialProductForm());
+    setVideoDuration(null);
+    setVideoError('');
+    setPendingVideoFile(null);
+    setShowTrimModal(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'add-product') {
+      resetProductForm();
+    }
+  }, [activeTab]);
 
   const isFetchingRef = useRef(false);
 
@@ -549,30 +566,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
         alert(isAuction ? tr('🔨 Enchère créée et publiée !', '🔨 تم إنشاء ونشر المزاد المباشر بنجاح!') : tr('✨ Article ajouté et publié dans la boutique !', '✨ تمت إضافة قطعة المجوهرات ونشرها بنجاح في المتجر!'));
 
-        // Reset form
-        setProductForm({
-          type_vente: 'direct',
-          images: [],
-          video: null,
-          titre_ar: '',
-          description_ar: '',
-          titre_fr: '',
-          description_fr: '',
-          titre: '',
-          description: '',
-          gramme: '4.5',
-          prix_gramme: '',
-          prix: '',
-          prix_depart: '',
-          duree: 24,
-          category_id: 'cat_rings',
-          city: user?.city || 'Casablanca',
-          adresse: '',
-          etat: 'Neuf',
-          matiere: 'Or',
-          composants_poids: { collier: '', bracelet: '', bague: '', boucles: '' }
-        });
-
+        // Reset form & video states
+        resetProductForm();
         fetchMerchantData();
         setActiveTab('listings');
       } else {
