@@ -2710,6 +2710,10 @@ body.dark-theme .sell-btn-inner {
   right: 18px;
   z-index: 10000;
 }
+.device-simulator-floating-bar.is-mobile-simulator {
+  top: 18px;
+  bottom: auto;
+}
 .simulator-toggle-inner {
   background: var(--bg-surface);
   border: 1.5px solid var(--border-gold);
@@ -2871,6 +2875,86 @@ body.dark-theme .desktop-device-simulator-canvas {
 }
 .iphone-screen-content .mobile-avito-bottom-nav {
   display: flex !important;
+}
+
+@media (max-width: 600px) {
+  .metal-card {
+    min-width: 0 !important;
+    padding: 12px !important;
+    overflow: hidden;
+  }
+  .metal-card > div:first-child {
+    flex-wrap: wrap !important;
+  }
+  .metal-card > div:nth-child(2) {
+    min-width: 0 !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .metal-card > div:nth-child(2) > div:first-child {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .metal-card > div:nth-child(2) > div:first-child img {
+    width: 64px !important;
+    max-width: 22vw;
+  }
+  .metal-card > div:nth-child(2) > div:last-child {
+    min-width: 0;
+    align-items: flex-start !important;
+  }
+  .metal-card > div:nth-child(2) > div:last-child > div {
+    flex-wrap: wrap;
+    gap: 4px !important;
+    max-width: 100%;
+  }
+  .metal-card > div:nth-child(2) > div:last-child > div > span:first-child {
+    font-size: clamp(1.65rem, 8vw, 2.2rem) !important;
+    overflow-wrap: anywhere;
+  }
+  .metal-card > div:nth-child(2) > div:last-child > div > span:last-child {
+    font-size: 0.8rem !important;
+  }
+}
+
+.iphone-screen-content .metal-card {
+  min-width: 0 !important;
+  padding: 12px !important;
+  overflow: hidden;
+}
+.iphone-screen-content .metal-card > div:first-child {
+  flex-wrap: wrap !important;
+}
+.iphone-screen-content .metal-card > div:nth-child(2) {
+  min-width: 0 !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+}
+.iphone-screen-content .metal-card > div:nth-child(2) > div:first-child {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.iphone-screen-content .metal-card > div:nth-child(2) > div:first-child img {
+  width: 64px !important;
+  max-width: 22vw;
+}
+.iphone-screen-content .metal-card > div:nth-child(2) > div:last-child {
+  min-width: 0;
+  align-items: flex-start !important;
+}
+.iphone-screen-content .metal-card > div:nth-child(2) > div:last-child > div {
+  flex-wrap: wrap;
+  gap: 4px !important;
+  max-width: 100%;
+}
+.iphone-screen-content .metal-card > div:nth-child(2) > div:last-child > div > span:first-child {
+  font-size: clamp(1.65rem, 8vw, 2.2rem) !important;
+  overflow-wrap: anywhere;
+}
+.iphone-screen-content .metal-card > div:nth-child(2) > div:last-child > div > span:last-child {
+  font-size: 0.8rem !important;
 }
 .iphone-screen-content .marketplace-container {
   padding: 0 0 85px 0 !important;

@@ -113,6 +113,28 @@ function MainLayout() {
   // Toast Notifications
   const [notifications, setNotifications] = useState([]);
 
+  const navigateFromHash = (hash = window.location.hash) => {
+    const destination = hash.replace(/^#/, '').toLowerCase();
+    if (destination === 'first-hand' || destination === 'second-hand' || destination === 'deals') {
+      setActiveView('marketplace');
+      setSaleUniverse(destination === 'first-hand' ? 'FIRST_HAND' : destination === 'second-hand' ? 'SECOND_HAND' : 'ALL');
+      setDealsOnly(destination === 'deals');
+      setSelectedCategory('');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (destination === 'sell') {
+      setIsSellModalOpen(true);
+    } else if (destination === 'finder') {
+      setIsFinderOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    const syncHash = () => navigateFromHash();
+    if (window.location.hash) syncHash();
+    window.addEventListener('hashchange', syncHash);
+    return () => window.removeEventListener('hashchange', syncHash);
+  }, []);
+
   const addNotification = (message, type = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
     setNotifications(prev => [...prev, { id, message, type }]);
@@ -664,6 +686,7 @@ function MainLayout() {
         <Footer 
           onOpenFinder={() => setIsFinderOpen(true)}
           onOpenSellModal={() => setIsSellModalOpen(true)}
+          onNavigate={(destination) => navigateFromHash(`#${destination}`)}
         />
       </div>
 
@@ -813,6 +836,7 @@ function MainLayout() {
     <>
       {/* Floating Device Simulator Toggle on Desktop */}
       <DeviceSimulatorToggle 
+        className={isMobileSimulator ? 'is-mobile-simulator' : ''}
         isMobileSimulator={isMobileSimulator}
         onToggleSimulator={setIsMobileSimulator}
       />

@@ -12,15 +12,14 @@ export default function PWAInstallBanner() {
 
   useEffect(() => {
     const dismissedUntil = localStorage.getItem('oria_pwa_dismissed_until');
-    if (dismissedUntil && Date.now() < parseInt(dismissedUntil, 10)) {
+    if (localStorage.getItem('oria_pwa_banner_dismissed') === 'true' || (dismissedUntil && Date.now() < parseInt(dismissedUntil, 10))) {
       setIsDismissed(true);
     }
   }, []);
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    // Dismiss for 24 hours
-    localStorage.setItem('oria_pwa_dismissed_until', (Date.now() + 24 * 60 * 60 * 1000).toString());
+    localStorage.setItem('oria_pwa_banner_dismissed', 'true');
   };
 
   const handleInstallClick = () => {
@@ -109,10 +108,9 @@ export default function PWAInstallBanner() {
         <div
           dir={isRtl ? 'rtl' : 'ltr'}
           style={{
-            position: 'fixed',
-            bottom: '80px',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            position: 'relative',
+            margin: '16px auto',
+            paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
             zIndex: 9990,
             width: 'calc(100% - 32px)',
             maxWidth: '480px',

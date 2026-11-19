@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage, translateCityToArabic } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
@@ -17,6 +17,7 @@ export default function ProductDetailModal({
   const isModalOpen = isOpen !== undefined ? isOpen : Boolean(product);
   const { t, isRtl, lang } = useLanguage();
   const { user, toggleFavorite } = useAuth();
+  const [isCurrentImage4k, setIsCurrentImage4k] = useState(false);
 
   const displayTitle = (lang === 'ar' && product?.titre_ar) 
     ? product.titre_ar 
@@ -356,6 +357,7 @@ Merci.`;
   }));
 
   const currentImgUrl = galleryImages[activeImageIndex]?.url || galleryImages[0]?.url;
+  useEffect(() => setIsCurrentImage4k(false), [currentImgUrl]);
 
   // Natural image navigation progression
   const handlePrevImage = () => {
@@ -476,10 +478,7 @@ Merci.`;
                 📷 {activeImageIndex + 1} / {galleryImages.length}
               </div>
 
-              {/* 4K Certification Badge */}
-              <div className="gallery-badge-hd">
-                ✨ 4K HAUTE DÉFINITION
-              </div>
+              {isCurrentImage4k && <div className="gallery-badge-hd">✨ 4K HAUTE DÉFINITION</div>}
 
               {/* Navigation Arrows */}
               {galleryImages.length > 1 && (
@@ -514,6 +513,10 @@ Merci.`;
                 src={currentImgUrl} 
                 alt={displayTitle} 
                 className="detail-main-img"
+                onLoad={(event) => {
+                  const { naturalWidth, naturalHeight } = event.currentTarget;
+                  setIsCurrentImage4k(Math.max(naturalWidth, naturalHeight) >= 3840 && Math.min(naturalWidth, naturalHeight) >= 2160);
+                }}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                   transform: isHovered ? 'scale(1.8)' : 'scale(1)'
