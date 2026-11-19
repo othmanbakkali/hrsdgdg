@@ -8,17 +8,8 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
   const isAr = lang === 'ar';
 
   const [activeMetal, setActiveMetal] = useState(initialMetal || 'gold'); // 'gold' | 'silver'
-  const [goldData, setGoldData] = useState({
-    currentPrice18k: 1032,
-    currentPriceSilver: 14.50,
-    carat: '18K',
-    unit: 'MAD/g',
-    silverUnit: 'MAD/g',
-    lastUpdated: '',
-    history: [],
-    silverHistory: []
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [goldData, setGoldData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [selectedRange, setSelectedRange] = useState('all'); // '7d', '30d', 'all'
   const svgRef = useRef(null);
@@ -32,16 +23,26 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
 
   useEffect(() => {
     if (!isOpen) return;
+    let isActive = true;
     setIsLoading(true);
+    setGoldData(null);
     fetch(`${API_URL}/gold-rates`)
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
+        if (data.success && isActive) {
           setGoldData(data);
+        } else if (isActive) {
+          throw new Error('Metal rates are unavailable');
         }
       })
-      .catch(err => console.error('Failed to fetch metal rates:', err))
-      .finally(() => setIsLoading(false));
+      .catch(err => {
+        console.error('Failed to fetch metal rates:', err);
+        if (isActive) setGoldData(null);
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+    return () => { isActive = false; };
   }, [isOpen]);
 
   // Reset hover on tab or filter change
@@ -49,41 +50,28 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
     setHoveredIndex(null);
   }, [activeMetal, selectedRange, goldData]);
 
-  // Fallback history for Gold 18K
-  const fallbackGoldHistory = useMemo(() => [
-    { id: 'gh_1', date: '2026-10-18 09:30', price18k: 1010, change: '+0.5%', source: isAr ? 'تحديد الدار البيضاء' : 'Fixation Casablanca', note: isAr ? 'السعر الصباحي الافتتاحي' : 'Cours matinal' },
-    { id: 'gh_2', date: '2026-10-20 11:15', price18k: 1025, change: '+1.5%', source: isAr ? 'السوق الوطني للذهب' : 'Marché national', note: isAr ? 'طلب متزايد على الصياغة' : 'Forte demande' },
-    { id: 'gh_3', date: '2026-10-22 10:00', price18k: 1028, change: '+0.3%', source: isAr ? 'بورصة الذهب المعتمدة' : 'Bourse de référence', note: isAr ? 'اتجاه تصاعدي في السوق' : 'Hausse continue' },
-    { id: 'gh_4', date: '2026-10-24 15:45', price18k: 1030, change: '+0.2%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Cours officiel clôture', note: isAr ? 'استقرار تداولات عيار 18' : 'Stabilité marché' },
-    { id: 'gh_5', date: '2026-10-26 12:00', price18k: 1032, change: '+0.2%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Cours officiel clôture', note: isAr ? 'السعر الرسمي المعتمد اليوم' : 'Cours actuel du jour' }
-  ], [isAr]);
-
-  // Fallback history for Silver 1000
-  const fallbackSilverHistory = useMemo(() => [
-    { id: 'sh_1', date: '2026-10-18 09:30', priceSilver: 13.80, change: '0.0%', source: isAr ? 'السوق الوطني للفضة' : 'Marché National Argent', note: isAr ? 'السعر الصباحي الافتتاحي' : 'Fixation matinale Ag 1000' },
-    { id: 'sh_2', date: '2026-10-20 11:15', priceSilver: 13.95, change: '+1.1%', source: isAr ? 'بورصة الدار البيضاء' : 'Bourse Casablanca', note: isAr ? 'طلب متزايد على السبائك' : 'Raffinement lingots 1000' },
-    { id: 'sh_3', date: '2026-10-22 10:00', priceSilver: 14.10, change: '+1.1%', source: isAr ? 'السوق الوطني للفضة' : 'Marché National Argent', note: isAr ? 'طلب صناعي وصياغة' : 'Forte demande joaillerie' },
-    { id: 'sh_4', date: '2026-10-24 15:45', priceSilver: 14.25, change: '+1.1%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Fixation Officielle Maroc', note: isAr ? 'تأكيد السعر المرجعي' : 'Cours certifié Ag 1000‰' },
-    { id: 'sh_5', date: '2026-10-25 10:30', priceSilver: 14.40, change: '+1.1%', source: isAr ? 'بورصة الدار البيضاء' : 'Bourse Casablanca', note: isAr ? 'اتجاه تصاعدي للفضة' : 'Progression continue' },
-    { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: isAr ? 'السعر الرسمي للإغلاق' : 'Fixation Officielle Maroc', note: isAr ? 'السعر الرسمي المعتمد اليوم' : 'Cours actuel du jour' }
-  ], [isAr]);
-
-  // Active full list depending on selected metal
+  // Use only rates returned by the server; never present a fabricated fallback as current.
   const fullHistoryList = useMemo(() => {
-    if (activeMetal === 'silver') {
-      return (goldData.silverHistory && goldData.silverHistory.length > 0)
-        ? goldData.silverHistory
-        : fallbackSilverHistory;
-    }
-    return (goldData.history && goldData.history.length > 0)
-      ? goldData.history
-      : fallbackGoldHistory;
-  }, [activeMetal, goldData, fallbackGoldHistory, fallbackSilverHistory]);
+    const history = activeMetal === 'silver' ? goldData?.silverHistory : goldData?.history;
+    return Array.isArray(history) ? [...history].sort((a, b) => {
+      const timeA = Date.parse(String(a.date || '').replace(' ', 'T')) || 0;
+      const timeB = Date.parse(String(b.date || '').replace(' ', 'T')) || 0;
+      return timeA - timeB;
+    }) : [];
+  }, [activeMetal, goldData]);
 
   // Filter history by time range
   const filteredHistory = useMemo(() => {
-    if (selectedRange === '7d') return fullHistoryList.slice(-7);
-    if (selectedRange === '30d') return fullHistoryList.slice(-30);
+    const days = selectedRange === '7d' ? 7 : selectedRange === '30d' ? 30 : null;
+    if (days) {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - (days - 1));
+      return fullHistoryList.filter(entry => {
+        const timestamp = Date.parse(String(entry.date || '').replace(' ', 'T'));
+        return Number.isFinite(timestamp) && timestamp >= start.getTime();
+      });
+    }
     return fullHistoryList;
   }, [fullHistoryList, selectedRange]);
 
@@ -301,6 +289,22 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
 
   if (!isOpen) return null;
 
+  if (isLoading || !goldData || filteredHistory.length === 0) {
+    return (
+      <div className="gold-modal-backdrop" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backgroundColor: 'rgba(5, 7, 15, 0.88)', backdropFilter: 'blur(10px)' }}>
+        <div role="dialog" aria-modal="true" aria-live="polite" style={{ width: 'min(440px, 100%)', padding: '28px', borderRadius: '18px', textAlign: 'center', color: '#e2e8f0', background: 'linear-gradient(155deg, #161922 0%, #0d0f15 100%)', border: '1px solid rgba(212, 175, 55, 0.3)' }} onClick={event => event.stopPropagation()}>
+          <button type="button" onClick={onClose} aria-label={isAr ? 'إغلاق' : 'Fermer'} style={{ float: isRtl ? 'left' : 'right', border: 0, background: 'transparent', color: '#cbd5e1', fontSize: '1.3rem', cursor: 'pointer' }}>×</button>
+          <div style={{ fontSize: '2rem', marginBottom: '12px' }}>{isLoading ? '⏳' : '📉'}</div>
+          <p style={{ margin: 0, color: '#cbd5e1' }}>
+            {isLoading
+              ? (isAr ? 'جاري تحميل آخر الأسعار المسجلة…' : 'Chargement des dernières cotations enregistrées…')
+              : (isAr ? 'لا توجد أسعار مسجلة خلال هذه الفترة' : 'Aucune cotation enregistrée sur cette période')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="gold-modal-backdrop"
@@ -413,8 +417,8 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
               {isSilver
-                ? (isAr ? 'متابعة حية لسعر غرام الفضة الخالصة عيار 1000 بالدرهم المغربي (MAD)' : 'Cotation en direct du gramme d\'argent pur 1000‰ en Dirhams Marocains (MAD)')
-                : (isAr ? 'متابعة حية لسعر غرام الذهب عيار 18 قيراط بالدرهم المغربي (MAD)' : 'Cotation en direct du gramme d\'or 18 carats en Dirhams Marocains (MAD)')}
+                ? (isAr ? 'آخر سعر مسجل لغرام الفضة الخالصة عيار 1000 بالدرهم المغربي (MAD)' : 'Dernière cotation enregistrée de l\'argent pur 1000‰ en Dirhams Marocains (MAD)')
+                : (isAr ? 'آخر سعر مسجل لغرام الذهب عيار 18 قيراط بالدرهم المغربي (MAD)' : 'Dernière cotation enregistrée de l\'or 18 carats en Dirhams Marocains (MAD)')}
             </p>
           </div>
         </div>
@@ -463,7 +467,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
               color: '#f6b22b',
               fontFamily: 'system-ui, sans-serif'
             }}>
-              {goldData.currentPrice18k || 1032} <span style={{ fontSize: '0.72rem', color: '#d4af37' }}>{themeCurrency}</span>
+              {goldData.currentPrice18k ?? '—'} <span style={{ fontSize: '0.72rem', color: '#d4af37' }}>{themeCurrency}</span>
             </div>
           </button>
 
@@ -504,7 +508,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
               color: '#38bdf8',
               fontFamily: 'system-ui, sans-serif'
             }}>
-              {Number(goldData.currentPriceSilver || 14.50).toFixed(2)} <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{themeCurrency}</span>
+              {goldData.currentPriceSilver == null ? '—' : Number(goldData.currentPriceSilver).toFixed(2)} <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{themeCurrency}</span>
             </div>
           </button>
         </div>

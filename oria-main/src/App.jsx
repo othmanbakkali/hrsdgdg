@@ -686,6 +686,8 @@ function MainLayout() {
         onClose={() => setIsCityPickerOpen(false)}
         selectedCity={selectedCity}
         onSelectCity={setSelectedCity}
+        products={allProducts}
+        filters={{ searchQuery, saleUniverse, selectedCategory, selectedMaterial, selectedCondition, selectedStyle, selectedOccasion, verifiedOnly, dealsOnly, priceMax }}
       />
 
       {/* Mobile Filter Sheet */}

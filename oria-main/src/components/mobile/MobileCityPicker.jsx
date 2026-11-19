@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ALL_MOROCCAN_CITIES, isSameCity } from '../../utils/moroccanCities';
+import { matchProduct } from '../../utils/searchEngine';
 
 const ALL_CITIES_OPTION = {
   key: '',
@@ -8,29 +9,36 @@ const ALL_CITIES_OPTION = {
   ar: 'كل المدن',
   regionFr: 'Maroc entier',
   regionAr: 'المغرب بأكمله',
-  count: '100+'
 };
 
-const MOROCCAN_CITIES = [
-  ALL_CITIES_OPTION,
-  ...ALL_MOROCCAN_CITIES.map(c => ({
-    key: c.key,
-    fr: c.fr,
-    ar: c.ar,
-    regionFr: c.regionFr,
-    regionAr: c.regionAr,
-    count: '10+'
-  }))
-];
-
-export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSelectCity }) {
+export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSelectCity, products = [], filters = {} }) {
   const [search, setSearch] = useState('');
   const { lang } = useLanguage();
   const isAr = lang === 'ar';
 
   if (!isOpen) return null;
 
-  const filteredCities = MOROCCAN_CITIES.filter(c => 
+  const cities = [ALL_CITIES_OPTION, ...ALL_MOROCCAN_CITIES];
+  const productsMatchingFilters = products.filter(product => {
+    if (filters.searchQuery && !matchProduct(product, filters.searchQuery)) return false;
+    if (filters.saleUniverse === 'AUCTION') {
+      if (product.disponibilite !== 'enchere' && product.type_vente !== 'AUCTION') return false;
+    } else if (filters.saleUniverse && filters.saleUniverse !== 'ALL' && product.type_vente !== filters.saleUniverse) return false;
+    if (filters.selectedCategory && product.category_id !== filters.selectedCategory) return false;
+    if (filters.selectedMaterial && filters.selectedMaterial !== 'ALL' && (product.matiere || '').toLowerCase() !== filters.selectedMaterial.toLowerCase()) return false;
+    if (filters.selectedCondition && filters.selectedCondition !== 'ALL' && product.etat !== filters.selectedCondition) return false;
+    if (filters.selectedStyle && filters.selectedStyle !== 'ALL' && (product.style || '').toLowerCase() !== filters.selectedStyle.toLowerCase()) return false;
+    if (filters.selectedOccasion && filters.selectedOccasion !== 'ALL' && (product.occasion || '').toLowerCase() !== filters.selectedOccasion.toLowerCase()) return false;
+    if (filters.verifiedOnly && product.authentifie !== 'Vérifié') return false;
+    if (filters.dealsOnly && (!product.ancien_prix || product.ancien_prix <= product.prix)) return false;
+    if (Number.isFinite(filters.priceMax) && product.prix > filters.priceMax) return false;
+    return true;
+  });
+  const getCityCount = (city) => city === ALL_CITIES_OPTION
+    ? productsMatchingFilters.length
+    : productsMatchingFilters.filter(product => isSameCity(product.city || product.ville, city.key)).length;
+
+  const filteredCities = cities.filter(c =>
     c.fr.toLowerCase().includes(search.toLowerCase()) || 
     c.ar.includes(search) ||
     c.regionFr.toLowerCase().includes(search.toLowerCase()) ||
@@ -74,6 +82,7 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
             const cityName = isAr ? city.ar : city.fr;
             const isAll = city.fr === 'Toutes les villes';
             const isSelected = isSameCity(selectedCity, city.key) || isSameCity(selectedCity, city.fr) || isSameCity(selectedCity, city.ar) || (!selectedCity && isAll);
+            const count = getCityCount(city);
             return (
               <div 
                 key={city.key || city.fr}
@@ -91,7 +100,11 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
                   </div>
                 </div>
                 <div className="city-item-right">
-                  <span className="city-item-count">{city.count} {isAr ? 'إعلان' : 'annonces'}</span>
+                  <span className="city-item-count">
+                    {count === 0
+                      ? (isAr ? 'لا توجد إعلانات' : 'Aucune annonce')
+                      : `${count} ${isAr ? 'إعلان' : count > 1 ? 'annonces' : 'annonce'}`}
+                  </span>
                   {isSelected && <span className="city-check">✓</span>}
                 </div>
               </div>

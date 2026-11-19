@@ -7,42 +7,39 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
   const { lang, isRtl } = useLanguage();
   const isAr = lang === 'ar';
 
-  const [price18k, setPrice18k] = useState(1045);
-  const [priceSilver, setPriceSilver] = useState(14.50);
-  const [change, setChange] = useState('+0.7%');
-  const [currentDateObj, setCurrentDateObj] = useState(() => new Date());
+  const [rateInfo, setRateInfo] = useState({ loading: true, price18k: null, priceSilver: null, change: null, lastUpdated: null, source: null });
 
   useEffect(() => {
     fetch(`${API_URL}/gold-rates`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          if (data.currentPrice18k) setPrice18k(data.currentPrice18k);
-          if (data.currentPriceSilver) setPriceSilver(data.currentPriceSilver);
-          if (data.history && data.history.length > 0) {
-            setChange(data.history[data.history.length - 1].change || '+0.7%');
-          }
+          const latestHistoryEntry = [...(data.history || [])].sort((a, b) =>
+            (Date.parse(String(a.date || '').replace(' ', 'T')) || 0) - (Date.parse(String(b.date || '').replace(' ', 'T')) || 0)
+          ).at(-1);
+          setRateInfo({
+            loading: false,
+            price18k: data.currentPrice18k ?? null,
+            priceSilver: data.currentPriceSilver ?? null,
+            change: latestHistoryEntry?.change || null,
+            lastUpdated: data.lastUpdated || latestHistoryEntry?.date || null,
+            source: latestHistoryEntry?.source || data.updatedBy || null
+          });
+        } else {
+          setRateInfo(previous => ({ ...previous, loading: false }));
         }
       })
-      .catch(() => setPrice18k(1045));
-
-    // Real-time ticking clock with seconds
-    const timer = setInterval(() => {
-      setCurrentDateObj(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
+      .catch(() => setRateInfo(previous => ({ ...previous, loading: false })));
   }, []);
 
-  const dateStr = isAr
-    ? currentDateObj.toLocaleDateString('ar-MA-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    : currentDateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-  const timeStr = currentDateObj.toLocaleTimeString('fr-FR', { hour12: false });
+  const recordedAt = rateInfo.lastUpdated ? new Date(String(rateInfo.lastUpdated).replace(' ', 'T')) : null;
+  const dateStr = recordedAt && !Number.isNaN(recordedAt.getTime())
+    ? recordedAt.toLocaleString(isAr ? 'ar-MA-u-nu-latn' : 'fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
+    : null;
 
   return (
     <aside 
-      aria-label={isAr ? "أسعار الذهب والفضة الحية اليوم" : "Cours officiel en direct de l'Or 18K et de l'Argent"}
+      aria-label={isAr ? "آخر أسعار الذهب والفضة المسجلة" : "Dernières cotations enregistrées de l'Or 18K et de l'Argent"}
       className="gold-luxury-card-widget"
       onClick={onOpenHistoryModal}
       role="button"
@@ -149,7 +146,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               letterSpacing: '0.5px'
             }}
           >
-            {timeStr}
+            {rateInfo.loading ? (isAr ? 'جاري التحميل…' : 'Chargement…') : (dateStr || (isAr ? 'غير متاح' : 'Date indisponible'))}
           </div>
         </div>
 
@@ -174,7 +171,11 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
             boxShadow: '0 0 8px #10b981',
             display: 'inline-block'
           }} />
-          <span>{isAr ? 'السوق المباشر • آخر تحديث' : 'Marché en direct • Dernière mise à jour'}</span>
+          <span>
+            {rateInfo.loading
+              ? (isAr ? 'جاري تحميل الأسعار' : 'Chargement des cotations')
+              : `${isAr ? 'آخر سعر مسجل' : 'Dernière cotation enregistrée'}${rateInfo.source ? ` • ${rateInfo.source}` : ''}`}
+          </span>
         </div>
       </div>
 
@@ -249,7 +250,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               border: '1px solid rgba(16, 185, 129, 0.3)',
               color: '#10b981'
             }}>
-              ▲ {change} {isAr ? 'اليوم' : 'Aujourd\'hui'}
+              ▲ {rateInfo.change || '—'} {isAr ? 'آخر تحديث' : 'dernière variation'}
             </span>
           </div>
 
@@ -312,7 +313,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
                   textShadow: '0 0 25px rgba(246, 178, 43, 0.45)',
                   fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
-                  {price18k}
+                  {rateInfo.loading ? '…' : (rateInfo.price18k ?? '—')}
                 </span>
                 <span style={{
                   fontSize: '0.95rem',
@@ -451,7 +452,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
                   textShadow: '0 0 25px rgba(248, 250, 252, 0.45)',
                   fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
-                  {typeof priceSilver === 'number' ? priceSilver.toFixed(2) : priceSilver}
+                  {rateInfo.loading ? '…' : (typeof rateInfo.priceSilver === 'number' ? rateInfo.priceSilver.toFixed(2) : (rateInfo.priceSilver ?? '—'))}
                 </span>
                 <span style={{
                   fontSize: '0.95rem',

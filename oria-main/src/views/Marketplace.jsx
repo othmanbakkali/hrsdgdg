@@ -189,6 +189,17 @@ export default function Marketplace({
   const [mobilePaginationMode, setMobilePaginationMode] = useState('demand'); // 'demand' (charger 10 de plus) or 'page' (pagination 1, 2, 3...)
   const [mobileCurrentPage, setMobileCurrentPage] = useState(1);
   const [mobileVisibleCount, setMobileVisibleCount] = useState(10);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 900px)');
+    const updateViewport = () => setIsMobileViewport(media.matches);
+    updateViewport();
+    media.addEventListener?.('change', updateViewport);
+    return () => media.removeEventListener?.('change', updateViewport);
+  }, []);
 
   // Total pages for mobile
   const totalMobilePages = Math.max(1, Math.ceil(sortedProducts.length / MOBILE_PAGE_SIZE));
@@ -852,18 +863,20 @@ export default function Marketplace({
               )}
 
               {/* DESKTOP GRID (High-Density Multi-Article Luxury Grid) */}
-              <div className={`products-grid density-${gridDensity} hide-on-mobile`}>
-                {sortedProducts.map(product => (
-                  <ProductCard 
-                    key={product.id}
-                    product={product}
-                    onSelectProduct={onSelectProduct}
-                    onOpenChatWithSeller={onOpenChatWithSeller}
-                    viewMode="desktop"
-                    isMobile={false}
-                  />
-                ))}
-              </div>
+              {!isMobileViewport && (
+                <div className={`products-grid density-${gridDensity} hide-on-mobile`}>
+                  {sortedProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onSelectProduct={onSelectProduct}
+                      onOpenChatWithSeller={onOpenChatWithSeller}
+                      viewMode="desktop"
+                      isMobile={false}
+                    />
+                  ))}
+                </div>
+              )}
             </>
           )}
         </main>
