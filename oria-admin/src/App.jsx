@@ -9,6 +9,8 @@ import './styles/admin.css';
 import { ALL_MOROCCAN_CITIES } from './utils/moroccanCities';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+const displayProductPurity = (product, fallback = '18k') =>
+  /argent|silver/i.test(product?.matiere || '') ? '925' : (product?.purete || fallback);
 
 const themes = {
   gold: {
@@ -1473,7 +1475,7 @@ function AdminLayout() {
   const handleUpdateSilverRateOnly = async (customVal) => {
     const valSilver = parseFloat(customVal !== undefined && customVal !== null ? customVal : silverPriceInput);
     if (!valSilver || isNaN(valSilver) || valSilver <= 0) {
-      triggerNotif(lang === 'ar' ? 'يرجى إدخال سعر صحيح لغرام الفضة 1000 (مثال: 14.50)' : 'Veuillez saisir un prix valide pour l\'Argent 1000 (ex: 14.50)');
+      triggerNotif(lang === 'ar' ? 'يرجى إدخال سعر صحيح لغرام الفضة عيار 925 (مثال: 14.50)' : 'Veuillez saisir un prix valide pour l\'Argent 925 (ex: 14.50)');
       return;
     }
 
@@ -1491,7 +1493,7 @@ function AdminLayout() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        triggerNotif(lang === 'ar' ? `تم تحديث سعر الفضة 1000 بنجاح: ${valSilver} د.م/غ` : `Cours de l'argent 1000 mis à jour : ${valSilver} MAD/g`);
+        triggerNotif(lang === 'ar' ? `تم تحديث سعر الفضة 925 بنجاح: ${valSilver} د.م/غ` : `Cours de l'argent 925 mis à jour : ${valSilver} MAD/g`);
         setSilverPriceInput(String(valSilver));
         fetchData();
       } else {
@@ -1548,7 +1550,7 @@ function AdminLayout() {
     const hasSilver = valSilver && !isNaN(valSilver) && valSilver > 0;
 
     if (!hasGold && !hasSilver) {
-      triggerNotif(lang === 'ar' ? 'يرجى إدخال سعر صحيح للذهب أو الفضة' : 'Veuillez saisir au moins un prix valide pour l\'Or 18K ou l\'Argent 1000');
+      triggerNotif(lang === 'ar' ? 'يرجى إدخال سعر صحيح للذهب أو الفضة' : 'Veuillez saisir au moins un prix valide pour l\'Or 18K ou l\'Argent 925');
       return;
     }
 
@@ -2188,7 +2190,7 @@ function AdminLayout() {
         {/* Tab content view router */}
         {activeTab === 'dashboard' && (
           <div>
-            {/* Precious Metals Direct Configuration & Live Tracking (Gold 18K & Silver 1000) */}
+            {/* Precious Metals Direct Configuration & Live Tracking (Gold 18K & Silver 925) */}
             {hasPermission('manage_gold_rates') && (
               <div style={{
                 background: 'linear-gradient(145deg, #181b26 0%, #11131a 100%)',
@@ -2299,7 +2301,7 @@ function AdminLayout() {
                   </div>
                 </div>
 
-                {/* Silver 1000 Card on Dashboard - FULLY CONFIGURABLE */}
+                {/* Silver 925 Card on Dashboard - FULLY CONFIGURABLE */}
                 <div style={{
                   background: 'linear-gradient(145deg, rgba(28, 34, 48, 0.6) 0%, rgba(16, 18, 25, 0.85) 100%)',
                   border: '1px solid rgba(203, 213, 225, 0.35)',
@@ -2314,7 +2316,7 @@ function AdminLayout() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <SilverIcon size={18} />
                       <strong style={{ color: '#e2e8f0', fontSize: '0.92rem' }}>
-                        {lang === 'ar' ? 'فضة 1000 نقية (Ag 1000)' : 'Argent Pur 1000‰ (Ag 1000)'}
+                        {lang === 'ar' ? 'فضة عيار 925 (Ag 925)' : 'Argent 925 (Ag 925)'}
                       </strong>
                     </div>
                     <span style={{
@@ -2519,7 +2521,7 @@ function AdminLayout() {
                         {p.description}
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.8rem', marginBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
-                        <div><strong>{t('purity')}:</strong> {p.purete}</div>
+                        <div><strong>{t('purity')}:</strong> {displayProductPurity(p)}</div>
                         <div><strong>{t('weight')}:</strong> {p.gramme}g</div>
                         <div><strong>{t('price')}:</strong> {p.prix} MAD</div>
                         <div><strong>{t('city')}:</strong> {p.city}</div>
@@ -4311,7 +4313,7 @@ function AdminLayout() {
                               )}
                               <div>
                                 <strong style={{ display: 'block', color: 'var(--text-dark)' }}>{aucTitle}</strong>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{auc.bijou?.gramme || 0}g • {auc.bijou?.purete || '18k'}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{auc.bijou?.gramme || 0}g • {displayProductPurity(auc.bijou)}</span>
                               </div>
                             </div>
                           </td>
@@ -4903,7 +4905,7 @@ function AdminLayout() {
                         </div>
                         <div className="detail-item">
                           <span className="detail-label">{lang === 'ar' ? 'العيار والمدينة' : 'Détails'} :</span>
-                          <span className="detail-value">✨ {p.purete || '18k'} • {p.gramme}g • {p.city}</span>
+                          <span className="detail-value">✨ {displayProductPurity(p)} • {p.gramme}g • {p.city}</span>
                         </div>
                       </div>
 
@@ -4995,7 +4997,7 @@ function AdminLayout() {
                                 <div style={{ display: 'flex', gap: '4px', marginTop: '3px', alignItems: 'center' }}>
                                   <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: p.titre_ar ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: p.titre_ar ? '#27ae60' : 'var(--text-gray)' }}>AR</span>
                                   <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, background: (p.titre_fr || p.titre) ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.1)', color: (p.titre_fr || p.titre) ? '#27ae60' : 'var(--text-gray)' }}>FR</span>
-                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', marginLeft: '4px' }}>• {p.purete} • {p.gramme}g • {p.city}</span>
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-gray)', marginLeft: '4px' }}>• {displayProductPurity(p)} • {p.gramme}g • {p.city}</span>
                                 </div>
                               </div>
                             </div>
@@ -5108,14 +5110,14 @@ function AdminLayout() {
                 </div>
               </div>
 
-              {/* Silver 1000 Card */}
+              {/* Silver 925 Card */}
               <div style={{ background: 'var(--bg-card)', border: '2px solid #cbd5e1', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 24px rgba(203,213,225,0.15)', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: '-10px', right: lang === 'ar' ? 'auto' : '-10px', left: lang === 'ar' ? '-10px' : 'auto', opacity: 0.1, pointerEvents: 'none' }}>
                   <SilverIcon size={80} />
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <SilverIcon size={20} />
-                  <span>{lang === 'ar' ? 'فضة عيار 1000 (المعيار الرسمي)' : 'Argent 1000 (Standard Maroc)'}</span>
+                  <span>{lang === 'ar' ? 'فضة عيار 925 (المعيار الرسمي)' : 'Argent 925 (Standard Maroc)'}</span>
                 </div>
                 <div style={{ fontSize: '2.8rem', fontWeight: 900, color: 'var(--text-white)', lineHeight: 1.1, marginBottom: '8px' }}>
                   {goldRatesData.currentPriceSilver || 14.50} <span style={{ fontSize: '1.2rem', color: '#cbd5e1', fontWeight: 700 }}>MAD / g</span>
@@ -5270,7 +5272,7 @@ function AdminLayout() {
                   </button>
                 </div>
 
-                {/* 2. Silver 1000 Box - DIRECT PARAMETERIZATION */}
+              {/* 2. Silver 925 Box - DIRECT PARAMETERIZATION */}
                 <div style={{
                   background: 'rgba(203, 213, 225, 0.05)',
                   border: '1.5px solid rgba(203, 213, 225, 0.35)',
@@ -5283,7 +5285,7 @@ function AdminLayout() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 800, color: '#e2e8f0' }}>
                       <SilverIcon size={18} />
-                      <span>{lang === 'ar' ? 'سعر غرام الفضة 1000 (د.م/غ)' : 'Prix Argent 1000 (MAD/g)'}</span>
+                      <span>{lang === 'ar' ? 'سعر غرام الفضة 925 (د.م/غ)' : 'Prix Argent 925 (MAD/g)'}</span>
                     </label>
                     <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: 700 }}>
                       {typeof goldRatesData.currentPriceSilver === 'number' ? goldRatesData.currentPriceSilver.toFixed(2) : (goldRatesData.currentPriceSilver || '14.50')} MAD/g
@@ -5445,7 +5447,7 @@ function AdminLayout() {
                 </p>
               </div>
 
-              {/* Tabs: Argent 1000‰ vs Or 18K */}
+              {/* Tabs: Argent 925 vs Or 18K */}
               <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '4px', gap: '6px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                 <button
                   type="button"
@@ -5467,7 +5469,7 @@ function AdminLayout() {
                   }}
                 >
                   <SilverIcon size={16} />
-                  <span>{lang === 'ar' ? 'الفضة عيار 1000' : 'Argent 1000‰'}</span>
+                  <span>{lang === 'ar' ? 'الفضة عيار 925' : 'Argent 925'}</span>
                   <span style={{ fontSize: '0.74rem', opacity: 0.85 }}>({(goldRatesData.silverHistory || []).length})</span>
                 </button>
 
@@ -5564,7 +5566,7 @@ function AdminLayout() {
                       <span style={{ fontSize: '1.2rem' }}>{isSilver ? '🛡️' : '🏆'}</span>
                       <span style={{ fontWeight: 800, color: 'var(--text-white)', fontSize: '0.98rem' }}>
                         {isSilver 
-                          ? (lang === 'ar' ? 'منحنى تطور سعر غرام الفضة عيار 1000 (MAD/g)' : 'Courbe d\'évolution du cours de l\'Argent Pur 1000‰ (MAD/g)')
+                          ? (lang === 'ar' ? 'منحنى تطور سعر غرام الفضة عيار 925 (MAD/g)' : 'Courbe d\'évolution du cours de l\'Argent 925 (MAD/g)')
                           : (lang === 'ar' ? 'منحنى تطور سعر غرام الذهب عيار 18 قيراط (MAD/g)' : 'Courbe d\'évolution du cours de l\'Or 18 Karats (MAD/g)')}
                       </span>
                     </div>
@@ -5655,7 +5657,7 @@ function AdminLayout() {
                     <th>{lang === 'ar' ? 'التاريخ والوقت' : 'Date & Heure'}</th>
                     <th>
                       {adminMetalHistoryTab === 'silver'
-                        ? (lang === 'ar' ? 'سعر الفضة 1000 (د.م/غ)' : 'Prix Argent 1000 (MAD/g)')
+                        ? (lang === 'ar' ? 'سعر الفضة 925 (د.م/غ)' : 'Prix Argent 925 (MAD/g)')
                         : (lang === 'ar' ? 'سعر الذهب 18K (د.م/غ)' : 'Prix Or 18K (MAD/g)')}
                     </th>
                     <th>{lang === 'ar' ? 'التغيير' : 'Variation'}</th>
@@ -5698,25 +5700,30 @@ function AdminLayout() {
 
                       const getLocalizedNote = (n) => {
                         if (!n || n === '-') return '-';
+                        const normalizedNote = n
+                          .replace(/\bAg 1000‰?/g, 'Ag 925')
+                          .replace(/\bArgent(?: Pur)? 1000‰?/g, 'Argent 925')
+                          .replace(/argent pur/gi, 'argent 925')
+                          .replace('Raffinement lingots 1000', 'Raffinement argent 925');
                         if (lang === 'ar') {
                           const map = {
                             'Cours matinal': 'السعر الصباحي الافتتاحي',
-                            'Fixation matinale Ag 1000': 'السعر الصباحي الافتتاحي Ag 1000',
+                            'Fixation matinale Ag 1000': 'السعر الصباحي الافتتاحي Ag 925',
                             'Forte demande joaillerie': 'طلب متزايد على الصياغة',
-                            'Raffinement lingots 1000': 'تنقية وسبك سبائك 1000',
+                            'Raffinement lingots 1000': 'تنقية وسبك سبائك 925',
                             'Tendance haussière': 'اتجاه تصاعدي في السوق',
                             'Cours actuel du jour': 'السعر الرسمي المعتمد اليوم',
-                            'Cours actuel du jour (Ag 1000)': 'السعر المعتمد اليوم (Ag 1000)',
+                            'Cours actuel du jour (Ag 1000)': 'السعر المعتمد اليوم (Ag 925)',
                             'Validation 18K': 'تأكيد سعر عيار 18',
-                            'Cours certifié Ag 1000‰': 'سعر الفضة المعتمد 1000‰',
+                            'Cours certifié Ag 1000‰': 'سعر الفضة المعتمد 925',
+                            'Progression continue de l\'argent pur': 'تطور إيجابي لسعر الفضة عيار 925',
                             'Mise à jour régulière': 'تحديث دوري معتمد',
-                            'Progression continue de l\'argent pur': 'تطور إيجابي وتصاعدي لسعر الفضة',
                             'Paramétrage cours argent depuis le dashboard': 'ضبط سعر الفضة من لوحة التحكم',
                             'Mise à jour du cours de l\'argent': 'تعديل سعر غرام الفضة'
                           };
-                          return map[n] || n;
+                          return map[n] || map[normalizedNote] || normalizedNote;
                         }
-                        return n;
+                        return normalizedNote;
                       };
 
                       return (

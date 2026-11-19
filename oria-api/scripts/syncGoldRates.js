@@ -51,12 +51,12 @@ async function syncGoldRates() {
     }) : [];
 
     const defaultSilverHistory = [
-      { id: 'sh_1', date: '2026-10-18 09:30', priceSilver: 13.80, change: '0.0%', source: 'Marché National Argent', note: 'Fixation matinale Ag 1000' },
+      { id: 'sh_1', date: '2026-10-18 09:30', priceSilver: 13.80, change: '0.0%', source: 'Marché National Argent', note: 'Fixation matinale Ag 925' },
       { id: 'sh_2', date: '2026-10-20 11:15', priceSilver: 13.95, change: '+1.1%', source: 'Bourse Casablanca', note: 'Raffinement lingots 1000' },
       { id: 'sh_3', date: '2026-10-22 10:00', priceSilver: 14.10, change: '+1.1%', source: 'Marché National Argent', note: 'Hausse demande industrielle & bijouterie' },
-      { id: 'sh_4', date: '2026-10-24 15:45', priceSilver: 14.25, change: '+1.1%', source: 'Fixation Officielle Maroc', note: 'Cours certifié Ag 1000‰' },
-      { id: 'sh_5', date: '2026-10-25 10:30', priceSilver: 14.40, change: '+1.1%', source: 'Bourse Casablanca', note: 'Progression continue de l\'argent pur' },
-      { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: 'Fixation Officielle Maroc', note: 'Cours actuel du jour (Ag 1000)' }
+      { id: 'sh_4', date: '2026-10-24 15:45', priceSilver: 14.25, change: '+1.1%', source: 'Fixation Officielle Maroc', note: 'Cours certifié Ag 925' },
+      { id: 'sh_5', date: '2026-10-25 10:30', priceSilver: 14.40, change: '+1.1%', source: 'Bourse Casablanca', note: 'Progression continue de l\'argent 925' },
+      { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: 'Fixation Officielle Maroc', note: 'Cours actuel du jour (Ag 925)' }
     ];
 
     if (!fs.existsSync(dbPath)) {

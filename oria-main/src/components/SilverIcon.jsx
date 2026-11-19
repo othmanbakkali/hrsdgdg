@@ -10,7 +10,7 @@ export default function SilverIcon({ size = 18, className = '', style = {} }) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0, ...style }}
-      aria-label="Argent 1000"
+      aria-label="Argent 925"
     >
       <defs>
         <linearGradient id="silverBarGrad" x1="2" y1="5" x2="22" y2="19" gradientUnits="userSpaceOnUse">
@@ -44,7 +44,7 @@ export default function SilverIcon({ size = 18, className = '', style = {} }) {
       <path d="M4 17.5L9 10" stroke="#FFFFFF" strokeWidth="0.8" strokeOpacity="0.8" />
       <path d="M20 17.5L15 10" stroke="#475569" strokeWidth="0.8" strokeOpacity="0.6" />
       <path d="M9 10H15L17.5 17.5H6.5L9 10Z" fill="#E2E8F0" fillOpacity="0.3" />
-      {/* Hallmark Stamp: "Ag 1000" */}
+      {/* Hallmark Stamp: "Ag 925" */}
       <text 
         x="12" 
         y="15.2" 
@@ -55,7 +55,7 @@ export default function SilverIcon({ size = 18, className = '', style = {} }) {
         fill="#1E293B" 
         letterSpacing="0.4"
       >
-        Ag 1000
+        Ag 925
       </text>
     </svg>
   );

@@ -108,27 +108,33 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
 
   const formatNote = (nt) => {
     if (!nt || nt === '-') return '-';
+    const normalizedNote = nt
+      .replace(/\bAg 1000‰?/g, 'Ag 925')
+      .replace(/\bArgent(?: Pur)? 1000‰?/g, 'Argent 925')
+      .replace(/argent pur/gi, 'argent 925')
+      .replace('Raffinement lingots 1000', 'Raffinement argent 925');
     if (isAr) {
       const map = {
         'Cours matinal': 'السعر الصباحي الافتتاحي',
-        'Fixation matinale Ag 1000': 'السعر الصباحي الافتتاحي Ag 1000',
+        'Fixation matinale Ag 1000': 'السعر الصباحي الافتتاحي Ag 925',
         'Forte demande joaillerie': 'طلب متزايد على الصياغة',
         'Forte demande': 'طلب متزايد على الصياغة',
-        'Raffinement lingots 1000': 'تنقية وسبك فضة 1000',
+        'Raffinement lingots 1000': 'تنقية وسبك فضة 925',
         'Raffinement lingots': 'تنقية وسبك السبائك',
         'Tendance haussière': 'اتجاه تصاعدي في السوق',
         'Hausse continue': 'اتجاه تصاعدي مستمر',
         'Progression continue': 'تطور إيجابي وتصاعدي',
+        'Progression continue de l\'argent pur': 'تطور إيجابي لسعر الفضة عيار 925',
         'Cours actuel du jour': 'السعر الرسمي المعتمد اليوم',
-        'Cours actuel du jour (Ag 1000)': 'السعر المعتمد اليوم (Ag 1000)',
+        'Cours actuel du jour (Ag 1000)': 'السعر المعتمد اليوم (Ag 925)',
         'Validation 18K': 'تأكيد سعر عيار 18',
-        'Cours certifié Ag 1000‰': 'سعر الفضة المعتمد 1000‰',
+        'Cours certifié Ag 1000‰': 'سعر الفضة المعتمد 925',
         'Mise à jour régulière': 'تحديث دوري معتمد',
         'Stabilité marché': 'استقرار السوق'
       };
-      return map[nt] || nt;
+      return map[nt] || map[normalizedNote] || normalizedNote;
     }
-    return nt;
+    return normalizedNote;
   };
 
   // --- STATS COMPUTATION ---
@@ -396,7 +402,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: isSilver ? '#e2e8f0' : '#fef3c7', fontFamily: 'Cinzel, Playfair Display, serif' }}>
                 {isSilver
-                  ? (isAr ? 'سعر الفضة عيار 1000 وسجل التغييرات' : 'Cours Officiel & Historique de l\'Argent 1000‰')
+                  ? (isAr ? 'سعر الفضة عيار 925 وسجل التغييرات' : 'Cours Officiel & Historique de l\'Argent 925')
                   : (isAr ? 'سعر الذهب عيار 18 وسجل التغييرات' : 'Cours Officiel & Historique de l\'Or 18K')}
               </h2>
               <span style={{
@@ -417,7 +423,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
               {isSilver
-                ? (isAr ? 'آخر سعر مسجل لغرام الفضة الخالصة عيار 1000 بالدرهم المغربي (MAD)' : 'Dernière cotation enregistrée de l\'argent pur 1000‰ en Dirhams Marocains (MAD)')
+                ? (isAr ? 'آخر سعر مسجل لغرام الفضة عيار 925 بالدرهم المغربي (MAD)' : 'Dernière cotation enregistrée de l\'argent 925 en Dirhams Marocains (MAD)')
                 : (isAr ? 'آخر سعر مسجل لغرام الذهب عيار 18 قيراط بالدرهم المغربي (MAD)' : 'Dernière cotation enregistrée de l\'or 18 carats en Dirhams Marocains (MAD)')}
             </p>
           </div>
@@ -471,7 +477,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
             </div>
           </button>
 
-          {/* 2. Tab Argent 1000 */}
+          {/* 2. Tab Argent 925 */}
           <button
             type="button"
             onClick={() => { setActiveMetal('silver'); setHoveredIndex(null); }}
@@ -495,7 +501,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
               <SilverIcon size={22} />
               <div style={{ textAlign: isRtl ? 'right' : 'left' }}>
                 <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>
-                  {isAr ? 'الفضة عيار 1000 (Ag 1000)' : 'Argent Pur 1000‰ (Ag 1000)'}
+                  {isAr ? 'الفضة عيار 925 (Ag 925)' : 'Argent 925 (Ag 925)'}
                 </div>
                 <div style={{ fontSize: '0.72rem', opacity: 0.8 }}>
                   {isAr ? 'المعيار الرسمي للفضة' : 'Cotation officielle Argent'}
@@ -529,7 +535,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                 <span>📈</span>
                 <span>
                   {isSilver
-                    ? (isAr ? 'المنحنى البياني لتطور سعر غرام الفضة 1000 مؤخراً' : 'Évolution du cours de l\'Argent Pur 1000‰')
+                    ? (isAr ? 'المنحنى البياني لتطور سعر غرام الفضة 925 مؤخراً' : 'Évolution du cours de l\'Argent 925')
                     : (isAr ? 'المنحنى البياني لتطور سعر غرام الذهب عيار 18 مؤخراً' : 'Évolution du cours de l\'Or 18 Karats')}
                 </span>
                 <span style={{
@@ -541,7 +547,7 @@ export default function GoldPriceHistoryModal({ isOpen, onClose, onOpenSellModal
                   color: isSilver ? '#38bdf8' : '#f6b22b',
                   border: isSilver ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(212, 175, 55, 0.3)'
                 }}>
-                  {isSilver ? 'Ag 1000‰' : 'Au 750‰'}
+                  {isSilver ? 'Ag 925' : 'Au 750‰'}
                 </span>
               </div>
               <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px' }}>

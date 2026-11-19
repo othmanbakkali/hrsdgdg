@@ -356,7 +356,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
           </div>
         </div>
 
-        {/* 2. SECONDARY HIGHLIGHT: SILVER 1000 (فضة عيار 1000) */}
+        {/* 2. SECONDARY HIGHLIGHT: SILVER 925 */}
         <div 
           className="metal-card silver-metal-card"
           onClick={(e) => {
@@ -399,7 +399,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               letterSpacing: '0.3px'
             }}>
               <SilverIcon size={16} />
-              <span>{isAr ? 'فضة 1000 نقية (Ag 1000)' : 'Argent Pur 1000‰ (Ag 1000)'}</span>
+              <span>{isAr ? 'فضة عيار 925 (Ag 925)' : 'Argent 925 (Ag 925)'}</span>
             </div>
 
             {/* Purity Hallmark Tag */}
@@ -415,7 +415,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               border: '1px solid rgba(255, 255, 255, 0.15)',
               color: '#cbd5e1'
             }}>
-              🛡️ {isAr ? 'نقاوة 100%' : 'Pureté 999.9'}
+              🛡️ {isAr ? 'نقاوة 92.5%' : 'Pureté 92,5 %'}
             </span>
           </div>
 
@@ -431,7 +431,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <img 
                 src="/silver-bars-perfect.jpg" 
-                alt="Lingots d'argent pur 1000"
+                alt={isAr ? 'سبائك فضة عيار 925' : 'Lingots d’argent 925'}
                 style={{
                   width: '84px',
                   height: '56px',
@@ -451,7 +451,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
                   maxWidth: '120px',
                   lineHeight: 1.3
                 }}>
-                  {isAr ? 'عيار الفضة الصافية المعتمد' : 'Standard officiel argent pur'}
+                  {isAr ? 'معيار الفضة عيار 925' : 'Standard de l’argent 925'}
                 </span>
               </div>
             </div>
