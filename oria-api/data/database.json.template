@@ -180,10 +180,10 @@
     },
     {
       "id": "cat_earrings",
-      "nom_fr": "Rumi coli",
-      "nom_ar": "كولي رومي",
-      "nom_en": "Rumi coli",
-      "icon": "📿"
+      "nom_fr": "Boucles d’oreilles",
+      "nom_ar": "أقراط",
+      "nom_en": "Earrings",
+      "icon": "👂"
     },
     {
       "id": "cat_sets",
@@ -194,37 +194,37 @@
     },
     {
       "id": "cat_a4y7fuan7",
-      "nom_fr": "Des rondelles",
-      "nom_ar": "خراصات",
-      "nom_en": "Des rondelles",
+      "nom_fr": "Boucles d’oreilles traditionnelles",
+      "nom_ar": "أقراط تقليدية",
+      "nom_en": "Traditional earrings",
       "icon": "✨"
     },
     {
       "id": "cat_y2od2qll9",
-      "nom_fr": "Brassellate",
-      "nom_ar": "براسليات",
-      "nom_en": "Brassellate",
+      "nom_fr": "Bracelets",
+      "nom_ar": "أساور",
+      "nom_en": "Bracelets",
       "icon": "🔗"
     },
     {
       "id": "cat_q0euze9d3",
-      "nom_fr": "Sanselah",
-      "nom_ar": "سناسل",
-      "nom_en": "Sanselah",
+      "nom_fr": "Chaînes et colliers",
+      "nom_ar": "سلاسل وقلائد",
+      "nom_en": "Chains and necklaces",
       "icon": "📿"
     },
     {
       "id": "cat_i754ll1yi",
-      "nom_fr": "Municipal verrouillé",
-      "nom_ar": "قفل بلدي",
-      "nom_en": "Municipal verrouillé",
+      "nom_fr": "Bijoux à fermoir traditionnel",
+      "nom_ar": "حلي بأقفال تقليدية",
+      "nom_en": "Traditional clasp jewelry",
       "icon": "🔒"
     },
     {
       "id": "cat_1w9hmgxu5",
-      "nom_fr": "Cintres",
-      "nom_ar": "علاقات",
-      "nom_en": "Cintres",
+      "nom_fr": "Pendentifs et breloques",
+      "nom_ar": "معلقات وحليات",
+      "nom_en": "Pendants and charms",
       "icon": "🏷️"
     }
   ],

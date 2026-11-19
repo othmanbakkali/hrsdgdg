@@ -21,7 +21,7 @@ export default function MobileMenuDrawer({
   onOpenAI,
   onOpenSell,
   onOpenGoldModal,
-  goldRate = { price18k: 1045, change: '+0.7%' },
+  goldRate = { loading: true, price18k: null, change: null },
   theme = 'light',
   onToggleTheme,
   user,
@@ -114,9 +114,11 @@ export default function MobileMenuDrawer({
           >
             <span className="strip-icon">🥇</span>
             <span className="strip-text">
-              {isAr ? `ذهب 18K: ${goldRate.price18k ? Number(goldRate.price18k).toLocaleString('fr-FR') : '1 045'} د.م` : `Or 18K: ${goldRate.price18k ? Number(goldRate.price18k).toLocaleString('fr-FR') : '1 045'} DH`}
+              {isAr
+                ? `ذهب 18K: ${goldRate.loading ? '...' : (goldRate.price18k == null ? 'غير متاح' : Number(goldRate.price18k).toLocaleString('fr-FR'))} د.م`
+                : `Or 18K: ${goldRate.loading ? '...' : (goldRate.price18k == null ? 'indisponible' : Number(goldRate.price18k).toLocaleString('fr-FR'))} DH`}
             </span>
-            <span className="strip-badge">{goldRate.change || '+0.7%'}</span>
+            <span className="strip-badge">{goldRate.change || '—'}</span>
           </button>
         </div>
 

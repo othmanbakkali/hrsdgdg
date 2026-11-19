@@ -88,6 +88,26 @@ function writeDB(data) {
   }
 }
 
+function normalizeSecondHandCondition(product) {
+  if (
+    product?.type_vente === 'SECOND_HAND' &&
+    String(product.etat || '').trim().toLowerCase().includes('neuf') &&
+    !String(product.etat || '').trim().toLowerCase().includes('comme neuf')
+  ) {
+    return { ...product, etat: 'Comme neuf' };
+  }
+  return product;
+}
+
+function getProductReviewStats(productId, reviews = []) {
+  const productReviews = reviews.filter(review => review.bijou_id === productId);
+  const ratingTotal = productReviews.reduce((sum, review) => sum + (Number(review.note) || 0), 0);
+  return {
+    nombre_avis: productReviews.length,
+    note: productReviews.length ? Number((ratingTotal / productReviews.length).toFixed(1)) : null
+  };
+}
+
 // Session Management Helpers
 const memorySessions = new Map();
 
@@ -1382,12 +1402,14 @@ app.get('/api/bijoux', (req, res) => {
 
   const usersMap = new Map((db.users || []).map(u => [u.id, u]));
   const enrichedResults = results.map(b => {
-    const seller = usersMap.get(b.commercant_id) || usersMap.get(b.vendeur_id);
-    const sellerPhone = b.vendeur_phone || b.telephone || seller?.phone || seller?.telephone || '';
-    const sellerNom = b.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
+    const product = normalizeSecondHandCondition(b);
+    const seller = usersMap.get(product.commercant_id) || usersMap.get(product.vendeur_id);
+    const sellerPhone = product.vendeur_phone || product.telephone || seller?.phone || seller?.telephone || '';
+    const sellerNom = product.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
     return {
-      ...b,
-      gramme: b.gramme !== undefined ? b.gramme : (b.poids !== undefined ? b.poids : null),
+      ...product,
+      ...getProductReviewStats(product.id, db.reviews || []),
+      gramme: product.gramme !== undefined ? product.gramme : (product.poids !== undefined ? product.poids : null),
       vendeur_phone: sellerPhone,
       vendeur_nom: sellerNom
     };
@@ -1416,18 +1438,20 @@ app.get('/api/bijoux/:id', (req, res) => {
     });
   }
 
-  const seller = (db.users || []).find(u => u.id === product.commercant_id || u.id === product.vendeur_id);
-  const sellerPhone = product.vendeur_phone || product.telephone || seller?.phone || seller?.telephone || '';
-  const sellerNom = product.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
+  const normalizedProduct = normalizeSecondHandCondition(product);
+  const seller = (db.users || []).find(u => u.id === normalizedProduct.commercant_id || u.id === normalizedProduct.vendeur_id);
+  const sellerPhone = normalizedProduct.vendeur_phone || normalizedProduct.telephone || seller?.phone || seller?.telephone || '';
+  const sellerNom = normalizedProduct.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
 
   // Attach reviews
-  const reviews = (db.reviews || []).filter(r => r.bijou_id === product.id);
+  const reviewStats = getProductReviewStats(normalizedProduct.id, db.reviews || []);
   res.json({ 
-    ...product,
-    gramme: product.gramme !== undefined ? product.gramme : (product.poids !== undefined ? product.poids : null),
+    ...normalizedProduct,
+    ...reviewStats,
+    gramme: normalizedProduct.gramme !== undefined ? normalizedProduct.gramme : (normalizedProduct.poids !== undefined ? normalizedProduct.poids : null),
     vendeur_phone: sellerPhone, 
-    vendeur_nom: sellerNom, 
-    customer_reviews: reviews 
+    vendeur_nom: sellerNom,
+    customer_reviews: (db.reviews || []).filter(review => review.bijou_id === normalizedProduct.id)
   });
 });
 
@@ -1608,6 +1632,13 @@ app.post('/api/bijoux', (req, res) => {
   const finalTitreFr = titre_fr || titre || '';
   const finalDescFr = description_fr || description || '';
   const processedProductImages = processImages(images);
+  const finalTypeVente = (type_vente === 'AUCTION' || req.body.type_vente === 'enchere')
+    ? 'SECOND_HAND'
+    : (type_vente || 'FIRST_HAND');
+  const requestedEtat = etat || (finalTypeVente === 'SECOND_HAND' ? 'Très bon état' : 'Neuf');
+  const finalEtat = finalTypeVente === 'SECOND_HAND' && String(requestedEtat).trim().toLowerCase().includes('neuf') && !String(requestedEtat).trim().toLowerCase().includes('comme neuf')
+    ? 'Comme neuf'
+    : requestedEtat;
 
   const newProduct = {
     id: 'b_' + Math.random().toString(36).substr(2, 9),
@@ -1621,14 +1652,14 @@ app.post('/api/bijoux', (req, res) => {
     description_en: description_en || '',
     prix: parseFloat(prix) || 0,
     ancien_prix: ancien_prix ? parseFloat(ancien_prix) : null,
-    type_vente: (type_vente === 'AUCTION' || req.body.type_vente === 'enchere') ? 'SECOND_HAND' : (type_vente || (isSecondHand ? 'SECOND_HAND' : 'FIRST_HAND')),
+    type_vente: finalTypeVente,
     matiere: matiere || 'Or',
     gramme: parseFloat(gramme || poids || 0),
     poids: parseFloat(poids || gramme || 0),
     purete: purete || '18k',
     pierre: pierre || 'Aucune',
     taille: taille || 'Unique',
-    etat: etat || (isSecondHand ? 'Très bon état' : 'Neuf'),
+    etat: finalEtat,
     annee: annee ? parseInt(annee) : (isSecondHand ? new Date().getFullYear() - 5 : new Date().getFullYear()),
     nombre_proprietaires: nombre_proprietaires ? parseInt(nombre_proprietaires) : 1,
     style: style || 'Moderne',
@@ -1651,7 +1682,7 @@ app.post('/api/bijoux', (req, res) => {
     boite: Boolean(boite),
     authentifie: isSecondHand ? (certificat ? 'Vérifié' : 'En attente de vérification') : 'Vérifié',
     badge: (type_vente === 'AUCTION' || req.body.type_vente === 'enchere' || effectiveDisponibilite === 'enchere') ? '🔨 ENCHÈRE EN DIRECT' : (isSecondHand ? (certificat ? '🛡️ BIJOU VÉRIFIÉ' : 'SECONDE MAIN') : 'NOUVEAU'),
-    note: 5.0,
+    note: null,
     nombre_avis: 0,
     favoris_count: 1,
     statut: statut || 'Validated',
@@ -1681,7 +1712,7 @@ app.put('/api/bijoux/:id', (req, res) => {
   const updatedDescFr = req.body.description_fr !== undefined ? req.body.description_fr : (req.body.description !== undefined ? req.body.description : current.description_fr);
   const updatedImages = req.body.images !== undefined ? processImages(req.body.images) : current.images;
 
-  db.bijoux[idx] = {
+  db.bijoux[idx] = normalizeSecondHandCondition({
     ...current,
     ...req.body,
     images: updatedImages,
@@ -1696,7 +1727,7 @@ app.put('/api/bijoux/:id', (req, res) => {
     prix: req.body.prix !== undefined ? parseFloat(req.body.prix) : current.prix,
     stock: req.body.stock !== undefined ? parseInt(req.body.stock) : current.stock,
     disponibilite: req.body.stock !== undefined ? (parseInt(req.body.stock) > 0 ? 'disponible' : 'rupture') : current.disponibilite
-  };
+  });
 
   writeDB(db);
   res.json(db.bijoux[idx]);
@@ -2928,32 +2959,11 @@ app.put('/api/subscriptions/:merchantId/status', (req, res) => {
 // Public: Get current precious metals rates (Or 18K & Argent 1000) and history
 app.get('/api/gold-rates', (req, res) => {
   const db = readDB();
-  const defaultSilverHistory = [
-    { id: 'sh_1', date: '2026-10-18 09:30', priceSilver: 13.80, change: '0.0%', source: 'Marché National Argent', note: 'Fixation matinale Ag 1000' },
-    { id: 'sh_2', date: '2026-10-20 11:15', priceSilver: 13.95, change: '+1.1%', source: 'Bourse Casablanca', note: 'Raffinement lingots 1000' },
-    { id: 'sh_3', date: '2026-10-22 10:00', priceSilver: 14.10, change: '+1.1%', source: 'Marché National Argent', note: 'Hausse demande industrielle & bijouterie' },
-    { id: 'sh_4', date: '2026-10-24 15:45', priceSilver: 14.25, change: '+1.1%', source: 'Fixation Officielle Maroc', note: 'Cours certifié Ag 1000‰' },
-    { id: 'sh_5', date: '2026-10-25 10:30', priceSilver: 14.40, change: '+1.1%', source: 'Bourse Casablanca', note: 'Progression continue de l\'argent pur' },
-    { id: 'sh_6', date: '2026-10-26 12:00', priceSilver: 14.50, change: '+0.7%', source: 'Fixation Officielle Maroc', note: 'Cours actuel du jour (Ag 1000)' }
-  ];
-
-  const goldRates = db.goldRates || {
-    currentPrice18k: 1045,
-    currentPriceSilver: 14.50,
-    carat: '18K',
-    unit: 'MAD/g',
-    silverUnit: 'MAD/g',
-    lastUpdated: new Date().toISOString(),
-    updatedBy: 'Admin',
-    history: [],
-    silverHistory: defaultSilverHistory
-  };
-
-  const currentPrice18k = Number(goldRates.currentPrice18k) || 1045;
-  const currentPriceSilver = Number(goldRates.currentPriceSilver) || 14.50;
-  const silverHistory = (Array.isArray(goldRates.silverHistory) && goldRates.silverHistory.length > 0)
-    ? goldRates.silverHistory
-    : defaultSilverHistory;
+  const goldRates = db.goldRates || {};
+  const currentPrice18k = Number(goldRates.currentPrice18k) || null;
+  const currentPriceSilver = Number(goldRates.currentPriceSilver) || null;
+  const history = Array.isArray(goldRates.history) ? goldRates.history : [];
+  const silverHistory = Array.isArray(goldRates.silverHistory) ? goldRates.silverHistory : [];
 
   res.json({
     success: true,
@@ -2962,9 +2972,9 @@ app.get('/api/gold-rates', (req, res) => {
     carat: '18K',
     unit: goldRates.unit || 'MAD/g',
     silverUnit: goldRates.silverUnit || 'MAD/g',
-    lastUpdated: goldRates.lastUpdated,
-    updatedBy: goldRates.updatedBy || 'Administration',
-    history: goldRates.history || [],
+    lastUpdated: goldRates.lastUpdated || null,
+    updatedBy: goldRates.updatedBy || null,
+    history,
     silverHistory
   });
 });
@@ -3236,29 +3246,33 @@ function checkAndRepairDatabaseIntegrity() {
     let hasChanges = false;
 
     const categoryNameMap = {
-      'cat_rings': { nom_ar: 'خواتم', nom_fr: 'Bagues', icon: '💍' },
-      'cat_earrings': { nom_ar: 'كولي رومي', nom_fr: 'Rumi coli', icon: '📿' },
-      'cat_sets': { nom_ar: 'أطقم كاملة', nom_fr: 'Parures', icon: '💎' },
-      'cat_a4y7fuan7': { nom_ar: 'خراصات', nom_fr: 'Des rondelles', icon: '✨' },
-      'cat_y2od2qll9': { nom_ar: 'براسليات', nom_fr: 'Brassellate', icon: '🔗' },
-      'cat_q0euze9d3': { nom_ar: 'سناسل', nom_fr: 'Sanselah', icon: '📿' },
-      'cat_i754ll1yi': { nom_ar: 'قفل بلدي', nom_fr: 'Municipal verrouillé', icon: '🔒' },
-      'cat_1w9hmgxu5': { nom_ar: 'علاقات', nom_fr: 'Cintres', icon: '🏷️' }
+      'cat_rings': { nom_ar: 'خواتم', nom_fr: 'Bagues', nom_en: 'Rings', icon: '💍' },
+      'cat_earrings': { nom_ar: 'أقراط', nom_fr: 'Boucles d’oreilles', nom_en: 'Earrings', icon: '👂' },
+      'cat_sets': { nom_ar: 'أطقم كاملة', nom_fr: 'Parures', nom_en: 'Jewelry sets', icon: '💎' },
+      'cat_a4y7fuan7': { nom_ar: 'أقراط تقليدية', nom_fr: 'Boucles d’oreilles traditionnelles', nom_en: 'Traditional earrings', icon: '✨' },
+      'cat_y2od2qll9': { nom_ar: 'أساور', nom_fr: 'Bracelets', nom_en: 'Bracelets', icon: '🔗' },
+      'cat_q0euze9d3': { nom_ar: 'سلاسل وقلائد', nom_fr: 'Chaînes et colliers', nom_en: 'Chains and necklaces', icon: '📿' },
+      'cat_i754ll1yi': { nom_ar: 'حلي بأقفال تقليدية', nom_fr: 'Bijoux à fermoir traditionnel', nom_en: 'Traditional clasp jewelry', icon: '🔒' },
+      'cat_1w9hmgxu5': { nom_ar: 'معلقات وحليات', nom_fr: 'Pendentifs et breloques', nom_en: 'Pendants and charms', icon: '🏷️' }
     };
 
     if (Array.isArray(db.categories)) {
       db.categories.forEach(cat => {
         const canonical = categoryNameMap[cat.id];
         if (canonical) {
-          if (!cat.nom_ar || cat.nom_ar.includes('?')) {
+          if (cat.nom_ar !== canonical.nom_ar) {
             cat.nom_ar = canonical.nom_ar;
             hasChanges = true;
           }
-          if (!cat.nom_fr || cat.nom_fr.includes('?') || cat.nom_fr.startsWith('?')) {
+          if (cat.nom_fr !== canonical.nom_fr) {
             cat.nom_fr = canonical.nom_fr;
             hasChanges = true;
           }
-          if (!cat.icon || cat.icon.includes('?')) {
+          if (cat.nom_en !== canonical.nom_en) {
+            cat.nom_en = canonical.nom_en;
+            hasChanges = true;
+          }
+          if (cat.icon !== canonical.icon) {
             cat.icon = canonical.icon;
             hasChanges = true;
           }
@@ -3266,8 +3280,23 @@ function checkAndRepairDatabaseIntegrity() {
       });
     }
 
+    (db.bijoux || []).forEach(product => {
+      const condition = String(product.etat || '').trim().toLowerCase();
+      if (product.type_vente === 'SECOND_HAND' && condition.includes('neuf') && !condition.includes('comme neuf')) {
+        product.etat = 'Comme neuf';
+        hasChanges = true;
+      }
+
+      const reviewStats = getProductReviewStats(product.id, db.reviews || []);
+      if (product.nombre_avis !== reviewStats.nombre_avis || product.note !== reviewStats.note) {
+        product.nombre_avis = reviewStats.nombre_avis;
+        product.note = reviewStats.note;
+        hasChanges = true;
+      }
+    });
+
     if (hasChanges) {
-      console.log('🛡️  [INTEGRITY] Repaired corrupted category names and accents to clean UTF-8.');
+      console.log('🛡️  [INTEGRITY] Normalized catalog categories, second-hand conditions, and UTF-8 data.');
       writeDB(db);
     }
   } catch (err) {

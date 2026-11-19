@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { usePWA } from './usePWA';
 import MobileAppModal from '../components/MobileAppModal';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function PWAInstallBanner() {
   const { isInstallable, isInstalled, isIOS, isOffline, swUpdateAvailable, updateApp } = usePWA();
+  const { lang, isRtl } = useLanguage();
+  const isAr = lang === 'ar';
   const [isDismissed, setIsDismissed] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -29,7 +32,8 @@ export default function PWAInstallBanner() {
       {/* 1. Offline Mode Notice Bar */}
       {isOffline && (
         <aside 
-          aria-label="Alerte mode hors ligne"
+          aria-label={isAr ? 'تنبيه وضع عدم الاتصال' : 'Alerte mode hors ligne'}
+          dir={isRtl ? 'rtl' : 'ltr'}
           style={{
             position: 'fixed',
             top: 0,
@@ -50,14 +54,15 @@ export default function PWAInstallBanner() {
           }}
         >
           <span style={{ fontSize: '1.1rem' }}>⚡</span>
-          <span>Mode hors ligne actif — Vous consultez les bijoux et données enregistrés en cache.</span>
+          <span>{isAr ? 'وضع عدم الاتصال نشط — تعرض المجوهرات والبيانات المحفوظة مؤقتاً.' : 'Mode hors ligne actif — Vous consultez les bijoux et données enregistrés en cache.'}</span>
         </aside>
       )}
 
       {/* 2. Service Worker Update Notification */}
       {swUpdateAvailable && (
         <aside 
-          aria-label="Mise à jour disponible"
+          aria-label={isAr ? 'يتوفر تحديث' : 'Mise à jour disponible'}
+          dir={isRtl ? 'rtl' : 'ltr'}
           style={{
             position: 'fixed',
             bottom: '24px',
@@ -78,8 +83,8 @@ export default function PWAInstallBanner() {
         >
           <div style={{ fontSize: '1.6rem' }}>✨</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#FFF2C6' }}>Mise à jour disponible</div>
-            <div style={{ fontSize: '0.8rem', color: '#ccc' }}>Une nouvelle version de HRSDGDG est prête.</div>
+            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#FFF2C6' }}>{isAr ? 'يتوفر تحديث' : 'Mise à jour disponible'}</div>
+            <div style={{ fontSize: '0.8rem', color: '#ccc' }}>{isAr ? 'الإصدار الجديد من HRSDGDG جاهز.' : 'Une nouvelle version de HRSDGDG est prête.'}</div>
           </div>
           <button
             onClick={updateApp}
@@ -94,7 +99,7 @@ export default function PWAInstallBanner() {
               cursor: 'pointer'
             }}
           >
-            Recharger
+            {isAr ? 'إعادة التحميل' : 'Recharger'}
           </button>
         </aside>
       )}
@@ -102,6 +107,7 @@ export default function PWAInstallBanner() {
       {/* 3. Floating Luxury PWA & Mobile App Banner */}
       {!isInstalled && !isDismissed && (
         <div
+          dir={isRtl ? 'rtl' : 'ltr'}
           style={{
             position: 'fixed',
             bottom: '80px',
@@ -141,7 +147,7 @@ export default function PWAInstallBanner() {
           >
             <img
               src="/icons/pwa-192x192.png"
-              alt="HRSDGDG App"
+              alt={isAr ? 'تطبيق HRSDGDG' : 'Application HRSDGDG'}
               style={{ width: '38px', height: '38px', borderRadius: '8px' }}
             />
           </div>
@@ -159,7 +165,7 @@ export default function PWAInstallBanner() {
                   WebkitTextFillColor: 'transparent'
                 }}
               >
-                App HRSDGDG
+                {isAr ? 'تطبيق HRSDGDG' : 'App HRSDGDG'}
               </span>
               <span
                 style={{
@@ -176,7 +182,7 @@ export default function PWAInstallBanner() {
               </span>
             </div>
             <p style={{ fontSize: '0.78rem', color: '#B3B3C0', margin: '2px 0 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              APK direct &amp; Version iPhone optimisée
+              {isAr ? 'تحميل APK مباشرة • نسخة محسّنة لـ iPhone' : 'APK direct • Version iPhone optimisée'}
             </p>
           </div>
 
@@ -200,12 +206,12 @@ export default function PWAInstallBanner() {
               }}
             >
               <span>📲</span>
-              <span>Installer</span>
+              <span>{isAr ? 'تثبيت' : 'Installer'}</span>
             </button>
 
             <button
               onClick={handleDismiss}
-              aria-label="Fermer"
+              aria-label={isAr ? 'إغلاق' : 'Fermer'}
               style={{
                 background: 'transparent',
                 border: 'none',

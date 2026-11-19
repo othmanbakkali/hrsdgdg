@@ -7,7 +7,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
   const { lang, isRtl } = useLanguage();
   const isAr = lang === 'ar';
 
-  const [rateInfo, setRateInfo] = useState({ loading: true, price18k: null, priceSilver: null, change: null, lastUpdated: null, source: null });
+  const [rateInfo, setRateInfo] = useState({ loading: true, price18k: null, priceSilver: null, change: null, lastUpdated: null, goldRecord: null, silverRecord: null });
 
   useEffect(() => {
     fetch(`${API_URL}/gold-rates`)
@@ -17,13 +17,17 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
           const latestHistoryEntry = [...(data.history || [])].sort((a, b) =>
             (Date.parse(String(a.date || '').replace(' ', 'T')) || 0) - (Date.parse(String(b.date || '').replace(' ', 'T')) || 0)
           ).at(-1);
+          const latestSilverEntry = [...(data.silverHistory || [])].sort((a, b) =>
+            (Date.parse(String(a.date || '').replace(' ', 'T')) || 0) - (Date.parse(String(b.date || '').replace(' ', 'T')) || 0)
+          ).at(-1);
           setRateInfo({
             loading: false,
             price18k: data.currentPrice18k ?? null,
             priceSilver: data.currentPriceSilver ?? null,
             change: latestHistoryEntry?.change || null,
-            lastUpdated: data.lastUpdated || latestHistoryEntry?.date || null,
-            source: latestHistoryEntry?.source || data.updatedBy || null
+            lastUpdated: data.lastUpdated || null,
+            goldRecord: latestHistoryEntry ? { date: latestHistoryEntry.date, source: latestHistoryEntry.source } : null,
+            silverRecord: latestSilverEntry ? { date: latestSilverEntry.date, source: latestSilverEntry.source } : null
           });
         } else {
           setRateInfo(previous => ({ ...previous, loading: false }));
@@ -36,6 +40,15 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
   const dateStr = recordedAt && !Number.isNaN(recordedAt.getTime())
     ? recordedAt.toLocaleString(isAr ? 'ar-MA-u-nu-latn' : 'fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
     : null;
+  const formatRecordDate = (date) => {
+    if (!date) return isAr ? 'التاريخ غير متاح' : 'date indisponible';
+    const parsed = new Date(String(date).replace(' ', 'T'));
+    if (Number.isNaN(parsed.getTime())) return date;
+    const options = /\d{1,2}:\d{2}/.test(String(date))
+      ? { dateStyle: 'medium', timeStyle: 'short' }
+      : { dateStyle: 'medium' };
+    return parsed.toLocaleString(isAr ? 'ar-MA-u-nu-latn' : 'fr-FR', options);
+  };
 
   return (
     <aside 
@@ -114,7 +127,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
         position: 'relative',
         zIndex: 2
       }}>
-        {/* Date & Monospace Live Time */}
+        {/* Stored synchronization timestamp */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -130,7 +143,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
             gap: '6px'
           }}>
             <span>🗓️</span>
-            <span>{dateStr}</span>
+            <span>{isAr ? 'آخر مزامنة:' : 'Dernière synchro :'}</span>
           </div>
           <div 
             dir="ltr"
@@ -150,31 +163,31 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
           </div>
         </div>
 
-        {/* Live Market Status Pill */}
+        {/* Stored-rate status */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '7px',
           padding: '4px 12px',
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
+          background: 'rgba(148, 163, 184, 0.1)',
+          border: '1px solid rgba(148, 163, 184, 0.25)',
           borderRadius: '9999px',
           fontSize: '0.76rem',
           fontWeight: 700,
-          color: '#34d399'
+          color: '#cbd5e1'
         }}>
           <span style={{
             width: '7px',
             height: '7px',
             borderRadius: '50%',
-            backgroundColor: '#10b981',
-            boxShadow: '0 0 8px #10b981',
+            backgroundColor: '#94a3b8',
+            boxShadow: 'none',
             display: 'inline-block'
           }} />
           <span>
             {rateInfo.loading
               ? (isAr ? 'جاري تحميل الأسعار' : 'Chargement des cotations')
-              : `${isAr ? 'آخر سعر مسجل' : 'Dernière cotation enregistrée'}${rateInfo.source ? ` • ${rateInfo.source}` : ''}`}
+              : (isAr ? 'أسعار محفوظة • ليست مباشرة' : 'Valeurs enregistrées • pas en temps réel')}
           </span>
         </div>
       </div>
@@ -323,6 +336,13 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
                   {isAr ? 'د.م/غ' : 'MAD/g'}
                 </span>
               </div>
+              <small style={{ marginTop: '8px', maxWidth: '220px', color: '#94a3b8', fontSize: '0.68rem', lineHeight: 1.4, textAlign: isRtl ? 'left' : 'right' }}>
+                {rateInfo.loading
+                  ? (isAr ? 'جاري تحميل تاريخ السعر…' : 'Chargement de la date du cours…')
+                  : rateInfo.goldRecord
+                    ? `${formatRecordDate(rateInfo.goldRecord.date)}${rateInfo.goldRecord.source ? ` • ${rateInfo.goldRecord.source}` : ''}`
+                    : (isAr ? 'لا يوجد تاريخ أو مصدر مسجل' : 'Aucune date ni source enregistrée')}
+              </small>
             </div>
           </div>
         </div>
@@ -462,6 +482,13 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
                   {isAr ? 'د.م/غ' : 'MAD/g'}
                 </span>
               </div>
+              <small style={{ marginTop: '8px', maxWidth: '220px', color: '#94a3b8', fontSize: '0.68rem', lineHeight: 1.4, textAlign: isRtl ? 'left' : 'right' }}>
+                {rateInfo.loading
+                  ? (isAr ? 'جاري تحميل تاريخ السعر…' : 'Chargement de la date du cours…')
+                  : rateInfo.silverRecord
+                    ? `${formatRecordDate(rateInfo.silverRecord.date)}${rateInfo.silverRecord.source ? ` • ${rateInfo.silverRecord.source}` : ''}`
+                    : (isAr ? 'لا يوجد تاريخ أو مصدر مسجل' : 'Aucune date ni source enregistrée')}
+              </small>
             </div>
           </div>
         </div>
@@ -488,7 +515,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
           gap: '6px'
         }}>
           <span>💡</span>
-          <span>{isAr ? 'الأسعار تحدث بانتظام وفق تداولات السوق المغربي للصياغة' : 'Cotations actualisées selon les cours de référence au Maroc'}</span>
+          <span>{isAr ? 'القيم المرجعية المسجلة لدى المنصة' : 'Valeurs de référence enregistrées sur la plateforme'}</span>
         </span>
 
         {/* Interactive History Button */}

@@ -191,7 +191,12 @@ Merci.`;
 
   const formatCondition = (etat) => {
     if (!etat) return '';
-    const e = etat.toLowerCase();
+    let normalizedEtat = etat;
+    let e = String(normalizedEtat).toLowerCase();
+    if (product?.type_vente === 'SECOND_HAND' && e.includes('neuf') && !e.includes('comme neuf')) {
+      normalizedEtat = 'Comme neuf';
+      e = normalizedEtat.toLowerCase();
+    }
     if (lang === 'ar') {
       if (e.includes('art') || e.includes('ant') || e.includes('أثر') || e.includes('حرف') || e.includes('تقليد')) return '🏺 قطعة أثرية';
       if (e.includes('comme neuf')) return t('condLikeNew') || 'كالجديد تماماً';
@@ -205,7 +210,7 @@ Merci.`;
       if (e.includes('art') || e.includes('ant')) return '🏺 Pièce antique';
       if (e.includes('occasion')) return 'Occasion (Très bon état)';
     }
-    return etat;
+    return normalizedEtat;
   };
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -217,6 +222,19 @@ Merci.`;
   const [isHovered, setIsHovered] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (!isModalOpen || !product?.id) return;
+    let isActive = true;
+    setReviewsList(Array.isArray(product.customer_reviews) ? product.customer_reviews : []);
+    fetch(`${API_URL}/reviews?bijou_id=${encodeURIComponent(product.id)}`)
+      .then(res => (res.ok ? res.json() : []))
+      .then(reviews => {
+        if (isActive && Array.isArray(reviews)) setReviewsList(reviews);
+      })
+      .catch(() => {});
+    return () => { isActive = false; };
+  }, [isModalOpen, product?.id]);
 
   // Auction State
   const isAuction = product?.disponibilite === 'enchere' || product?.type_vente === 'AUCTION';
@@ -377,6 +395,12 @@ Merci.`;
 
   const isSecondHand = product.type_vente === 'SECOND_HAND';
   const isFavorited = user?.favoris?.includes(product.id);
+  const reviewCount = Math.max(reviewsList.length, Number(product.nombre_avis) || 0);
+  const averageRating = reviewsList.length > 0
+    ? reviewsList.reduce((sum, review) => sum + (Number(review.note) || 0), 0) / reviewsList.length
+    : (product.note !== null && product.note !== undefined && product.note !== '' && Number.isFinite(Number(product.note))
+      ? Number(product.note)
+      : null);
 
   // Complementary look items
   const complementaryItems = allProducts
@@ -651,13 +675,23 @@ Merci.`;
 
             {/* Rating & Seller */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.86rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span className="star-icon">⭐</span>
-                <strong>{product.note || 4.9}</strong>
+              {reviewCount > 0 && averageRating !== null ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span className="star-icon">⭐</span>
+                  <strong>{averageRating.toFixed(1)}</strong>
+                  <span style={{ color: 'var(--text-gray)' }}>
+                    {lang === 'ar' ? `(${reviewCount} تقييم)` : `(${reviewCount} avis)`}
+                  </span>
+                </div>
+              ) : reviewCount === 0 ? (
                 <span style={{ color: 'var(--text-gray)' }}>
-                  {lang === 'ar' ? `(${product.nombre_avis || reviewsList.length} تقييم)` : `(${product.nombre_avis || reviewsList.length} avis)`}
+                  {lang === 'ar' ? 'لا توجد تقييمات' : 'Aucun avis'}
                 </span>
-              </div>
+              ) : (
+                <span style={{ color: 'var(--text-gray)' }}>
+                  {lang === 'ar' ? `${reviewCount} تقييم` : `${reviewCount} avis`}
+                </span>
+              )}
               <span style={{ color: 'var(--text-gray)' }}>•</span>
               <div style={{ color: 'var(--text-gray)' }}>
                 {lang === 'ar' ? 'البائع والمصدر :' : 'Vendu par :'} <strong style={{ color: 'var(--primary-gold)' }}>{product.vendeur_nom || (lang === 'ar' ? 'دار المجوهرات' : 'Maison Joaillerie')}</strong>

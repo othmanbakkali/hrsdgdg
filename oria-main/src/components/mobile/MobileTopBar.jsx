@@ -38,10 +38,7 @@ export default function MobileTopBar({
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [goldRate, setGoldRate] = useState({
-    price18k: 1045,
-    change: '+0.7%'
-  });
+  const [goldRate, setGoldRate] = useState({ loading: true, price18k: null, change: null });
 
   // Sticky header scroll detection
   useEffect(() => {
@@ -59,14 +56,14 @@ export default function MobileTopBar({
       fetch(`${API_URL}/gold-rates`)
         .then(res => res.json())
         .then(data => {
-          if (data && data.success && data.currentPrice18k) {
-            setGoldRate({
-              price18k: data.currentPrice18k,
-              change: (data.history && data.history.length > 0 && data.history[data.history.length - 1].change) || '+0.7%'
-            });
+          if (data && data.success) {
+            const latestEntry = [...(data.history || [])].sort((a, b) =>
+              (Date.parse(String(a.date || '').replace(' ', 'T')) || 0) - (Date.parse(String(b.date || '').replace(' ', 'T')) || 0)
+            ).at(-1);
+            setGoldRate({ loading: false, price18k: data.currentPrice18k ?? null, change: latestEntry?.change || null });
           }
         })
-        .catch(() => {});
+        .catch(() => setGoldRate(previous => ({ ...previous, loading: false })));
     };
     fetchGoldPrice();
     const interval = setInterval(fetchGoldPrice, 30000);

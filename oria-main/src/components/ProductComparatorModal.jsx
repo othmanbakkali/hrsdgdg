@@ -151,7 +151,15 @@ export default function ProductComparatorModal({ isOpen, onClose, comparedProduc
                   {comparedProducts.map(p => (
                     <td key={p.id} style={{ padding: '12px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                       <div>{p.vendeur_nom || (lang === 'ar' ? 'بائع موثق' : 'Vendeur Certifié')}</div>
-                      <span style={{ fontSize: '0.75rem', color: '#f59e0b' }}>⭐ {p.note || 4.8} ({p.nombre_avis || 10} {lang === 'ar' ? 'تقييم' : 'avis'})</span>
+                      {Number(p.nombre_avis) > 0 && p.note != null ? (
+                        <span style={{ fontSize: '0.75rem', color: '#f59e0b' }}>
+                          ⭐ {Number(p.note).toFixed(1)} ({p.nombre_avis} {lang === 'ar' ? 'تقييم' : 'avis'})
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
+                          {lang === 'ar' ? 'لا توجد تقييمات' : 'Aucun avis'}
+                        </span>
+                      )}
                     </td>
                   ))}
                 </tr>
