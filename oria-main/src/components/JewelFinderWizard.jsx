@@ -67,7 +67,13 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
     const pool = (products && products.length > 0) ? products : fetchedProducts;
     if (!pool || pool.length === 0) return [];
 
-    return pool.map(product => {
+    const withinBudget = pool.filter(product => {
+      if (!answers.budget) return true;
+      const price = Number(product.prix);
+      return Number.isFinite(price) && price <= Number(answers.budget);
+    });
+
+    return withinBudget.map(product => {
       let score = 0;
       let totalCriteria = 4;
 
@@ -146,17 +152,9 @@ export default function JewelFinderWizard({ isOpen, onClose, products = [], onSe
         score += 1;
       }
 
-      // 4. Budget match
+      // 4. Budget match (the hard maximum was applied before ranking above).
       if (answers.budget) {
-        if (product.prix <= answers.budget) {
-          score += 1;
-        } else if (product.prix <= answers.budget * 1.15) {
-          score += 0.75;
-        } else if (product.prix <= answers.budget * 1.35) {
-          score += 0.45;
-        } else {
-          score += 0.25;
-        }
+        score += 1;
       } else {
         score += 1;
       }

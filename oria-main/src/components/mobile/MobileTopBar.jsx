@@ -120,13 +120,16 @@ export default function MobileTopBar({
         <div className="mobile-search-section">
           <div className="mobile-search-box">
             <span className="search-symbol">🔍</span>
+            <label className="sr-only" htmlFor="mobile-marketplace-search">
+              {isAr ? 'البحث في المجوهرات' : 'Rechercher dans le catalogue'}
+            </label>
             <input 
               type="text"
+              id="mobile-marketplace-search"
               className="mobile-search-field"
               placeholder={isAr ? "ابحث عن مجوهرات، خاتم، سوار..." : "Rechercher un bijou, bague, bracelet..."}
               value={searchQuery}
               onChange={e => onSearchChange(e.target.value)}
-              aria-label={isAr ? "البحث في المجوهرات" : "Recherche"}
             />
             {searchQuery ? (
               <button 

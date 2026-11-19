@@ -151,8 +151,12 @@ export default function Footer({ onNavigate, user }) {
             {isAr ? 'احصلوا حصرياً على تنبيهات بأندر قطع المجوهرات المستعملة وأحدث التشكيلات الفاخرة.' : 'Recevez en avant-première les alertes pépites seconde main et les nouvelles créations joaillières.'}
           </p>
           <form onSubmit={handleSubscribe} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <label htmlFor="newsletter-email" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-light-gray)' }}>
+              {isAr ? 'البريد الإلكتروني' : 'Adresse e-mail'}
+            </label>
             <input 
               type="email"
+              id="newsletter-email"
               required
               placeholder={isAr ? 'بريدكم الإلكتروني...' : 'Votre email...'}
               value={newsletterEmail}

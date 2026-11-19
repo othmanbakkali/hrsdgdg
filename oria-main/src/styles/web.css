@@ -127,6 +127,22 @@
   box-shadow: 0 0 0 3px rgba(179, 135, 40, 0.15);
 }
 
+.change-password-input,
+.change-password-input:focus {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff !important;
+}
+
+.change-password-input:-webkit-autofill,
+.change-password-input:-webkit-autofill:hover,
+.change-password-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff !important;
+  box-shadow: 0 0 0 1000px #171820 inset !important;
+  transition: background-color 99999s ease-out 0s !important;
+}
+
 .jewelia-search-icon {
   position: absolute;
   left: 14px;
@@ -1314,6 +1330,38 @@ footer .pwa-nav-install-btn:hover .pwa-btn-label {
   transition: color 0.2s ease;
 }
 
+.avito-card-title:focus-visible {
+  outline: 3px solid var(--primary-gold) !important;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.catalog-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.catalog-loading-card {
+  min-height: 300px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: linear-gradient(100deg, var(--bg-card) 25%, var(--bg-surface-elevated) 45%, var(--bg-card) 65%);
+  background-size: 200% 100%;
+  animation: catalog-shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes catalog-shimmer {
+  to { background-position-x: -200%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-loading-card {
+    animation: none;
+  }
+}
+
 .avito-white-card:hover .avito-card-title {
   color: var(--primary-gold);
 }
@@ -2021,9 +2069,10 @@ body.dark-theme .cart-drawer-footer {
   width: 100%;
   height: 420px;
   border-radius: 16px;
-  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #faf8f5 65%, #f2ede4 100%);
+  background: radial-gradient(circle at 50% 45%, var(--bg-surface) 0%, var(--bg-ivory) 65%, var(--bg-beige) 100%);
   border: 1.5px solid rgba(179, 135, 40, 0.28);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-card), inset 0 1px 0 color-mix(in srgb, var(--bg-surface) 75%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2035,7 +2084,13 @@ body.dark-theme .cart-drawer-footer {
 
 .detail-main-img-wrap:hover {
   border-color: rgba(179, 135, 40, 0.55);
-  box-shadow: 0 16px 44px rgba(179, 135, 40, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-card-hover);
+  box-shadow: var(--shadow-card-hover), inset 0 1px 0 color-mix(in srgb, var(--bg-surface) 75%, transparent);
+}
+
+[data-theme="dark"] .detail-main-img-wrap,
+.dark-theme .detail-main-img-wrap {
+  border-color: var(--border-gold);
 }
 
 .detail-main-img {
@@ -2650,22 +2705,74 @@ body.dark-theme .cart-drawer-footer {
 }
 
 .auth-text-input.has-toggle {
-  padding-right: 48px !important;
+  /* Reserve space on the same side as the visibility button in both directions. */
+  padding-inline-end: 48px !important;
 }
 
-[dir="rtl"] .auth-text-input.has-toggle {
-  padding-right: 18px !important;
-  padding-left: 48px !important;
+.auth-text-input.has-toggle:-webkit-autofill,
+.auth-text-input.has-toggle:-webkit-autofill:hover,
+.auth-text-input.has-toggle:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-white, #ffffff) !important;
+  caret-color: var(--text-white, #ffffff) !important;
+  /* Keep the browser's autofill paint from covering the input's reserved padding. */
+  transition: background-color 99999s ease-out 0s !important;
 }
 
 .auth-select-input {
   cursor: pointer;
   appearance: auto;
+  color-scheme: light;
+  color: #111827 !important;
+  background-color: #ffffff !important;
+  border-color: rgba(179, 135, 40, 0.4) !important;
+}
+
+.auth-select-input option {
+  color: #111827;
+  background-color: #ffffff;
+}
+
+.auth-select-input option:hover,
+.auth-select-input option:checked {
+  color: #111827;
+  background-color: #f3eee3;
+}
+
+.auth-select-input:focus {
+  outline: 2px solid rgba(179, 135, 40, 0.5) !important;
+  outline-offset: 2px;
+}
+
+[data-theme="dark"] .auth-select-input,
+.dark-theme .auth-select-input {
+  color-scheme: dark;
+  color: #f3f4f6 !important;
+  background-color: #181924 !important;
+  border-color: rgba(212, 175, 55, 0.5) !important;
+}
+
+[data-theme="dark"] .auth-select-input option,
+.dark-theme .auth-select-input option {
+  color: #f3f4f6;
+  background-color: #181924;
+}
+
+[data-theme="dark"] .auth-select-input option:hover,
+[data-theme="dark"] .auth-select-input option:checked,
+.dark-theme .auth-select-input option:hover,
+.dark-theme .auth-select-input option:checked {
+  color: #ffffff;
+  background-color: #34303a;
+}
+
+[data-theme="dark"] .auth-select-input:focus,
+.dark-theme .auth-select-input:focus {
+  outline-color: rgba(212, 175, 55, 0.7) !important;
 }
 
 .auth-pwd-toggle-btn {
   position: absolute;
-  right: 12px;
+  inset-inline-end: 12px;
   background: transparent;
   border: none;
   font-size: 1.15rem;
@@ -3513,12 +3620,11 @@ body.dark-theme .cart-drawer-footer {
 }
 
 .auth-phone-input {
-  padding-left: 42px !important;
+  padding-inline-start: 46px !important;
 }
 
 [dir="rtl"] .auth-phone-input {
-  padding-left: 16px !important;
-  padding-right: 42px !important;
+  padding-inline-start: 46px !important;
 }
 
 .auth-field-micro-hint {

@@ -111,12 +111,13 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
 
       const firstHandCount = matches.filter(m => m.type_vente === 'FIRST_HAND').length;
       const secondHandCount = matches.filter(m => m.type_vente === 'SECOND_HAND').length;
+      const auctionCount = matches.filter(m => m.type_vente === 'AUCTION' || m.disponibilite === 'enchere').length;
 
       let aiContent = '';
       if (!isFallback) {
         aiContent = isAr 
-          ? `✨ وجدت ${matches.length} قطعة مجوهرات تطابق معاييركم بدقة (الميزانية ≤ ${maxBudget.toLocaleString()} درهم):\n\n• ${firstHandCount} قطعة جديدة بالضمان والفاتورة\n• ${secondHandCount} قطعة مستعملة ومفحوصة أصلياً`
-          : `✨ J'ai sélectionné ${matches.length} bijoux correspondant à votre demande (budget ≤ ${maxBudget.toLocaleString()} DH) :\n\n• ${firstHandCount} bijou(x) Première Main (neufs avec garantie)\n• ${secondHandCount} bijou(x) Seconde Main (certifiés d'époque)`;
+          ? `✨ وجدت ${matches.length} قطعة مجوهرات تطابق معاييركم بدقة (الميزانية ≤ ${maxBudget.toLocaleString()} درهم):\n\n• ${firstHandCount} قطعة جديدة بالضمان والفاتورة\n• ${secondHandCount} قطعة مستعملة ومفحوصة أصلياً${auctionCount ? `\n• ${auctionCount} مزاد مباشر` : ''}`
+          : `✨ J'ai sélectionné ${matches.length} bijoux correspondant à votre demande (budget ≤ ${maxBudget.toLocaleString()} DH) :\n\n• ${firstHandCount} bijou(x) Première Main (neufs avec garantie)\n• ${secondHandCount} bijou(x) Seconde Main (certifiés d'époque)${auctionCount ? `\n• ${auctionCount} enchère(s) en direct` : ''}`;
       } else {
         aiContent = isAr
           ? `✨ إليكم تشكيلة مختارة من أرقى قطع المجوهرات الأكثر طلباً لدينا التي قد تناسب ذوقكم:`
@@ -334,6 +335,8 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
                   }}>
                     {msg.recommendations.map(item => {
                       const isFirstHand = item.type_vente === 'FIRST_HAND';
+                      const isSecondHand = item.type_vente === 'SECOND_HAND';
+                      const isAuction = item.type_vente === 'AUCTION' || item.disponibilite === 'enchere';
                       const itemTitle = (isAr && item.titre_ar) ? item.titre_ar : item.titre;
                       const itemImg = (item.images && item.images[0]) || '/gold-bars-perfect.png';
 
@@ -382,13 +385,15 @@ export default function AIAssistantModal({ isOpen, onClose, products = [], onSel
                                 padding: '1px 6px',
                                 borderRadius: '4px',
                                 fontWeight: 800,
-                                background: isFirstHand ? 'rgba(16, 185, 129, 0.15)' : 'rgba(212, 175, 55, 0.15)',
-                                color: isFirstHand ? '#10b981' : '#f6b22b',
-                                border: isFirstHand ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(212, 175, 55, 0.3)'
+                                background: isFirstHand ? 'rgba(16, 185, 129, 0.15)' : isSecondHand ? 'rgba(212, 175, 55, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: isFirstHand ? '#10b981' : isSecondHand ? '#f6b22b' : '#f87171',
+                                border: isFirstHand ? '1px solid rgba(16, 185, 129, 0.3)' : isSecondHand ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
                               }}>
-                                {isFirstHand 
-                                  ? (isAr ? 'جديد (أصلي)' : 'Première Main') 
-                                  : (isAr ? 'مستعمل معتمد' : 'Seconde Main')}
+                                {isFirstHand
+                                  ? (isAr ? 'جديد (أصلي)' : 'Première Main')
+                                  : isSecondHand
+                                    ? (isAr ? 'مستعمل معتمد' : 'Seconde Main')
+                                    : isAuction ? (isAr ? 'مزاد مباشر' : 'Enchère') : (isAr ? 'مجوهرات' : 'Bijou')}
                               </span>
                             </div>
                             <div style={{

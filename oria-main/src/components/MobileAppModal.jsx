@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { usePWA } from '../pwa/usePWA';
 
@@ -10,6 +10,31 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
   const [activeTab, setActiveTab] = useState('android');
   const [showAndroidGuide, setShowAndroidGuide] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
+  const closeButtonRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const trigger = document.activeElement;
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.cancelAnimationFrame(focusFrame);
+      window.requestAnimationFrame(() => {
+        if (trigger && trigger.isConnected && typeof trigger.focus === 'function') trigger.focus();
+      });
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -86,6 +111,7 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
         {/* Close Button */}
         <button
           type="button"
+          ref={closeButtonRef}
           onClick={onClose}
           aria-label={isAr ? 'إغلاق' : 'Fermer'}
           style={{

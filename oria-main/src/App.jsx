@@ -291,8 +291,12 @@ function MainLayout() {
           {/* Desktop Central Search Bar */}
           <div className="jewelia-search-wrapper">
             <span className="jewelia-search-icon">🔍</span>
+            <label className="sr-only" htmlFor="desktop-marketplace-search">
+              {lang === 'ar' ? 'البحث في المجوهرات' : 'Rechercher dans le catalogue'}
+            </label>
             <input 
               type="text" 
+              id="desktop-marketplace-search"
               className="jewelia-search-input"
               placeholder={lang === 'ar' ? 'ابحث عن مجوهرات، خاتم، سوار، ذهب 18 قيراط...' : 'Rechercher un bijou, bague, bracelet, or 18k...'}
               value={searchQuery}

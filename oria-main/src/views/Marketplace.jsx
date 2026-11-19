@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { matchProduct } from '../utils/searchEngine';
+import { matchProduct, scoreProductRelevance } from '../utils/searchEngine';
 import { isSameCity, getCityDisplayName } from '../utils/moroccanCities';
 import MobileProductCard from '../components/mobile/MobileProductCard';
 import ProductCard from '../components/ProductCard';
@@ -172,6 +172,10 @@ export default function Marketplace({
     if (sortBy === 'price_desc') return b.prix - a.prix;
     if (sortBy === 'rating') return (b.note || 0) - (a.note || 0);
     if (sortBy === 'popular') return (b.favoris_count || 0) - (a.favoris_count || 0);
+    if (searchQuery) {
+      const relevanceDiff = scoreProductRelevance(b, searchQuery) - scoreProductRelevance(a, searchQuery);
+      if (relevanceDiff !== 0) return relevanceDiff;
+    }
     
     // 'newest' (default fallback: du récent au plus ancien)
     const dateA = new Date(a.date_creation || a.created_at || 0).getTime();
@@ -485,7 +489,7 @@ export default function Marketplace({
           {/* Header Bar */}
           <div className="products-grid-header">
             <div className="products-count-text">
-              <span className="results-badge">{sortedProducts.length}</span>
+              <span className="results-badge">{loading ? '…' : sortedProducts.length}</span>
               <span>{lang === 'ar' ? 'قطعة مجوهرات متوفرة' : 'bijoux disponibles'}</span>
               {selectedCity && (
                 <span className="city-filter-highlight" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -615,7 +619,7 @@ export default function Marketplace({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '1.2rem' }}>🔍</span>
                 <span style={{ fontSize: '0.9rem', color: 'var(--text-dark)' }}>
-                  {lang === 'ar' ? 'نتائج البحث عن :' : 'Résultats pour :'} <strong style={{ color: 'var(--primary-gold)' }}>« {searchQuery} »</strong> ({sortedProducts.length})
+                  {lang === 'ar' ? 'نتائج البحث عن :' : 'Résultats pour :'} <strong style={{ color: 'var(--primary-gold)' }}>« {searchQuery} »</strong> ({loading ? '…' : sortedProducts.length})
                 </span>
               </div>
               <button
@@ -637,8 +641,13 @@ export default function Marketplace({
             </div>
           )}
 
-          {/* Empty state */}
-          {sortedProducts.length === 0 ? (
+          {/* Keep a loading state distinct from a genuinely empty result set. */}
+          {loading ? (
+            <div className="catalog-loading-grid" role="status" aria-live="polite" aria-label={lang === 'ar' ? 'جاري تحميل المجوهرات' : 'Chargement du catalogue'}>
+              <span className="sr-only">{lang === 'ar' ? 'جاري تحميل المجوهرات…' : 'Chargement du catalogue…'}</span>
+              {Array.from({ length: 6 }, (_, index) => <div className="catalog-loading-card" key={index} aria-hidden="true" />)}
+            </div>
+          ) : sortedProducts.length === 0 ? (
             <div className="empty-results-box">
               <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '16px' }}>🔍</span>
               <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>

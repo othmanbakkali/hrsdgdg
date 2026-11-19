@@ -270,7 +270,7 @@ app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '30d' }));
 
 function processImages(images) {
   if (!images) return [];
-  const list = Array.isArray(images) ? images : [images];
+  const list = [...new Set(Array.isArray(images) ? images : [images])];
   return list.map(img => {
     if (typeof img === 'string' && img.startsWith('data:image/')) {
       try {
@@ -1607,6 +1607,7 @@ app.post('/api/bijoux', (req, res) => {
 
   const finalTitreFr = titre_fr || titre || '';
   const finalDescFr = description_fr || description || '';
+  const processedProductImages = processImages(images);
 
   const newProduct = {
     id: 'b_' + Math.random().toString(36).substr(2, 9),
@@ -1633,7 +1634,7 @@ app.post('/api/bijoux', (req, res) => {
     style: style || 'Moderne',
     occasion: occasion || 'Cadeau',
     pour_qui: pour_qui || 'Femme',
-    images: (processImages(images) && processImages(images).length > 0) ? processImages(images) : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'],
+    images: processedProductImages.length > 0 ? [...new Set(processedProductImages)] : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'],
     video: req.body.video || null,
     disponibilite: effectiveDisponibilite,
     city: city || 'Casablanca',

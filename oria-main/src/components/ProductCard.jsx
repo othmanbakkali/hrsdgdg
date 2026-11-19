@@ -57,7 +57,7 @@ export default function ProductCard({
 
   const sellerRawPhone = product.vendeur_phone || product.telephone || product.phone || '';
   const sellerCleanPhone = formatWhatsAppPhone(sellerRawPhone);
-  const hasValidPhone = Boolean(sellerCleanPhone && sellerCleanPhone.length >= 11);
+  const hasValidPhone = /^212[5-7]\d{8}$/.test(sellerCleanPhone);
 
   // Public direct product URL
   const productUrl = typeof window !== 'undefined' 
@@ -101,7 +101,7 @@ Merci.`;
 
   const whatsappUrl = hasValidPhone 
     ? `https://wa.me/${sellerCleanPhone}?text=${encodeURIComponent(whatsappPreFilledText)}`
-    : '#';
+    : `https://wa.me/?text=${encodeURIComponent(whatsappPreFilledText)}`;
 
   const handleWhatsAppClick = (e) => {
     e.stopPropagation();
@@ -110,7 +110,7 @@ Merci.`;
       return;
     }
     if (!hasValidPhone) {
-      alert(isAr ? 'رقم هاتف البائع غير متوفر حالياً.' : 'Le numéro WhatsApp de ce vendeur n\'est pas encore renseigné.');
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
       return;
     }
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
@@ -336,12 +336,30 @@ Merci.`;
       <div style={{ padding: '8px 10px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
         <div style={{ minWidth: 0, width: '100%' }}>
           {/* 2. Nom de l'article ou de la parure (avec retour à la ligne automatique sans déformer l'affichage) */}
-          <h4 
-            className="avito-card-title"
-            style={{
+          <h4 className="avito-card-title-heading" style={{ margin: 0, minWidth: 0, width: '100%' }}>
+            <button
+              type="button"
+              className="avito-card-title"
+              disabled={!onSelectProduct}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelectProduct && onSelectProduct(product);
+              }}
+              aria-label={`${lang === 'ar' ? 'عرض تفاصيل' : 'Voir la fiche de'} ${displayTitle}`}
+              style={{
+              display: '-webkit-box',
+              width: '100%',
+              minWidth: 0,
+              padding: 0,
+              border: 'none',
+              background: 'transparent',
+              appearance: 'none',
+              cursor: 'pointer',
               fontSize: '0.88rem',
               fontWeight: 700,
               color: '#0f172a',
+              fontFamily: 'inherit',
+              textAlign: 'start',
               margin: '0 0 4px 0',
               lineHeight: 1.35,
               display: '-webkit-box',
@@ -357,9 +375,10 @@ Merci.`;
               minWidth: 0,
               boxSizing: 'border-box'
             }}
-            title={displayTitle}
-          >
-            {displayTitle}
+              title={displayTitle}
+            >
+              {displayTitle}
+            </button>
           </h4>
 
           {/* 3 & 4. Prix et Grammage sur la même ligne */}

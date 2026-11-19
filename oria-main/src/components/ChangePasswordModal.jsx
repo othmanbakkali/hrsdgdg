@@ -277,7 +277,7 @@ export default function ChangePasswordModal({ isOpen, onClose, isFirstLogin = fa
               <div style={{ position: 'relative' }}>
                 <input 
                   type={showCurrent ? 'text' : 'password'}
-                  className="jewelia-search-input"
+                  className="jewelia-search-input change-password-input"
                   style={{
                     width: '100%',
                     padding: '10px 42px 10px 14px',
@@ -340,7 +340,7 @@ export default function ChangePasswordModal({ isOpen, onClose, isFirstLogin = fa
             <div style={{ position: 'relative' }}>
               <input 
                 type={showNew ? 'text' : 'password'}
-                className="jewelia-search-input"
+                className="jewelia-search-input change-password-input"
                 style={{
                   width: '100%',
                   padding: '10px 42px 10px 14px',
@@ -399,7 +399,7 @@ export default function ChangePasswordModal({ isOpen, onClose, isFirstLogin = fa
             <div style={{ position: 'relative' }}>
               <input 
                 type={showConfirm ? 'text' : 'password'}
-                className="jewelia-search-input"
+                className="jewelia-search-input change-password-input"
                 style={{
                   width: '100%',
                   padding: '10px 42px 10px 14px',

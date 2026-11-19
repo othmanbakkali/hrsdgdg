@@ -47,6 +47,8 @@ const DEFAULT_SUGGESTIONS = {
 export default function MerchantDashboard({ onOpenSellModal, onOpenChangePassword }) {
   const { user } = useAuth();
   const { lang, t } = useLanguage();
+  const isFrench = lang === 'fr';
+  const tr = (fr, ar) => isFrench ? fr : ar;
 
   const [activeTab, setActiveTab] = useState('listings'); // 'listings', 'orders', 'add-product', 'sales-history', 'verifications'
   const [stats, setStats] = useState({ totalSales: 0, totalCommission: 0, netEarnings: 0, itemsSold: 0 });
@@ -58,7 +60,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
   // Multi-image and translation states for the Add Product form
   const [customImageUrl, setCustomImageUrl] = useState('');
-  const [productLangTab, setProductLangTab] = useState('ar'); // 'ar' or 'fr'
+  const [productLangTab, setProductLangTab] = useState(lang === 'fr' ? 'fr' : 'ar'); // 'ar' or 'fr'
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateSuccessMsg, setTranslateSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,6 +99,10 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   });
 
   const isFetchingRef = useRef(false);
+
+  useEffect(() => {
+    setProductLangTab(lang === 'fr' ? 'fr' : 'ar');
+  }, [lang]);
 
   const fetchMerchantData = async () => {
     if (!user || isFetchingRef.current) return;
@@ -242,7 +248,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     if (!file) return;
 
     if (file.size > 50 * 1024 * 1024) {
-      setVideoError(lang === 'ar' ? '⚠️ حجم ملف الفيديو كبير جداً (أقصى حد هو 50 ميغابايت).' : '⚠️ La vidéo est trop volumineuse (maximum 50 Mo).');
+      setVideoError(tr('⚠️ Le fichier vidéo est trop volumineux (maximum 50 Mo).', '⚠️ حجم ملف الفيديو كبير جداً (أقصى حد هو 50 ميغابايت).'));
       e.target.value = '';
       return;
     }
@@ -260,9 +266,10 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         setPendingVideoFile(file);
         setShowTrimModal(true);
         setVideoError(
-          lang === 'ar'
-            ? `⚠️ مدة هذا الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى (10 ثوانٍ). تم فتح أداة القص لاختيار مقطع 10 ثوانٍ.`
-            : `⚠️ La durée (${Math.round(duration)}s) dépasse 10 secondes. Vous pouvez découper un extrait de 10s.`
+          tr(
+            `⚠️ La durée (${Math.round(duration)} s) dépasse la limite de 10 secondes. L’outil de découpe vous permet de choisir un extrait.`,
+            `⚠️ مدة هذا الفيديو (${Math.round(duration)} ثوانٍ) تتجاوز الحد الأقصى (10 ثوانٍ). تم فتح أداة القص لاختيار مقطع 10 ثوانٍ.`
+          )
         );
         return;
       }
@@ -285,7 +292,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
     tempVideo.onerror = () => {
       URL.revokeObjectURL(blobUrl);
-      setVideoError(lang === 'ar' ? 'تعذر قراءة صيغة الفيديو. يرجى تجربة ملف آخر (MP4/WebM/MOV).' : 'Format vidéo non supporté. Essayez un autre fichier.');
+      setVideoError(tr('Format vidéo non pris en charge. Essayez un autre fichier (MP4/WebM/MOV).', 'تعذر قراءة صيغة الفيديو. يرجى تجربة ملف آخر (MP4/WebM/MOV).'));
     };
 
     tempVideo.src = blobUrl;
@@ -328,7 +335,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       : (productForm.description_ar || '');
 
     if (!title.trim() && !desc.trim()) {
-      alert('يرجى ملء العنوان أو الوصف أولاً لبدء الترجمة التلقائية.');
+      alert(tr('Renseignez d’abord un titre ou une description pour lancer la traduction.', 'يرجى ملء العنوان أو الوصف أولاً لبدء الترجمة التلقائية.'));
       return;
     }
 
@@ -368,7 +375,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             }
             return updated;
           });
-          setTranslateSuccessMsg('✓ تمت الترجمة التلقائية بنجاح!');
+          setTranslateSuccessMsg(tr('✓ Traduction automatique réussie !', '✓ تمت الترجمة التلقائية بنجاح!'));
           setTimeout(() => setTranslateSuccessMsg(''), 4000);
         }
       }
@@ -466,12 +473,12 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     const finalTitle = productForm.titre_ar || productForm.titre_fr || productForm.titre;
 
     if (!finalTitle || !effectivePrice) {
-      alert('يرجى ملء عنوان القطعة والسعر.');
+      alert(tr('Veuillez renseigner le titre et le prix de l’article.', 'يرجى ملء عنوان القطعة والسعر.'));
       return;
     }
 
     if (!productForm.images || productForm.images.length === 0) {
-      alert('يرجى إضافة صورة واحدة على الأقل للقطعة (عبر رفع الملفات أو الرابط).');
+      alert(tr('Ajoutez au moins une photo de l’article (fichier ou URL).', 'يرجى إضافة صورة واحدة على الأقل للقطعة (عبر رفع الملفات أو الرابط).'));
       return;
     }
 
@@ -540,7 +547,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           });
         }
 
-        alert(isAuction ? '🔨 تم إنشاء ونشر المزاد المباشر بنجاح!' : '✨ تمت إضافة قطعة المجوهرات ونشرها بنجاح في المتجر!');
+        alert(isAuction ? tr('🔨 Enchère créée et publiée !', '🔨 تم إنشاء ونشر المزاد المباشر بنجاح!') : tr('✨ Article ajouté et publié dans la boutique !', '✨ تمت إضافة قطعة المجوهرات ونشرها بنجاح في المتجر!'));
 
         // Reset form
         setProductForm({
@@ -570,18 +577,18 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         setActiveTab('listings');
       } else {
         const errData = await res.json();
-        alert(errData.message || 'حدث خطأ أثناء حفظ القطعة.');
+        alert(errData.message || tr('Une erreur est survenue pendant l’enregistrement de l’article.', 'حدث خطأ أثناء حفظ القطعة.'));
       }
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ في الاتصال بالخادم.');
+      alert(tr('Impossible de joindre le serveur.', 'حدث خطأ في الاتصال بالخادم.'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleMarkAsSold = async (productId) => {
-    if (!confirm('تأكيد تسجيل هذه القطعة كـ «مباعة» ؟\n\nوفقاً لنظام المنصة، ستظل القطعة ظاهرة مع شارة «مباع» لمدة 12 ساعة قبل إخفائها تلقائياً من الكتالوج العام.')) return;
+    if (!confirm(tr('Confirmer la vente ?\n\nL’article restera visible avec le badge « Vendu » pendant 12 heures, puis sera masqué du catalogue.', 'تأكيد تسجيل هذه القطعة كـ «مباعة» ؟\n\nوفقاً لنظام المنصة، ستظل القطعة ظاهرة مع شارة «مباع» لمدة 12 ساعة قبل إخفائها تلقائياً من الكتالوج العام.'))) return;
     try {
       const res = await fetch(`${API_URL}/bijoux/${productId}/vendre`, {
         method: 'POST',
@@ -593,14 +600,14 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       });
       const data = await res.json();
       if (res.ok) {
-        alert('✓ تم تأكيد البيع بنجاح! القطعة الآن مؤشرة كـ «مباعة» وستُحفظ في السجل التجاري.');
+        alert(tr('✓ Vente confirmée ! L’article a été marqué comme vendu et ajouté à l’historique.', '✓ تم تأكيد البيع بنجاح! القطعة الآن مؤشرة كـ «مباعة» وستُحفظ في السجل التجاري.'));
         fetchMerchantData();
       } else {
-        alert(data.message || 'تعذر تسجيل القطعة كمباعة.');
+        alert(data.message || tr('Impossible d’enregistrer la vente.', 'تعذر تسجيل القطعة كمباعة.'));
       }
     } catch (err) {
       console.error('Error marking as sold:', err);
-      alert('خطأ في الاتصال بالشبكة.');
+      alert(tr('Erreur de connexion réseau.', 'خطأ في الاتصال بالشبكة.'));
     }
   };
 
@@ -620,7 +627,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   };
 
   const handleDeleteProduct = async (productId) => {
-    if (!confirm('هل أنت متأكد من حذف هذه القطعة من الكتالوج ؟')) return;
+    if (!confirm(tr('Voulez-vous vraiment supprimer cet article du catalogue ?', 'هل أنت متأكد من حذف هذه القطعة من الكتالوج ؟'))) return;
     try {
       await fetch(`${API_URL}/bijoux/${productId}`, { method: 'DELETE' });
       fetchMerchantData();
@@ -630,7 +637,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   };
 
   return (
-    <div dir="rtl" style={{ maxWidth: '1440px', margin: '0 auto', padding: '36px 24px 60px', textAlign: 'right' }}>
+    <div dir={isFrench ? 'ltr' : 'rtl'} style={{ maxWidth: '1440px', margin: '0 auto', padding: '36px 24px 60px', textAlign: isFrench ? 'left' : 'right' }}>
       {/* 1. SELLER HEADER */}
       <div style={{
         background: 'var(--bg-card)',
@@ -649,7 +656,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '1.8rem' }}>🏪</span>
             <h2 style={{ fontSize: '1.6rem', color: 'var(--text-white)' }}>
-              {user?.shopName || user?.nom || 'دار المجوهرات'}
+              {user?.shopName || user?.nom || tr('Bijouterie', 'دار المجوهرات')}
             </h2>
 
             <span style={{
@@ -661,11 +668,11 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               fontWeight: 700,
               border: '1px solid rgba(16, 185, 129, 0.3)'
             }}>
-              ✓ تاجر معتمد وموثق
+              {tr('✓ Vendeur agréé et vérifié', '✓ تاجر معتمد وموثق')}
             </span>
           </div>
           <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-            فضاء التاجر المهني • إدارة الكتالوج، طلبيات الزبائن وتتبع المبيعات
+            {tr('Espace professionnel • Catalogue, commandes et suivi des ventes', 'فضاء التاجر المهني • إدارة الكتالوج، طلبيات الزبائن وتتبع المبيعات')}
           </p>
         </div>
 
@@ -675,9 +682,9 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               onClick={onOpenChangePassword}
               className="btn-jewelia-secondary"
               style={{ padding: '10px 18px', fontSize: '0.88rem' }}
-              title="تغيير كلمة المرور"
+              title={tr('Modifier le mot de passe', 'تغيير كلمة المرور')}
             >
-              🔐 كلمة المرور
+              🔐 {tr('Mot de passe', 'كلمة المرور')}
             </button>
           )}
 
@@ -686,7 +693,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             className="btn-jewelia-secondary"
             style={{ padding: '10px 20px', fontSize: '0.88rem' }}
           >
-            📜 سجل المبيعات
+            📜 {tr('Historique des ventes', 'سجل المبيعات')}
           </button>
 
           <button
@@ -694,7 +701,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             className="btn-jewelia-primary"
             style={{ padding: '10px 22px', fontSize: '0.88rem' }}
           >
-            ➕ إضافة قطعة مجوهرات
+            ➕ {tr('Ajouter un article', 'إضافة قطعة مجوهرات')}
           </button>
         </div>
       </div>
@@ -703,26 +710,26 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            إجمالي المبيعات
+            {tr('Ventes totales', 'إجمالي المبيعات')}
           </span>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.totalSales?.toLocaleString()} درهم
+            {stats.totalSales?.toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
           </h3>
           <span style={{ fontSize: '0.75rem', color: 'var(--success-green)', fontWeight: 600 }}>
-            حجم المعاملات المنجزة
+            {tr('Volume des transactions réalisées', 'حجم المعاملات المنجزة')}
           </span>
         </div>
 
         {/* INDICATEUR ARGENT (REVENUS NETS) */}
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            صافي الأرباح (المدخول الصافي)
+            {tr('Revenu net', 'صافي الأرباح (المدخول الصافي)')}
           </span>
           <h3 style={{ fontSize: '1.75rem', color: '#10b981', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.netEarnings?.toLocaleString()} درهم
+            {stats.netEarnings?.toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
           </h3>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
-            الرصيد المتاح • تاجر موثق
+            {tr('Solde disponible • Vendeur vérifié', 'الرصيد المتاح • تاجر موثق')}
           </span>
         </div>
 
@@ -730,27 +737,27 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              القطع المباعة
+              {tr('Articles vendus', 'القطع المباعة')}
             </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>✓ نشط</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>✓ {tr('Actif', 'نشط')}</span>
           </div>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {salesHistory.length} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>معاملة</span>
+            {salesHistory.length} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>{tr('transactions', 'معاملة')}</span>
           </h3>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '6px' }}>
-            يتم حفظ وأرشفة القطع تلقائياً بعد البيع
+            {tr('Les articles sont archivés automatiquement après leur vente', 'يتم حفظ وأرشفة القطع تلقائياً بعد البيع')}
           </div>
         </div>
 
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            الطلبيات الواردة
+            {tr('Commandes reçues', 'الطلبيات الواردة')}
           </span>
           <h3 style={{ fontSize: '1.75rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
             {orders.length}
           </h3>
           <span style={{ fontSize: '0.75rem', color: 'var(--primary-gold)' }}>
-            ⭐ تقييم التاجر 4.9/5
+            ⭐ {tr('Note vendeur 4,9/5', 'تقييم التاجر 4.9/5')}
           </span>
         </div>
       </div>
@@ -758,11 +765,11 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       {/* 3. NAVIGATION TABS */}
       <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '28px', overflowX: 'auto', paddingBottom: '6px' }}>
         {[
-          { id: 'listings', label: '💎 معروضاتي في المتجر', count: products.length },
-          { id: 'orders', label: '📦 الطلبيات الواردة', count: orders.length },
-          { id: 'add-product', label: '➕ إضافة قطعة مجوهرات', count: null },
-          { id: 'sales-history', label: '📜 سجل المبيعات', count: salesHistory.length, highlight: true },
-          { id: 'verifications', label: '🛡️ التوثيق والشهادات', count: products.filter(p => p.type_vente === 'SECOND_HAND').length }
+          { id: 'listings', label: tr('💎 Mes articles', '💎 معروضاتي في المتجر'), count: products.length },
+          { id: 'orders', label: tr('📦 Commandes reçues', '📦 الطلبيات الواردة'), count: orders.length },
+          { id: 'add-product', label: tr('➕ Ajouter un article', '➕ إضافة قطعة مجوهرات'), count: null },
+          { id: 'sales-history', label: tr('📜 Historique des ventes', '📜 سجل المبيعات'), count: salesHistory.length, highlight: true },
+          { id: 'verifications', label: tr('🛡️ Vérifications et certificats', '🛡️ التوثيق والشهادات'), count: products.filter(p => p.type_vente === 'SECOND_HAND').length }
         ].map(tab => (
           <button
             key={tab.id}
@@ -795,13 +802,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--border-gold)' }}>
               <span style={{ fontSize: '3rem', display: 'block', marginBottom: '14px' }}>💍</span>
               <h3 style={{ fontSize: '1.3rem', color: 'var(--text-white)', marginBottom: '8px' }}>
-                لا توجد أي قطع مجوهرات معروضة حالياً
+                {tr('Aucun article n’est encore en ligne', 'لا توجد أي قطع مجوهرات معروضة حالياً')}
               </h3>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '20px' }}>
-                ابدأ الآن بإضافة وعرض إبداعاتك ومجوهراتك الفاخرة للزبائن.
+                {tr('Ajoutez vos créations pour les présenter aux clients.', 'ابدأ الآن بإضافة وعرض إبداعاتك ومجوهراتك الفاخرة للزبائن.')}
               </p>
               <button onClick={() => setActiveTab('add-product')} className="btn-jewelia-primary">
-                ➕ إضافة أول قطعة مجوهرات
+                ➕ {tr('Ajouter mon premier article', 'إضافة أول قطعة مجوهرات')}
               </button>
             </div>
           ) : (
@@ -814,22 +821,22 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       {isSold ? (
                         <div style={{ padding: '8px 10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          ✓ تم البيع {p.sold_at ? `(${new Date(p.sold_at).toLocaleDateString('ar-MA')})` : ''}
+                          ✓ {tr('Vendu', 'تم البيع')} {p.sold_at ? `(${new Date(p.sold_at).toLocaleDateString(isFrench ? 'fr-FR' : 'ar-MA')})` : ''}
                         </div>
                       ) : (
                         <button
                           onClick={() => handleMarkAsSold(p.id)}
                           style={{ padding: '8px 10px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#fff', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
-                          title="تسجيل القطعة كمباعة (تظل 12 ساعة ثم تؤرشف)"
+                          title={tr('Marquer comme vendu (masqué après 12 h)', 'تسجيل القطعة كمباعة (تظل 12 ساعة ثم تؤرشف)')}
                         >
-                          🏷️ تسجيل كـ مباع
+                          🏷️ {tr('Marquer comme vendu', 'تسجيل كـ مباع')}
                         </button>
                       )}
                       <button
                         onClick={() => handleDeleteProduct(p.id)}
                         style={{ padding: '8px 10px', background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.2s ease' }}
                       >
-                        🗑️ حذف القطعة
+                        🗑️ {tr('Supprimer l’article', 'حذف القطعة')}
                       </button>
                     </div>
                   </div>
@@ -847,10 +854,10 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--border-gold)' }}>
               <span style={{ fontSize: '3rem', display: 'block', marginBottom: '14px' }}>📦</span>
               <h3 style={{ fontSize: '1.3rem', color: 'var(--text-white)', marginBottom: '8px' }}>
-                لا توجد أي طلبيات في الانتظار
+                {tr('Aucune commande en attente', 'لا توجد أي طلبيات في الانتظار')}
               </h3>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-                ستظهر طلبيات الزبائن وتفاصيل الشراء هنا بمجرد تأكيد طلباتهم.
+                {tr('Les commandes et leurs détails apparaîtront ici dès leur confirmation.', 'ستظهر طلبيات الزبائن وتفاصيل الشراء هنا بمجرد تأكيد طلباتهم.')}
               </p>
             </div>
           ) : (
@@ -859,25 +866,25 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
                     <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary-gold)' }}>
-                      طلب رقم #{order.id}
+                      {tr('Commande n°', 'طلب رقم')} #{order.id}
                     </span>
                     <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginRight: '12px' }}>
-                      الزبون : <strong style={{ color: 'var(--text-white)' }}>{order.client_nom}</strong> (<span dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate' }}>{order.client_telephone}</span>) • {order.client_ville}
+                      {tr('Client :', 'الزبون :')} <strong style={{ color: 'var(--text-white)' }}>{order.client_nom}</strong> (<span dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate' }}>{order.client_telephone}</span>) • {order.client_ville}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }}>الحالة :</span>
+                    <span style={{ fontSize: '0.84rem', color: 'var(--text-gray)' }}>{tr('Statut :', 'الحالة :')}</span>
                     <select
                       value={order.statut}
                       onChange={e => handleUpdateOrderStatus(order.id, e.target.value)}
                       style={{ padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border-gold)', color: 'var(--text-white)', borderRadius: '6px', fontSize: '0.84rem', outline: 'none' }}
                     >
-                      <option value="Confirmed">مؤكدة (Confirmed)</option>
-                      <option value="In Preparation">قيد التجهيز (In Preparation)</option>
-                      <option value="Shipped">تم الشحن 🚚 (Shipped)</option>
-                      <option value="Delivered">تم التوصيل ✓ (Delivered)</option>
-                      <option value="Cancelled">ملغاة (Cancelled)</option>
+                      <option value="Confirmed">{tr('Confirmée', 'مؤكدة')} (Confirmed)</option>
+                      <option value="In Preparation">{tr('En préparation', 'قيد التجهيز')} (In Preparation)</option>
+                      <option value="Shipped">{tr('Expédiée 🚚', 'تم الشحن 🚚')} (Shipped)</option>
+                      <option value="Delivered">{tr('Livrée ✓', 'تم التوصيل ✓')} (Delivered)</option>
+                      <option value="Cancelled">{tr('Annulée', 'ملغاة')} (Cancelled)</option>
                     </select>
                   </div>
                 </div>
@@ -886,7 +893,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                   {(order.items || []).map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', padding: '8px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
                       <span>{item.titre} (x{item.quantite})</span>
-                      <strong style={{ color: 'var(--primary-gold)' }}>{(item.prix * item.quantite).toLocaleString()} درهم</strong>
+                      <strong style={{ color: 'var(--primary-gold)' }}>{(item.prix * item.quantite).toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}</strong>
                     </div>
                   ))}
                 </div>
@@ -900,7 +907,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       {activeTab === 'add-product' && (
         <div style={{ maxWidth: '650px', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '28px', boxShadow: 'var(--shadow-card)' }}>
           <h3 style={{ color: 'var(--primary-gold)', marginBottom: '22px', fontFamily: 'var(--font-serif)', fontSize: '1.5rem', textAlign: 'center' }}>
-            قطعة مجوهرات جديدة
+            {tr('Nouvel article', 'قطعة مجوهرات جديدة')}
           </h3>
 
           <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -914,15 +921,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                 <label style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-white)' }}>
                   <span style={{ fontSize: '1.2rem' }}>📷🎥</span>
-                  <span>صور وفيديو القطعة (أضف صور أو فيديو 10 ثوانٍ كحد أقصى)</span>
+                  <span>{tr('Photos et vidéo (10 secondes maximum)', 'صور وفيديو القطعة (أضف صور أو فيديو 10 ثوانٍ كحد أقصى)')}</span>
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', background: 'rgba(0,0,0,0.3)', padding: '3px 8px', borderRadius: '12px', border: '1px solid var(--border-gold)' }}>
-                    {(productForm.images || []).length} صورة
+                    {(productForm.images || []).length} {tr('photo(s)', 'صورة')}
                   </span>
                   {productForm.video && (
                     <span style={{ fontSize: '0.78rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', padding: '3px 8px', borderRadius: '12px', border: '1px solid #10b981', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      🎥 فيديو ({videoDuration ? `${videoDuration}s` : '10s max'})
+                      🎥 {tr('Vidéo', 'فيديو')} ({videoDuration ? `${videoDuration}s` : '10s max'})
                     </span>
                   )}
                 </div>
@@ -974,7 +981,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       <button
                         type="button"
                         onClick={handleRemoveVideo}
-                        title="حذف الفيديو"
+                        title={tr('Supprimer la vidéo', 'حذف الفيديو')}
                         style={{
                           position: 'absolute',
                           top: '4px',
@@ -1013,7 +1020,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     >
                       <img
                         src={img}
-                        alt={`صورة ${idx + 1}`}
+                        alt={`${tr('Photo', 'صورة')} ${idx + 1}`}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
 
@@ -1030,13 +1037,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                           padding: '2px 4px',
                           borderRadius: '4px'
                         }}>
-                          ★ الرئيسية
+                          ★ {tr('Principale', 'الرئيسية')}
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleSetPrimaryImage(idx)}
-                          title="تعيين كصورة رئيسية"
+                          title={tr('Définir comme photo principale', 'تعيين كصورة رئيسية')}
                           style={{
                             position: 'absolute',
                             top: '4px',
@@ -1050,7 +1057,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                             padding: '2px 4px'
                           }}
                         >
-                          ★ تعيين
+                          ★ {tr('Définir', 'تعيين')}
                         </button>
                       )}
 
@@ -1058,7 +1065,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(idx)}
-                        title="حذف هذه الصورة"
+                        title={tr('Supprimer cette photo', 'حذف هذه الصورة')}
                         style={{
                           position: 'absolute',
                           top: '4px',
@@ -1107,7 +1114,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     margin: 0
                   }}
                 >
-                  📁 اختيار صورة أو عدة صور
+                  📁 {tr('Choisir une ou plusieurs photos', 'اختيار صورة أو عدة صور')}
                 </label>
 
                 {/* زر رفع فيديو 10 ثوانٍ كحد أقصى */}
@@ -1134,13 +1141,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     color: productForm.video ? '#10b981' : undefined
                   }}
                 >
-                  🎥 {productForm.video ? 'تغيير فيديو القطعة (10s max)' : 'فيديو القطعة (10s max)'}
+                  🎥 {productForm.video ? tr('Remplacer la vidéo (10 s max)', 'تغيير فيديو القطعة (10s max)') : tr('Vidéo de l’article (10 s max)', 'فيديو القطعة (10s max)')}
                 </label>
 
                 <div style={{ display: 'flex', flex: 1, minWidth: '220px', gap: '6px' }}>
                   <input
                     type="text"
-                    placeholder="أو الصق رابط صورة/فيديو..."
+                    placeholder={tr('Ou collez l’URL d’une photo ou vidéo…', 'أو الصق رابط صورة/فيديو...')}
                     value={customImageUrl}
                     onChange={e => setCustomImageUrl(e.target.value)}
                     className="filter-select-control"
@@ -1152,7 +1159,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     className="btn-jewelia-secondary"
                     style={{ padding: '6px 12px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
                   >
-                    ➕ إضافة
+                    ➕ {tr('Ajouter', 'إضافة')}
                   </button>
                 </div>
               </div>
@@ -1197,7 +1204,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       }}
                     >
                       <span>✂️</span>
-                      <span>{lang === 'ar' ? 'قص وتقصير الفيديو (10s)' : 'Découper la vidéo (10s)'}</span>
+              <span>{tr('Découper la vidéo (10 s)', 'قص وتقصير الفيديو (10s)')}</span>
                     </button>
                   )}
                 </div>
@@ -1248,7 +1255,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       color: productLangTab === 'ar' ? '#000' : 'var(--text-gray)'
                     }}
                   >
-                    🇲🇦 العربية {productForm.titre_ar ? '✓' : ''}
+                    🇲🇦 {tr('Arabe', 'العربية')} {productForm.titre_ar ? '✓' : ''}
                   </button>
                   <button
                     type="button"
@@ -1287,9 +1294,9 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     cursor: isTranslating ? 'wait' : 'pointer',
                     boxShadow: '0 2px 8px rgba(212, 175, 55, 0.25)'
                   }}
-                  title="ترجمة تلقائية للمحتوى فوراً"
+                  title={tr('Traduire automatiquement le contenu', 'ترجمة تلقائية للمحتوى فوراً')}
                 >
-                  {isTranslating ? '⏳ جاري الترجمة...' : '✨ ترجمة تلقائية (عربي ⇄ فرنسي)'}
+                  {isTranslating ? tr('⏳ Traduction en cours…', '⏳ جاري الترجمة...') : tr('✨ Traduction automatique (arabe ⇄ français)', '✨ ترجمة تلقائية (عربي ⇄ فرنسي)')}
                 </button>
               </div>
 
@@ -1482,13 +1489,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
               <div>
                 <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
-                  الوزن (غ / g) *
+                  {tr('Poids (g)', 'الوزن (غ / g)')} *
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0.1"
-                  placeholder="مثال: 4.5"
+                  placeholder={tr('Ex. : 4,5', 'مثال: 4.5')}
                   className="filter-select-control"
                   value={productForm.gramme}
                   onChange={e => handleGrammeChange(e.target.value)}
@@ -1498,13 +1505,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
               <div>
                 <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
-                  سعر الغرام (درهم / غ)
+                  {tr('Prix au gramme (DH/g)', 'سعر الغرام (درهم / غ)')}
                 </label>
                 <input
                   type="number"
                   step="1"
                   min="0"
-                  placeholder="مثال: 850"
+                  placeholder={tr('Ex. : 850', 'مثال: 850')}
                   className="filter-select-control"
                   value={productForm.prix_gramme || ''}
                   onChange={e => handlePrixGrammeChange(e.target.value)}
@@ -1528,7 +1535,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                       }}
                     >
-                      {pg} {lang === 'ar' ? 'د.م' : 'DH'}
+                      {pg} {tr('DH', 'د.م')}
                     </button>
                   ))}
                 </div>
@@ -1536,12 +1543,12 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
 
               <div>
                 <label className="filter-label" style={{ marginBottom: '6px', display: 'block', fontWeight: 700 }}>
-                  سعر القطعة (درهم / MAD) *
+                  {tr('Prix de l’article (DH)', 'سعر القطعة (درهم / MAD)')} *
                 </label>
                 <input
                   type="number"
                   min="100"
-                  placeholder="مثال: 6400"
+                  placeholder={tr('Ex. : 6 400', 'مثال: 6400')}
                   className="filter-select-control"
                   value={productForm.prix}
                   onChange={e => handleTotalPriceChange(e.target.value)}
@@ -1566,8 +1573,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               }}>
                 <span style={{ fontSize: '1.2rem' }}>🧮</span>
                 <span>
-                  <strong>سعر القطعة المحسوب : </strong>
-                  {productForm.gramme} غرام × {productForm.prix_gramme} درهم/غ = <strong style={{ color: '#fff', fontSize: '1.05rem', textDecoration: 'underline' }}>{Math.round(parseFloat(productForm.gramme) * parseFloat(productForm.prix_gramme)).toLocaleString()} درهم</strong>
+                  <strong>{tr('Prix calculé :', 'سعر القطعة المحسوب :')} </strong>
+                  {productForm.gramme} {tr('g', 'غرام')} × {productForm.prix_gramme} {tr('DH/g', 'درهم/غ')} = <strong style={{ color: '#fff', fontSize: '1.05rem', textDecoration: 'underline' }}>{Math.round(parseFloat(productForm.gramme) * parseFloat(productForm.prix_gramme)).toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}</strong>
                 </span>
               </div>
             )}
@@ -1575,38 +1582,38 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             {/* 5. الفئة وقائمة المدن المغربية */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
-                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>فئة المجوهرات *</label>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>{tr('Catégorie de bijou', 'فئة المجوهرات')} *</label>
                 <select
                   className="filter-select-control"
                   value={productForm.category_id}
                   onChange={e => setProductForm({ ...productForm, category_id: e.target.value })}
                   required
                 >
-                  <option value="">-- اختر الفئة --</option>
+                  <option value="">{tr('-- Choisir une catégorie --', '-- اختر الفئة --')}</option>
                   {categories && categories.length > 0 ? (
                     categories.map(c => (
                       <option key={c.id} value={c.id}>
-                        {c.icon || '💎'} {c.nom_ar || c.nom_fr || c.nom}
+                        {c.icon || '💎'} {isFrench ? (c.nom_fr || c.nom) : (c.nom_ar || c.nom)}
                       </option>
                     ))
                   ) : (
                     <>
-                      <option value="cat_rings">💍 خواتم (Bagues)</option>
-                      <option value="cat_necklaces">📿 قلادات وسلاسل (Colliers)</option>
-                      <option value="cat_bracelets">🔗 أساور (Bracelets)</option>
-                      <option value="cat_earrings">👂 أقراط وحلق (Boucles d'oreilles)</option>
-                      <option value="cat_sets">💎 أطقم كاملة (Parures)</option>
-                      <option value="cat_men">⌚ مجوهرات رجالية (Bijoux Homme)</option>
-                      <option value="cat_boxes">🎁 علب وهدايا فاخرة (Coffrets)</option>
-                      <option value="cat_traditional">👑 مجوهرات تقليدية (Traditionnels)</option>
-                      <option value="cat_artisanal">🏺 قطعة أثرية نادرة (Pièce antique)</option>
+                      <option value="cat_rings">💍 {tr('Bagues', 'خواتم')}</option>
+                      <option value="cat_necklaces">📿 {tr('Colliers', 'قلادات وسلاسل')}</option>
+                      <option value="cat_bracelets">🔗 {tr('Bracelets', 'أساور')}</option>
+                      <option value="cat_earrings">👂 {tr('Boucles d’oreilles', 'أقراط وحلق')}</option>
+                      <option value="cat_sets">💎 {tr('Parures', 'أطقم كاملة')}</option>
+                      <option value="cat_men">⌚ {tr('Bijoux homme', 'مجوهرات رجالية')}</option>
+                      <option value="cat_boxes">🎁 {tr('Coffrets et cadeaux', 'علب وهدايا فاخرة')}</option>
+                      <option value="cat_traditional">👑 {tr('Bijoux traditionnels', 'مجوهرات تقليدية')}</option>
+                      <option value="cat_artisanal">🏺 {tr('Pièce antique', 'قطعة أثرية نادرة')}</option>
                     </>
                   )}
                 </select>
               </div>
 
               <div>
-                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>المدينة *</label>
+                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>{tr('Ville', 'المدينة')} *</label>
                 <select
                   className="filter-select-control"
                   value={productForm.city || 'Casablanca'}
@@ -1615,22 +1622,22 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 >
                   {ALL_MOROCCAN_CITIES.map(city => (
                     <option key={city.key} value={city.key}>
-                      {`${city.ar} (${city.fr})`}
+                      {isFrench ? city.fr : city.ar}
                     </option>
                   ))}
-                  <option value="Autre">مدينة أخرى</option>
+                  <option value="Autre">{tr('Autre ville', 'مدينة أخرى')}</option>
                 </select>
               </div>
             </div>
 
             {/* 6. حالة القطعة (ÉTAT DU BIJOU) */}
             <div style={{ marginBottom: '4px' }}>
-              <label className="filter-label" style={{ marginBottom: '8px', display: 'block' }}>حالة القطعة</label>
+              <label className="filter-label" style={{ marginBottom: '8px', display: 'block' }}>{tr('État de l’article', 'حالة القطعة')}</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 {[
-                  { value: 'Neuf', label: '✨ جديد' },
-                  { value: 'Occasion', label: '🏷️ مستعمل ممتازة' },
-                  { value: 'Artisanal', label: '🏺 قطعة أثرية' }
+                  { value: 'Neuf', label: tr('✨ Neuf', '✨ جديد') },
+                  { value: 'Occasion', label: tr('🏷️ Occasion', '🏷️ مستعمل ممتازة') },
+                  { value: 'Artisanal', label: tr('🏺 Pièce artisanale', '🏺 قطعة أثرية') }
                 ].map(item => {
                   const isActive = (productForm.etat || 'Neuf') === item.value;
                   return (
@@ -1665,14 +1672,14 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             {productForm.category_id === 'cat_sets' && (
               <div style={{ background: 'rgba(212, 175, 55, 0.05)', border: '1px dashed var(--primary-gold)', borderRadius: 'var(--radius-sm)', padding: '16px' }}>
                 <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--primary-gold)', marginBottom: '4px' }}>
-                  💎 تفصيل وزن مكونات الطقم (اختياري)
+                  💎 {tr('Poids des éléments de la parure (facultatif)', 'تفصيل وزن مكونات الطقم (اختياري)')}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginBottom: '12px' }}>
-                  سجل الوزن الفردي لكل عنصر لتوفير أقصى قدر من الشفافية للمشترين.
+                  {tr('Indiquez le poids de chaque élément pour informer les acheteurs.', 'سجل الوزن الفردي لكل عنصر لتوفير أقصى قدر من الشفافية للمشترين.')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
                   <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>قلادة (غ)</label>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>{tr('Collier (g)', 'قلادة (غ)')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1686,7 +1693,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     />
                   </div>
                   <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>سوار (غ)</label>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>{tr('Bracelet (g)', 'سوار (غ)')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1700,7 +1707,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     />
                   </div>
                   <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>خاتم (غ)</label>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>{tr('Bague (g)', 'خاتم (غ)')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1714,7 +1721,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     />
                   </div>
                   <div>
-                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>أقراط (غ)</label>
+                    <label className="filter-label" style={{ fontSize: '0.78rem' }}>{tr('Boucles d’oreilles (g)', 'أقراط (غ)')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1738,7 +1745,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               className="btn-jewelia-primary"
               style={{ marginTop: '10px', padding: '12px 24px', fontSize: '1rem', fontWeight: 800 }}
             >
-              {isSubmitting ? '⏳ جاري الحفظ والنشر...' : '✨ حفظ ونشر القطعة في المتجر'}
+              {isSubmitting ? tr('⏳ Enregistrement et publication…', '⏳ جاري الحفظ والنشر...') : tr('✨ Enregistrer et publier l’article', '✨ حفظ ونشر القطعة في المتجر')}
             </button>
           </form>
         </div>
@@ -1750,19 +1757,19 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '22px' }}>
             <div>
               <div className="hero-pill-badge" style={{ background: 'rgba(212, 175, 55, 0.15)', borderColor: 'var(--primary-gold)', color: 'var(--primary-gold)', marginBottom: '8px' }}>
-                📜 السجل التجاري للمبيعات
+                📜 {tr('Historique des ventes', 'السجل التجاري للمبيعات')}
               </div>
               <h3 style={{ fontSize: '1.4rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', margin: 0 }}>
-                سجل المبيعات والصفقات المكتملة
+                {tr('Ventes et transactions terminées', 'سجل المبيعات والصفقات المكتملة')}
               </h3>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem', margin: '4px 0 0' }}>
-                تتبع دقيق لجميع القطع المباعة في المتجر. يتم الاحتفاظ بها لأرشفة معاملات التاجر وتوثيقها.
+                {tr('Suivez les articles vendus. Les transactions sont conservées dans cet historique.', 'تتبع دقيق لجميع القطع المباعة في المتجر. يتم الاحتفاظ بها لأرشفة معاملات التاجر وتوثيقها.')}
               </p>
             </div>
             <div style={{ textAlign: 'left' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase' }}>إجمالي حجم المبيعات</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase' }}>{tr('Montant total des ventes', 'إجمالي حجم المبيعات')}</span>
               <div style={{ fontSize: '1.6rem', color: 'var(--primary-gold)', fontWeight: 800 }}>
-                {salesHistory.reduce((sum, s) => sum + (Number(s.prix_vente) || 0), 0).toLocaleString()} درهم
+                {salesHistory.reduce((sum, s) => sum + (Number(s.prix_vente) || 0), 0).toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
               </div>
             </div>
           </div>
@@ -1770,23 +1777,23 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
           {salesHistory.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '50px 20px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-gold)' }}>
               <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '10px' }}>📦</span>
-              <h4 style={{ color: 'var(--text-white)', fontSize: '1.1rem', marginBottom: '6px' }}>لا توجد أي مبيعات مسجلة حتى الآن</h4>
+              <h4 style={{ color: 'var(--text-white)', fontSize: '1.1rem', marginBottom: '6px' }}>{tr('Aucune vente enregistrée pour le moment', 'لا توجد أي مبيعات مسجلة حتى الآن')}</h4>
               <p style={{ color: 'var(--text-gray)', fontSize: '0.88rem' }}>
-                عند بيع أي قطعة أو تسجيلها كمباعة، ستتم أرشفة كامل معلوماتها (المرجع، السعر، التاريخ ورقم العملية) هنا.
+                {tr('Les références, prix, dates et numéros de transaction seront archivés ici après chaque vente.', 'عند بيع أي قطعة أو تسجيلها كمباعة، ستتم أرشفة كامل معلوماتها (المرجع، السعر، التاريخ ورقم العملية) هنا.')}
               </p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'right' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: isFrench ? 'left' : 'right' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-gold)', color: 'var(--text-gray)' }}>
-                    <th style={{ padding: '12px 14px' }}>مرجع القطعة</th>
-                    <th style={{ padding: '12px 14px' }}>اسم القطعة</th>
-                    <th style={{ padding: '12px 14px' }}>التاجر</th>
-                    <th style={{ padding: '12px 14px' }}>سعر البيع</th>
-                    <th style={{ padding: '12px 14px' }}>التاريخ والوقت</th>
-                    <th style={{ padding: '12px 14px' }}>الحالة</th>
-                    <th style={{ padding: '12px 14px' }}>رقم المعاملة</th>
+                    <th style={{ padding: '12px 14px' }}>{tr('Référence', 'مرجع القطعة')}</th>
+                    <th style={{ padding: '12px 14px' }}>{tr('Article', 'اسم القطعة')}</th>
+                    <th style={{ padding: '12px 14px' }}>{tr('Vendeur', 'التاجر')}</th>
+                    <th style={{ padding: '12px 14px' }}>{tr('Prix de vente', 'سعر البيع')}</th>
+                    <th style={{ padding: '12px 14px' }}>{tr('Date et heure', 'التاريخ والوقت')}</th>
+                    <th style={{ padding: '12px 14px' }}>{tr('Statut', 'الحالة')}</th>
+                    <th style={{ padding: '12px 14px' }}>{tr('Transaction', 'رقم المعاملة')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1799,17 +1806,17 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         {s.titre || s.article_nom}
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-gray)' }}>
-                        {s.vendeur_nom || 'متجر معتمد'}
+                        {s.vendeur_nom || tr('Boutique agréée', 'متجر معتمد')}
                       </td>
                       <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--primary-gold)' }}>
-                        {(Number(s.prix_vente) || 0).toLocaleString()} درهم
+                        {(Number(s.prix_vente) || 0).toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-gray)', fontSize: '0.82rem' }}>
-                        {s.sold_at ? new Date(s.sold_at).toLocaleString('ar-MA') : 'مؤكد'}
+                        {s.sold_at ? new Date(s.sold_at).toLocaleString(isFrench ? 'fr-FR' : 'ar-MA') : tr('Confirmée', 'مؤكد')}
                       </td>
                       <td style={{ padding: '12px 14px' }}>
                         <span style={{ padding: '3px 10px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontSize: '0.75rem', fontWeight: 800, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                          ✓ مباع
+                          ✓ {tr('Vendu', 'مباع')}
                         </span>
                       </td>
                       <td style={{ padding: '12px 14px', fontFamily: 'monospace', color: 'var(--text-gray)', fontSize: '0.78rem' }}>
@@ -1828,13 +1835,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       {activeTab === 'verifications' && (
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '30px', boxShadow: 'var(--shadow-card)' }}>
           <div className="hero-pill-badge" style={{ background: 'rgba(6, 182, 212, 0.15)', borderColor: '#06b6d4', color: '#0891b2' }}>
-            🛡️ مختبر الخبرة والتوثيق المعتمد
+            🛡️ {tr('Centre agréé d’expertise et de certification', 'مختبر الخبرة والتوثيق المعتمد')}
           </div>
           <h3 style={{ fontSize: '1.4rem', color: 'var(--text-white)', marginBottom: '10px' }}>
-            متابعة توثيق وفحص القطع الخاصة بك
+            {tr('Suivi de l’expertise et de la certification de vos articles', 'متابعة توثيق وفحص القطع الخاصة بك')}
           </h3>
           <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '24px' }}>
-            تحصل كل قطعة مجوهرات مستعملة على شهادة رقمية موثقة بعد الفحص والتأكد من نقاء الذهب والأحجار الكريمة.
+            {tr('Chaque bijou d’occasion reçoit un certificat numérique après vérification de l’or et des pierres.', 'تحصل كل قطعة مجوهرات مستعملة على شهادة رقمية موثقة بعد الفحص والتأكد من نقاء الذهب والأحجار الكريمة.')}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1843,12 +1850,12 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 <div>
                   <strong style={{ color: 'var(--text-white)' }}>{p.titre}</strong>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-gray)', marginTop: '2px' }}>
-                    الحالة : {p.etat} • السنة : {p.annee || '2026'} • الشهادة : {p.certificat ? 'متوفرة' : 'قيد الفحص'}
+                    {tr('État :', 'الحالة :')} {p.etat} • {tr('Année :', 'السنة :')} {p.annee || '2026'} • {tr('Certificat :', 'الشهادة :')} {p.certificat ? tr('Disponible', 'متوفرة') : tr('En cours de vérification', 'قيد الفحص')}
                   </div>
                 </div>
 
                 <span style={{ padding: '4px 12px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: '#059669', fontWeight: 700, fontSize: '0.8rem', border: '1px solid #10b981' }}>
-                  ✓ {p.authentifie || 'تم التوثيق'}
+                  ✓ {p.authentifie || tr('Certifié', 'تم التوثيق')}
                 </span>
               </div>
             ))}

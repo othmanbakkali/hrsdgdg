@@ -28,6 +28,7 @@
   
   /* Luxury Surface & Backgrounds */
   --bg-slate: #f8f7f4;
+  --bg-body: #f8f7f4;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #faf9f6;
   --bg-card: #ffffff;
@@ -93,6 +94,7 @@
   --second-hand-text: #a7f3d0;
   
   --bg-slate: #0b0c10;
+  --bg-body: #0b0c10;
   --bg-surface: #12131a;
   --bg-surface-elevated: #181924;
   --bg-card: #151621;
@@ -100,8 +102,8 @@
   --bg-input: #181924;
   --bg-header: rgba(14, 15, 22, 0.92);
   --bg-modal: #151621;
-  --bg-ivory: #faf8f5;
-  --bg-beige: #f5efe6;
+  --bg-ivory: #12131a;
+  --bg-beige: #1c1d2b;
   
   --text-white: #f3f4f6;
   --text-dark: #f3f4f6;
@@ -132,7 +134,7 @@ html {
 }
 
 body {
-  background-color: var(--bg-slate);
+  background-color: var(--bg-body);
   background-image: 
     radial-gradient(ellipse 90% 50% at 50% -10%, rgba(179, 135, 40, 0.06) 0%, transparent 60%),
     radial-gradient(ellipse 70% 40% at 100% 30%, rgba(179, 135, 40, 0.03) 0%, transparent 50%),
@@ -225,6 +227,18 @@ html {
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(212, 175, 55, 0.4) transparent;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Typography Hierarchy */

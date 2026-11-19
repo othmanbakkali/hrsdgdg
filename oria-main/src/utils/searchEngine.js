@@ -168,6 +168,44 @@ export function matchProduct(product, rawQuery) {
   if (!rawQuery || !rawQuery.trim()) return true;
 
   const { cleanedQuery, maxPrice, targetGram } = parseQueryConstraints(rawQuery);
+  const normalizedQuery = normalizeSearchText(rawQuery);
+
+  // Explicit product types, metals, purity and audience are hard constraints.
+  // They prevent broad synonym matches (for example a parure matching "bague").
+  const categoryMatchers = [
+    { id: 'cat_rings', terms: ['bague', 'bagues', 'alliance', 'alliances', 'solitaire', 'solitaires', 'chevaliere', 'خاتم', 'خواتم', 'محبس'] },
+    { id: 'cat_bracelets', terms: ['bracelet', 'bracelets', 'jonc', 'joncs', 'gourmette', 'سوار', 'اساور', 'اسوارة'] },
+    { id: 'cat_necklaces', terms: ['collier', 'colliers', 'chaine', 'chaines', 'pendentif', 'pendentifs', 'sautoir', 'سلسله', 'سلاسل', 'قلاده', 'عقد'] },
+    { id: 'cat_earrings', terms: ['boucle', 'boucles', 'creole', 'dormeuse', 'puce', 'حلق', 'حلقات', 'اقراط'] },
+    { id: 'cat_sets', terms: ['parure', 'parures', 'طقم', 'اطقم'] },
+    { id: 'cat_watches', terms: ['montre', 'montres', 'ساعة', 'ساعه', 'ساعات'] }
+  ];
+  const explicitCategory = categoryMatchers.find(({ terms }) => terms.some(term => normalizedQuery.includes(normalizeSearchText(term))));
+  if (explicitCategory && product.category_id !== explicitCategory.id) return false;
+
+  const normalizedMaterial = normalizeSearchText(product.matiere || '');
+  const normalizedPurity = normalizeSearchText(`${product.purete || ''} ${product.carats || ''}`);
+  const productText = normalizeSearchText([
+    product.titre_fr, product.titre, product.titre_ar, product.titre_en,
+    product.description_fr, product.description, product.description_ar,
+    product.matiere, product.purete, product.carats
+  ].filter(Boolean).join(' '));
+  if (/(^| )or( |$)|gold|ذهب/.test(normalizedQuery)) {
+    if (/argent|silver|فضه/.test(normalizedMaterial) || !/(^| )or( |$)|gold|ذهب/.test(`${normalizedMaterial} ${productText}`)) return false;
+  }
+  if (/(^| )18k( |$)|18 carat|18 karat|750/.test(normalizedQuery)) {
+    if (!/(^| )18k( |$)|18 carat|18 karat|750/.test(`${normalizedPurity} ${productText}`)) return false;
+  }
+  const audience = /(^| )femme(s)?( |$)|نساء|نسائي/.test(normalizedQuery)
+    ? 'femme'
+    : /(^| )homme(s)?( |$)|رجال|رجالي/.test(normalizedQuery) ? 'homme' : '';
+  if (audience) {
+    const productAudience = normalizeSearchText(product.pour_qui || '');
+    const hasAudience = productAudience
+      ? productAudience.includes(audience)
+      : productText.includes(audience);
+    if (!hasAudience) return false;
+  }
 
   // 1. Check max price constraint
   if (maxPrice !== null && !isNaN(maxPrice)) {
@@ -238,4 +276,27 @@ export function matchProduct(product, rawQuery) {
   // Multi-word natural query: match if at least 60% of tokens match
   const matchedTokensCount = queryTokens.filter(checkToken).length;
   return (matchedTokensCount / queryTokens.length) >= 0.6;
+}
+
+// Higher scores mean the product matches more of the query in its title and
+// structured attributes, allowing the marketplace to rank targeted searches.
+export function scoreProductRelevance(product, rawQuery) {
+  if (!rawQuery || !rawQuery.trim()) return 0;
+  const { cleanedQuery } = parseQueryConstraints(rawQuery);
+  const query = normalizeSearchText(cleanedQuery);
+  const tokens = query.split(/\s+/).filter(token => token.length > 1);
+  const title = normalizeSearchText([product.titre_fr, product.titre, product.titre_ar, product.titre_en].filter(Boolean).join(' '));
+  const attributes = normalizeSearchText([
+    product.category_id, product.matiere, product.purete, product.carats,
+    product.pour_qui, product.pierre, product.style
+  ].filter(Boolean).join(' '));
+  const details = normalizeSearchText([
+    product.description_fr, product.description, product.description_ar,
+    product.description_en, product.occasion
+  ].filter(Boolean).join(' '));
+
+  const tokenScore = tokens.reduce((score, token) => score + (
+    title.includes(token) ? 5 : attributes.includes(token) ? 3 : details.includes(token) ? 1 : 0
+  ), 0);
+  return tokenScore + (query && title.includes(query) ? 10 : 0);
 }
