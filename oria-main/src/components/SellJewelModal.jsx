@@ -335,9 +335,12 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
       const reader = new FileReader();
       reader.onloadend = () => {
         if (reader.result) {
+          const cleanDataUrl = typeof reader.result === 'string'
+            ? reader.result.replace(/^data:video\/([a-zA-Z0-9]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,')
+            : reader.result;
           setFormData(prev => ({
             ...prev,
-            video: reader.result
+            video: cleanDataUrl
           }));
           setToastMessage(
             lang === 'ar'
@@ -733,9 +736,11 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                       <video 
                         src={formData.video} 
                         controls 
+                        autoPlay 
                         playsInline 
                         loop 
                         muted 
+                        preload="auto"
                         className="sell-thumb-video-elem" 
                       />
                       <span className="thumb-video-badge">▶ {videoDuration ? `${videoDuration}s` : '10s MAX'}</span>

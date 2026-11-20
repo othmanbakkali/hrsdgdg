@@ -884,9 +884,12 @@ function AdminLayout() {
       const reader = new FileReader();
       reader.onloadend = () => {
         if (reader.result) {
+          const cleanDataUrl = typeof reader.result === 'string'
+            ? reader.result.replace(/^data:video\/([a-zA-Z0-9]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,')
+            : reader.result;
           setProductForm(prev => ({
             ...prev,
-            video: reader.result
+            video: cleanDataUrl
           }));
         }
       };
@@ -6520,9 +6523,11 @@ function AdminLayout() {
                       <video 
                         src={productForm.video} 
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        autoPlay
                         muted 
                         playsInline 
                         loop
+                        preload="auto"
                       />
                       <span style={{
                         position: 'absolute',

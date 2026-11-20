@@ -199,12 +199,12 @@ export default function VideoTrimModal({
     video.pause();
 
     try {
-      // Find supported mime type
+      // Find supported mime type for MediaRecorder
       const candidates = [
-        'video/mp4;codecs=avc1,mp4a.40.2',
+        'video/mp4;codecs=avc1',
         'video/mp4',
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=vp8',
+        'video/webm;codecs=vp9',
         'video/webm'
       ];
       let chosenMime = '';
@@ -221,6 +221,10 @@ export default function VideoTrimModal({
         throw new Error(isAr ? 'المتصفح لا يدعم تسجيل وتقطيع الفيديو مباشرة.' : 'Ce navigateur ne supporte pas l\'enregistrement vidéo direct.');
       }
 
+      // Base MIME type for output Blob (avoiding ;codecs= parameters in data URLs that break mobile Safari/WebKit)
+      const isMp4 = chosenMime.toLowerCase().includes('mp4');
+      const cleanBlobType = isMp4 ? 'video/mp4' : 'video/webm';
+
       // Seek video to exact start
       video.currentTime = startTime;
       video.muted = muteAudio;
@@ -233,41 +237,49 @@ export default function VideoTrimModal({
         video.addEventListener('seeked', onSeeked);
       });
 
-      // Acquire MediaStream
-      let stream = null;
-      let usingCanvas = false;
+      // Canvas capture: ALWAYS render video frames to canvas to guarantee real visible video frames
+      // (avoiding the Chromium bug where video.captureStream() on local blob URLs records black compositor frames)
+      const canvas = canvasRef.current || document.createElement('canvas');
+      const vWidth = video.videoWidth || 720;
+      const vHeight = video.videoHeight || 720;
+      canvas.width = vWidth;
+      canvas.height = vHeight;
+      const ctx = canvas.getContext('2d');
+      try {
+        ctx.drawImage(video, 0, 0, vWidth, vHeight);
+      } catch (e) {}
 
-      if (typeof video.captureStream === 'function') {
-        try {
-          stream = video.captureStream();
-        } catch (e) {
-          console.warn('video.captureStream() not supported, falling back to canvas', e);
-        }
-      } else if (typeof video.mozCaptureStream === 'function') {
-        try {
-          stream = video.mozCaptureStream();
-        } catch (e) {}
-      }
+      // Acquire canvas media stream
+      const stream = canvas.captureStream ? canvas.captureStream(30) : (video.captureStream ? video.captureStream() : null);
 
-      // Fallback to canvas captureStream
       if (!stream) {
-        usingCanvas = true;
-        const canvas = canvasRef.current || document.createElement('canvas');
-        canvas.width = video.videoWidth || 720;
-        canvas.height = video.videoHeight || 720;
-        stream = canvas.captureStream(30);
+        throw new Error(isAr ? 'تعذر إنشاء تدفق الفيديو من المتصفح.' : 'Impossible d\'initialiser le flux vidéo.');
       }
 
-      // If audio is muted by user, disable audio tracks
-      if (muteAudio && stream) {
-        stream.getAudioTracks().forEach(track => {
-          track.enabled = false;
-        });
+      // If audio is not muted, attach audio tracks from the video element
+      if (!muteAudio) {
+        try {
+          let audioTracks = [];
+          if (typeof video.captureStream === 'function') {
+            const vStream = video.captureStream();
+            audioTracks = vStream.getAudioTracks ? vStream.getAudioTracks() : [];
+          } else if (typeof video.mozCaptureStream === 'function') {
+            const vStream = video.mozCaptureStream();
+            audioTracks = vStream.getAudioTracks ? vStream.getAudioTracks() : [];
+          }
+          audioTracks.forEach(track => {
+            try {
+              stream.addTrack(track);
+            } catch (e) {}
+          });
+        } catch (e) {
+          console.warn('Could not attach audio track:', e);
+        }
       }
 
       const recorder = new MediaRecorder(stream, {
         mimeType: chosenMime || undefined,
-        videoBitsPerSecond: 2500000
+        videoBitsPerSecond: 2500000 // 2.5 Mbps crisp mobile quality
       });
       mediaRecorderRef.current = recorder;
 
@@ -282,11 +294,14 @@ export default function VideoTrimModal({
         if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
         if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
-        const trimmedBlob = new Blob(chunks, { type: chosenMime || 'video/webm' });
+        // Always create Blob with clean MIME type (NO ;codecs=...) for maximum mobile compatibility
+        const trimmedBlob = new Blob(chunks, { type: cleanBlobType });
         const reader = new FileReader();
         reader.onloadend = () => {
-          if (reader.result) {
-            onTrimComplete(reader.result, clipDuration);
+          if (reader.result && typeof reader.result === 'string') {
+            // Guarantee data URL header is strictly clean data:video/mp4;base64,... or data:video/webm;base64,...
+            const cleanDataUrl = reader.result.replace(/^data:video\/[a-zA-Z0-9]+;codecs=[^;]+;base64,/, `data:${cleanBlobType};base64,`);
+            onTrimComplete(cleanDataUrl, clipDuration);
           } else {
             setTrimError(isAr ? 'حدث خطأ أثناء حفظ الفيديو المقصوص.' : 'Erreur lors de la sauvegarde de la vidéo découpée.');
             setIsTrimming(false);
@@ -301,24 +316,22 @@ export default function VideoTrimModal({
         setIsTrimming(false);
       };
 
-      // Start recording
+      // Start recording with 100ms chunk slices
       recorder.start(100);
 
-      // Play video
+      // Play video to record frames
       await video.play();
 
-      // If using canvas fallback, render each frame
-      if (usingCanvas) {
-        const canvas = canvasRef.current || document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const renderFrame = () => {
-          if (video && !video.paused && !video.ended) {
+      // Continuous render loop on canvas while playing
+      const renderFrame = () => {
+        if (video && !video.paused && !video.ended) {
+          try {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            animFrameRef.current = requestAnimationFrame(renderFrame);
-          }
-        };
-        renderFrame();
-      }
+          } catch (e) {}
+          animFrameRef.current = requestAnimationFrame(renderFrame);
+        }
+      };
+      animFrameRef.current = requestAnimationFrame(renderFrame);
 
       // Progress monitor and auto-stop when endTime reached
       const totalTrimMs = clipDuration * 1000;

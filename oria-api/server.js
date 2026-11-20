@@ -288,6 +288,13 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '30d' }));
 
+function sanitizeVideoUrl(video) {
+  if (!video || typeof video !== 'string') return null;
+  // Strip codec parameters from data URL that break mobile Safari/WebKit:
+  // e.g. data:video/mp4;codecs=avc1,mp4a.40.2;base64,... -> data:video/mp4;base64,...
+  return video.replace(/^data:video\/([a-zA-Z0-9]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,');
+}
+
 function processImages(images) {
   if (!images) return [];
   const list = [...new Set(Array.isArray(images) ? images : [images])];
@@ -1666,7 +1673,7 @@ app.post('/api/bijoux', (req, res) => {
     occasion: occasion || 'Cadeau',
     pour_qui: pour_qui || 'Femme',
     images: processedProductImages.length > 0 ? [...new Set(processedProductImages)] : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'],
-    video: req.body.video || null,
+    video: sanitizeVideoUrl(req.body.video),
     disponibilite: effectiveDisponibilite,
     city: city || 'Casablanca',
     stock: (stock !== undefined && stock !== null && stock !== '') ? (parseInt(stock) || 1) : 1,
@@ -1711,10 +1718,12 @@ app.put('/api/bijoux/:id', (req, res) => {
   const updatedTitreFr = req.body.titre_fr !== undefined ? req.body.titre_fr : (req.body.titre !== undefined ? req.body.titre : current.titre_fr);
   const updatedDescFr = req.body.description_fr !== undefined ? req.body.description_fr : (req.body.description !== undefined ? req.body.description : current.description_fr);
   const updatedImages = req.body.images !== undefined ? processImages(req.body.images) : current.images;
+  const updatedVideo = req.body.video !== undefined ? sanitizeVideoUrl(req.body.video) : current.video;
 
   db.bijoux[idx] = normalizeSecondHandCondition({
     ...current,
     ...req.body,
+    video: updatedVideo,
     images: updatedImages,
     titre: updatedTitreFr || current.titre,
     titre_fr: updatedTitreFr || current.titre_fr,
@@ -3175,25 +3184,30 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.3',
-  versionCode: 17,
+  version: '1.4.4',
+  versionCode: 18,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
-  releaseDate: '2026-11-19',
-  pwaCacheVersion: 'oria-pwa-v20',
-  title_fr: 'Mise à jour disponible (Routage direct WhatsApp & Liens fiches bijoux)',
-  title_ar: 'تحديث جديد متوفر (الفتح المباشر لروابط المجوهرات من واتساب)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible assurant l\'ouverture instantanée de la fiche du bijou sélectionné lors d\'un clic sur le lien WhatsApp.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن الفتح المباشر لبطاقة القطعة المختارة عند النقر على رابط طلب واتساب دون التوجيه للرئيسية.',
+  releaseDate: '2026-11-20',
+  pwaCacheVersion: 'oria-pwa-v21',
+  title_fr: 'Mise à jour disponible (Lecture vidéo optimale & Découpage haute compatibilité)',
+  title_ar: 'تحديث جديد متوفر (تشغيل الفيديو المباشر ومعالجة الشاشة السوداء)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible assurant la lecture fluide et immédiate des vidéos d\'offres sur mobile et desktop, avec un outil de découpage vidéo garanti sans écran noir.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن تشغيل مقاطع الفيديو الخاصة بالعروض بسلاسة ودون شاشة سوداء على جميع الهواتف والحواسيب، مع تحسين أداة القص.',
   changelog_fr: [
-    'Routage direct et automatique des fiches bijoux depuis les liens WhatsApp (?product=...)',
-    'Génération canonicale des URL produits vers https://hrsdgdg.sdbo.ma/?product=...',
-    'Synchronisation complète avec l\'historique du navigateur (ouverture, fermeture et retour)'
+    'Lecture vidéo instantanée et automatique (autoplay muted inline) dans la fiche produit',
+    'Nettoyage et standardisation des types MIME des vidéos (suppression des codecs incompatibles mobile)',
+    'Enregistrement vidéo par canvas 30fps garantissant des images réelles et nettes sans écran noir',
+    'Bouton de contrôle du son rapide dans le lecteur vidéo'
   ],
   changelog_ar: [
-    'توجيه وفتح فوري وتلقائي لبطاقة المجوهرات مباشرة من روابط واتساب المختارة',
-    'توليد عناوين رسمية ومباشرة للقطع https://hrsdgdg.sdbo.ma/?product=...',
+    'تشغيل فوري وتلقائي لمقاطع الفيديو داخل بطاقة تفاصيل القطعة دون شاشة سوداء',
+    'معالجة وتصحيح ترميز الفيديو لتوافقه الكامل مع هواتف آيفون وأندرويد',
+    'تقطيع وتسجيل الفيديو عبر كانفاس عالي الدقة يضمن ظهور الصور وحركتها بنقاء تام',
+    'زر سريع للتحكم في كتم وتشغيل الصوت'
+  ]
+};
     'مزامنة كاملة مع تاريخ المتصفح عند فتح وإغلاق بطاقة القطعة'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',

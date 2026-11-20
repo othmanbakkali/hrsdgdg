@@ -225,6 +225,15 @@ Merci.`;
   const [isHovered, setIsHovered] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const detailVideoRef = React.useRef(null);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const [videoLoadError, setVideoLoadError] = useState(false);
+
+  // Clean / normalize video data URL (safely stripping any ;codecs=... parameter that crashes mobile Safari / WebKit)
+  const cleanVideoSrc = React.useMemo(() => {
+    if (!product?.video || typeof product.video !== 'string') return null;
+    return product.video.replace(/^data:video\/([a-zA-Z0-9]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,');
+  }, [product?.video]);
 
   React.useEffect(() => {
     setActiveImageIndex(0);
@@ -558,22 +567,59 @@ Merci.`;
             </div>
 
             {/* Product 10s Video Showcase if available */}
-            {product?.video && (
+            {cleanVideoSrc && (
               <div className="product-video-showcase-box" style={{ marginTop: '14px' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: '700', color: '#2563eb', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>🎥</span>
-                  <span>{lang === 'ar' ? 'فيديو حقيقي للقطعة (10 ثوانٍ كحد أقصى) :' : 'Vidéo authentique de la pièce (10s max) :'}</span>
+                <div style={{ fontSize: '0.82rem', fontWeight: '700', color: '#2563eb', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🎥</span>
+                    <span>{lang === 'ar' ? 'فيديو حقيقي للقطعة (10 ثوانٍ كحد أقصى) :' : 'Vidéo authentique de la pièce (10s max) :'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (detailVideoRef.current) {
+                        const newMuted = !detailVideoRef.current.muted;
+                        detailVideoRef.current.muted = newMuted;
+                        setIsVideoMuted(newMuted);
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(37, 99, 235, 0.1)',
+                      border: '1px solid #3b82f6',
+                      borderRadius: '20px',
+                      color: '#2563eb',
+                      padding: '2px 8px',
+                      fontSize: '0.72rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {isVideoMuted ? (lang === 'ar' ? '🔇 كتم' : '🔇 Muet') : (lang === 'ar' ? '🔊 صوت' : '🔊 Son')}
+                  </button>
                 </div>
-                <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1.5px solid #3b82f6', background: '#0b0f19', boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)' }}>
-                  <video 
-                    key={product.id || product.video}
-                    src={product.video} 
-                    controls 
-                    playsInline 
-                    loop 
-                    muted 
-                    style={{ width: '100%', maxHeight: '220px', objectFit: 'contain', display: 'block' }} 
-                  />
+                <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1.5px solid #3b82f6', background: '#0b0f19', boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)', position: 'relative' }}>
+                  {!videoLoadError ? (
+                    <video 
+                      ref={detailVideoRef}
+                      key={product.id || cleanVideoSrc}
+                      src={cleanVideoSrc} 
+                      controls 
+                      autoPlay 
+                      playsInline 
+                      loop 
+                      muted 
+                      preload="auto"
+                      onError={() => setVideoLoadError(true)}
+                      style={{ width: '100%', maxHeight: '240px', objectFit: 'contain', display: 'block', background: '#000' }} 
+                    />
+                  ) : (
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '0.82rem' }}>
+                      <p style={{ margin: 0 }}>⚠️ {lang === 'ar' ? 'تعذر تشغيل هذا المقطع مباشرة في هذا المتصفح.' : 'Impossible de lire cette vidéo directement dans ce navigateur.'}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
