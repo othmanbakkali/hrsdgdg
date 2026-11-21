@@ -3184,28 +3184,26 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.4',
-  versionCode: 18,
+  version: '1.4.5',
+  versionCode: 19,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
-  releaseDate: '2026-11-20',
-  pwaCacheVersion: 'oria-pwa-v21',
-  title_fr: 'Mise à jour disponible (Lecture vidéo optimale & Découpage haute compatibilité)',
-  title_ar: 'تحديث جديد متوفر (تشغيل الفيديو المباشر ومعالجة الشاشة السوداء)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible assurant la lecture fluide et immédiate des vidéos d\'offres sur mobile et desktop, avec un outil de découpage vidéo garanti sans écran noir.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن تشغيل مقاطع الفيديو الخاصة بالعروض بسلاسة ودون شاشة سوداء على جميع الهواتف والحواسيب، مع تحسين أداة القص.',
+  releaseDate: '2026-11-21',
+  pwaCacheVersion: 'oria-pwa-v22',
+  title_fr: 'Mise à jour disponible (Contraste mode clair & Messages de recherche)',
+  title_ar: 'تحديث جديد متوفر (تحسين تباين الوضع الفاتح ورسائل البحث)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible assurant une lisibilité et un contraste parfaits du message d\'absence de résultat en mode clair comme en mode sombre.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن وضوحاً وتبايناً مثالياً لرسالة عدم وجود نتائج في الوضع الفاتح والداكن.',
   changelog_fr: [
-    'Lecture vidéo instantanée et automatique (autoplay muted inline) dans la fiche produit',
-    'Nettoyage et standardisation des types MIME des vidéos (suppression des codecs incompatibles mobile)',
-    'Enregistrement vidéo par canvas 30fps garantissant des images réelles et nettes sans écran noir',
-    'Bouton de contrôle du son rapide dans le lecteur vidéo'
+    'Correction de la couleur du message « Aucun bijou ne correspond » en mode clair',
+    'Application des variables CSS dynamiques (--text-dark) au composant d\'état vide',
+    'Mise en valeur élégante en or du terme recherché dans le message principal'
   ],
   changelog_ar: [
-    'تشغيل فوري وتلقائي لمقاطع الفيديو داخل بطاقة تفاصيل القطعة دون شاشة سوداء',
-    'معالجة وتصحيح ترميز الفيديو لتوافقه الكامل مع هواتف آيفون وأندرويد',
-    'تقطيع وتسجيل الفيديو عبر كانفاس عالي الدقة يضمن ظهور الصور وحركتها بنقاء تام',
-    'زر سريع للتحكم في كتم وتشغيل الصوت'
+    'تصحيح لون رسالة «لم نجد أي قطعة تطابق» في الوضع الفاتح لتباين ممتاز',
+    'تطبيق متغيرات المظهر الديناميكية (--text-dark) على صندوق النتائج الفارغة',
+    'إبراز كلمة البحث باللون الذهبي الراقي في العنوان الرئيسي'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '65 Ko'

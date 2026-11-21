@@ -659,15 +659,20 @@ export default function Marketplace({
               {Array.from({ length: 6 }, (_, index) => <div className="catalog-loading-card" key={index} aria-hidden="true" />)}
             </div>
           ) : sortedProducts.length === 0 ? (
-            <div className="empty-results-box">
-              <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '16px' }}>🔍</span>
-              <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>
-                {searchQuery 
-                  ? (lang === 'ar' ? `لم نجد أي قطعة تطابق « ${searchQuery} »` : `Aucun bijou ne correspond à « ${searchQuery} »`)
-                  : (lang === 'ar' ? 'لم يتم العثور على قطع تطابق البحث' : 'Aucun bijou correspondant trouvé')
-                }
+            <div className="empty-results-box" role="region" aria-label={lang === 'ar' ? 'نتائج فارغة' : 'Aucun résultat'}>
+              <span className="empty-results-icon" aria-hidden="true" style={{ fontSize: '3.5rem', display: 'block', marginBottom: '16px' }}>🔍</span>
+              <h3 className="empty-results-title" style={{ fontSize: '1.4rem', marginBottom: '8px', color: 'var(--text-dark)', fontWeight: 700 }}>
+                {searchQuery ? (
+                  lang === 'ar' ? (
+                    <>لم نجد أي قطعة تطابق <span className="empty-results-highlight" style={{ color: 'var(--primary-gold)' }}>« {searchQuery} »</span></>
+                  ) : (
+                    <>Aucun bijou ne correspond à <span className="empty-results-highlight" style={{ color: 'var(--primary-gold)' }}>« {searchQuery} »</span></>
+                  )
+                ) : (
+                  lang === 'ar' ? 'لم يتم العثور على قطع تطابق البحث' : 'Aucun bijou correspondant trouvé'
+                )}
               </h3>
-              <p style={{ color: 'var(--text-gray)', fontSize: '0.92rem', marginBottom: '18px', maxWidth: '420px', margin: '0 auto 18px' }}>
+              <p className="empty-results-desc" style={{ color: 'var(--text-gray)', fontSize: '0.92rem', marginBottom: '18px', maxWidth: '420px', margin: '0 auto 18px' }}>
                 {lang === 'ar' 
                   ? 'جرب البحث بكلمات أخرى (مثل: خاتم، سوار، ذهب 18، ألماس) أو اضغط على أحد الاقتراحات السريعة أدناه.' 
                   : 'Essayez une autre recherche (ex: bague, bracelet, or 18k, diamant) ou cliquez sur une suggestion ci-dessous.'

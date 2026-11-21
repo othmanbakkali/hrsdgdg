@@ -1362,6 +1362,51 @@ footer .pwa-nav-install-btn:hover .pwa-btn-label {
   }
 }
 
+/* Empty search results state */
+.empty-results-box {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--bg-card);
+  border: 1.5px dashed var(--border-gold);
+  border-radius: var(--radius-lg, 18px);
+  margin: 16px 0 28px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+
+.empty-results-box .empty-results-icon {
+  font-size: 3.5rem;
+  display: block;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 8px var(--gold-glow));
+}
+
+.empty-results-box .empty-results-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .empty-results-box .empty-results-title,
+.dark-theme .empty-results-box .empty-results-title {
+  color: var(--text-dark, #f3f4f6);
+}
+
+.empty-results-box .empty-results-desc {
+  color: var(--text-gray);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0 auto 18px;
+  max-width: 440px;
+}
+
+.empty-results-box .empty-results-highlight {
+  color: var(--primary-gold);
+  font-weight: 700;
+}
+
 .avito-white-card:hover .avito-card-title {
   color: var(--primary-gold);
 }
