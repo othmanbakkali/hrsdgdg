@@ -3184,26 +3184,26 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.5',
-  versionCode: 19,
+  version: '1.4.6',
+  versionCode: 20,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-21',
-  pwaCacheVersion: 'oria-pwa-v22',
-  title_fr: 'Mise à jour disponible (Contraste mode clair & Messages de recherche)',
-  title_ar: 'تحديث جديد متوفر (تحسين تباين الوضع الفاتح ورسائل البحث)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible assurant une lisibilité et un contraste parfaits du message d\'absence de résultat en mode clair comme en mode sombre.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن وضوحاً وتبايناً مثالياً لرسالة عدم وجود نتائج في الوضع الفاتح والداكن.',
+  pwaCacheVersion: 'oria-pwa-v23',
+  title_fr: 'Mise à jour disponible (Accessibilité & Fermeture popup Échap)',
+  title_ar: 'تحديث جديد متوفر (إمكانية الوصول وإغلاق النافذة بزر الإلغاء Esc)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible permettant de fermer instantanément la fenêtre App Mobile avec la touche Échap et ajoutant un bouton d\'action de fermeture dédié.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يتيح إغلاق نافذة تطبيق الهاتف فوراً عبر زر Escape (Échap) مع إضافة زر إغلاق مخصص أسفل النافذة.',
   changelog_fr: [
-    'Correction de la couleur du message « Aucun bijou ne correspond » en mode clair',
-    'Application des variables CSS dynamiques (--text-dark) au composant d\'état vide',
-    'Mise en valeur élégante en or du terme recherché dans le message principal'
+    'Prise en charge complète de la touche Échap (Esc) pour fermer la fenêtre App Mobile sur Chrome',
+    'Restauration automatique du focus clavier sur le bouton déclencheur à la fermeture',
+    'Ajout d\'un bouton d\'action direct « Fermer la fenêtre » au bas de la modale'
   ],
   changelog_ar: [
-    'تصحيح لون رسالة «لم نجد أي قطعة تطابق» في الوضع الفاتح لتباين ممتاز',
-    'تطبيق متغيرات المظهر الديناميكية (--text-dark) على صندوق النتائج الفارغة',
-    'إبراز كلمة البحث باللون الذهبي الراقي في العنوان الرئيسي'
+    'دعم كامل للزر Escape (Esc) لإغلاق نافذة تطبيق الهاتف بسلاسة على متصفح Chrome',
+    'استرجاع تلقائي لتركيز لوحة المفاتيح على الزر المشغل عند الإغلاق',
+    'إضافة زر إجراء مباشر «إغلاق النافذة» في أسفل النافذة المنبثقة'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '65 Ko'

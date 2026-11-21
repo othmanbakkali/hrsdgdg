@@ -11,28 +11,48 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
   const [showAndroidGuide, setShowAndroidGuide] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
   const closeButtonRef = useRef(null);
+  const downloadBtnRef = useRef(null);
+  const triggerElementRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return undefined;
 
-    const trigger = document.activeElement;
-    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    // Capture the trigger element that opened the modal before shifting focus
+    if (document.activeElement && document.activeElement !== document.body) {
+      triggerElementRef.current = document.activeElement;
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' || event.key === 'Esc' || event.code === 'Escape' || event.keyCode === 27) {
         event.preventDefault();
+        event.stopPropagation();
         onCloseRef.current?.();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+
+    // Use capture phase on both document and window for maximum Chrome reliability
+    document.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keydown', handleKeyDown, true);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keydown', handleKeyDown, true);
       window.cancelAnimationFrame(focusFrame);
-      window.requestAnimationFrame(() => {
-        if (trigger && trigger.isConnected && typeof trigger.focus === 'function') trigger.focus();
-      });
+
+      const el = triggerElementRef.current;
+      if (el && el.isConnected && typeof el.focus === 'function') {
+        window.requestAnimationFrame(() => {
+          try {
+            el.focus();
+          } catch (e) {}
+        });
+      }
     };
   }, [isOpen]);
 
@@ -60,6 +80,15 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Keep focus inside modal in Chrome so Escape continues to close modal after download starts
+    setTimeout(() => {
+      if (downloadBtnRef.current && typeof downloadBtnRef.current.focus === 'function') {
+        downloadBtnRef.current.focus();
+      } else if (closeButtonRef.current && typeof closeButtonRef.current.focus === 'function') {
+        closeButtonRef.current.focus();
+      }
+    }, 60);
   };
 
   const handleChromeInstall = async () => {
@@ -74,7 +103,15 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="mobile-app-modal-title"
+      tabIndex={-1}
       onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }
+      }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -90,7 +127,15 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
       }}
     >
       <div
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape' || e.keyCode === 27) {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }
+        }}
         style={{
           background: 'linear-gradient(155deg, #15141D 0%, #0B0C10 100%)',
           border: '1px solid rgba(212, 175, 55, 0.45)',
@@ -113,7 +158,8 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
           type="button"
           ref={closeButtonRef}
           onClick={onClose}
-          aria-label={isAr ? 'إغلاق' : 'Fermer'}
+          aria-label={isAr ? 'إغلاق (Esc)' : 'Fermer (Échap)'}
+          title={isAr ? 'إغلاق (Esc)' : 'Fermer (Échap)'}
           style={{
             position: 'absolute',
             top: '18px',
@@ -299,6 +345,7 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
             {/* Primary Action: Direct APK Download */}
             <button
               type="button"
+              ref={downloadBtnRef}
               onClick={handleDownloadApk}
               style={{
                 background: 'linear-gradient(135deg, #FFF2C6 0%, #D4AF37 50%, #B8901C 100%)',
@@ -579,6 +626,52 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
             </button>
           </div>
         )}
+
+        {/* Dedicated Bottom Close Action Button for All Tabs */}
+        <div
+          style={{
+            marginTop: '20px',
+            paddingTop: '16px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            justifyContent: 'center'
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={isAr ? 'إغلاق نافذة تطبيق الهاتف' : 'Fermer la fenêtre de l\'application'}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.16)',
+              borderRadius: '12px',
+              color: '#CBD5E1',
+              padding: '11px 20px',
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              width: '100%',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.color = '#FFF';
+              e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.color = '#CBD5E1';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.16)';
+            }}
+          >
+            <span>✕</span>
+            <span>{isAr ? 'إغلاق النافذة' : 'Fermer la fenêtre'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
