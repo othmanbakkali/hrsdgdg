@@ -6,6 +6,7 @@ import { getCityDisplayName } from '../../utils/moroccanCities';
 export default function MobileMenuDrawer({
   isOpen,
   onClose,
+  onOpenMobileApp,
   saleUniverse,
   onSelectUniverse,
   selectedCategory,
@@ -33,7 +34,7 @@ export default function MobileMenuDrawer({
   const { lang, setLang, t } = useLanguage();
   const isAr = lang === 'ar';
 
-  // Prevent background scrolling when drawer is open
+  // Prevent background scrolling and enable Escape key to close drawer
   useEffect(() => {
     if (isOpen) {
       const scrollY = window.scrollY;
@@ -41,7 +42,17 @@ export default function MobileMenuDrawer({
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown, true);
+
       return () => {
+        window.removeEventListener('keydown', handleKeyDown, true);
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.width = '';
@@ -49,7 +60,7 @@ export default function MobileMenuDrawer({
         window.scrollTo(0, scrollY);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -251,7 +262,24 @@ export default function MobileMenuDrawer({
             </div>
 
             <div className="menu-nav-list">
+              {onOpenMobileApp && (
+                <button 
+                  type="button"
+                  className="menu-nav-item highlight-app"
+                  onClick={() => handleSelectNav(onOpenMobileApp)}
+                  title={isAr ? 'تطبيق الهاتف (Android & iOS)' : 'Application Mobile (Android & iPhone)'}
+                >
+                  <div className="nav-item-icon-box gold">📲</div>
+                  <div className="nav-item-info">
+                    <span className="nav-item-label">{isAr ? 'تطبيق الهاتف (Android & iOS)' : 'Application Mobile'}</span>
+                    <span className="nav-item-sub">{isAr ? 'تحميل مباشر APK وإصدار الآيفون' : 'Téléchargement direct APK & iPhone'}</span>
+                  </div>
+                  <span className="nav-item-badge new">APK</span>
+                </button>
+              )}
+
               <button 
+                type="button"
                 className="menu-nav-item highlight-sell"
                 onClick={() => handleSelectNav(onOpenSell)}
               >
@@ -260,10 +288,11 @@ export default function MobileMenuDrawer({
                   <span className="nav-item-label">{isAr ? 'بيع مجوهراتي وذهب قديم' : 'Vendre mon bijou'}</span>
                   <span className="nav-item-sub">{isAr ? 'تقييم فوري وعرض للبيع في المغرب' : 'Estimation & Rachat rapide'}</span>
                 </div>
-                <span className="nav-item-chevron">‹</span>
+                <span className="nav-item-chevron">{isAr ? '‹' : '›'}</span>
               </button>
 
               <button 
+                type="button"
                 className="menu-nav-item"
                 onClick={() => handleSelectNav(onOpenAI)}
               >
@@ -272,10 +301,11 @@ export default function MobileMenuDrawer({
                   <span className="nav-item-label">{isAr ? 'المساعد الذكي للجوهرجي (AI)' : 'Concierge IA Joaillerie'}</span>
                   <span className="nav-item-sub">{isAr ? 'استشارات ذكية لاختيار القطعة المثالية' : 'Conseils personnalisés par IA'}</span>
                 </div>
-                <span className="nav-item-chevron">‹</span>
+                <span className="nav-item-chevron">{isAr ? '‹' : '›'}</span>
               </button>
 
               <button 
+                type="button"
                 className="menu-nav-item"
                 onClick={() => handleSelectNav(onOpenGoldModal)}
               >
@@ -284,7 +314,7 @@ export default function MobileMenuDrawer({
                   <span className="nav-item-label">{isAr ? 'سجل وحاسبة أسعار الذهب' : 'Simulateur & Cours de l\'or'}</span>
                   <span className="nav-item-sub">{isAr ? 'تتبع عيار 18 قيراط وحساب القيمة' : 'Graphiques & Historique 18K'}</span>
                 </div>
-                <span className="nav-item-chevron">‹</span>
+                <span className="nav-item-chevron">{isAr ? '‹' : '›'}</span>
               </button>
             </div>
           </div>

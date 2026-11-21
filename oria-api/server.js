@@ -3184,26 +3184,28 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.6',
-  versionCode: 20,
+  version: '1.4.7',
+  versionCode: 21,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-21',
-  pwaCacheVersion: 'oria-pwa-v23',
-  title_fr: 'Mise à jour disponible (Accessibilité & Fermeture popup Échap)',
-  title_ar: 'تحديث جديد متوفر (إمكانية الوصول وإغلاق النافذة بزر الإلغاء Esc)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible permettant de fermer instantanément la fenêtre App Mobile avec la touche Échap et ajoutant un bouton d\'action de fermeture dédié.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يتيح إغلاق نافذة تطبيق الهاتف فوراً عبر زر Escape (Échap) مع إضافة زر إغلاق مخصص أسفل النافذة.',
+  pwaCacheVersion: 'oria-pwa-v24',
+  title_fr: 'Mise à jour disponible (Menu Mobile Responsive & RTL Arabe)',
+  title_ar: 'تحديث جديد متوفر (تحسين تجاوب القائمة على الهواتف والوضع العربي)',
+  message_fr: 'Une nouvelle version de HRSDGDG est disponible avec une navigation mobile ultra-fluide adaptée à toutes les largeurs d\'écran, des zones tactiles agrandies (44px) et une orientation RTL arabe parfaite.',
+  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن تجربة تصفح مثالية وسلسة على مختلف أحجام شاشات الهواتف مع مناطق لمس مريحة وانسيابية تامة في الاتجاه العربي (RTL).',
   changelog_fr: [
-    'Prise en charge complète de la touche Échap (Esc) pour fermer la fenêtre App Mobile sur Chrome',
-    'Restauration automatique du focus clavier sur le bouton déclencheur à la fermeture',
-    'Ajout d\'un bouton d\'action direct « Fermer la fenêtre » au bas de la modale'
+    'Refonte responsive de la navigation mobile et du menu tiroir pour les petits écrans (320px - 380px)',
+    'Correction de l\'orientation et de l\'animation coulissante RTL pour la langue arabe (glissement depuis la droite)',
+    'Agrandissement des zones cliquables tactiles (minimum 44px) pour le bouton hamburger, les actions et le menu',
+    'Élimination complète des débordements horizontaux et meilleure lisibilité des catégories et boutons'
   ],
   changelog_ar: [
-    'دعم كامل للزر Escape (Esc) لإغلاق نافذة تطبيق الهاتف بسلاسة على متصفح Chrome',
-    'استرجاع تلقائي لتركيز لوحة المفاتيح على الزر المشغل عند الإغلاق',
-    'إضافة زر إجراء مباشر «إغلاق النافذة» في أسفل النافذة المنبثقة'
+    'إعادة تصميم متجاوبة ومثالية لقائمة التنقل وشريط الهاتف للشاشات الصغيرة (320px إلى 380px)',
+    'تصحيح كامل لاتجاه وحركة انزلاق القائمة باللغة العربية (RTL) لتفتح بسلاسة من جهة اليمين',
+    'تكبير مساحات النقر باللمس (الحد الأدنى 44px) لزر القائمة، الإجراءات وشريط التنقل السفلي',
+    'منع أي تجاوز أفقي أو اقتطاع للنصوص وتنسيق شبكة الفئات وخيارات الحساب'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '65 Ko'

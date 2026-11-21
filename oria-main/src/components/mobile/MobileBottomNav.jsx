@@ -14,11 +14,13 @@ export default function MobileBottomNav({
   const isAr = lang === 'ar';
 
   return (
-    <div className="mobile-avito-bottom-nav">
+    <nav className="mobile-avito-bottom-nav" dir={isAr ? 'rtl' : 'ltr'} aria-label={isAr ? "شريط التنقل السفلي" : "Navigation mobile"}>
       {/* 1. Home / Accueil */}
       <button 
+        type="button"
         className={`mobile-nav-item ${activeTab === 'home' ? 'active' : ''}`}
         onClick={() => onChangeTab('home')}
+        aria-label={t('home')}
       >
         <span className="nav-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 24 24" fill={activeTab === 'home' ? 'var(--primary-gold)' : 'none'} stroke={activeTab === 'home' ? 'var(--primary-gold)' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -31,11 +33,13 @@ export default function MobileBottomNav({
 
       {/* 2. Explorer / Finder */}
       <button 
+        type="button"
         className={`mobile-nav-item ${activeTab === 'explore' ? 'active' : ''}`}
         onClick={() => {
           onChangeTab('explore');
           if (onOpenFinder) onOpenFinder();
         }}
+        aria-label={t('search')}
       >
         <span className="nav-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'explore' ? 'var(--primary-gold)' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -48,8 +52,10 @@ export default function MobileBottomNav({
 
       {/* 3. Mobile App (Android APK & iPhone) */}
       <button 
+        type="button"
         className="mobile-nav-item"
         onClick={() => onOpenMobileApp && onOpenMobileApp()}
+        aria-label={isAr ? 'تطبيق الهاتف (أندرويد وآيفون)' : "Application Mobile (Android & iPhone)"}
         title={isAr ? 'تطبيق الهاتف (أندرويد وآيفون)' : "Application Mobile (Android & iPhone)"}
       >
         <span className="nav-icon-wrap" style={{ position: 'relative' }}>
@@ -74,8 +80,10 @@ export default function MobileBottomNav({
 
       {/* 4. Mon Compte */}
       <button 
+        type="button"
         className={`mobile-nav-item ${activeTab === 'account' ? 'active' : ''}`}
         onClick={() => onChangeTab('account')}
+        aria-label={user ? (user.nom.split(' ')[0] || t('account')) : t('account')}
       >
         <span className="nav-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'account' ? 'var(--primary-gold)' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -85,6 +93,6 @@ export default function MobileBottomNav({
         </span>
         <span className="nav-text">{user ? (user.nom.split(' ')[0] || t('account')) : t('account')}</span>
       </button>
-    </div>
+    </nav>
   );
 }

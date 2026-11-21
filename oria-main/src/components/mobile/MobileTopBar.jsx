@@ -16,7 +16,9 @@ export default function MobileTopBar({
   cartCount = 0,
   onOpenChat,
   onOpenAI,
+  onOpenSell,
   onOpenGoldModal,
+  onOpenMobileApp,
   saleUniverse,
   onSelectUniverse,
   selectedCategory,
@@ -24,7 +26,6 @@ export default function MobileTopBar({
   dealsOnly,
   onToggleDeals,
   categories = [],
-  onOpenSell,
   theme = 'light',
   onToggleTheme,
   user,
@@ -77,8 +78,10 @@ export default function MobileTopBar({
         <div className="mobile-main-bar">
           {/* Hamburger Menu Button (Right side in RTL) */}
           <button 
+            type="button"
             className="mobile-hamburger-btn"
             onClick={() => setIsMenuOpen(true)}
+            aria-expanded={isMenuOpen}
             aria-label={isAr ? "فتح القائمة الرئيسية" : "Ouvrir le menu"}
             title={isAr ? "القائمة الرئيسية والفئات" : "Menu principal et catégories"}
           >
@@ -104,8 +107,10 @@ export default function MobileTopBar({
           <div className="mobile-actions-group">
             {/* AI Concierge */}
             <button 
+              type="button"
               className="mobile-action-circle ai-btn"
               onClick={onOpenAI}
+              aria-label={isAr ? "المساعد الذكي للجوهرجي" : "Concierge IA"}
               title={isAr ? "المساعد الذكي للجوهرجي" : "Concierge IA"}
             >
               <span>✨</span>
@@ -235,6 +240,7 @@ export default function MobileTopBar({
       <MobileMenuDrawer 
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
+        onOpenMobileApp={onOpenMobileApp}
         saleUniverse={saleUniverse}
         onSelectUniverse={onSelectUniverse}
         selectedCategory={selectedCategory}

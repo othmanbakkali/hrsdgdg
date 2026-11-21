@@ -379,6 +379,7 @@ function MainLayout() {
           onOpenAI={() => setIsAIOpen(true)}
           onOpenSell={() => setIsSellModalOpen(true)}
           onOpenGoldModal={() => setIsGoldModalOpen(true)}
+          onOpenMobileApp={() => setIsMobileAppModalOpen(true)}
           saleUniverse={saleUniverse}
           onSelectUniverse={setSaleUniverse}
           selectedCategory={selectedCategory}
