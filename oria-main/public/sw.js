@@ -1,5 +1,5 @@
-const CACHE_NAME = 'oria-pwa-v24';
-const API_CACHE_NAME = 'oria-pwa-api-v24';
+const CACHE_NAME = 'oria-pwa-v25';
+const API_CACHE_NAME = 'oria-pwa-api-v25';
 
 const PRECACHE_URLS = [
   '/',

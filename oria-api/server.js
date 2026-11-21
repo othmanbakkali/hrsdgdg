@@ -3184,31 +3184,31 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.7',
-  versionCode: 21,
+  version: '1.4.8',
+  versionCode: 22,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-21',
-  pwaCacheVersion: 'oria-pwa-v24',
-  title_fr: 'Mise à jour disponible (Menu Mobile Responsive & RTL Arabe)',
-  title_ar: 'تحديث جديد متوفر (تحسين تجاوب القائمة على الهواتف والوضع العربي)',
-  message_fr: 'Une nouvelle version de HRSDGDG est disponible avec une navigation mobile ultra-fluide adaptée à toutes les largeurs d\'écran, des zones tactiles agrandies (44px) et une orientation RTL arabe parfaite.',
-  message_ar: 'يتوفر إصدار جديد لمنصة HRSDGDG يضمن تجربة تصفح مثالية وسلسة على مختلف أحجام شاشات الهواتف مع مناطق لمس مريحة وانسيابية تامة في الاتجاه العربي (RTL).',
+  pwaCacheVersion: 'oria-pwa-v25',
+  title_fr: 'Mise à jour disponible (Correctif Android APK & net::ERR_CACHE_MISS)',
+  title_ar: 'تحديث جديد متوفر (إصلاح تشغيل تطبيق الأندرويد APK ومنع أخطاء الذاكرة)',
+  message_fr: 'Une nouvelle version de l\'APK Android HRSDGDG est disponible éliminant l\'erreur net::ERR_CACHE_MISS au premier lancement, avec gestion résiliente du cache, validation SSL native et écran de reconnexion automatique.',
+  message_ar: 'يتوفر إصدار جديد لتطبيق أندرويد APK يقضي نهائياً على خطأ net::ERR_CACHE_MISS عند أول تشغيل، مع نظام تعافي ذكي ومصادقة أمان متطورة وشاشة إعادة اتصال تفاعلية.',
   changelog_fr: [
-    'Refonte responsive de la navigation mobile et du menu tiroir pour les petits écrans (320px - 380px)',
-    'Correction de l\'orientation et de l\'animation coulissante RTL pour la langue arabe (glissement depuis la droite)',
-    'Agrandissement des zones cliquables tactiles (minimum 44px) pour le bouton hamburger, les actions et le menu',
-    'Élimination complète des débordements horizontaux et meilleure lisibilité des catégories et boutons'
+    'Élimination définitive de l\'erreur net::ERR_CACHE_MISS au premier lancement de l\'APK Android',
+    'Gestion dynamique et adaptative du cache WebView (LOAD_DEFAULT et auto-retry avec LOAD_NO_CACHE)',
+    'Intégration d\'une Network Security Configuration officielle et validation SSL sécurisée pour les sous-domaines',
+    'Écran de reconnexion élégant en cas de coupure réseau avec bouton de nouvelle tentative direct'
   ],
   changelog_ar: [
-    'إعادة تصميم متجاوبة ومثالية لقائمة التنقل وشريط الهاتف للشاشات الصغيرة (320px إلى 380px)',
-    'تصحيح كامل لاتجاه وحركة انزلاق القائمة باللغة العربية (RTL) لتفتح بسلاسة من جهة اليمين',
-    'تكبير مساحات النقر باللمس (الحد الأدنى 44px) لزر القائمة، الإجراءات وشريط التنقل السفلي',
-    'منع أي تجاوز أفقي أو اقتطاع للنصوص وتنسيق شبكة الفئات وخيارات الحساب'
+    'القضاء التام على خطأ net::ERR_CACHE_MISS عند أول تشغيل للتطبيق بعد التثبيت على أندرويد',
+    'إدارة ذكية وديناميكية لذاكرة التخزين المؤقت للويب مع إعادة تحميل تلقائية وفورية في حال غياب الكاش',
+    'تطبيق إعدادات أمان الشبكة (Network Security Config) ودعم شهادات الأمان لضمان استقرار الاتصال',
+    'شاشة أنيقة وفاخرة في حال انقطاع الشبكة مع زر إعادة المحاولة بنقرة واحدة'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
-  apkSize: '65 Ko'
+  apkSize: '69 Ko'
 };
 
 app.get('/api/app-version', (req, res) => {
