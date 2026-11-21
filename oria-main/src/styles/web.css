@@ -3649,27 +3649,47 @@ body.dark-theme .cart-drawer-footer {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .auth-country-flag {
   position: absolute;
-  left: 12px;
-  font-size: 1.15rem;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 14px;
+  right: auto;
+  font-size: 1.25rem;
+  line-height: 1;
   pointer-events: none;
-  z-index: 2;
+  z-index: 5;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 [dir="rtl"] .auth-country-flag {
   left: auto;
-  right: 12px;
+  right: 14px;
 }
 
-.auth-phone-input {
-  padding-inline-start: 46px !important;
+/* Internal padding: generous clearance so typed digits NEVER overlap the country flag/badge in LTR and RTL */
+.auth-phone-input,
+.auth-phone-input-wrap input.auth-phone-input,
+.auth-input-container input.auth-phone-input,
+.auth-input-container input.auth-phone-input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+input.auth-phone-input {
+  padding-left: 58px !important;
+  padding-right: 18px !important;
 }
 
-[dir="rtl"] .auth-phone-input {
-  padding-inline-start: 46px !important;
+[dir="rtl"] .auth-phone-input,
+[dir="rtl"] .auth-phone-input-wrap input.auth-phone-input,
+[dir="rtl"] .auth-input-container input.auth-phone-input,
+[dir="rtl"] .auth-input-container input.auth-phone-input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+[dir="rtl"] input.auth-phone-input {
+  padding-right: 58px !important;
+  padding-left: 18px !important;
 }
 
 .auth-field-micro-hint {

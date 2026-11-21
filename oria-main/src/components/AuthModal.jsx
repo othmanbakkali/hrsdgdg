@@ -1090,7 +1090,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                     <span className="auth-required-mark">*</span>
                   </label>
                   <div className="auth-input-container auth-phone-input-wrap">
-                    <span className="auth-country-flag" title="Maroc (+212)">🇲🇦</span>
+                    <span className="auth-country-flag" title="Maroc (+212)" aria-hidden="true">🇲🇦</span>
                     <input
                       type="tel"
                       required
@@ -1099,6 +1099,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                       onChange={e => setPhone(e.target.value)}
                       placeholder="06 00 00 00 00"
                       autoComplete="tel"
+                      style={{
+                        paddingLeft: isRtl ? '18px' : '58px',
+                        paddingRight: isRtl ? '58px' : '18px'
+                      }}
                     />
                   </div>
                   <span className="auth-field-micro-hint">{t.phoneHint}</span>

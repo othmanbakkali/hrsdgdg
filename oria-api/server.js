@@ -3184,28 +3184,28 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.8',
-  versionCode: 22,
+  version: '1.4.9',
+  versionCode: 23,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-21',
-  pwaCacheVersion: 'oria-pwa-v25',
-  title_fr: 'Mise à jour disponible (Correctif Android APK & net::ERR_CACHE_MISS)',
-  title_ar: 'تحديث جديد متوفر (إصلاح تشغيل تطبيق الأندرويد APK ومنع أخطاء الذاكرة)',
-  message_fr: 'Une nouvelle version de l\'APK Android HRSDGDG est disponible éliminant l\'erreur net::ERR_CACHE_MISS au premier lancement, avec gestion résiliente du cache, validation SSL native et écran de reconnexion automatique.',
-  message_ar: 'يتوفر إصدار جديد لتطبيق أندرويد APK يقضي نهائياً على خطأ net::ERR_CACHE_MISS عند أول تشغيل، مع نظام تعافي ذكي ومصادقة أمان متطورة وشاشة إعادة اتصال تفاعلية.',
+  pwaCacheVersion: 'oria-pwa-v26',
+  title_fr: 'Mise à jour disponible (Ajustement padding champ téléphone)',
+  title_ar: 'تحديث جديد متوفر (تحسين حقل رقم الهاتف والتسجيل)',
+  message_fr: 'Mise à jour du formulaire d\'inscription : espacement interne garanti du champ numéro de téléphone évitant toute superposition des chiffres saisis avec l\'icône/drapeau en mode arabe (RTL) et français (LTR).',
+  message_ar: 'تحديث استمارة التسجيل: ضبط دقيق للمسافة البادئة الداخلية لحقل رقم الهاتف والواتساب لمنع أي تداخل بين الأرقام المدخلة وأيقونة/شارة العلم في الواجهتين العربية (RTL) والفرنسية (LTR).',
   changelog_fr: [
-    'Élimination définitive de l\'erreur net::ERR_CACHE_MISS au premier lancement de l\'APK Android',
-    'Gestion dynamique et adaptative du cache WebView (LOAD_DEFAULT et auto-retry avec LOAD_NO_CACHE)',
-    'Intégration d\'une Network Security Configuration officielle et validation SSL sécurisée pour les sous-domaines',
-    'Écran de reconnexion élégant en cas de coupure réseau avec bouton de nouvelle tentative direct'
+    'Ajustement du padding interne du champ téléphone dans le formulaire d\'inscription',
+    'Élimination définitive de la superposition du numéro sur l\'icône/drapeau',
+    'Alignement parfait et espacement aéré en RTL (arabe) et LTR (français/anglais)',
+    'Compatibilité responsive vérifiée sur mobile, tablette et desktop'
   ],
   changelog_ar: [
-    'القضاء التام على خطأ net::ERR_CACHE_MISS عند أول تشغيل للتطبيق بعد التثبيت على أندرويد',
-    'إدارة ذكية وديناميكية لذاكرة التخزين المؤقت للويب مع إعادة تحميل تلقائية وفورية في حال غياب الكاش',
-    'تطبيق إعدادات أمان الشبكة (Network Security Config) ودعم شهادات الأمان لضمان استقرار الاتصال',
-    'شاشة أنيقة وفاخرة في حال انقطاع الشبكة مع زر إعادة المحاولة بنقرة واحدة'
+    'ضبط المسافة الداخلية (padding) لحقل رقم الهاتف في استمارة التسجيل',
+    'إلغاء أي تراكب بين الأرقام المدخلة وأيقونة أو علم الدولة',
+    'محاذاة متناسقة ومسافة أمان مريحة في العرض العربي (RTL) والفرنسي (LTR)',
+    'توافق كامل وتجاوب تام على الهواتف الذكية والحواسب'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '69 Ko'
