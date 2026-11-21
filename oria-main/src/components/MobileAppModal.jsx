@@ -321,8 +321,8 @@ export default function MobileAppModal({ isOpen, onClose, initialTab }) {
                 color: '#FFF2C6'
               }}
             >
-              <span>📦 <strong>hrsdgdg.apk</strong> (v1.2)</span>
-              <span>⚡ {isAr ? 'حجم خفيف: 65 كيلوبايت' : 'Taille : 65 Ko'}</span>
+              <span>📦 <strong>hrsdgdg.apk</strong> (v1.4.9)</span>
+              <span>⚡ {isAr ? 'حجم خفيف: 69 كيلوبايت' : 'Taille : 69 Ko'}</span>
               <span style={{ color: '#4ade80' }}>● {isAr ? 'موقّع وآمن' : 'Signé & Sécurisé'}</span>
             </div>
 

@@ -80,8 +80,8 @@ $manifestXml = @"
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ma.sdbo.hrsdgdg"
-    android:versionCode="21"
-    android:versionName="1.4.7">
+    android:versionCode="23"
+    android:versionName="1.4.9">
 
     <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="34" />
 
