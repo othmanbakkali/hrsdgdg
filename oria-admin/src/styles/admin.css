@@ -4,7 +4,7 @@
    Harmonisé avec le Site Principal (Mode Clair Luxueux & Mode Sombre Élégant)
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap');
+/* Google Fonts loaded asynchronously in index.html with preconnect */
 
 :root {
   /* ==========================================================================

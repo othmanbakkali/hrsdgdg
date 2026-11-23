@@ -8,6 +8,10 @@ import ProductCard from '../components/ProductCard';
 import GoldPriceCard from '../components/GoldPriceCard';
 import { API_URL } from '../config/api';
 
+// Memory cache for instantaneous tab switching and zero-latency navigation
+let cachedMarketplaceProducts = null;
+let cachedMarketplaceCategories = null;
+
 export default function Marketplace({ 
   onSelectProduct, 
   onOpenFinder, 
@@ -53,9 +57,9 @@ export default function Marketplace({
   const { t, isRtl, lang } = useLanguage();
   const { user, toggleFavorite } = useAuth();
 
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(() => cachedMarketplaceProducts || []);
+  const [categories, setCategories] = useState(() => cachedMarketplaceCategories || []);
+  const [loading, setLoading] = useState(() => !cachedMarketplaceProducts);
   const [mobileViewMode, setMobileViewMode] = useState('list'); // 'list' (1 article per line, Amazon/Temu mobile style) or 'grid' (2 columns)
   const [showDesktopFilters, setShowDesktopFilters] = useState(true);
   const [gridDensity, setGridDensity] = useState('compact'); // 'compact' (dense: more items) or 'standard'
@@ -70,6 +74,7 @@ export default function Marketplace({
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
+          cachedMarketplaceProducts = data;
           setProducts(data);
         }
       }
@@ -78,6 +83,7 @@ export default function Marketplace({
       if (catRes.ok) {
         const catData = await catRes.json();
         if (Array.isArray(catData)) {
+          cachedMarketplaceCategories = catData;
           setCategories(catData);
         }
       }

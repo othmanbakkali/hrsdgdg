@@ -1,4 +1,4 @@
-﻿# Build Android APK for HRSDGDG (Anti-ERR_CACHE_MISS & Resilient Offline/Online Architecture)
+# Build Android APK for HRSDGDG (Anti-ERR_CACHE_MISS & Resilient Offline/Online Architecture)
 $ErrorActionPreference = "Stop"
 
 $sdkDir = "C:\Users\othma\AppData\Local\Android\Sdk"
@@ -80,8 +80,8 @@ $manifestXml = @"
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ma.sdbo.hrsdgdg"
-    android:versionCode="25"
-    android:versionName="1.5.1">
+    android:versionCode="26"
+    android:versionName="1.5.2">
 
     <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="34" />
 

@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { useCart, CartProvider } from './context/CartContext';
 import Marketplace from './views/Marketplace';
-import ClientDashboard from './views/ClientDashboard';
-import MerchantDashboard from './views/MerchantDashboard';
 import OriaLogo from './components/OriaLogo';
 import Footer from './components/Footer';
-import AuthModal from './components/AuthModal';
-import ProductDetailModal from './components/ProductDetailModal';
-import JewelFinderWizard from './components/JewelFinderWizard';
-import SellJewelModal from './components/SellJewelModal';
-import ProductComparatorModal from './components/ProductComparatorModal';
-import AIAssistantModal from './components/AIAssistantModal';
-import GoldPriceHistoryModal from './components/GoldPriceHistoryModal';
-import ChangePasswordModal from './components/ChangePasswordModal';
-import MobileAppModal from './components/MobileAppModal';
-import ForcedUpdateModal from './components/ForcedUpdateModal';
 import PostUpdateBanner from './components/PostUpdateBanner';
 import PWAInstallBanner from './pwa/PWAInstallBanner';
 import PWAInstallButton from './pwa/PWAInstallButton';
+import MobileAppModal from './components/MobileAppModal';
+
+// High-Performance: Lazy-load heavy views & modals for instant initial load
+const ClientDashboard = lazy(() => import('./views/ClientDashboard'));
+const MerchantDashboard = lazy(() => import('./views/MerchantDashboard'));
+const AuthModal = lazy(() => import('./components/AuthModal'));
+const ProductDetailModal = lazy(() => import('./components/ProductDetailModal'));
+const JewelFinderWizard = lazy(() => import('./components/JewelFinderWizard'));
+const SellJewelModal = lazy(() => import('./components/SellJewelModal'));
+const ProductComparatorModal = lazy(() => import('./components/ProductComparatorModal'));
+const AIAssistantModal = lazy(() => import('./components/AIAssistantModal'));
+const GoldPriceHistoryModal = lazy(() => import('./components/GoldPriceHistoryModal'));
+const ChangePasswordModal = lazy(() => import('./components/ChangePasswordModal'));
+const ForcedUpdateModal = lazy(() => import('./components/ForcedUpdateModal'));
 
 // Mobile-specific components
 import MobileTopBar from './components/mobile/MobileTopBar';
@@ -766,24 +768,28 @@ function MainLayout() {
         )}
 
         {activeView === 'client-dashboard' && (
-          <ClientDashboard 
-            onSelectProduct={handleSelectProduct}
-            onOpenSellModal={() => setIsSellModalOpen(true)}
-            onOpenChangePassword={() => {
-              setIsFirstLoginChange(false);
-              setIsChangePasswordOpen(true);
-            }}
-          />
+          <Suspense fallback={<div style={{ padding: '60px', textAlign: 'center', color: 'var(--admin-gold)' }}>⏳ Chargement...</div>}>
+            <ClientDashboard 
+              onSelectProduct={handleSelectProduct}
+              onOpenSellModal={() => setIsSellModalOpen(true)}
+              onOpenChangePassword={() => {
+                setIsFirstLoginChange(false);
+                setIsChangePasswordOpen(true);
+              }}
+            />
+          </Suspense>
         )}
 
         {activeView === 'merchant-dashboard' && (
-          <MerchantDashboard 
-            onOpenSellModal={() => setIsSellModalOpen(true)}
-            onOpenChangePassword={() => {
-              setIsFirstLoginChange(false);
-              setIsChangePasswordOpen(true);
-            }}
-          />
+          <Suspense fallback={<div style={{ padding: '60px', textAlign: 'center', color: 'var(--admin-gold)' }}>⏳ Chargement...</div>}>
+            <MerchantDashboard 
+              onOpenSellModal={() => setIsSellModalOpen(true)}
+              onOpenChangePassword={() => {
+                setIsFirstLoginChange(false);
+                setIsChangePasswordOpen(true);
+              }}
+            />
+          </Suspense>
         )}
       </div>
 
@@ -807,7 +813,7 @@ function MainLayout() {
         />
       </div>
 
-      {/* 4. MODALS & BOTTOM SHEETS */}
+      {/* 4. MODALS & BOTTOM SHEETS (Lightweight Mobile Overlays) */}
       
       {/* Mobile City Picker */}
       <MobileCityPicker 
@@ -862,78 +868,93 @@ function MainLayout() {
         targetProduct={chatTargetProduct}
       />
 
+      {/* Global Modals (Lazy Loaded on Demand for Instant Page Performance) */}
+      <Suspense fallback={null}>
+        {isAuthModalOpen && (
+          <AuthModal 
+            isOpen={isAuthModalOpen} 
+            onClose={() => setIsAuthModalOpen(false)} 
+            onAuthSuccess={(type, loggedUser) => {
+              if (loggedUser && (loggedUser.first_login || loggedUser.premier_login || loggedUser.doit_changer_mot_de_passe)) {
+                setIsFirstLoginChange(true);
+                setIsChangePasswordOpen(true);
+              }
+            }}
+          />
+        )}
+        {isChangePasswordOpen && (
+          <ChangePasswordModal 
+            isOpen={isChangePasswordOpen}
+            onClose={() => setIsChangePasswordOpen(false)}
+            isFirstLogin={isFirstLoginChange}
+          />
+        )}
+        {isFinderOpen && (
+          <JewelFinderWizard 
+            isOpen={isFinderOpen} 
+            onClose={() => setIsFinderOpen(false)} 
+            products={allProducts}
+            onSelectProduct={handleSelectProduct}
+          />
+        )}
+        {isSellModalOpen && (
+          <SellJewelModal 
+            isOpen={isSellModalOpen} 
+            onClose={() => setIsSellModalOpen(false)} 
+            onProductPublished={() => fetchData()}
+          />
+        )}
+        {isAIOpen && (
+          <AIAssistantModal 
+            isOpen={isAIOpen} 
+            onClose={() => setIsAIOpen(false)} 
+            products={allProducts}
+            onSelectProduct={handleSelectProduct}
+          />
+        )}
+        {isGoldModalOpen && (
+          <GoldPriceHistoryModal 
+            isOpen={isGoldModalOpen}
+            onClose={() => setIsGoldModalOpen(false)}
+            onOpenSellModal={() => setIsSellModalOpen(true)}
+            initialMetal={historyModalMetal}
+          />
+        )}
+        {isComparatorOpen && (
+          <ProductComparatorModal 
+            isOpen={isComparatorOpen} 
+            onClose={() => setIsComparatorOpen(false)} 
+            comparedProducts={comparedProducts}
+            onRemoveProduct={(id) => handleToggleCompare(id)}
+          />
+        )}
+        {Boolean(selectedProduct) && (
+          <ProductDetailModal 
+            isOpen={Boolean(selectedProduct)}
+            product={selectedProduct} 
+            onClose={handleCloseProductDetail} 
+            allProducts={allProducts}
+            onSelectProduct={handleSelectProduct}
+            onToggleCompare={handleToggleCompare}
+            isCompared={selectedProduct ? comparedProductIds.includes(selectedProduct.id) : false}
+            onOpenChatWithSeller={() => {
+              const target = selectedProduct;
+              handleCloseProductDetail();
+              handleOpenChatWithSeller(target);
+            }}
+          />
+        )}
+        {isMobileAppModalOpen && (
+          <MobileAppModal 
+            isOpen={isMobileAppModalOpen} 
+            onClose={() => setIsMobileAppModalOpen(false)} 
+          />
+        )}
+        <ForcedUpdateModal />
+      </Suspense>
 
-
-      {/* Global Modals */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-        onAuthSuccess={(type, loggedUser) => {
-          if (loggedUser && (loggedUser.first_login || loggedUser.premier_login || loggedUser.doit_changer_mot_de_passe)) {
-            setIsFirstLoginChange(true);
-            setIsChangePasswordOpen(true);
-          }
-        }}
-      />
-      <ChangePasswordModal 
-        isOpen={isChangePasswordOpen}
-        onClose={() => setIsChangePasswordOpen(false)}
-        isFirstLogin={isFirstLoginChange}
-      />
-      <JewelFinderWizard 
-        isOpen={isFinderOpen} 
-        onClose={() => setIsFinderOpen(false)} 
-        products={allProducts}
-        onSelectProduct={handleSelectProduct}
-      />
-      <SellJewelModal 
-        isOpen={isSellModalOpen} 
-        onClose={() => setIsSellModalOpen(false)} 
-        onProductPublished={() => fetchData()}
-      />
-      <AIAssistantModal 
-        isOpen={isAIOpen} 
-        onClose={() => setIsAIOpen(false)} 
-        products={allProducts}
-        onSelectProduct={handleSelectProduct}
-      />
-      <GoldPriceHistoryModal 
-        isOpen={isGoldModalOpen}
-        onClose={() => setIsGoldModalOpen(false)}
-        onOpenSellModal={() => setIsSellModalOpen(true)}
-        initialMetal={historyModalMetal}
-      />
-      <ProductComparatorModal 
-        isOpen={isComparatorOpen} 
-        onClose={() => setIsComparatorOpen(false)} 
-        comparedProducts={comparedProducts}
-        onRemoveProduct={(id) => handleToggleCompare(id)}
-      />
-      <ProductDetailModal 
-        isOpen={Boolean(selectedProduct)}
-        product={selectedProduct} 
-        onClose={handleCloseProductDetail} 
-        allProducts={allProducts}
-        onSelectProduct={handleSelectProduct}
-        onToggleCompare={handleToggleCompare}
-        isCompared={selectedProduct ? comparedProductIds.includes(selectedProduct.id) : false}
-        onOpenChatWithSeller={() => {
-          const target = selectedProduct;
-          handleCloseProductDetail();
-          handleOpenChatWithSeller(target);
-        }}
-      />
       {/* PWA Install Banner & Offline / Update notifications */}
       <PWAInstallBanner />
-
-      {/* Global Mobile App Modal */}
-      <MobileAppModal 
-        isOpen={isMobileAppModalOpen} 
-        onClose={() => setIsMobileAppModalOpen(false)} 
-      />
-
-      {/* Mandatory / Forced Update Modal */}
-      <ForcedUpdateModal />
 
       {/* Post-Update Celebration Banner */}
       <PostUpdateBanner />

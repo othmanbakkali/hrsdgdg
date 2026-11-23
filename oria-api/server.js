@@ -283,16 +283,98 @@ function requireAdminSession(req, res, next) {
 
 // Uploads directory and static serving
 const UPLOADS_DIR = path.join(__dirname, 'data', 'uploads');
+const VIDEOS_UPLOADS_DIR = path.join(UPLOADS_DIR, 'videos');
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
-app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '30d' }));
+if (!fs.existsSync(VIDEOS_UPLOADS_DIR)) {
+  fs.mkdirSync(VIDEOS_UPLOADS_DIR, { recursive: true });
+}
+app.use('/uploads', express.static(UPLOADS_DIR, { 
+  maxAge: '30d',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.mp4') || filePath.endsWith('.webm') || filePath.endsWith('.mov')) {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=2592000');
+    }
+  }
+}));
 
-function sanitizeVideoUrl(video) {
+function sanitizeVideoUrl(video, productId = null) {
   if (!video || typeof video !== 'string') return null;
-  // Strip codec parameters from data URL that break mobile Safari/WebKit:
-  // e.g. data:video/mp4;codecs=avc1,mp4a.40.2;base64,... -> data:video/mp4;base64,...
-  return video.replace(/^data:video\/([a-zA-Z0-9]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,');
+  // If already a static URL or external URL, return as is
+  if (video.startsWith('/uploads/') || video.startsWith('http://') || video.startsWith('https://')) {
+    return video;
+  }
+  // If base64 data URL, extract and save to /uploads/videos/ to eliminate massive JSON bloat
+  if (video.startsWith('data:video/')) {
+    try {
+      const cleanDataUrl = video.replace(/^data:video\/([a-zA-Z0-9]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,');
+      const matches = cleanDataUrl.match(/^data:video\/([a-zA-Z0-9+]+);base64,(.+)$/);
+      if (matches) {
+        let ext = matches[1].toLowerCase();
+        if (ext === 'quicktime') ext = 'mov';
+        else if (ext.includes('webm')) ext = 'webm';
+        else ext = 'mp4';
+        const buffer = Buffer.from(matches[2], 'base64');
+        const prefix = productId ? `vid_${productId}_` : 'vid_';
+        const filename = `${prefix}${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${ext}`;
+        if (!fs.existsSync(VIDEOS_UPLOADS_DIR)) {
+          fs.mkdirSync(VIDEOS_UPLOADS_DIR, { recursive: true });
+        }
+        fs.writeFileSync(path.join(VIDEOS_UPLOADS_DIR, filename), buffer);
+        console.log(`[Video Storage] Saved base64 video to /uploads/videos/${filename} (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`);
+        return `/uploads/videos/${filename}`;
+      }
+    } catch (err) {
+      console.error('Failed to save base64 video to file:', err.message);
+    }
+  }
+  return video;
+}
+
+// Background auto-migration: converts any existing base64 video in database to lightweight .mp4 files on disk
+function migrateBase64VideosToFiles() {
+  try {
+    const db = readDB();
+    if (!db || !Array.isArray(db.bijoux)) return;
+    let modified = false;
+    if (!fs.existsSync(VIDEOS_UPLOADS_DIR)) {
+      fs.mkdirSync(VIDEOS_UPLOADS_DIR, { recursive: true });
+    }
+
+    let savedBytes = 0;
+    for (const b of db.bijoux) {
+      if (b.video && typeof b.video === 'string' && b.video.startsWith('data:video/')) {
+        try {
+          const cleanDataUrl = b.video.replace(/^data:video\/([a-zA-Z0-9]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,');
+          const matches = cleanDataUrl.match(/^data:video\/([a-zA-Z0-9+]+);base64,(.+)$/);
+          if (matches) {
+            let ext = matches[1].toLowerCase();
+            if (ext === 'quicktime') ext = 'mov';
+            else if (ext.includes('webm')) ext = 'webm';
+            else ext = 'mp4';
+            const buffer = Buffer.from(matches[2], 'base64');
+            const filename = `vid_${b.id || Date.now()}_${Math.random().toString(36).substr(2, 5)}.${ext}`;
+            fs.writeFileSync(path.join(VIDEOS_UPLOADS_DIR, filename), buffer);
+            savedBytes += b.video.length;
+            b.video = `/uploads/videos/${filename}`;
+            modified = true;
+            console.log(`[Video Migration] Extracted base64 video for item ${b.id} to /uploads/videos/${filename} (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`);
+          }
+        } catch (e) {
+          console.error(`[Video Migration] Failed for item ${b.id}:`, e.message);
+        }
+      }
+    }
+
+    if (modified) {
+      writeDB(db);
+      console.log(`✅ Base64 video migration completed: freed ${(savedBytes / 1024 / 1024).toFixed(2)} MB from database.json!`);
+    }
+  } catch (err) {
+    console.error('Error migrating base64 videos:', err);
+  }
 }
 
 function processImages(images) {
@@ -1418,12 +1500,22 @@ app.get('/api/bijoux', (req, res) => {
     const seller = usersMap.get(product.commercant_id) || usersMap.get(product.vendeur_id);
     const sellerPhone = product.vendeur_phone || product.telephone || seller?.phone || seller?.telephone || '';
     const sellerNom = product.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
+    
+    // Performance safeguard: NEVER return raw multi-megabyte base64 videos in the catalog list
+    let videoUrl = product.video || null;
+    const hasVideo = Boolean(videoUrl);
+    if (videoUrl && videoUrl.startsWith('data:')) {
+      videoUrl = null; // strip inline base64 from listing payload to avoid multi-megabyte latency
+    }
+
     return {
       ...product,
       ...getProductReviewStats(product.id, db.reviews || []),
       gramme: product.gramme !== undefined ? product.gramme : (product.poids !== undefined ? product.poids : null),
       vendeur_phone: sellerPhone,
-      vendeur_nom: sellerNom
+      vendeur_nom: sellerNom,
+      has_video: hasVideo,
+      video: videoUrl
     };
   });
 
@@ -1451,6 +1543,19 @@ app.get('/api/bijoux/:id', (req, res) => {
   }
 
   const normalizedProduct = normalizeSecondHandCondition(product);
+  // Auto-migrate inline base64 video on the fly if needed
+  if (normalizedProduct.video && normalizedProduct.video.startsWith('data:video/')) {
+    const cleanUrl = sanitizeVideoUrl(normalizedProduct.video, normalizedProduct.id);
+    if (cleanUrl && cleanUrl.startsWith('/uploads/')) {
+      normalizedProduct.video = cleanUrl;
+      const idx = db.bijoux.findIndex(b => b.id === normalizedProduct.id);
+      if (idx !== -1) {
+        db.bijoux[idx].video = cleanUrl;
+        writeDB(db);
+      }
+    }
+  }
+
   const seller = (db.users || []).find(u => u.id === normalizedProduct.commercant_id || u.id === normalizedProduct.vendeur_id);
   const sellerPhone = normalizedProduct.vendeur_phone || normalizedProduct.telephone || seller?.phone || seller?.telephone || '';
   const sellerNom = normalizedProduct.vendeur_nom || seller?.shopName || seller?.nom || 'Particulier Vérifié';
@@ -3167,6 +3272,7 @@ const mainDistPath = path.join(__dirname, '..', 'oria-main', 'dist');
 const adminDistPath = path.join(__dirname, '..', 'oria-admin', 'dist');
 
 const staticOptions = {
+  maxAge: '1d',
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.webmanifest')) {
       res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
@@ -3178,6 +3284,8 @@ const staticOptions = {
       if (filePath.endsWith('sw.js')) {
         res.setHeader('Service-Worker-Allowed', '/');
       }
+    } else if (filePath.includes('/assets/') || filePath.includes('\\assets\\')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
     if (filePath.endsWith('.apk')) {
       res.setHeader('Content-Type', 'application/vnd.android.package-archive');
@@ -3189,32 +3297,32 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.5.1',
-  versionCode: 25,
+  version: '1.5.2',
+  versionCode: 26,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-23',
-  pwaCacheVersion: 'oria-pwa-v28',
-  title_fr: 'Mise à jour disponible (Design Administration Moderne & Haute Joaillerie)',
-  title_ar: 'تحديث جديد متوفر (تصميم عصري وجذاب للوحة الإدارة)',
-  message_fr: 'Nouvelle interface d\'administration moderne, élégante et attractive avec navigation enrichie, métriques haute fidélité et contraste optimal.',
-  message_ar: 'واجهة إدارة عصرية ومحسنة بتصميم فاخر وجذاب، وتنقل ميسر ومؤشرات دقيقة وتوافق تام مع كافة الأجهزة.',
+  pwaCacheVersion: 'oria-pwa-v29',
+  title_fr: 'Mise à jour disponible (Performances & Navigation Instantanée)',
+  title_ar: 'تحديث جديد متوفر (تحسين فائق للسرعة والاستجابة)',
+  message_fr: 'Optimisation majeure des temps de chargement : streaming vidéo déporté, division du bundle JS et navigation instantanée.',
+  message_ar: 'تسريع شامل للمنصة: تقليص حجم البيانات، تحميل فوري للصفحات، وتشغيل الفيديو بسرعة فائقة.',
   changelog_fr: [
-    'Refonte visuelle moderne de l\'espace d\'administration (Haute Joaillerie SaaS)',
-    'Nouvelle barre latérale avec catégories structurées, profil admin et badges interactifs',
-    'En-tête sticky avec fil d\'Ariane, raccourci boutique et sélecteur de palettes précieuses',
-    'Cartes KPI haute élévation avec icônes brillantes, indicateurs de tendance et chiffres lisibles',
-    'Tableaux de données et badges de statut sublimés avec points lumineux en direct'
+    'Élimination du goulot d\'étranglement de 30 Mo : extraction des vidéos vers le stockage statique',
+    'Division du bundle JS en modules dynamiques légers (Code-splitting)',
+    'Pré-connexion aux polices et suppression du blocage d\'affichage au démarrage',
+    'Mise en cache instantanée des données du catalogue pour une navigation fluide sans temps mort'
   ],
   changelog_ar: [
-    'إعادة تصميم عصري وشامل للوحة الإدارة (طراز المجوهرات الراقية)',
-    'شريط جانبي متطور مع تبويبات منظمة، بطاقة تعريف المسؤول، وشارات تفاعلية',
-    'شريط علوي مثبت مع مسار التصفح، رابط المتجر المباشر ومغير ألوان الجواهر',
-    'بطاقات إحصائيات متقدمة مع أيقونات ملونة ومؤشرات فورية وأرقام واضحة',
-    'جداول بيانات أنيقة مع شارات حالات ذات نقاط مضيئة ومتباينة'
+    'إلغاء بطء التحميل وحجم 30 ميغابايت باستخراج مقاطع الفيديو للتخزين السريع',
+    'تقسيم حزم الجافاسكريبت وتحميل النوافذ بشكل ديناميكي فوري',
+    'تسريع عرض الخطوط وإزالة أي تأخير في العرض الأولي',
+    'ذاكرة تخزين فورية لبيانات الكتالوج لتنقل سلس وفوري بين الأقسام'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
+  apkSize: '69 Ko'
+};
   apkSize: '69 Ko'
 };
 
@@ -3336,6 +3444,7 @@ const PORT = process.env.PORT || 5077;
 const HOST = process.env.HOST || '0.0.0.0';
 
 checkAndRepairDatabaseIntegrity();
+migrateBase64VideosToFiles();
 
 app.listen(PORT, HOST, () => {
   console.log(`HRSDGDG Unified Server is running on http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
