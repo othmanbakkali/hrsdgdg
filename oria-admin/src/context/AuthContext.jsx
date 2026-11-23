@@ -97,12 +97,19 @@ export const AuthProvider = ({ children }) => {
     restoreSession();
   }, []);
 
-  const login = async (email, password, rememberMe = false) => {
+  const login = async (phoneOrEmail, password, rememberMe = false) => {
     try {
+      const trimmed = (phoneOrEmail || '').trim();
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password, rememberMe })
+        body: JSON.stringify({ 
+          identifier: trimmed,
+          phone: trimmed,
+          email: trimmed, 
+          password, 
+          rememberMe 
+        })
       });
 
       if (!res.ok) {

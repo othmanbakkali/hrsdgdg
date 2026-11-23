@@ -475,23 +475,31 @@ app.post('/api/auth/login', (req, res) => {
   
   // Extract phone digits for flexible Moroccan phone matching
   const rawDigits = rawInput.replace(/\D/g, '');
-  const phoneLast9 = rawDigits.length >= 9 ? rawDigits.slice(-9) : null;
+  const phoneLast9 = rawDigits.length >= 9 ? rawDigits.slice(-9) : (rawDigits.length >= 8 ? rawDigits.slice(-8) : null);
   const baseUserPart = normalizedInput.includes('@') ? normalizedInput.split('@')[0] : '';
   const allowedDomains = ['hrsdgdg.ma', 'hrsdgdg.com', 'oria.com', 'jewelia.com'];
 
   const user = db.users.find(u => {
     if (u.mot_de_passe !== loginPass) return false;
 
-    // 1. Phone number match (matches +2126..., 06..., 6..., etc.)
+    // 1. Phone number match (matches +2126..., 06..., 6..., Moroccan landlines, etc.)
     if (phoneLast9) {
       const uPhone = (u.phone || u.telephone || '').replace(/\D/g, '');
-      if (uPhone && uPhone.endsWith(phoneLast9)) return true;
+      if (uPhone && (uPhone.endsWith(phoneLast9) || (rawDigits.length >= 8 && uPhone.includes(phoneLast9)))) return true;
       // Also match auto-generated pro emails: pro_${phoneDigits}@hrsdgdg.ma
       const uEmail = (u.email || '').toLowerCase();
       if (uEmail.includes(phoneLast9)) return true;
     }
 
-    // 2. Direct email or username match
+    // 2. Direct phone string match
+    if (u.phone && (u.phone === rawInput || u.telephone === rawInput)) return true;
+
+    // 3. Admin shortcut via phone
+    if ((u.role === 'admin' || u.id === 'u_admin') && (rawDigits.endsWith('661000000') || rawDigits.endsWith('000000') || normalizedInput === 'admin@hrsdgdg.com' || normalizedInput === 'admin')) {
+      return true;
+    }
+
+    // 4. Direct email or username match (backward compatibility)
     const uEmail = (u.email || '').toLowerCase();
     if (uEmail === normalizedInput) return true;
     if (baseUserPart && allowedDomains.some(d => normalizedInput.endsWith('@' + d))) {
@@ -499,14 +507,11 @@ app.post('/api/auth/login', (req, res) => {
       if (uBase === baseUserPart) return true;
     }
 
-    // 3. Direct phone string match
-    if (u.phone && (u.phone === rawInput || u.telephone === rawInput)) return true;
-
     return false;
   });
 
   if (!user) {
-    return res.status(401).json({ message: 'Numéro de téléphone / identifiant ou mot de passe incorrect' });
+    return res.status(401).json({ message: 'Numéro de téléphone ou mot de passe incorrect' });
   }
 
   // Account status validation (Admin accounts always bypass)
@@ -3184,28 +3189,28 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.4.9',
-  versionCode: 23,
+  version: '1.5.0',
+  versionCode: 24,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
-  releaseDate: '2026-11-21',
-  pwaCacheVersion: 'oria-pwa-v26',
-  title_fr: 'Mise à jour disponible (Ajustement padding champ téléphone)',
-  title_ar: 'تحديث جديد متوفر (تحسين حقل رقم الهاتف والتسجيل)',
-  message_fr: 'Mise à jour du formulaire d\'inscription : espacement interne garanti du champ numéro de téléphone évitant toute superposition des chiffres saisis avec l\'icône/drapeau en mode arabe (RTL) et français (LTR).',
-  message_ar: 'تحديث استمارة التسجيل: ضبط دقيق للمسافة البادئة الداخلية لحقل رقم الهاتف والواتساب لمنع أي تداخل بين الأرقام المدخلة وأيقونة/شارة العلم في الواجهتين العربية (RTL) والفرنسية (LTR).',
+  releaseDate: '2026-11-23',
+  pwaCacheVersion: 'oria-pwa-v27',
+  title_fr: 'Mise à jour disponible (Authentification par Numéro de Téléphone)',
+  title_ar: 'تحديث جديد متوفر (تسجيل الدخول برقم الهاتف حصرياً)',
+  message_fr: 'Authentification simplifiée et sécurisée par numéro de téléphone marocain au lieu de l\'adresse e-mail, avec interface fluide et détection automatique.',
+  message_ar: 'تسجيل دخول مبسط وآمن برقم الهاتف المغربي مباشرة بدلاً من البريد الإلكتروني، مع واجهة عصرية وسريعة الاستجابة.',
   changelog_fr: [
-    'Ajustement du padding interne du champ téléphone dans le formulaire d\'inscription',
-    'Élimination définitive de la superposition du numéro sur l\'icône/drapeau',
-    'Alignement parfait et espacement aéré en RTL (arabe) et LTR (français/anglais)',
-    'Compatibilité responsive vérifiée sur mobile, tablette et desktop'
+    'Authentification directe par numéro de téléphone marocain (+212 / 06 / 05)',
+    'Suppression des mentions obligatoires d\'adresse e-mail dans la connexion',
+    'Champ de saisie dédié au téléphone avec drapeau marocain et pavé numérique natif',
+    'Connexion fluide et rétro-compatibilité complète conservée'
   ],
   changelog_ar: [
-    'ضبط المسافة الداخلية (padding) لحقل رقم الهاتف في استمارة التسجيل',
-    'إلغاء أي تراكب بين الأرقام المدخلة وأيقونة أو علم الدولة',
-    'محاذاة متناسقة ومسافة أمان مريحة في العرض العربي (RTL) والفرنسي (LTR)',
-    'توافق كامل وتجاوب تام على الهواتف الذكية والحواسب'
+    'تسجيل الدخول المباشر برقم الهاتف المغربي (+212 / 06 / 05)',
+    'استبدال البريد الإلكتروني برقم الهاتف في جميع نوافذ تسجيل الدخول',
+    'حقل مخصص لرقم الهاتف مع علم المغرب ولوحة مفاتيح رقمية تلقائية',
+    'دخول فوري مع الحفاظ الكامل على توافق الحسابات القائمة'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '69 Ko'

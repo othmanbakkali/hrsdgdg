@@ -47,13 +47,13 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
   };
 
   const handleFillDemo = () => {
-    setEmail('admin@hrsdgdg.com');
+    setEmail('0661000000');
     setPassword('admin123');
     setErrorMsg('');
   };
 
   const handleFillDemoMerchant = () => {
-    setEmail('vintage@jewelia.com');
+    setEmail('0662789012');
     setPassword('merchant123');
     setErrorMsg('');
   };
@@ -215,16 +215,16 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
               color: 'var(--text-white)',
               marginBottom: '8px'
             }}>
-              {t('email')}
+              {lang === 'ar' ? 'رقم الهاتف أو البريد' : 'Numéro de Téléphone (ou Email)'}
             </label>
             <div style={{ position: 'relative' }}>
               <input
-                type="email"
-                placeholder="admin@hrsdgdg.com"
+                type="text"
+                placeholder={lang === 'ar' ? '06 61 00 00 00 أو admin@hrsdgdg.com' : '06 61 00 00 00 ou admin@hrsdgdg.com'}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="tel username"
                 style={{
                   width: '100%',
                   boxSizing: 'border-box'
@@ -348,7 +348,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
                 fontSize: '0.8rem'
               }}
             >
-              👑 {t('demoAdmin')}
+              👑 {lang === 'ar' ? 'المشرف (0661000000)' : 'Admin (0661000000)'}
             </button>
             <button
               type="button"
@@ -360,7 +360,7 @@ export default function AdminLogin({ selectedTheme, setSelectedTheme }) {
                 fontSize: '0.8rem'
               }}
             >
-              🏪 {lang === 'ar' ? 'تاجر (Karim Bennani)' : 'Commerçant (Karim Bennani)'}
+              🏪 {lang === 'ar' ? 'تاجر (0662789012)' : 'Commerçant (0662789012)'}
             </button>
           </div>
         </div>

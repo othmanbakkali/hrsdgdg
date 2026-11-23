@@ -255,7 +255,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     e.preventDefault();
     setErrorMsg('');
     if (!phoneOrEmail.trim()) {
-      setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم الهاتف أو البريد الإلكتروني.' : 'Veuillez saisir votre numéro de téléphone.');
+      setErrorMsg(lang === 'ar' ? 'يرجى إدخال رقم الهاتف المسجل.' : 'Veuillez saisir votre numéro de téléphone.');
       return;
     }
     if (!password) {
@@ -365,9 +365,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       welcomeDesc: "Accédez à votre coffre-fort, vos enchères privées et vos commandes.",
       createAcc: "Espace Professionnel Agréé",
       createDesc: "Inscription strictement réservée aux bijoutiers, artisans orfèvres et joailliers agréés.",
-      emailLabel: "Numéro de Téléphone (ou Email)",
-      loginIdentifierLabel: "Numéro de Téléphone (ou Email)",
-      loginIdentifierPlaceholder: "Ex: 0661234567 ou +212661234567",
+      emailLabel: "Numéro de Téléphone",
+      loginIdentifierLabel: "Numéro de Téléphone",
+      loginIdentifierPlaceholder: "06 00 00 00 00",
       passLabel: "Mot de passe",
       generatePwd: "🔑 Générer un mot de passe fort",
       nameLabel: "Nom & Prénom du Gérant / Responsable",
@@ -431,9 +431,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       welcomeDesc: "ادخل إلى خزنتك ومزاداتك الحصرية وطلباتك بكل أمان.",
       createAcc: "تسجيل الصاغة والمحلات المعتمدة",
       createDesc: "التسجيل في المنصة مخصص حصرياً للمحترفين والصاغة المعتمدين لممارسة الصياغة بالمغرب.",
-      emailLabel: "رقم الهاتف / واتساب (أو البريد)",
-      loginIdentifierLabel: "رقم الهاتف / واتساب (أو البريد)",
-      loginIdentifierPlaceholder: "مثال: 0661234567 أو +212661234567",
+      emailLabel: "رقم الهاتف",
+      loginIdentifierLabel: "رقم الهاتف",
+      loginIdentifierPlaceholder: "06 00 00 00 00",
       passLabel: "كلمة المرور",
       generatePwd: "🔑 توليد كلمة مرور قوية",
       nameLabel: "الاسم الكامل للمسؤول / المدير",
@@ -497,7 +497,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       welcomeDesc: "Access your private vault, live auctions, and orders.",
       createAcc: "Certified Jeweller Registration",
       createDesc: "Registration is strictly reserved for certified jewelry boutiques and workshops.",
-      emailLabel: "Business Email Address",
+      emailLabel: "Phone Number",
+      loginIdentifierLabel: "Phone Number",
+      loginIdentifierPlaceholder: "06 00 00 00 00",
       passLabel: "Password",
       generatePwd: "🔑 Generate Strong Password",
       nameLabel: "Full Name of Manager / Owner",
@@ -1253,23 +1255,32 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
              TAB 2: LOGIN FORM
              ======================================================== */
           <form onSubmit={handleLoginSubmit} className="auth-form-body">
-            {/* Phone Number / Identifier Input */}
+            {/* Phone Number Input */}
             <div className="auth-field-group">
               <label className="auth-field-label">
                 <span className="auth-label-icon">📱</span>
-                <span>{t.loginIdentifierLabel || t.emailLabel}</span>
+                <span>{t.loginIdentifierLabel}</span>
+                <span className="auth-required-mark">*</span>
               </label>
-              <div className="auth-input-container">
+              <div className="auth-input-container auth-phone-input-wrap">
+                <span className="auth-country-flag" title="Maroc (+212)" aria-hidden="true">🇲🇦</span>
                 <input
-                  type="text"
+                  type="tel"
                   required
-                  className="auth-text-input"
+                  className="auth-text-input auth-phone-input"
                   value={phoneOrEmail}
                   onChange={e => setPhoneOrEmail(e.target.value)}
-                  placeholder={t.loginIdentifierPlaceholder || (lang === 'ar' ? "مثال: 0661234567 أو +212661234567" : "Ex: 0661234567 ou +212661234567")}
-                  autoComplete="username tel"
+                  placeholder={t.loginIdentifierPlaceholder}
+                  autoComplete="tel"
+                  style={{
+                    paddingLeft: isRtl ? '18px' : '58px',
+                    paddingRight: isRtl ? '58px' : '18px'
+                  }}
                 />
               </div>
+              <span className="auth-field-micro-hint">
+                {lang === 'ar' ? 'أدخل رقم هاتفك المسجل في المنصة (مثال: 0661234567)' : 'Saisissez votre numéro de téléphone (ex: 0661234567)'}
+              </span>
             </div>
 
             {/* Password Input */}
@@ -1369,12 +1380,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <button
                   type="button"
                   className="auth-demo-pill"
-                  onClick={() => setDemoAccount('admin@hrsdgdg.com', 'admin123')}
+                  onClick={() => setDemoAccount('0661000000', 'admin123')}
                   style={{ borderColor: 'var(--primary-gold)', background: 'rgba(212, 175, 55, 0.12)' }}
-                  title="Admin: admin@hrsdgdg.com"
+                  title="Admin: 0661000000"
                 >
                   <span className="demo-pill-icon">👑</span>
-                  <span className="demo-pill-text">{lang === 'ar' ? 'المشرف (Admin)' : 'Admin HRSDGDG'}</span>
+                  <span className="demo-pill-text">{lang === 'ar' ? 'المشرف (0661000000)' : 'Admin (0661000000)'}</span>
                 </button>
               </div>
             </div>

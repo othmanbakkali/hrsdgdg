@@ -148,9 +148,15 @@ export default function ClientDashboard({ onSelectProduct, onOpenSellModal, onOp
               </span>
             </div>
             <p style={{ color: 'var(--text-gray)', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span>{user?.email}</span>
-              <span>•</span>
-              <span dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate', fontWeight: 600 }}>{user?.phone || user?.telephone || '+212 661-000000'}</span>
+              <span dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate', fontWeight: 700, color: 'var(--primary-gold)' }}>
+                📱 {user?.phone || user?.telephone || '+212 661-889900'}
+              </span>
+              {user?.email && !user.email.startsWith('pro_') && (
+                <>
+                  <span>•</span>
+                  <span>{user.email}</span>
+                </>
+              )}
             </p>
           </div>
         </div>
