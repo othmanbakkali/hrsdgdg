@@ -2017,129 +2017,171 @@ function AdminLayout() {
           ✕
         </button>
 
-        <div className="logo-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '15px 10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '20px' }}>
-          <OriaLogo size={36} subtitle={isMerchant ? (lang === 'ar' ? 'فضاء التاجر والصائغ' : 'ESPACE MARCHAND') : 'ADMINISTRATION'} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-            <div style={{ fontSize: '0.78rem', color: isMerchant ? 'var(--admin-gold)' : 'var(--text-gray)', background: isMerchant ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.08)', padding: '3px 10px', borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: isMerchant ? 700 : 500 }}>
-              {isMerchant ? `🏪 ${adminUser?.shopName || adminUser?.nom || 'Commerçant'}` : `Super-Admin • ${adminUser?.nom || 'Admin'}`}
+        <div className="admin-sidebar-header">
+          <OriaLogo size={34} subtitle={isMerchant ? (lang === 'ar' ? 'فضاء الصائغ والتاجر' : 'ESPACE MARCHAND') : (lang === 'ar' ? 'لوحة الإدارة العليا' : 'ADMINISTRATION')} />
+          <div className="admin-profile-badge">
+            <div className="admin-profile-avatar">
+              {(adminUser?.nom || (isMerchant ? 'M' : 'A')).substring(0, 2).toUpperCase()}
+              <span className="status-dot-online" title={lang === 'ar' ? 'متصل الآن' : 'En ligne'} />
             </div>
-            <button
-              type="button"
-              onClick={logout}
-              title={t('logout')}
-              style={{
-                background: 'rgba(231, 76, 60, 0.1)',
-                border: '1px solid rgba(231, 76, 60, 0.3)',
-                color: '#ff6b6b',
-                borderRadius: '8px',
-                padding: '4px 8px',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'all 0.2s'
-              }}
-            >
-              🚪
-            </button>
+            <div className="admin-profile-info">
+              <span className="admin-profile-name">{adminUser?.shopName || adminUser?.nom || (isMerchant ? 'Commerçant' : 'Super-Admin')}</span>
+              <span className="admin-profile-role">
+                {isMerchant ? (lang === 'ar' ? '🏪 تاجر مجوهرات' : '🏪 Joaillier Agréé') : (lang === 'ar' ? '🛡️ مسؤول النظام' : '🛡️ Super-Admin')}
+              </span>
+            </div>
           </div>
         </div>
 
-        <nav>
-          <ul className="nav-list">
-            {!isMerchant && (
-              <>
-                <li>
-                  <span className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
-                    📊 {t('dashboard')}
-                  </span>
-                </li>
-                <li>
-                  <span className={`nav-link ${activeTab === 'validation' ? 'active' : ''}`} onClick={() => { setActiveTab('validation'); setMobileMenuOpen(false); }}>
-                    ⚖️ {t('validationQueue')} ({pendingProducts.length})
-                  </span>
-                </li>
-              </>
-            )}
-
-            <li>
-              <span className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
-                💎 {isMerchant ? (lang === 'ar' ? 'مجوهراتي ومقالاتي' : 'Mes Bijoux & Articles') : t('products')} ({products.length})
-              </span>
-            </li>
-
-            {!isMerchant && (
-              <>
-                <li>
-                  <span className={`nav-link ${activeTab === 'commissions' ? 'active' : ''}`} onClick={() => { setActiveTab('commissions'); setMobileMenuOpen(false); }}>
-                    💰 {t('commissions')}
-                  </span>
-                </li>
-                <li>
-                  <span className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setMobileMenuOpen(false); }}>
-                    🗂️ {t('categories')}
-                  </span>
-                </li>
-                <li>
-                  <span className={`nav-link ${activeTab === 'suggestions' ? 'active' : ''}`} onClick={() => { setActiveTab('suggestions'); setMobileMenuOpen(false); }}>
-                    ⚡ {lang === 'ar' ? 'إدارة الاقتراحات' : 'Gestion des Suggestions'}
-                  </span>
-                </li>
-              </>
-            )}
-
-            {hasPermission('manage_gold_rates') && (
-              <li>
-                <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => { setActiveTab('gold_rates'); setMobileMenuOpen(false); }}>
-                  🥇 {t('goldRates')}
-                </span>
-              </li>
-            )}
-            <li>
-              <span className={`nav-link ${activeTab === 'sales_history' ? 'active' : ''}`} onClick={() => { setActiveTab('sales_history'); setMobileMenuOpen(false); }}>
-                📜 {isMerchant ? (lang === 'ar' ? 'سجل مبيعاتي' : 'Mes Ventes & Commandes') : (lang === 'ar' ? 'سجل المبيعات' : 'Historique des Ventes')} ({salesHistory.length})
-              </span>
-            </li>
-
-            {!isMerchant && (
-              <>
-                <li>
-                  <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
-                    👥 {t('users')}
-                  </span>
-                </li>
-                <li>
-                  <span className={`nav-link ${activeTab === 'auctions' ? 'active' : ''}`} onClick={() => { setActiveTab('auctions'); setMobileMenuOpen(false); }}>
-                    🔨 {t('auctions')} ({auctions.length})
-                  </span>
-                </li>
-                <li>
-                  <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => { setActiveTab('subscriptions'); setMobileMenuOpen(false); }}>
-                    🌟 {t('subscriptions')} ({subscriptionsData?.merchants?.length || 0})
-                  </span>
-                </li>
-                <li>
-                  <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setMobileMenuOpen(false); }}>
-                    🛡️ {t('roles')}
-                  </span>
-                </li>
-                {hasPermission('manage_terms') && (
+        <nav style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+          {!isMerchant ? (
+            <>
+              <div className="nav-section">
+                <div className="nav-section-title">
+                  <span>{lang === 'ar' ? 'نظرة عامة' : 'VUE D\'ENSEMBLE'}</span>
+                </div>
+                <ul className="nav-list">
                   <li>
-                    <span className={`nav-link ${activeTab === 'terms' ? 'active' : ''}`} onClick={() => { setActiveTab('terms'); setMobileMenuOpen(false); }}>
-                      ⚖️ {t('termsAndConditions')}
+                    <span className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">📊 {t('dashboard')}</span>
                     </span>
                   </li>
-                )}
-              </>
-            )}
+                  <li>
+                    <span className={`nav-link ${activeTab === 'validation' ? 'active' : ''}`} onClick={() => { setActiveTab('validation'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">⚖️ {t('validationQueue')}</span>
+                      {pendingProducts.length > 0 ? (
+                        <span className="nav-badge alert">{pendingProducts.length}</span>
+                      ) : (
+                        <span className="nav-badge">0</span>
+                      )}
+                    </span>
+                  </li>
+                </ul>
+              </div>
 
-            <li style={{ marginTop: '25px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '12px' }}>
-              <span className="nav-link" onClick={logout} style={{ color: '#ff6b6b', cursor: 'pointer' }}>
-                🚪 {t('logout')}
+              <div className="nav-section">
+                <div className="nav-section-title">
+                  <span>{lang === 'ar' ? 'الكتالوج والمعاملات' : 'CATALOGUE & VENTES'}</span>
+                </div>
+                <ul className="nav-list">
+                  <li>
+                    <span className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">💎 {t('products')}</span>
+                      <span className="nav-badge">{products.length}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'sales_history' ? 'active' : ''}`} onClick={() => { setActiveTab('sales_history'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">📜 {lang === 'ar' ? 'سجل المبيعات' : 'Historique des Ventes'}</span>
+                      <span className="nav-badge">{salesHistory.length}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'commissions' ? 'active' : ''}`} onClick={() => { setActiveTab('commissions'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">💰 {t('commissions')}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">🗂️ {t('categories')}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'suggestions' ? 'active' : ''}`} onClick={() => { setActiveTab('suggestions'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">⚡ {lang === 'ar' ? 'إدارة الاقتراحات' : 'Gestion des Suggestions'}</span>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="nav-section">
+                <div className="nav-section-title">
+                  <span>{lang === 'ar' ? 'النظام والمراقبة' : 'GESTION & SYSTÈME'}</span>
+                </div>
+                <ul className="nav-list">
+                  {hasPermission('manage_gold_rates') && (
+                    <li>
+                      <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => { setActiveTab('gold_rates'); setMobileMenuOpen(false); }}>
+                        <span className="nav-link-content">🥇 {t('goldRates')}</span>
+                      </span>
+                    </li>
+                  )}
+                  <li>
+                    <span className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">👥 {t('users')}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'auctions' ? 'active' : ''}`} onClick={() => { setActiveTab('auctions'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">🔨 {t('auctions')}</span>
+                      <span className="nav-badge">{auctions.length}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => { setActiveTab('subscriptions'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">🌟 {t('subscriptions')}</span>
+                      <span className="nav-badge">{subscriptionsData?.merchants?.length || 0}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">🛡️ {t('roles')}</span>
+                    </span>
+                  </li>
+                  {hasPermission('manage_terms') && (
+                    <li>
+                      <span className={`nav-link ${activeTab === 'terms' ? 'active' : ''}`} onClick={() => { setActiveTab('terms'); setMobileMenuOpen(false); }}>
+                        <span className="nav-link-content">⚖️ {t('termsAndConditions')}</span>
+                      </span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="nav-section">
+                <div className="nav-section-title">
+                  <span>{lang === 'ar' ? 'فضاء الصائغ' : 'ESPACE COMMERÇANT'}</span>
+                </div>
+                <ul className="nav-list">
+                  <li>
+                    <span className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">💎 {lang === 'ar' ? 'مجوهراتي ومقالاتي' : 'Mes Bijoux & Articles'}</span>
+                      <span className="nav-badge">{products.length}</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span className={`nav-link ${activeTab === 'sales_history' ? 'active' : ''}`} onClick={() => { setActiveTab('sales_history'); setMobileMenuOpen(false); }}>
+                      <span className="nav-link-content">📜 {lang === 'ar' ? 'سجل مبيعاتي' : 'Mes Ventes & Commandes'}</span>
+                      <span className="nav-badge">{salesHistory.length}</span>
+                    </span>
+                  </li>
+                  {hasPermission('manage_gold_rates') && (
+                    <li>
+                      <span className={`nav-link ${activeTab === 'gold_rates' ? 'active' : ''}`} onClick={() => { setActiveTab('gold_rates'); setMobileMenuOpen(false); }}>
+                        <span className="nav-link-content">🥇 {t('goldRates')}</span>
+                      </span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </>
+          )}
+
+          <div className="sidebar-footer">
+            <a href="/" target="_blank" rel="noopener noreferrer" className="nav-shortcut-btn" title={lang === 'ar' ? 'معاينة متجر ORIA' : 'Voir la Marketplace ORIA'}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🌐</span>
+                <span>{lang === 'ar' ? 'معاينة المتجر' : 'Voir la Boutique'}</span>
               </span>
-            </li>
-          </ul>
+              <span>↗</span>
+            </a>
+            <button type="button" onClick={logout} className="nav-logout-btn">
+              <span>🚪</span>
+              <span>{t('logout')}</span>
+            </button>
+          </div>
         </nav>
       </aside>
 
@@ -2147,21 +2189,64 @@ function AdminLayout() {
       <main className="main-content">
         {/* Header */}
         <header className="admin-header">
-          <h1>{
-            isMerchant ? (
-              activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل مبيعاتي والطلبات' : '📜 Mes Ventes & Commandes') :
-              activeTab === 'gold_rates' ? (lang === 'ar' ? '🥇 أسعار الذهب والفضة الحية' : "🥇 Cours de l'Or & Argent") :
-              (lang === 'ar' ? '💎 إدارة ونشر مجوهراتي ومقالاتي' : '💎 Gestion & Publication de Mes Bijoux')
-            ) : (
-              activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل المبيعات والصفقات المكتملة' : '📜 Historique Général des Ventes') :
-              activeTab === 'subscriptions' ? t('subscriptionsTitle') : 
-              activeTab === 'terms' ? (lang === 'ar' ? '⚖️ إدارة شروط وأحكام الاستخدام' : "⚖️ Termes & Conditions d'Utilisation") :
-              activeTab === 'suggestions' ? (lang === 'ar' ? '⚡ إدارة اقتراحات المنتجات وسعر الغرام' : '⚡ Gestion des Suggestions de Titres & Prix') :
-              t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))
-            )
-          }</h1>
+          <div className="admin-header-title-box">
+            <div className="admin-breadcrumb">
+              <span className="breadcrumb-dot"></span>
+              <span>ORIA</span>
+              <span className="breadcrumb-sep">/</span>
+              <span>{isMerchant ? (lang === 'ar' ? 'فضاء الصائغ' : 'Espace Marchand') : (lang === 'ar' ? 'الإدارة العليا' : 'Administration')}</span>
+              <span className="breadcrumb-sep">/</span>
+              <span className="breadcrumb-current">
+                {isMerchant ? (
+                  activeTab === 'sales_history' ? (lang === 'ar' ? 'المبيعات' : 'Ventes') :
+                  activeTab === 'gold_rates' ? (lang === 'ar' ? 'الذهب' : 'Or & Argent') :
+                  (lang === 'ar' ? 'المجوهرات' : 'Catalogue')
+                ) : (
+                  activeTab === 'dashboard' ? (lang === 'ar' ? 'لوحة التحكم' : 'Dashboard') :
+                  activeTab === 'validation' ? (lang === 'ar' ? 'المراجعة' : 'Validation') :
+                  activeTab === 'products' ? (lang === 'ar' ? 'المنتجات' : 'Catalogue') :
+                  activeTab === 'sales_history' ? (lang === 'ar' ? 'المبيعات' : 'Ventes') :
+                  activeTab === 'commissions' ? (lang === 'ar' ? 'العمولات' : 'Commissions') :
+                  activeTab === 'categories' ? (lang === 'ar' ? 'الفئات' : 'Catégories') :
+                  activeTab === 'suggestions' ? (lang === 'ar' ? 'الاقتراحات' : 'Suggestions') :
+                  activeTab === 'gold_rates' ? (lang === 'ar' ? 'الذهب والفضة' : 'Cours Métaux') :
+                  activeTab === 'users' ? (lang === 'ar' ? 'المستخدمون' : 'Utilisateurs') :
+                  activeTab === 'auctions' ? (lang === 'ar' ? 'المزادات' : 'Enchères') :
+                  activeTab === 'subscriptions' ? (lang === 'ar' ? 'الاشتراكات' : 'Abonnements') :
+                  activeTab === 'roles' ? (lang === 'ar' ? 'الأدوار' : 'Rôles') :
+                  (lang === 'ar' ? 'الشروط' : 'Termes')
+                )}
+              </span>
+            </div>
+            <h1>{
+              isMerchant ? (
+                activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل مبيعاتي والطلبات' : '📜 Mes Ventes & Commandes') :
+                activeTab === 'gold_rates' ? (lang === 'ar' ? '🥇 أسعار الذهب والفضة الحية' : "🥇 Cours de l'Or & Argent") :
+                (lang === 'ar' ? '💎 إدارة ونشر مجوهراتي ومقالاتي' : '💎 Gestion & Publication de Mes Bijoux')
+              ) : (
+                activeTab === 'sales_history' ? (lang === 'ar' ? '📜 سجل المبيعات والصفقات المكتملة' : '📜 Historique Général des Ventes') :
+                activeTab === 'subscriptions' ? t('subscriptionsTitle') : 
+                activeTab === 'terms' ? (lang === 'ar' ? '⚖️ إدارة شروط وأحكام الاستخدام' : "⚖️ Termes & Conditions d'Utilisation") :
+                activeTab === 'suggestions' ? (lang === 'ar' ? '⚡ إدارة اقتراحات المنتجات وسعر الغرام' : '⚡ Gestion des Suggestions de Titres & Prix') :
+                t(activeTab === 'validation' ? 'validationQueue' : (activeTab === 'commissions' ? 'commissions' : (activeTab === 'categories' ? 'categories' : (activeTab === 'users' ? 'userManagement' : (activeTab === 'auctions' ? 'auctionManagement' : (activeTab === 'products' ? 'productManagement' : (activeTab === 'roles' ? 'roles' : 'dashboard')))))))
+              )
+            }</h1>
+          </div>
           
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div className="admin-header-actions">
+            {/* Quick link to live marketplace */}
+            <a 
+              href="/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-header-shortcut" 
+              title={lang === 'ar' ? 'معاينة متجر ORIA' : 'Voir la Marketplace ORIA'}
+            >
+              <span>🌐</span>
+              <span>{lang === 'ar' ? 'المتجر' : 'Marketplace'}</span>
+              <span style={{ fontSize: '0.72rem', opacity: 0.8 }}>↗</span>
+            </a>
+
             {/* Light / Dark Mode Toggle */}
             <button
               type="button"
@@ -2173,15 +2258,16 @@ function AdminLayout() {
               <span>{themeMode === 'light' ? (lang === 'ar' ? 'الوضع الليلي' : 'Mode Nuit') : (lang === 'ar' ? 'الوضع النهاري' : 'Fond Clair')}</span>
             </button>
 
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>{t('themeColor')}</span>
-              <button type="button" onClick={() => setSelectedTheme('gold')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'gold' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#d4af37', cursor: 'pointer', padding: 0 }} title="Or Royal"></button>
-              <button type="button" onClick={() => setSelectedTheme('rosegold')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'rosegold' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#b76e79', cursor: 'pointer', padding: 0 }} title="Or Rose"></button>
-              <button type="button" onClick={() => setSelectedTheme('emerald')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'emerald' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#2ecc71', cursor: 'pointer', padding: 0 }} title="Émeraude"></button>
-              <button type="button" onClick={() => setSelectedTheme('ruby')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'ruby' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#e74c3c', cursor: 'pointer', padding: 0 }} title="Rubis"></button>
-              <button type="button" onClick={() => setSelectedTheme('sapphire')} style={{ width: '16px', height: '16px', borderRadius: '50%', border: selectedTheme === 'sapphire' ? '2px solid white' : '1px solid rgba(255,255,255,0.2)', backgroundColor: '#3498db', cursor: 'pointer', padding: 0 }} title="Saphir"></button>
+            {/* Jewel Palette Picker */}
+            <div className="header-jewel-palette">
+              <button type="button" onClick={() => setSelectedTheme('gold')} className={`jewel-dot-btn ${selectedTheme === 'gold' ? 'active' : ''}`} style={{ backgroundColor: '#d4af37' }} title="Or Royal"></button>
+              <button type="button" onClick={() => setSelectedTheme('rosegold')} className={`jewel-dot-btn ${selectedTheme === 'rosegold' ? 'active' : ''}`} style={{ backgroundColor: '#b76e79' }} title="Or Rose"></button>
+              <button type="button" onClick={() => setSelectedTheme('emerald')} className={`jewel-dot-btn ${selectedTheme === 'emerald' ? 'active' : ''}`} style={{ backgroundColor: '#2ecc71' }} title="Émeraude"></button>
+              <button type="button" onClick={() => setSelectedTheme('ruby')} className={`jewel-dot-btn ${selectedTheme === 'ruby' ? 'active' : ''}`} style={{ backgroundColor: '#e74c3c' }} title="Rubis"></button>
+              <button type="button" onClick={() => setSelectedTheme('sapphire')} className={`jewel-dot-btn ${selectedTheme === 'sapphire' ? 'active' : ''}`} style={{ backgroundColor: '#3498db' }} title="Saphir"></button>
             </div>
 
+            {/* Language Select */}
             <select 
               className="lang-select" 
               value={lang} 
@@ -2463,23 +2549,66 @@ function AdminLayout() {
             </div>
           )}
 
-            {/* Global Metrics Row */}
+            {/* Global Metrics Row (Haute Joaillerie SaaS Cards) */}
             <div className="stats-row">
               <div className="stat-card">
-                <span className="stat-title">{t('salesVolume')}</span>
-                <span className="stat-num">{stats.totalSales} MAD</span>
+                <div className="stat-card-top">
+                  <span className="stat-title">{t('salesVolume')}</span>
+                  <div className="stat-icon-wrapper stat-icon-gold">💰</div>
+                </div>
+                <div className="stat-num-box">
+                  <span className="stat-num">{Number(stats.totalSales || 0).toLocaleString()}</span>
+                  <span className="stat-currency">MAD</span>
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-trend-pill up">▲ {lang === 'ar' ? 'معاملات مباشرة' : 'Volume direct'}</span>
+                  <span className="stat-period">{lang === 'ar' ? 'إجمالي المبيعات' : 'Cumulé plateforme'}</span>
+                </div>
               </div>
-              <div className="stat-card" style={{ borderColor: 'rgba(212,175,55,0.4)' }}>
-                <span className="stat-title">{t('platformRevenues')}</span>
-                <span className="stat-num">{stats.totalCommissions} MAD</span>
-              </div>
+
               <div className="stat-card">
-                <span className="stat-title">{t('activeMerchants')}</span>
-                <span className="stat-num">{stats.totalMerchants}</span>
+                <div className="stat-card-top">
+                  <span className="stat-title">{t('platformRevenues')}</span>
+                  <div className="stat-icon-wrapper stat-icon-emerald">📈</div>
+                </div>
+                <div className="stat-num-box">
+                  <span className="stat-num">{Number(stats.totalCommissions || 0).toLocaleString()}</span>
+                  <span className="stat-currency">MAD</span>
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-trend-pill up">● {lang === 'ar' ? 'عمولات محققة' : 'Commissions nettes'}</span>
+                  <span className="stat-period">{lang === 'ar' ? 'أرباح المنصة' : 'Revenus réels'}</span>
+                </div>
               </div>
+
               <div className="stat-card">
-                <span className="stat-title">{t('activeClients')}</span>
-                <span className="stat-num">{stats.totalClients}</span>
+                <div className="stat-card-top">
+                  <span className="stat-title">{t('activeMerchants')}</span>
+                  <div className="stat-icon-wrapper stat-icon-blue">🏪</div>
+                </div>
+                <div className="stat-num-box">
+                  <span className="stat-num">{stats.totalMerchants}</span>
+                  <span className="stat-currency">{lang === 'ar' ? 'متجر' : 'boutiques'}</span>
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-trend-pill neutral">● {lang === 'ar' ? 'صاغة معتمدون' : 'Vendeurs agréés'}</span>
+                  <span className="stat-period">{lang === 'ar' ? 'نشط' : 'Actifs'}</span>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-card-top">
+                  <span className="stat-title">{t('activeClients')}</span>
+                  <div className="stat-icon-wrapper stat-icon-purple">👥</div>
+                </div>
+                <div className="stat-num-box">
+                  <span className="stat-num">{stats.totalClients}</span>
+                  <span className="stat-currency">{lang === 'ar' ? 'حساب' : 'clients'}</span>
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-trend-pill neutral">● {lang === 'ar' ? 'مشترون موثقون' : 'Acheteurs vérifiés'}</span>
+                  <span className="stat-period">{lang === 'ar' ? 'نشط' : 'Actifs'}</span>
+                </div>
               </div>
             </div>
 

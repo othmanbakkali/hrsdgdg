@@ -3189,28 +3189,30 @@ const staticOptions = {
 
 // Centralized Application Version & Mandatory Update Configuration
 const APP_VERSION_CONFIG = {
-  version: '1.5.0',
-  versionCode: 24,
+  version: '1.5.1',
+  versionCode: 25,
   minSupportedVersion: '1.4.0',
   minSupportedVersionCode: 14,
   forceUpdate: false,
   releaseDate: '2026-11-23',
-  pwaCacheVersion: 'oria-pwa-v27',
-  title_fr: 'Mise à jour disponible (Authentification par Numéro de Téléphone)',
-  title_ar: 'تحديث جديد متوفر (تسجيل الدخول برقم الهاتف حصرياً)',
-  message_fr: 'Authentification simplifiée et sécurisée par numéro de téléphone marocain au lieu de l\'adresse e-mail, avec interface fluide et détection automatique.',
-  message_ar: 'تسجيل دخول مبسط وآمن برقم الهاتف المغربي مباشرة بدلاً من البريد الإلكتروني، مع واجهة عصرية وسريعة الاستجابة.',
+  pwaCacheVersion: 'oria-pwa-v28',
+  title_fr: 'Mise à jour disponible (Design Administration Moderne & Haute Joaillerie)',
+  title_ar: 'تحديث جديد متوفر (تصميم عصري وجذاب للوحة الإدارة)',
+  message_fr: 'Nouvelle interface d\'administration moderne, élégante et attractive avec navigation enrichie, métriques haute fidélité et contraste optimal.',
+  message_ar: 'واجهة إدارة عصرية ومحسنة بتصميم فاخر وجذاب، وتنقل ميسر ومؤشرات دقيقة وتوافق تام مع كافة الأجهزة.',
   changelog_fr: [
-    'Authentification directe par numéro de téléphone marocain (+212 / 06 / 05)',
-    'Suppression des mentions obligatoires d\'adresse e-mail dans la connexion',
-    'Champ de saisie dédié au téléphone avec drapeau marocain et pavé numérique natif',
-    'Connexion fluide et rétro-compatibilité complète conservée'
+    'Refonte visuelle moderne de l\'espace d\'administration (Haute Joaillerie SaaS)',
+    'Nouvelle barre latérale avec catégories structurées, profil admin et badges interactifs',
+    'En-tête sticky avec fil d\'Ariane, raccourci boutique et sélecteur de palettes précieuses',
+    'Cartes KPI haute élévation avec icônes brillantes, indicateurs de tendance et chiffres lisibles',
+    'Tableaux de données et badges de statut sublimés avec points lumineux en direct'
   ],
   changelog_ar: [
-    'تسجيل الدخول المباشر برقم الهاتف المغربي (+212 / 06 / 05)',
-    'استبدال البريد الإلكتروني برقم الهاتف في جميع نوافذ تسجيل الدخول',
-    'حقل مخصص لرقم الهاتف مع علم المغرب ولوحة مفاتيح رقمية تلقائية',
-    'دخول فوري مع الحفاظ الكامل على توافق الحسابات القائمة'
+    'إعادة تصميم عصري وشامل للوحة الإدارة (طراز المجوهرات الراقية)',
+    'شريط جانبي متطور مع تبويبات منظمة، بطاقة تعريف المسؤول، وشارات تفاعلية',
+    'شريط علوي مثبت مع مسار التصفح، رابط المتجر المباشر ومغير ألوان الجواهر',
+    'بطاقات إحصائيات متقدمة مع أيقونات ملونة ومؤشرات فورية وأرقام واضحة',
+    'جداول بيانات أنيقة مع شارات حالات ذات نقاط مضيئة ومتباينة'
   ],
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '69 Ko'
