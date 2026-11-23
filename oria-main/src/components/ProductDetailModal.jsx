@@ -50,6 +50,13 @@ export default function ProductDetailModal({
   const grammageDisplay = realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné');
   const cityDisplay = lang === 'ar' ? translateCityToArabic(product?.city) : (product?.city || 'Casablanca');
 
+  const weightNum = parseFloat(realGramme || 0);
+  const effectivePrice = product?.prix ? parseFloat(product.prix) : 0;
+  const prixGramme = (product?.prix_gramme && Number(product.prix_gramme) > 0)
+    ? Number(product.prix_gramme)
+    : (weightNum > 0 && effectivePrice > 0 ? Math.round(effectivePrice / weightNum) : null);
+  const prixGrammeDisplay = prixGramme ? `${prixGramme.toLocaleString('fr-FR')} ${lang === 'ar' ? 'درهم / غ' : 'DH / g'}` : null;
+
   // Public direct canonical product URL
   const productBaseUrl = (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost') && !window.location.origin.includes('127.0.0.1'))
     ? window.location.origin
@@ -63,7 +70,7 @@ export default function ProductDetailModal({
 المرجع : ${product?.id}
 السعر : ${product?.prix ? product.prix.toLocaleString() : 'غير محدد'} د.م
 الوزن : ${grammageDisplay}
-المدينة : ${cityDisplay}
+${prixGramme ? `سعر الغرام : ${prixGrammeDisplay}\n` : ''}المدينة : ${cityDisplay}
 رابط القطعة : ${productUrl}
 
 هل هذه القطعة لا تزال متوفرة ؟
@@ -75,7 +82,7 @@ Article : ${displayTitle}
 Référence : ${product?.id}
 Prix : ${product?.prix ? product.prix.toLocaleString() : 'N/A'} MAD
 Grammage : ${grammageDisplay}
-Ville : ${cityDisplay}
+${prixGramme ? `Prix au gramme : ${prixGrammeDisplay}\n` : ''}Ville : ${cityDisplay}
 Lien du produit : ${productUrl}
 
 Cet article est-il toujours disponible ?
@@ -852,37 +859,54 @@ Merci.`;
             ) : (
               /* Normal Price Row with Grammage on the same line */
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(0, 0, 0, 0.08)', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }}>
-                    {product.prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
-                  </span>
-                  {product.ancien_prix && product.ancien_prix > product.prix && (
-                    <>
-                      <span style={{ fontSize: '1.1rem', color: 'var(--text-gray)', textDecoration: 'line-through' }}>
-                        {product.ancien_prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
-                      </span>
-                      <span className="card-discount-badge">
-                        -{Math.round(((product.ancien_prix - product.prix) / product.ancien_prix) * 100)}%
-                      </span>
-                    </>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                    <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--primary-gold)' }}>
+                      {product.prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
+                    </span>
+                    {product.ancien_prix && product.ancien_prix > product.prix && (
+                      <>
+                        <span style={{ fontSize: '1.1rem', color: 'var(--text-gray)', textDecoration: 'line-through' }}>
+                          {product.ancien_prix.toLocaleString()} {lang === 'ar' ? 'د.م' : 'DH'}
+                        </span>
+                        <span className="card-discount-badge">
+                          -{Math.round(((product.ancien_prix - product.prix) / product.ancien_prix) * 100)}%
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {prixGramme && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.92rem', color: 'var(--primary-gold)', fontWeight: 700 }}>
+                      <span>🏷️</span>
+                      <span>{lang === 'ar' ? 'سعر الغرام (درهم / غ) :' : 'Prix au gramme (DH / g) :'}</span>
+                      <strong style={{ fontSize: '1rem', color: '#b48625', textDecoration: 'underline' }}>
+                        {prixGrammeDisplay}
+                      </strong>
+                    </div>
                   )}
                 </div>
 
                 {realGramme && (
                   <div style={{
                     display: 'inline-flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 14px',
+                    gap: '4px',
+                    padding: '8px 16px',
                     background: 'rgba(212, 175, 55, 0.08)',
                     border: '1.5px solid var(--border-gold)',
-                    borderRadius: '20px',
-                    fontSize: '0.95rem',
-                    fontWeight: 800,
+                    borderRadius: '16px',
                     color: 'var(--primary-gold)'
                   }}>
-                    <span>⚖️</span>
-                    <span>{realGramme} {lang === 'ar' ? 'غ' : 'g'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 800 }}>
+                      <span>⚖️</span>
+                      <span>{realGramme} {lang === 'ar' ? 'غ' : 'g'}</span>
+                    </div>
+                    {prixGramme && (
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#854d0e', opacity: 0.95 }}>
+                        {prixGramme.toLocaleString('fr-FR')} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -908,6 +932,12 @@ Merci.`;
                 <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'الوزن (غرام)' : 'Grammage'} :</span>{' '}
                 <strong style={{ color: 'var(--primary-gold)' }}>
                   {product.gramme || product.poids ? `${product.gramme || product.poids} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
+                </strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-gray)' }}>{lang === 'ar' ? 'سعر الغرام (درهم / غ)' : 'Prix au gramme (DH/g)'} :</span>{' '}
+                <strong style={{ color: 'var(--primary-gold)', fontWeight: 800 }}>
+                  {prixGrammeDisplay || (lang === 'ar' ? 'غير محدد' : 'Non renseigné')}
                 </strong>
               </div>
               <div><span style={{ color: 'var(--text-gray)' }}>{t('stone')} :</span> <strong>{formatStone(product.pierre)}</strong></div>

@@ -1508,10 +1508,17 @@ app.get('/api/bijoux', (req, res) => {
       videoUrl = null; // strip inline base64 from listing payload to avoid multi-megabyte latency
     }
 
+    const pWeight = parseFloat(product.gramme !== undefined ? product.gramme : (product.poids !== undefined ? product.poids : 0)) || 0;
+    const pPrice = parseFloat(product.prix || 0);
+    const pPrixGramme = (product.prix_gramme && Number(product.prix_gramme) > 0)
+      ? Number(product.prix_gramme)
+      : (pWeight > 0 && pPrice > 0 ? Math.round(pPrice / pWeight) : null);
+
     return {
       ...product,
       ...getProductReviewStats(product.id, db.reviews || []),
       gramme: product.gramme !== undefined ? product.gramme : (product.poids !== undefined ? product.poids : null),
+      prix_gramme: pPrixGramme,
       vendeur_phone: sellerPhone,
       vendeur_nom: sellerNom,
       has_video: hasVideo,
@@ -1562,10 +1569,17 @@ app.get('/api/bijoux/:id', (req, res) => {
 
   // Attach reviews
   const reviewStats = getProductReviewStats(normalizedProduct.id, db.reviews || []);
+  const npWeight = parseFloat(normalizedProduct.gramme !== undefined ? normalizedProduct.gramme : (normalizedProduct.poids !== undefined ? normalizedProduct.poids : 0)) || 0;
+  const npPrice = parseFloat(normalizedProduct.prix || 0);
+  const npPrixGramme = (normalizedProduct.prix_gramme && Number(normalizedProduct.prix_gramme) > 0)
+    ? Number(normalizedProduct.prix_gramme)
+    : (npWeight > 0 && npPrice > 0 ? Math.round(npPrice / npWeight) : null);
+
   res.json({ 
     ...normalizedProduct,
     ...reviewStats,
     gramme: normalizedProduct.gramme !== undefined ? normalizedProduct.gramme : (normalizedProduct.poids !== undefined ? normalizedProduct.poids : null),
+    prix_gramme: npPrixGramme,
     vendeur_phone: sellerPhone, 
     vendeur_nom: sellerNom,
     customer_reviews: (db.reviews || []).filter(review => review.bijou_id === normalizedProduct.id)
@@ -1769,6 +1783,7 @@ app.post('/api/bijoux', (req, res) => {
     description_en: description_en || '',
     prix: parseFloat(prix) || 0,
     ancien_prix: ancien_prix ? parseFloat(ancien_prix) : null,
+    prix_gramme: req.body.prix_gramme ? parseFloat(req.body.prix_gramme) : ((parseFloat(gramme || poids || 0) > 0 && parseFloat(prix || 0) > 0) ? Math.round(parseFloat(prix) / parseFloat(gramme || poids)) : null),
     type_vente: finalTypeVente,
     matiere: matiere || 'Or',
     gramme: parseFloat(gramme || poids || 0),
@@ -1847,6 +1862,15 @@ app.put('/api/bijoux/:id', (req, res) => {
     stock: req.body.stock !== undefined ? parseInt(req.body.stock) : current.stock,
     disponibilite: req.body.stock !== undefined ? (parseInt(req.body.stock) > 0 ? 'disponible' : 'rupture') : current.disponibilite
   });
+
+  const updItem = db.bijoux[idx];
+  const updGramme = parseFloat(updItem.gramme || updItem.poids || 0);
+  const updPrix = parseFloat(updItem.prix || 0);
+  if (req.body.prix_gramme !== undefined && req.body.prix_gramme !== null && req.body.prix_gramme !== '') {
+    db.bijoux[idx].prix_gramme = parseFloat(req.body.prix_gramme);
+  } else if (updGramme > 0 && updPrix > 0) {
+    db.bijoux[idx].prix_gramme = Math.round(updPrix / updGramme);
+  }
 
   writeDB(db);
   res.json(db.bijoux[idx]);

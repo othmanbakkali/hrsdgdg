@@ -409,6 +409,7 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
         ancien_prix: formData.ancien_prix ? parseFloat(formData.ancien_prix) : null,
         poids: parseFloat(formData.poids || 3),
         gramme: parseFloat(formData.poids || 3),
+        prix_gramme: parseFloat(formData.poids || 3) > 0 ? Math.round(parseFloat(effectivePrice) / parseFloat(formData.poids || 3)) : null,
         type_vente: isAuction ? 'SECOND_HAND' : formData.type_vente,
         disponibilite: isAuction ? 'enchere' : 'disponible',
         commercant_id: user ? user.id : 'u_particulier1',
@@ -1227,6 +1228,28 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
                       className="auth-text-input"
                     />
                   </div>
+
+                  {(parseFloat(formData.poids) > 0 && parseFloat(formData.prix) > 0) && (
+                    <div style={{
+                      gridColumn: '1 / -1',
+                      marginTop: '4px',
+                      padding: '8px 12px',
+                      background: 'rgba(212, 175, 55, 0.08)',
+                      border: '1px solid var(--border-gold)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '0.85rem'
+                    }}>
+                      <span style={{ color: 'var(--text-gray)' }}>
+                        ⚖️ {lang === 'ar' ? 'سعر الغرام (درهم / غ) :' : 'Prix au gramme (DH/g) :'}
+                      </span>
+                      <strong style={{ color: 'var(--primary-gold)', fontSize: '0.95rem' }}>
+                        {Math.round(parseFloat(formData.prix) / parseFloat(formData.poids)).toLocaleString('fr-FR')} {lang === 'ar' ? 'درهم / غ' : 'DH / g'}
+                      </strong>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -30,6 +30,12 @@ export default function ProductCard({
     ? product.gramme 
     : (product.poids !== undefined && product.poids !== null && product.poids !== '' ? product.poids : null);
 
+  const weightNum = parseFloat(realGramme || 0);
+  const effectivePrice = product.prix ? parseFloat(product.prix) : 0;
+  const prixGramme = (product.prix_gramme && Number(product.prix_gramme) > 0)
+    ? Number(product.prix_gramme)
+    : (weightNum > 0 && effectivePrice > 0 ? Math.round(effectivePrice / weightNum) : null);
+
   // Multi-image list with fallback
   const productImages = product.images && product.images.length > 0 
     ? product.images 
@@ -81,7 +87,7 @@ export default function ProductCard({
 المرجع : ${product.id}
 السعر : ${product.prix ? product.prix.toLocaleString('fr-FR') : 'غير محدد'} د.م
 الوزن : ${grammageDisplay}
-المدينة : ${cityDisplay}
+${prixGramme ? `سعر الغرام : ${prixGramme.toLocaleString('fr-FR')} درهم / غ\n` : ''}المدينة : ${cityDisplay}
 رابط القطعة : ${productUrl}
 
 هل هذه القطعة لا تزال متوفرة ؟
@@ -93,7 +99,7 @@ Article : ${displayTitle}
 Référence : ${product.id}
 Prix : ${product.prix ? product.prix.toLocaleString('fr-FR') : 'N/A'} MAD
 Grammage : ${grammageDisplay}
-Ville : ${cityDisplay}
+${prixGramme ? `Prix au gramme : ${prixGramme.toLocaleString('fr-FR')} DH / g\n` : ''}Ville : ${cityDisplay}
 Lien du produit : ${productUrl}
 
 Cet article est-il toujours disponible ?
@@ -409,24 +415,42 @@ Merci.`;
               )}
             </div>
 
-            {/* Grammage (sur la même ligne que le prix) */}
+            {/* Grammage & Prix au gramme (sur la même ligne que le prix) */}
             <div style={{ 
               display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '3px', 
-              fontSize: '0.74rem', 
-              color: realGramme ? '#0f172a' : '#64748b', 
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              padding: '1px 5px',
-              borderRadius: '4px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0'
+              flexDirection: 'column',
+              alignItems: lang === 'ar' ? 'flex-start' : 'flex-end',
+              gap: '2px',
+              flexShrink: 0
             }}>
-              <span style={{ color: '#b38728', fontWeight: 700, fontSize: '0.74rem' }}>⚖️</span>
-              <strong style={{ fontWeight: 700 }}>
-                {realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'N/A')}
-              </strong>
+              <div style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '3px', 
+                fontSize: '0.74rem', 
+                color: realGramme ? '#0f172a' : '#64748b', 
+                whiteSpace: 'nowrap',
+                padding: '1px 5px',
+                borderRadius: '4px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0'
+              }}>
+                <span style={{ color: '#b38728', fontWeight: 700, fontSize: '0.74rem' }}>⚖️</span>
+                <strong style={{ fontWeight: 700 }}>
+                  {realGramme ? `${realGramme} ${lang === 'ar' ? 'غ' : 'g'}` : (lang === 'ar' ? 'غير محدد' : 'N/A')}
+                </strong>
+              </div>
+              {prixGramme && (
+                <span style={{
+                  fontSize: '0.67rem',
+                  fontWeight: 700,
+                  color: '#b48625',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1
+                }} title={lang === 'ar' ? 'سعر الغرام (درهم / غ)' : 'Prix au gramme (DH/g)'}>
+                  {prixGramme.toLocaleString('fr-FR')} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
+                </span>
+              )}
             </div>
           </div>
 

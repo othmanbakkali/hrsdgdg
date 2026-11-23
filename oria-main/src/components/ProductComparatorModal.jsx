@@ -136,6 +136,22 @@ export default function ProductComparatorModal({ isOpen, onClose, comparedProduc
                 </tr>
                 <tr>
                   <td style={{ padding: '12px', color: 'var(--text-gray)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    {lang === 'ar' ? 'سعر الغرام (درهم / غ)' : 'Prix au gramme (DH/g)'}
+                  </td>
+                  {comparedProducts.map(p => {
+                    const w = parseFloat(p.gramme || p.poids || 0);
+                    const pg = (p.prix_gramme && Number(p.prix_gramme) > 0)
+                      ? Number(p.prix_gramme)
+                      : (w > 0 && p.prix > 0 ? Math.round(Number(p.prix) / w) : null);
+                    return (
+                      <td key={p.id} style={{ padding: '12px', color: 'var(--primary-gold)', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        {pg ? `${pg.toLocaleString('fr-FR')} ${lang === 'ar' ? 'د.م/غ' : 'DH/g'}` : '-'}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td style={{ padding: '12px', color: 'var(--text-gray)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                     {lang === 'ar' ? 'الأحجار' : 'Pierre'}
                   </td>
                   {comparedProducts.map(p => (

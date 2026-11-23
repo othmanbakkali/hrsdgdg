@@ -5033,7 +5033,14 @@ function AdminLayout() {
                       <div className="product-card-details-grid">
                         <div className="detail-item">
                           <span className="detail-label">{t('price')} :</span>
-                          <strong className="detail-value price-val">{p.prix?.toLocaleString()} MAD</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <strong className="detail-value price-val">{p.prix?.toLocaleString()} MAD</strong>
+                            {(p.prix_gramme || ((p.gramme || p.poids) > 0 && p.prix > 0)) && (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--admin-gold)', fontWeight: 600 }}>
+                                ⚖️ {Math.round(p.prix_gramme || (p.prix / (p.gramme || p.poids)))} MAD/g
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="detail-item">
                           <span className="detail-label">{t('stock')} :</span>
@@ -5146,7 +5153,14 @@ function AdminLayout() {
                           </td>
                           <td>{shop}</td>
                           <td>{catName}</td>
-                          <td style={{ color: 'var(--admin-gold)', fontWeight: 'bold' }}>{p.prix} MAD</td>
+                          <td style={{ color: 'var(--admin-gold)', fontWeight: 'bold' }}>
+                            <div>{p.prix?.toLocaleString ? p.prix.toLocaleString() : p.prix} MAD</div>
+                            {(p.prix_gramme || ((p.gramme || p.poids) > 0 && p.prix > 0)) && (
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-gray)', fontWeight: 'normal' }}>
+                                {Math.round(p.prix_gramme || (p.prix / (p.gramme || p.poids)))} MAD/g
+                              </div>
+                            )}
+                          </td>
                           <td>
                             <span style={{
                               color: p.stock <= 2 ? 'var(--danger-red)' : 'inherit',

@@ -526,6 +526,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         prix: parseFloat(effectivePrice),
         gramme: parseFloat(productForm.gramme || 0),
         poids: parseFloat(productForm.gramme || 0),
+        prix_gramme: parseFloat(productForm.prix_gramme || 0) || (parseFloat(productForm.gramme || 0) > 0 ? Math.round(parseFloat(effectivePrice) / parseFloat(productForm.gramme)) : null),
         composants_poids: cleanComposants,
         type_vente: isAuction ? 'SECOND_HAND' : (productForm.etat === 'Neuf' ? 'FIRST_HAND' : 'SECOND_HAND'),
         disponibilite: isAuction ? 'enchere' : 'disponible',
