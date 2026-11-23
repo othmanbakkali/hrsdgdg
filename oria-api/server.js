@@ -3323,8 +3323,6 @@ const APP_VERSION_CONFIG = {
   apkUrl: '/downloads/hrsdgdg.apk',
   apkSize: '69 Ko'
 };
-  apkSize: '69 Ko'
-};
 
 app.get('/api/app-version', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
