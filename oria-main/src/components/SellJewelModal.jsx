@@ -13,8 +13,8 @@ const getInitialFormData = (userCity = 'Casablanca') => ({
   matiere: 'Or',
   purete: '18k',
   poids: '',
-  pierre: 'Diamant',
-  taille: '54',
+  pierre: 'Aucune',
+  taille: 'Unique',
   etat: 'Excellent état',
   annee: '2024',
   prix: '5900',
@@ -164,6 +164,19 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
     { id: 'Perle', ar: '⚪ لؤلؤ طبيعي', fr: '⚪ Perle' },
     { id: 'Zircon', ar: '✨ زركون برّاق', fr: '✨ Zircon' },
     { id: 'Aucune', ar: '🚫 بدون أحجار (ذهب خالص)', fr: '🚫 Sans pierres (Or pur)' }
+  ];
+
+  // Sizes / Tailles
+  const sizeOptions = [
+    { id: 'Unique', ar: '📏 قياسي (موحد)', fr: '📏 Standard (Unique)' },
+    { id: 'Ajustable', ar: '🔄 قابل للتعديل', fr: '🔄 Ajustable' },
+    { id: 'Sur mesure', ar: '✂️ حسب المقاس', fr: '✂️ Sur mesure' },
+    { id: '50', ar: '50', fr: '50' },
+    { id: '52', ar: '52', fr: '52' },
+    { id: '54', ar: '54', fr: '54' },
+    { id: '56', ar: '56', fr: '56' },
+    { id: '58', ar: '58', fr: '58' },
+    { id: '60', ar: '60', fr: '60' }
   ];
 
   // Condition / Etat
@@ -409,6 +422,8 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
         ancien_prix: formData.ancien_prix ? parseFloat(formData.ancien_prix) : null,
         poids: parseFloat(formData.poids || 3),
         gramme: parseFloat(formData.poids || 3),
+        pierre: formData.pierre || 'Aucune',
+        taille: formData.taille || 'Unique',
         prix_gramme: parseFloat(formData.poids || 3) > 0 ? Math.round(parseFloat(effectivePrice) / parseFloat(formData.poids || 3)) : null,
         type_vente: isAuction ? 'SECOND_HAND' : formData.type_vente,
         disponibilite: isAuction ? 'enchere' : 'disponible',
@@ -1090,11 +1105,45 @@ export default function SellJewelModal({ isOpen, onClose, onProductPublished }) 
             </div>
 
             {/* ========================================================
-                7. ETAT & ACCESSOIRES INCLUS (CHECKABLE BADGES)
+                6.2 TAILLE DU BIJOU / المقاس
                 ======================================================== */}
             <div className="sell-section-box">
               <label className="sell-section-label">
                 <span className="section-label-num">7</span>
+                <span>{lang === 'ar' ? 'المقاس (مقاس القطعة)' : 'Taille du bijou'}</span>
+              </label>
+
+              <div className="choice-pills-wrap" style={{ marginBottom: '8px' }}>
+                {sizeOptions.map(s => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className={`choice-chip ${(formData.taille || 'Unique') === s.id ? 'active' : ''}`}
+                    onClick={() => setFormData({ ...formData, taille: s.id })}
+                  >
+                    {lang === 'ar' ? s.ar : s.fr}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '6px' }}>
+                <input
+                  type="text"
+                  placeholder={lang === 'ar' ? 'أو أدخل مقاساً مخصصاً (مثال: 54، 18 سم، إلخ)' : 'Ou saisir une taille personnalisée (ex: 54, 18 cm...)'}
+                  value={formData.taille || ''}
+                  onChange={e => setFormData({ ...formData, taille: e.target.value })}
+                  className="auth-text-input"
+                  style={{ fontSize: '0.88rem' }}
+                />
+              </div>
+            </div>
+
+            {/* ========================================================
+                8. ETAT & ACCESSOIRES INCLUS (CHECKABLE BADGES)
+                ======================================================== */}
+            <div className="sell-section-box">
+              <label className="sell-section-label">
+                <span className="section-label-num">8</span>
                 <span>{lang === 'ar' ? 'الحالة والوثائق المرفقة' : 'État & Accessoires Inclus'}</span>
               </label>
 

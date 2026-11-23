@@ -90,6 +90,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     adresse: '',
     etat: 'Neuf',
     matiere: 'Or',
+    pierre: 'Aucune',
+    taille: 'Unique',
     composants_poids: {
       collier: '',
       bracelet: '',
@@ -526,6 +528,8 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         prix: parseFloat(effectivePrice),
         gramme: parseFloat(productForm.gramme || 0),
         poids: parseFloat(productForm.gramme || 0),
+        pierre: productForm.pierre || 'Aucune',
+        taille: productForm.taille || 'Unique',
         prix_gramme: parseFloat(productForm.prix_gramme || 0) || (parseFloat(productForm.gramme || 0) > 0 ? Math.round(parseFloat(effectivePrice) / parseFloat(productForm.gramme)) : null),
         composants_poids: cleanComposants,
         type_vente: isAuction ? 'SECOND_HAND' : (productForm.etat === 'Neuf' ? 'FIRST_HAND' : 'SECOND_HAND'),
@@ -1666,6 +1670,114 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* 7. الحجر والمقاس (PIERRE ET TAILLE) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginTop: '6px', marginBottom: '8px' }}>
+              {/* الحجر (Pierre) */}
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px' }}>
+                <label className="filter-label" style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700 }}>
+                  <span>💎 {tr('Pierre / Gemme (الحجر)', 'الحجر (الأحجار الكريمة)')}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--primary-gold)' }}>
+                    {productForm.pierre || 'Aucune'}
+                  </span>
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {[
+                    { id: 'Aucune', fr: '🚫 Sans pierres', ar: '🚫 بدون أحجار' },
+                    { id: 'Diamant', fr: '💎 Diamant', ar: '💎 ألماس' },
+                    { id: 'Zircon', fr: '✨ Zircon', ar: '✨ زركون' },
+                    { id: 'Rubis', fr: '🔴 Rubis', ar: '🔴 ياقوت أحمر' },
+                    { id: 'Saphir', fr: '🔵 Saphir', ar: '🔵 ياقوت أزرق' },
+                    { id: 'Émeraude', fr: '🟢 Émeraude', ar: '🟢 زمرد' },
+                    { id: 'Perle', fr: '⚪ Perle', ar: '⚪ لؤلؤ' },
+                    { id: 'Pierres précieuses', fr: '🔮 Pierres précieuses', ar: '🔮 أحجار كريمة' }
+                  ].map(stone => {
+                    const isActive = (productForm.pierre || 'Aucune') === stone.id;
+                    return (
+                      <button
+                        key={stone.id}
+                        type="button"
+                        onClick={() => setProductForm({ ...productForm, pierre: stone.id })}
+                        style={{
+                          background: isActive ? 'rgba(212, 175, 55, 0.22)' : 'rgba(255,255,255,0.05)',
+                          border: isActive ? '1.5px solid var(--primary-gold)' : '1px solid rgba(255,255,255,0.12)',
+                          color: isActive ? 'var(--primary-gold)' : 'var(--text-gray)',
+                          borderRadius: '14px',
+                          padding: '4px 10px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {isFrench ? stone.fr : stone.ar}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  placeholder={tr('Ou préciser la pierre...', 'أو اكتب نوع الحجر...')}
+                  className="filter-select-control"
+                  style={{ fontSize: '0.82rem', padding: '6px 10px' }}
+                  value={productForm.pierre}
+                  onChange={e => setProductForm({ ...productForm, pierre: e.target.value })}
+                />
+              </div>
+
+              {/* المقاس (Taille) */}
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px' }}>
+                <label className="filter-label" style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700 }}>
+                  <span>📏 {tr('Taille du bijou (المقاس)', 'المقاس (مقاس القطعة)')}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--primary-gold)' }}>
+                    {productForm.taille || 'Unique'}
+                  </span>
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {[
+                    { id: 'Unique', fr: 'Standard (Unique)', ar: 'قياسي (موحد)' },
+                    { id: 'Ajustable', fr: 'Ajustable', ar: 'قابل للتعديل' },
+                    { id: 'Sur mesure', fr: 'Sur mesure', ar: 'حسب المقاس' },
+                    { id: '50', fr: '50', ar: '50' },
+                    { id: '52', fr: '52', ar: '52' },
+                    { id: '54', fr: '54', ar: '54' },
+                    { id: '56', fr: '56', ar: '56' },
+                    { id: '58', fr: '58', ar: '58' },
+                    { id: '60', fr: '60', ar: '60' }
+                  ].map(sz => {
+                    const isActive = (productForm.taille || 'Unique') === sz.id;
+                    return (
+                      <button
+                        key={sz.id}
+                        type="button"
+                        onClick={() => setProductForm({ ...productForm, taille: sz.id })}
+                        style={{
+                          background: isActive ? 'rgba(212, 175, 55, 0.22)' : 'rgba(255,255,255,0.05)',
+                          border: isActive ? '1.5px solid var(--primary-gold)' : '1px solid rgba(255,255,255,0.12)',
+                          color: isActive ? 'var(--primary-gold)' : 'var(--text-gray)',
+                          borderRadius: '14px',
+                          padding: '4px 10px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {isFrench ? sz.fr : sz.ar}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  placeholder={tr('Ou préciser la taille (ex: 54, 18 cm)...', 'أو اكتب المقاس المحدد (مثال: 54، 18 سم)...')}
+                  className="filter-select-control"
+                  style={{ fontSize: '0.82rem', padding: '6px 10px' }}
+                  value={productForm.taille}
+                  onChange={e => setProductForm({ ...productForm, taille: e.target.value })}
+                />
               </div>
             </div>
 
