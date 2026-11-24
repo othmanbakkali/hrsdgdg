@@ -3194,6 +3194,23 @@ body.dark-theme .desktop-device-simulator-canvas {
     grid-template-columns: 1fr 1fr !important;
     gap: 10px !important;
   }
+  .merchant-dashboard-wrap {
+    padding: 12px 10px 80px !important;
+  }
+  .merchant-seller-header {
+    padding: 14px !important;
+    margin-bottom: 14px !important;
+  }
+  .merchant-add-product-card {
+    padding: 16px 12px !important;
+    margin-top: 4px !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .merchant-tabs-bar {
+    margin-bottom: 14px !important;
+  }
   .admin-kpi-grid {
     grid-template-columns: 1fr !important;
   }

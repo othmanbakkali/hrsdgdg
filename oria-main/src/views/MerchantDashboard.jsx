@@ -122,6 +122,18 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   const [orders, setOrders] = useState([]);
   const [productSuggestions, setProductSuggestions] = useState(DEFAULT_SUGGESTIONS);
   const [salesHistory, setSalesHistory] = useState([]);
+  const formTopRef = useRef(null);
+
+  const openAddProductForm = () => {
+    setActiveTab('add-product');
+    setTimeout(() => {
+      if (formTopRef.current) {
+        formTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 40);
+  };
 
   // Multi-image and translation states for the Add Product form
   const [customImageUrl, setCustomImageUrl] = useState('');
@@ -179,6 +191,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   useEffect(() => {
     if (activeTab === 'add-product') {
       resetProductForm();
+      setTimeout(() => {
+        if (formTopRef.current) {
+          formTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 50);
     }
   }, [activeTab]);
 
@@ -725,133 +744,203 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
   };
 
   return (
-    <div dir={isFrench ? 'ltr' : 'rtl'} style={{ maxWidth: '1440px', margin: '0 auto', padding: '36px 24px 60px', textAlign: isFrench ? 'left' : 'right' }}>
+    <div
+      className="merchant-dashboard-wrap"
+      dir={isFrench ? 'ltr' : 'rtl'}
+      style={{
+        maxWidth: '1440px',
+        margin: '0 auto',
+        padding: activeTab === 'add-product' ? '16px 14px 60px' : '36px 24px 60px',
+        textAlign: isFrench ? 'left' : 'right'
+      }}
+    >
       {/* 1. SELLER HEADER */}
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-gold)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '28px',
-        marginBottom: '30px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '20px',
-        boxShadow: 'var(--shadow-card)'
-      }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '1.8rem' }}>🏪</span>
-            <h2 style={{ fontSize: '1.6rem', color: 'var(--text-white)' }}>
-              {user?.shopName || user?.nom || tr('Bijouterie', 'دار المجوهرات')}
-            </h2>
-
-            <span style={{
-              padding: '4px 12px',
-              borderRadius: 'var(--radius-full)',
-              background: 'rgba(16, 185, 129, 0.12)',
-              color: '#059669',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              border: '1px solid rgba(16, 185, 129, 0.3)'
-            }}>
-              {tr('✓ Vendeur agréé et vérifié', '✓ تاجر معتمد وموثق')}
-            </span>
-          </div>
-          <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-            {tr('Espace professionnel • Catalogue, commandes et suivi des ventes', 'فضاء التاجر المهني • إدارة الكتالوج، طلبيات الزبائن وتتبع المبيعات')}
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          {onOpenChangePassword && (
+      {activeTab === 'add-product' ? (
+        <div
+          className="merchant-seller-header"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1.5px solid var(--border-gold)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            boxShadow: 'var(--shadow-card)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <button
-              onClick={onOpenChangePassword}
+              type="button"
+              onClick={() => setActiveTab('listings')}
               className="btn-jewelia-secondary"
-              style={{ padding: '10px 18px', fontSize: '0.88rem' }}
-              title={tr('Modifier le mot de passe', 'تغيير كلمة المرور')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '0.86rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
             >
-              🔐 {tr('Mot de passe', 'كلمة المرور')}
+              <span>{isFrench ? '←' : '→'}</span>
+              <span>{tr('Retour à mes articles', 'العودة لمعروضاتي')}</span>
             </button>
-          )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.3rem' }}>➕</span>
+              <h2 style={{ fontSize: '1.25rem', color: 'var(--primary-gold)', margin: 0, fontFamily: 'var(--font-serif)' }}>
+                {tr('Ajouter une pièce de bijouterie', 'إضافة قطعة مجوهرات جديدة')}
+              </h2>
+            </div>
+          </div>
 
-          <button
-            onClick={() => setActiveTab('sales-history')}
-            className="btn-jewelia-secondary"
-            style={{ padding: '10px 20px', fontSize: '0.88rem' }}
-          >
-            📜 {tr('Historique des ventes', 'سجل المبيعات')}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('add-product')}
-            className="btn-jewelia-primary"
-            style={{ padding: '10px 22px', fontSize: '0.88rem' }}
-          >
-            ➕ {tr('Ajouter un article', 'إضافة قطعة مجوهرات')}
-          </button>
-        </div>
-      </div>
-
-      {/* 2. KPIS ROW */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {tr('Ventes totales', 'إجمالي المبيعات')}
-          </span>
-          <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.totalSales?.toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
-          </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--success-green)', fontWeight: 600 }}>
-            {tr('Volume des transactions réalisées', 'حجم المعاملات المنجزة')}
+          <span style={{
+            padding: '4px 12px',
+            borderRadius: 'var(--radius-full)',
+            background: 'rgba(16, 185, 129, 0.12)',
+            color: '#059669',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            border: '1px solid rgba(16, 185, 129, 0.3)'
+          }}>
+            {user?.shopName || user?.nom || tr('Bijouterie', 'دار المجوهرات')}
           </span>
         </div>
+      ) : (
+        <div
+          className="merchant-seller-header"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-gold)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '28px',
+            marginBottom: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '20px',
+            boxShadow: 'var(--shadow-card)'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '1.8rem' }}>🏪</span>
+              <h2 style={{ fontSize: '1.6rem', color: 'var(--text-white)' }}>
+                {user?.shopName || user?.nom || tr('Bijouterie', 'دار المجوهرات')}
+              </h2>
 
-        {/* INDICATEUR ARGENT (REVENUS NETS) */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {tr('Revenu net', 'صافي الأرباح (المدخول الصافي)')}
-          </span>
-          <h3 style={{ fontSize: '1.75rem', color: '#10b981', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {stats.netEarnings?.toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
-          </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
-            {tr('Solde disponible • Vendeur vérifié', 'الرصيد المتاح • تاجر موثق')}
-          </span>
+              <span style={{
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(16, 185, 129, 0.12)',
+                color: '#059669',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                border: '1px solid rgba(16, 185, 129, 0.3)'
+              }}>
+                {tr('✓ Vendeur agréé et vérifié', '✓ تاجر معتمد وموثق')}
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
+              {tr('Espace professionnel • Catalogue, commandes et suivi des ventes', 'فضاء التاجر المهني • إدارة الكتالوج، طلبيات الزبائن وتتبع المبيعات')}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {onOpenChangePassword && (
+              <button
+                onClick={onOpenChangePassword}
+                className="btn-jewelia-secondary"
+                style={{ padding: '10px 18px', fontSize: '0.88rem' }}
+                title={tr('Modifier le mot de passe', 'تغيير كلمة المرور')}
+              >
+                🔐 {tr('Mot de passe', 'كلمة المرور')}
+              </button>
+            )}
+
+            <button
+              onClick={() => setActiveTab('sales-history')}
+              className="btn-jewelia-secondary"
+              style={{ padding: '10px 20px', fontSize: '0.88rem' }}
+            >
+              📜 {tr('Historique des ventes', 'سجل المبيعات')}
+            </button>
+
+            <button
+              onClick={openAddProductForm}
+              className="btn-jewelia-primary"
+              style={{ padding: '10px 22px', fontSize: '0.88rem' }}
+            >
+              ➕ {tr('Ajouter un article', 'إضافة قطعة مجوهرات')}
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* ARTICLES VENDUS & TRACABILITE */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* 2. KPIS ROW (Masqué lors de l'ajout pour faire remonter le formulaire tout en haut) */}
+      {activeTab !== 'add-product' && (
+        <div className="merchant-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {tr('Articles vendus', 'القطع المباعة')}
+              {tr('Ventes totales', 'إجمالي المبيعات')}
             </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>✓ {tr('Actif', 'نشط')}</span>
+            <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
+              {stats.totalSales?.toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
+            </h3>
+            <span style={{ fontSize: '0.75rem', color: 'var(--success-green)', fontWeight: 600 }}>
+              {tr('Volume des transactions réalisées', 'حجم المعاملات المنجزة')}
+            </span>
           </div>
-          <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {salesHistory.length} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>{tr('transactions', 'معاملة')}</span>
-          </h3>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '6px' }}>
-            {tr('Les articles sont archivés automatiquement après leur vente', 'يتم حفظ وأرشفة القطع تلقائياً بعد البيع')}
-          </div>
-        </div>
 
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {tr('Commandes reçues', 'الطلبيات الواردة')}
-          </span>
-          <h3 style={{ fontSize: '1.75rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
-            {orders.length}
-          </h3>
-          <span style={{ fontSize: '0.75rem', color: 'var(--primary-gold)' }}>
-            ⭐ {tr('Note vendeur 4,9/5', 'تقييم التاجر 4.9/5')}
-          </span>
+          {/* INDICATEUR ARGENT (REVENUS NETS) */}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {tr('Revenu net', 'صافي الأرباح (المدخول الصافي)')}
+            </span>
+            <h3 style={{ fontSize: '1.75rem', color: '#10b981', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
+              {stats.netEarnings?.toLocaleString(isFrench ? 'fr-FR' : 'ar-MA')} {tr('DH', 'درهم')}
+            </h3>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>
+              {tr('Solde disponible • Vendeur vérifié', 'الرصيد المتاح • تاجر موثق')}
+            </span>
+          </div>
+
+          {/* ARTICLES VENDUS & TRACABILITE */}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {tr('Articles vendus', 'القطع المباعة')}
+              </span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-gold)' }}>✓ {tr('Actif', 'نشط')}</span>
+            </div>
+            <h3 style={{ fontSize: '1.75rem', color: 'var(--primary-gold)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
+              {salesHistory.length} <span style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontFamily: 'var(--font-sans)' }}>{tr('transactions', 'معاملة')}</span>
+            </h3>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '6px' }}>
+              {tr('Les articles sont archivés automatiquement après leur vente', 'يتم حفظ وأرشفة القطع تلقائياً بعد البيع')}
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-card)' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {tr('Commandes reçues', 'الطلبيات الواردة')}
+            </span>
+            <h3 style={{ fontSize: '1.75rem', color: 'var(--text-white)', fontFamily: 'var(--font-serif)', marginTop: '4px' }}>
+              {orders.length}
+            </h3>
+            <span style={{ fontSize: '0.75rem', color: 'var(--primary-gold)' }}>
+              ⭐ {tr('Note vendeur 4,9/5', 'تقييم التاجر 4.9/5')}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 3. NAVIGATION TABS */}
-      <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '28px', overflowX: 'auto', paddingBottom: '6px' }}>
+      <div className="merchant-tabs-bar" style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border-gold)', marginBottom: '24px', overflowX: 'auto', paddingBottom: '6px' }}>
         {[
           { id: 'listings', label: tr('💎 Mes articles', '💎 معروضاتي في المتجر'), count: products.length },
           { id: 'orders', label: tr('📦 Commandes reçues', '📦 الطلبيات الواردة'), count: orders.length },
@@ -861,7 +950,13 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              if (tab.id === 'add-product') {
+                openAddProductForm();
+              } else {
+                setActiveTab(tab.id);
+              }
+            }}
             style={{
               padding: '12px 20px',
               background: activeTab === tab.id
@@ -895,7 +990,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginBottom: '20px' }}>
                 {tr('Ajoutez vos créations pour les présenter aux clients.', 'ابدأ الآن بإضافة وعرض إبداعاتك ومجوهراتك الفاخرة للزبائن.')}
               </p>
-              <button onClick={() => setActiveTab('add-product')} className="btn-jewelia-primary">
+              <button onClick={openAddProductForm} className="btn-jewelia-primary">
                 ➕ {tr('Ajouter mon premier article', 'إضافة أول قطعة مجوهرات')}
               </button>
             </div>
@@ -991,12 +1086,54 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         </div>
       )}
 
-      {/* TAB 3: ADD PRODUCT (EXACTEMENT COMME LE BLOC D'ADMINISTRATION) */}
+      {/* TAB 3: ADD PRODUCT (EXACTEMENT COMME LE BLOC D'ADMINISTRATION, REMONTÉ TOUT EN HAUT) */}
       {activeTab === 'add-product' && (
-        <div style={{ maxWidth: '650px', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-lg)', padding: '28px', boxShadow: 'var(--shadow-card)' }}>
-          <h3 style={{ color: 'var(--primary-gold)', marginBottom: '22px', fontFamily: 'var(--font-serif)', fontSize: '1.5rem', textAlign: 'center' }}>
-            {tr('Nouvel article', 'قطعة مجوهرات جديدة')}
-          </h3>
+        <div
+          ref={formTopRef}
+          className="merchant-add-product-card"
+          style={{
+            maxWidth: '680px',
+            margin: '0 auto',
+            background: 'var(--bg-card)',
+            border: '1.5px solid var(--border-gold)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '24px 20px',
+            boxShadow: 'var(--shadow-card)'
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+            paddingBottom: '12px',
+            borderBottom: '1px solid rgba(212, 175, 55, 0.25)',
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
+            <h3 style={{ color: 'var(--primary-gold)', margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.35rem' }}>
+              ✨ {tr('Formulaire d’ajout de bijou', 'استمارة إضافة قطعة مجوهرات')}
+            </h3>
+            <button
+              type="button"
+              onClick={() => setActiveTab('listings')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(212, 175, 55, 0.35)',
+                color: 'var(--text-white)',
+                padding: '6px 12px',
+                borderRadius: '16px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <span>{isFrench ? '✕ Annuler' : '✕ إلغاء والعودة'}</span>
+            </button>
+          </div>
 
           <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {/* 1. PHOTOS DU BIJOU (MULTI-PHOTOS AVEC COMPRESSION) */}
