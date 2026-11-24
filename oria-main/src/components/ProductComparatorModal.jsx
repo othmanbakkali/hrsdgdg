@@ -120,7 +120,7 @@ export default function ProductComparatorModal({ isOpen, onClose, comparedProduc
                   </td>
                   {comparedProducts.map(p => (
                     <td key={p.id} style={{ padding: '12px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      {/argent|silver/i.test(p.matiere || '') ? (lang === 'ar' ? 'فضة عيار 925' : 'Argent 925') : `${p.matiere} ${p.purete || '18K'}`}
+                      {/argent|silver/i.test(p.matiere || '') ? (lang === 'ar' ? 'فضة عيار 1000' : 'Argent 1000') : `${p.matiere} ${p.purete || '18K'}`}
                     </td>
                   ))}
                 </tr>

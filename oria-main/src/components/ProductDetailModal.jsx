@@ -148,7 +148,7 @@ Merci.`;
     const mLower = (mat || '').toLowerCase();
     if (lang === 'ar') {
       if (mLower.includes('piece') || mLower.includes('pièce') || mLower.includes('rare')) return 'قطعة نادرة';
-      if (mLower.includes('argent')) return 'فضة عيار 925';
+      if (mLower.includes('argent')) return 'فضة عيار 1000';
       let m = mat || '';
       if (mLower.includes('or jaune')) m = 'ذهب أصفر';
       else if (mLower.includes('or blanc')) m = 'ذهب أبيض';
@@ -161,7 +161,7 @@ Merci.`;
       return `${m} ${pureAr}`;
     }
     if (mLower.includes('piece') || mLower.includes('pièce') || mLower.includes('rare')) return 'Pièce rare';
-    if (mLower.includes('argent')) return 'Argent 925';
+    if (mLower.includes('argent')) return 'Argent 1000';
     return `${mat || 'Or'} ${purity || '18K'}`;
   };
 

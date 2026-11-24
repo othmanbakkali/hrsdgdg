@@ -51,7 +51,7 @@ export default function LiveGoldTicker() {
       gold18: "Or 18K (750‰)",
       gold21: "Or 21K (875‰)",
       gold24: "Or 24K Pur (999‰)",
-      silver: "Argent 925",
+      silver: "Argent 1000",
       calcBtn: "Calculateur d'Or",
       calcTitle: "Estimer la valeur de votre or",
       calcDesc: "Calculez la valeur instantanée selon le cours officiel du jour au Maroc.",
@@ -65,7 +65,7 @@ export default function LiveGoldTicker() {
       gold18: "ذهب 18 قيراط (750‰)",
       gold21: "ذهب 21 قيراط (875‰)",
       gold24: "ذهب 24 قيراط نقي (999‰)",
-      silver: "فضة عيار 925",
+      silver: "فضة عيار 1000",
       calcBtn: "حاسبة الذهب",
       calcTitle: "تقدير قيمة الذهب الخاص بك",
       calcDesc: "احسب القيمة الفورية حسب سعر السوق الرسمي اليوم في المغرب.",
@@ -79,7 +79,7 @@ export default function LiveGoldTicker() {
       gold18: "18K Gold (750‰)",
       gold21: "21K Gold (875‰)",
       gold24: "24K Pure Gold (999‰)",
-      silver: "925 Silver",
+      silver: "1000 Silver",
       calcBtn: "Gold Calculator",
       calcTitle: "Estimate Your Gold Value",
       calcDesc: "Instant value calculation based on today's official Moroccan market spot prices.",
@@ -183,7 +183,7 @@ export default function LiveGoldTicker() {
                     style={{ borderColor: calcKarat === 'silver' ? '#cbd5e1' : undefined }}
                   >
                     <SilverIcon size={13} style={{ verticalAlign: 'middle', marginInlineEnd: '4px' }} />
-                    {lang === 'ar' ? 'فضة عيار 925' : 'Argent 925'} • {rates.silver925.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
+                    {lang === 'ar' ? 'فضة عيار 1000' : 'Argent 1000'} • {rates.silver925.toFixed(2)} {lang === 'ar' ? 'د.م/غ' : 'DH/g'}
                   </button>
                 </div>
               </div>

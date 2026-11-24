@@ -356,7 +356,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
           </div>
         </div>
 
-        {/* 2. SECONDARY HIGHLIGHT: SILVER 925 */}
+        {/* 2. SECONDARY HIGHLIGHT: SILVER 1000 */}
         <div 
           className="metal-card silver-metal-card"
           onClick={(e) => {
@@ -399,7 +399,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               letterSpacing: '0.3px'
             }}>
               <SilverIcon size={16} />
-              <span>{isAr ? 'فضة عيار 925 (Ag 925)' : 'Argent 925 (Ag 925)'}</span>
+              <span>{isAr ? 'فضة عيار 1000 (Ag 1000)' : 'Argent 1000 (Ag 1000)'}</span>
             </div>
 
             {/* Purity Hallmark Tag */}
@@ -415,7 +415,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
               border: '1px solid rgba(255, 255, 255, 0.15)',
               color: '#cbd5e1'
             }}>
-              🛡️ {isAr ? 'نقاوة 92.5%' : 'Pureté 92,5 %'}
+              🛡️ {isAr ? 'نقاوة 100%' : 'Pureté 100 %'}
             </span>
           </div>
 
@@ -431,7 +431,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <img 
                 src="/silver-bars-perfect.jpg" 
-                alt={isAr ? 'سبائك فضة عيار 925' : 'Lingots d’argent 925'}
+                alt={isAr ? 'سبائك فضة عيار 1000' : 'Lingots d’argent 1000'}
                 style={{
                   width: '84px',
                   height: '56px',
@@ -451,7 +451,7 @@ export default function GoldPriceCard({ onOpenHistoryModal }) {
                   maxWidth: '120px',
                   lineHeight: 1.3
                 }}>
-                  {isAr ? 'معيار الفضة عيار 925' : 'Standard de l’argent 925'}
+                  {isAr ? 'معيار الفضة عيار 1000' : 'Standard de l’argent 1000'}
                 </span>
               </div>
             </div>
