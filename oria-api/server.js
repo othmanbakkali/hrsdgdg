@@ -1413,7 +1413,25 @@ app.get('/api/bijoux', (req, res) => {
   }
 
   if (category) {
-    results = results.filter(b => b.category_id === category);
+    const categoryAliases = {
+      cat_rings: ['cat_rings', 'bague', 'bagues', 'alliance', 'alliances', 'solitaire', 'خاتم', 'خواتم'],
+      cat_y2od2qll9: ['cat_y2od2qll9', 'cat_bracelets', 'bracelet', 'bracelets', 'براسلي', 'براسليات', 'رافنتي', 'سوار', 'اساور'],
+      cat_bracelets: ['cat_y2od2qll9', 'cat_bracelets', 'bracelet', 'bracelets', 'براسلي', 'براسليات', 'رافنتي', 'سوار', 'اساور'],
+      cat_q0euze9d3: ['cat_q0euze9d3', 'cat_necklaces', 'collier', 'colliers', 'سلسلة', 'سلاسل', 'سناسل', 'قلادة', 'عقد'],
+      cat_necklaces: ['cat_q0euze9d3', 'cat_necklaces', 'collier', 'colliers', 'سلسلة', 'سلاسل', 'سناسل', 'قلادة', 'عقد'],
+      cat_i754ll1yi: ['cat_i754ll1yi', 'cat_qfel', 'قفل بلدي', 'مقفل', 'قفل'],
+      cat_a4y7fuan7: ['cat_a4y7fuan7', 'cat_earrings', 'boucle', 'boucles', 'حلقات', 'حلق', 'أقراط', 'خراصات', 'خرصات'],
+      cat_earrings: ['cat_a4y7fuan7', 'cat_earrings', 'boucle', 'boucles', 'حلقات', 'كولي', 'كولي رومي'],
+      cat_sets: ['cat_sets', 'parure', 'parures', 'طقم', 'أطقم', 'بارور'],
+      cat_1w9hmgxu5: ['cat_1w9hmgxu5', 'cat_pendants', 'pendentif', 'علاقة', 'علاقات', 'تعليقة', 'تعليقه'],
+      cat_watches: ['cat_watches', 'montre', 'montres', 'ساعة', 'ساعات']
+    };
+    const aliases = categoryAliases[category] || [category];
+    results = results.filter(b => {
+      if (b.category_id === category || aliases.includes(b.category_id)) return true;
+      const fullText = `${b.titre_fr || ''} ${b.titre || ''} ${b.titre_ar || ''} ${b.description_fr || ''} ${b.description || ''} ${b.description_ar || ''}`.toLowerCase();
+      return aliases.some(alias => fullText.includes(alias.toLowerCase()));
+    });
   }
   if (type_vente && type_vente !== 'ALL') {
     results = results.filter(b => b.type_vente === type_vente);
@@ -1802,7 +1820,19 @@ app.post('/api/bijoux', (req, res) => {
     disponibilite: effectiveDisponibilite,
     city: city || 'Casablanca',
     stock: (stock !== undefined && stock !== null && stock !== '') ? (parseInt(stock) || 1) : 1,
-    category_id: category_id || 'cat_rings',
+    category_id: (() => {
+      if (category_id) return category_id;
+      const combinedText = `${titre_ar || ''} ${finalTitreFr || ''} ${description_ar || ''} ${finalDescFr || ''}`.toLowerCase();
+      if (/خاتم|خواتم|محبس|bague|solitaire|alliance/i.test(combinedText)) return 'cat_rings';
+      if (/براسلي|براسليات|سوار|أساور|اساور|رافنتي|دملج|bracelet/i.test(combinedText)) return 'cat_y2od2qll9';
+      if (/مقفل|قفل|بلدي/i.test(combinedText)) return 'cat_i754ll1yi';
+      if (/حلقات|حلق|أقراط|خراصات|خرصات|boucle/i.test(combinedText)) return 'cat_a4y7fuan7';
+      if (/تعليقة|علاقة|علاقات|دلاية|pendentif/i.test(combinedText)) return 'cat_1w9hmgxu5';
+      if (/سلسلة|سلاسل|سناسل|قلادة|عقد|collier|chaine/i.test(combinedText)) return 'cat_q0euze9d3';
+      if (/طقم|أطقم|بارور|parure/i.test(combinedText)) return 'cat_sets';
+      if (/كولي/i.test(combinedText)) return 'cat_earrings';
+      return 'cat_rings';
+    })(),
     commercant_id: targetMerchantId,
     vendeur_nom: vendeur_nom || merchantUser?.shopName || merchantUser?.nom || 'Particulier Vérifié',
     vendeur_phone: req.body.vendeur_phone || merchantUser?.phone || merchantUser?.telephone || '',

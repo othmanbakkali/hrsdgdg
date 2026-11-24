@@ -170,19 +170,6 @@ export function matchProduct(product, rawQuery) {
   const { cleanedQuery, maxPrice, targetGram } = parseQueryConstraints(rawQuery);
   const normalizedQuery = normalizeSearchText(rawQuery);
 
-  // Explicit product types, metals, purity and audience are hard constraints.
-  // They prevent broad synonym matches (for example a parure matching "bague").
-  const categoryMatchers = [
-    { id: 'cat_rings', terms: ['bague', 'bagues', 'alliance', 'alliances', 'solitaire', 'solitaires', 'chevaliere', 'خاتم', 'خواتم', 'محبس'] },
-    { id: 'cat_bracelets', terms: ['bracelet', 'bracelets', 'jonc', 'joncs', 'gourmette', 'سوار', 'اساور', 'اسوارة'] },
-    { id: 'cat_necklaces', terms: ['collier', 'colliers', 'chaine', 'chaines', 'pendentif', 'pendentifs', 'sautoir', 'سلسله', 'سلاسل', 'قلاده', 'عقد'] },
-    { id: 'cat_earrings', terms: ['boucle', 'boucles', 'creole', 'dormeuse', 'puce', 'حلق', 'حلقات', 'اقراط'] },
-    { id: 'cat_sets', terms: ['parure', 'parures', 'طقم', 'اطقم'] },
-    { id: 'cat_watches', terms: ['montre', 'montres', 'ساعة', 'ساعه', 'ساعات'] }
-  ];
-  const explicitCategory = categoryMatchers.find(({ terms }) => terms.some(term => normalizedQuery.includes(normalizeSearchText(term))));
-  if (explicitCategory && product.category_id !== explicitCategory.id) return false;
-
   const normalizedMaterial = normalizeSearchText(product.matiere || '');
   const normalizedPurity = normalizeSearchText(`${product.purete || ''} ${product.carats || ''}`);
   const productText = normalizeSearchText([
@@ -190,6 +177,24 @@ export function matchProduct(product, rawQuery) {
     product.description_fr, product.description, product.description_ar,
     product.matiere, product.purete, product.carats
   ].filter(Boolean).join(' '));
+
+  // Explicit product types, metals, purity and audience are hard constraints.
+  // They prevent broad synonym matches (for example a parure matching "bague").
+  const categoryMatchers = [
+    { id: 'cat_rings', ids: ['cat_rings'], terms: ['bague', 'bagues', 'alliance', 'alliances', 'solitaire', 'solitaires', 'chevaliere', 'خاتم', 'خواتم', 'محبس'] },
+    { id: 'cat_bracelets', ids: ['cat_bracelets', 'cat_y2od2qll9'], terms: ['bracelet', 'bracelets', 'jonc', 'joncs', 'gourmette', 'سوار', 'اساور', 'اسوارة', 'براسلي', 'براسليات', 'دملج', 'رافنتي'] },
+    { id: 'cat_necklaces', ids: ['cat_necklaces', 'cat_q0euze9d3', 'cat_1w9hmgxu5'], terms: ['collier', 'colliers', 'chaine', 'chaines', 'pendentif', 'pendentifs', 'sautoir', 'سلسله', 'سلاسل', 'سناسل', 'قلاده', 'عقد', 'تعليقة', 'علاقة'] },
+    { id: 'cat_earrings', ids: ['cat_earrings', 'cat_a4y7fuan7'], terms: ['boucle', 'boucles', 'creole', 'dormeuse', 'puce', 'حلق', 'حلقات', 'اقراط', 'خراصات', 'خرصات', 'كولي', 'كولي رومي'] },
+    { id: 'cat_sets', ids: ['cat_sets'], terms: ['parure', 'parures', 'طقم', 'اطقم', 'أطقم', 'بارور'] },
+    { id: 'cat_watches', ids: ['cat_watches'], terms: ['montre', 'montres', 'ساعة', 'ساعه', 'ساعات'] },
+    { id: 'cat_qfel', ids: ['cat_i754ll1yi'], terms: ['مقفل', 'قفل', 'بلدي', 'قفل بلدي'] }
+  ];
+  const explicitCategory = categoryMatchers.find(({ terms }) => terms.some(term => normalizedQuery.includes(normalizeSearchText(term))));
+  if (explicitCategory) {
+    const matchesId = explicitCategory.ids.includes(product.category_id);
+    const matchesText = explicitCategory.terms.some(t => productText.includes(normalizeSearchText(t)));
+    if (!matchesId && !matchesText) return false;
+  }
   if (/(^| )or( |$)|gold|ذهب/.test(normalizedQuery)) {
     if (/argent|silver|فضه/.test(normalizedMaterial) || !/(^| )or( |$)|gold|ذهب/.test(`${normalizedMaterial} ${productText}`)) return false;
   }

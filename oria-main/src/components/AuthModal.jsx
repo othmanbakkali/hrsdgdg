@@ -561,10 +561,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
   );
 
   return (
-    <div className="modal-overlay auth-modal-overlay" onClick={onClose}>
+    <div className="modal-overlay auth-modal-overlay" onClick={onClose} dir={isRtl ? 'rtl' : 'ltr'}>
       <div
         className="modal-content auth-modal-card auth-modal-card-v2"
         onClick={e => e.stopPropagation()}
+        dir={isRtl ? 'rtl' : 'ltr'}
         style={{ direction: isRtl ? 'rtl' : 'ltr' }}
       >
         {/* Top Close Button */}
@@ -1091,8 +1092,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                     <span>{t.phoneLabel}</span>
                     <span className="auth-required-mark">*</span>
                   </label>
-                  <div className="auth-input-container auth-phone-input-wrap">
-                    <span className="auth-country-flag" title="Maroc (+212)" aria-hidden="true">🇲🇦</span>
+                  <div className={`auth-input-container auth-phone-input-wrap ${isRtl ? 'is-rtl' : 'is-ltr'}`}>
+                    <span className="auth-country-flag" title="Maroc (+212)" aria-hidden="true">
+                      <svg viewBox="0 0 900 600" width="22" height="15" style={{ borderRadius: '2px', display: 'inline-block', verticalAlign: 'middle', boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }}>
+                        <rect width="900" height="600" fill="#c1272d"/>
+                        <polygon points="450,195 487,311 390,240 510,240 413,311" fill="none" stroke="#006233" strokeWidth="26"/>
+                      </svg>
+                    </span>
                     <input
                       type="tel"
                       required
@@ -1101,10 +1107,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                       onChange={e => setPhone(e.target.value)}
                       placeholder="06 00 00 00 00"
                       autoComplete="tel"
-                      style={{
-                        paddingLeft: isRtl ? '18px' : '58px',
-                        paddingRight: isRtl ? '58px' : '18px'
-                      }}
+                      dir="ltr"
                     />
                   </div>
                   <span className="auth-field-micro-hint">{t.phoneHint}</span>
@@ -1262,8 +1265,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                 <span>{t.loginIdentifierLabel}</span>
                 <span className="auth-required-mark">*</span>
               </label>
-              <div className="auth-input-container auth-phone-input-wrap">
-                <span className="auth-country-flag" title="Maroc (+212)" aria-hidden="true">🇲🇦</span>
+              <div className={`auth-input-container auth-phone-input-wrap ${isRtl ? 'is-rtl' : 'is-ltr'}`}>
+                <span className="auth-country-flag" title="Maroc (+212)" aria-hidden="true">
+                  <svg viewBox="0 0 900 600" width="22" height="15" style={{ borderRadius: '2px', display: 'inline-block', verticalAlign: 'middle', boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }}>
+                    <rect width="900" height="600" fill="#c1272d"/>
+                    <polygon points="450,195 487,311 390,240 510,240 413,311" fill="none" stroke="#006233" strokeWidth="26"/>
+                  </svg>
+                </span>
                 <input
                   type="tel"
                   required
@@ -1272,10 +1280,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
                   onChange={e => setPhoneOrEmail(e.target.value)}
                   placeholder={t.loginIdentifierPlaceholder}
                   autoComplete="tel"
-                  style={{
-                    paddingLeft: isRtl ? '18px' : '58px',
-                    paddingRight: isRtl ? '58px' : '18px'
-                  }}
+                  dir="ltr"
                 />
               </div>
               <span className="auth-field-micro-hint">

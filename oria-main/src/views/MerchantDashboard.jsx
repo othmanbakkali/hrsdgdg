@@ -26,22 +26,87 @@ const DEFAULT_SUGGESTIONS = {
   description_ar: [
     '✨ ذهب موثق عيار 18k مع الختم الرسمي المغربي.',
     '💎 صياغة تقليدية مغربية فاخرة مع تشطيب دقيق.',
-    '📦 مرفق بشهادة أصالة معتمدة وعلبة فاخرة.',
-    '🔒 قفل أمان محكم ومفحوص بدقة من خبير معتمد.',
     '💎 حلي بلدية مغربية أصيلة.',
-    '💎 حلي عصرية راقية مع تشطيب دقيق.',
-    '💎 رافينتي إيطالية عيار 18k.'
+    'مقفل',
+    'رافنتي',
+    'براسلي',
+    'تعليقة',
+    'خاتم',
+    'حلقات',
+    'طقم',
+    'سلسلة',
+    'كولي'
   ],
   description_fr: [
     '✨ Or 18K certifié avec poinçon officiel marocain.',
     '💎 Finition artisanale marocaine haute joaillerie.',
-    '📦 Livré avec certificat d\'authenticité et écrin de luxe.',
-    '🔒 Fermoir de sécurité renforcé et contrôle bijoutier.',
     '💎 Joaillerie traditionnelle marocaine authentique.',
-    '💎 Bijou moderne raffiné avec finition soignée.',
-    '💎 Pièce italienne raffinée en or 18k.'
+    'Bague',
+    'Bracelet',
+    'Collier',
+    'Boucles d\'oreilles',
+    'Pendentif',
+    'Parure',
+    'Fermoir traditionnel (Qfel)',
+    'Raffinati'
   ],
   prix_gramme: [750, 800, 850, 900]
+};
+
+// Smart Category Auto-Detection from Moroccan & French keywords
+export const detectCategoryFromText = (text, availableCategories = []) => {
+  if (!text || typeof text !== 'string') return '';
+  const t = text.toLowerCase();
+
+  // 1. Direct match with category names
+  for (const cat of availableCategories) {
+    const names = [cat.nom_fr, cat.nom_ar, cat.nom_en, cat.nom].filter(Boolean).map(n => n.toLowerCase());
+    if (names.some(n => t.includes(n))) {
+      return cat.id;
+    }
+  }
+
+  // 2. Moroccan and French jewellery keywords matching
+  // Bagues / خواتم
+  if (/خاتم|خواتم|محبس|bague|bagues|solitaire|alliance/i.test(t)) {
+    return 'cat_rings';
+  }
+  // Bracelets / براسليات / رافنتي
+  if (/براسلي|براسليات|سوار|أساور|اساور|رافنتي|دملج|دمالج|brassellate|bracelet|jonc|gourmette/i.test(t)) {
+    const found = availableCategories.find(c => c.id === 'cat_y2od2qll9' || c.id === 'cat_bracelets');
+    return found ? found.id : 'cat_y2od2qll9';
+  }
+  // Qfel Beldi / قفل بلدي / مقفل
+  if (/مقفل|قفل|بلدي|verrouill/i.test(t)) {
+    const found = availableCategories.find(c => c.id === 'cat_i754ll1yi');
+    if (found) return found.id;
+  }
+  // Boucles / حلقات / خراصات / أقراط
+  if (/حلقات|حلق|أقراط|اقراط|خراصات|خرصات|boucle|boucles|créole|creole|rondelle/i.test(t)) {
+    const found = availableCategories.find(c => c.id === 'cat_a4y7fuan7' || c.id === 'cat_earrings');
+    return found ? found.id : 'cat_a4y7fuan7';
+  }
+  // Pendentifs / علاقات / تعليقة
+  if (/تعليقة|تعليقه|علاقة|علاقات|دلاية|دلايات|cintre|pendentif/i.test(t)) {
+    const found = availableCategories.find(c => c.id === 'cat_1w9hmgxu5' || c.id === 'cat_q0euze9d3');
+    if (found) return found.id;
+  }
+  // Colliers / سناسل / سلاسل
+  if (/سلسلة|سلاسل|سنسلة|سناسل|قلادة|قلادات|عقد|sanselah|collier|chaine/i.test(t)) {
+    const found = availableCategories.find(c => c.id === 'cat_q0euze9d3' || c.id === 'cat_necklaces');
+    return found ? found.id : 'cat_q0euze9d3';
+  }
+  // Parures / أطقم
+  if (/طقم|أطقم|اطقم|بارور|parure|parures|ensemble/i.test(t)) {
+    return 'cat_sets';
+  }
+  // Koli Rumi / كولي رومي
+  if (/كولي|كولي رومي|rumi/i.test(t)) {
+    const found = availableCategories.find(c => c.id === 'cat_earrings');
+    if (found) return found.id;
+  }
+
+  return '';
 };
 
 export default function MerchantDashboard({ onOpenSellModal, onOpenChangePassword }) {
@@ -85,7 +150,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
     prix: '',
     prix_depart: '',
     duree: 24,
-    category_id: 'cat_rings',
+    category_id: '',
     city: user?.city || 'Casablanca',
     adresse: '',
     etat: 'Neuf',
@@ -504,6 +569,25 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
       return;
     }
 
+    // Forcer le choix de la catégorie dans la description
+    let effectiveCategory = productForm.category_id;
+    if (!effectiveCategory) {
+      effectiveCategory = detectCategoryFromText(
+        `${productForm.description_ar} ${productForm.description_fr} ${productForm.description} ${finalTitle}`,
+        categories
+      );
+    }
+
+    if (!effectiveCategory) {
+      alert(tr(
+        'Veuillez choisir la catégorie du bijou dans la description (Bague, Bracelet, Collier, Boucles, Parure...).',
+        'يرجى تحديد فئة القطعة في الوصف (خاتم، براسلي، مقفل، تعليقة، حلقات، طقم...).'
+      ));
+      const descEl = document.getElementById('desc-cat-section');
+      if (descEl) descEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       let cleanComposants = null;
@@ -526,6 +610,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
         description_ar: productForm.description_ar || productForm.description || '',
         description_fr: productForm.description_fr || productForm.description || '',
         prix: parseFloat(effectivePrice),
+        category_id: effectiveCategory,
         gramme: parseFloat(productForm.gramme || 0),
         poids: parseFloat(productForm.gramme || 0),
         pierre: productForm.pierre || 'Aucune',
@@ -1237,7 +1322,7 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
             </div>
 
             {/* 3. MULTILINGUAL CONTENT SECTION (CONTENU EN 3 LANGUES) */}
-            <div style={{
+            <div id="desc-cat-section" style={{
               background: 'rgba(212, 175, 55, 0.06)',
               border: '1.5px solid var(--primary-gold)',
               borderRadius: '12px',
@@ -1322,6 +1407,109 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                 </div>
               )}
 
+              {/* شريط اختيار وتأكيد الفئة في الوصف مباشرة (إجباري بدون تكرار) */}
+              <div style={{
+                margin: '0 0 16px',
+                padding: '12px 14px',
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.04) 100%)',
+                border: '1.5px solid rgba(212, 175, 55, 0.5)',
+                borderRadius: '12px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '1rem' }}>🏷️</span>
+                    <strong style={{ fontSize: '0.86rem', color: 'var(--primary-gold, #b8860b)' }}>
+                      {tr('Catégorie du bijou (choisie dans la description) *', 'فئة القطعة (محددة في الوصف) *')}
+                    </strong>
+                  </div>
+                  {productForm.category_id ? (
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      color: '#15803d',
+                      background: '#dcfce7',
+                      padding: '3px 12px',
+                      borderRadius: '20px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      border: '1px solid #86efac'
+                    }}>
+                      ✓ {tr('Catégorie :', 'الفئة المختارة :')} <strong>{
+                        categories.find(c => c.id === productForm.category_id)?.nom_ar ||
+                        categories.find(c => c.id === productForm.category_id)?.nom_fr ||
+                        categories.find(c => c.id === productForm.category_id)?.nom ||
+                        productForm.category_id
+                      }</strong>
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: '#dc2626',
+                      background: '#fee2e2',
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      border: '1px solid #fca5a5'
+                    }}>
+                      ⚠️ {tr('Obligatoire : cliquez ci-dessous ou écrivez dans la description', 'إجباري : انقر أدناه أو اكتبها في الوصف')}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {(categories && categories.length > 0 ? categories : [
+                    { id: 'cat_rings', nom_ar: 'خواتم', nom_fr: 'Bagues', icon: '💍' },
+                    { id: 'cat_y2od2qll9', nom_ar: 'براسليات', nom_fr: 'Bracelets', icon: '🔗' },
+                    { id: 'cat_q0euze9d3', nom_ar: 'سناسل', nom_fr: 'Colliers', icon: '📿' },
+                    { id: 'cat_i754ll1yi', nom_ar: 'قفل بلدي', nom_fr: 'Qfel beldi', icon: '🔒' },
+                    { id: 'cat_a4y7fuan7', nom_ar: 'خراصات', nom_fr: 'Boucles', icon: '✨' },
+                    { id: 'cat_1w9hmgxu5', nom_ar: 'علاقات', nom_fr: 'Pendentifs', icon: '🏷️' },
+                    { id: 'cat_sets', nom_ar: 'أطقم كاملة', nom_fr: 'Parures', icon: '💎' },
+                    { id: 'cat_earrings', nom_ar: 'كولي رومي', nom_fr: 'Koli rumi', icon: '📿' }
+                  ]).map(cat => {
+                    const isSelected = productForm.category_id === cat.id;
+                    const catLabel = isFrench ? (cat.nom_fr || cat.nom) : (cat.nom_ar || cat.nom);
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const currentDesc = isFrench ? (productForm.description_fr || '') : (productForm.description_ar || '');
+                          const keywordToAdd = isFrench ? (cat.nom_fr || cat.nom) : (cat.nom_ar || cat.nom);
+                          const updatedDesc = currentDesc ? `${currentDesc} • ${keywordToAdd}` : keywordToAdd;
+                          setProductForm(prev => ({
+                            ...prev,
+                            category_id: cat.id,
+                            ...(isFrench ? { description_fr: updatedDesc, description: updatedDesc } : { description_ar: updatedDesc })
+                          }));
+                        }}
+                        style={{
+                          background: isSelected ? 'linear-gradient(135deg, #FFF6D6 0%, #E5C158 50%, #D4AF37 100%)' : '#ffffff',
+                          color: isSelected ? '#000000' : '#1e293b',
+                          border: isSelected ? '2px solid #b8860b' : '1px solid #cbd5e1',
+                          borderRadius: '20px',
+                          padding: '6px 14px',
+                          fontSize: '0.82rem',
+                          fontWeight: isSelected ? 800 : 600,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: isSelected ? '0 2px 8px rgba(212, 175, 55, 0.35)' : '0 1px 3px rgba(0,0,0,0.06)',
+                          transform: isSelected ? 'scale(1.03)' : 'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <span>{cat.icon || '💎'}</span>
+                        <span>{catLabel}</span>
+                        {isSelected && <span style={{ fontWeight: 800 }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* حقول اللغة العربية */}
               {productLangTab === 'ar' && (
                 <div dir="rtl">
@@ -1336,7 +1524,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       dir="rtl"
                       placeholder="مثال: خاتم سوليتير ألماس ذهب أبيض 18 قيراط"
                       value={productForm.titre_ar}
-                      onChange={e => setProductForm({ ...productForm, titre_ar: e.target.value })}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const detected = detectCategoryFromText(val, categories);
+                        setProductForm(prev => ({
+                          ...prev,
+                          titre_ar: val,
+                          ...(detected ? { category_id: detected } : {})
+                        }));
+                      }}
                     />
                     {/* اقتراحات سريعة للعنوان */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
@@ -1345,7 +1541,14 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         <button
                           key={sug}
                           type="button"
-                          onClick={() => setProductForm({ ...productForm, titre_ar: sug })}
+                          onClick={() => {
+                            const detected = detectCategoryFromText(sug, categories);
+                            setProductForm(prev => ({
+                              ...prev,
+                              titre_ar: sug,
+                              ...(detected ? { category_id: detected } : {})
+                            }));
+                          }}
                           style={{
                             background: '#ffffff',
                             border: '1.5px solid #d4af37',
@@ -1372,7 +1575,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       dir="rtl"
                       placeholder="وصف تفصيلي للقطعة باللغة العربية..."
                       value={productForm.description_ar}
-                      onChange={e => setProductForm({ ...productForm, description_ar: e.target.value })}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const detected = detectCategoryFromText(val, categories);
+                        setProductForm(prev => ({
+                          ...prev,
+                          description_ar: val,
+                          ...(detected ? { category_id: detected } : {})
+                        }));
+                      }}
                       style={{ resize: 'vertical' }}
                     />
                     {/* اقتراحات سريعة للوصف */}
@@ -1382,10 +1593,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         <button
                           key={sug}
                           type="button"
-                          onClick={() => setProductForm({
-                            ...productForm,
-                            description_ar: productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug
-                          })}
+                          onClick={() => {
+                            const newDesc = productForm.description_ar ? `${productForm.description_ar} • ${sug}` : sug;
+                            const detected = detectCategoryFromText(`${newDesc} ${sug}`, categories);
+                            setProductForm(prev => ({
+                              ...prev,
+                              description_ar: newDesc,
+                              ...(detected ? { category_id: detected } : {})
+                            }));
+                          }}
                           style={{
                             background: '#ffffff',
                             border: '1px solid #cbd5e1',
@@ -1419,7 +1635,16 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       className="filter-select-control"
                       placeholder="ex: Bague Solitaire Diamant Or Blanc 18K"
                       value={productForm.titre_fr}
-                      onChange={e => setProductForm({ ...productForm, titre_fr: e.target.value, titre: e.target.value })}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const detected = detectCategoryFromText(val, categories);
+                        setProductForm(prev => ({
+                          ...prev,
+                          titre_fr: val,
+                          titre: val,
+                          ...(detected ? { category_id: detected } : {})
+                        }));
+                      }}
                     />
                     {/* Suggestions Titre */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
@@ -1428,7 +1653,15 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         <button
                           key={sug}
                           type="button"
-                          onClick={() => setProductForm({ ...productForm, titre_fr: sug, titre: sug })}
+                          onClick={() => {
+                            const detected = detectCategoryFromText(sug, categories);
+                            setProductForm(prev => ({
+                              ...prev,
+                              titre_fr: sug,
+                              titre: sug,
+                              ...(detected ? { category_id: detected } : {})
+                            }));
+                          }}
                           style={{
                             background: '#ffffff',
                             border: '1.5px solid #d4af37',
@@ -1454,7 +1687,16 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                       rows="3"
                       placeholder="Description détaillée du bijou en français..."
                       value={productForm.description_fr}
-                      onChange={e => setProductForm({ ...productForm, description_fr: e.target.value, description: e.target.value })}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const detected = detectCategoryFromText(val, categories);
+                        setProductForm(prev => ({
+                          ...prev,
+                          description_fr: val,
+                          description: val,
+                          ...(detected ? { category_id: detected } : {})
+                        }));
+                      }}
                       style={{ resize: 'vertical' }}
                     />
                     {/* Suggestions Description */}
@@ -1464,11 +1706,16 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
                         <button
                           key={sug}
                           type="button"
-                          onClick={() => setProductForm({
-                            ...productForm,
-                            description_fr: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug,
-                            description: productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug
-                          })}
+                          onClick={() => {
+                            const newDesc = productForm.description_fr ? `${productForm.description_fr} • ${sug}` : sug;
+                            const detected = detectCategoryFromText(`${newDesc} ${sug}`, categories);
+                            setProductForm(prev => ({
+                              ...prev,
+                              description_fr: newDesc,
+                              description: newDesc,
+                              ...(detected ? { category_id: detected } : {})
+                            }));
+                          }}
                           style={{
                             background: '#ffffff',
                             border: '1px solid #cbd5e1',
@@ -1584,55 +1831,22 @@ export default function MerchantDashboard({ onOpenSellModal, onOpenChangePasswor
               </div>
             )}
 
-            {/* 5. الفئة وقائمة المدن المغربية */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div>
-                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>{tr('Catégorie de bijou', 'فئة المجوهرات')} *</label>
-                <select
-                  className="filter-select-control"
-                  value={productForm.category_id}
-                  onChange={e => setProductForm({ ...productForm, category_id: e.target.value })}
-                  required
-                >
-                  <option value="">{tr('-- Choisir une catégorie --', '-- اختر الفئة --')}</option>
-                  {categories && categories.length > 0 ? (
-                    categories.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.icon || '💎'} {isFrench ? (c.nom_fr || c.nom) : (c.nom_ar || c.nom)}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="cat_rings">💍 {tr('Bagues', 'خواتم')}</option>
-                      <option value="cat_necklaces">📿 {tr('Colliers', 'قلادات وسلاسل')}</option>
-                      <option value="cat_bracelets">🔗 {tr('Bracelets', 'أساور')}</option>
-                      <option value="cat_earrings">👂 {tr('Boucles d’oreilles', 'أقراط وحلق')}</option>
-                      <option value="cat_sets">💎 {tr('Parures', 'أطقم كاملة')}</option>
-                      <option value="cat_men">⌚ {tr('Bijoux homme', 'مجوهرات رجالية')}</option>
-                      <option value="cat_boxes">🎁 {tr('Coffrets et cadeaux', 'علب وهدايا فاخرة')}</option>
-                      <option value="cat_traditional">👑 {tr('Bijoux traditionnels', 'مجوهرات تقليدية')}</option>
-                      <option value="cat_artisanal">🏺 {tr('Pièce antique', 'قطعة أثرية نادرة')}</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>{tr('Ville', 'المدينة')} *</label>
-                <select
-                  className="filter-select-control"
-                  value={productForm.city || 'Casablanca'}
-                  onChange={e => setProductForm({ ...productForm, city: e.target.value })}
-                  required
-                >
-                  {ALL_MOROCCAN_CITIES.map(city => (
-                    <option key={city.key} value={city.key}>
-                      {isFrench ? city.fr : city.ar}
-                    </option>
-                  ))}
-                  <option value="Autre">{tr('Autre ville', 'مدينة أخرى')}</option>
-                </select>
-              </div>
+            {/* 5. المدينة المغربية */}
+            <div style={{ marginBottom: '14px' }}>
+              <label className="filter-label" style={{ marginBottom: '6px', display: 'block' }}>{tr('Ville de la bijouterie', 'مدينة المحل / البائع')} *</label>
+              <select
+                className="filter-select-control"
+                value={productForm.city || 'Casablanca'}
+                onChange={e => setProductForm({ ...productForm, city: e.target.value })}
+                required
+              >
+                {ALL_MOROCCAN_CITIES.map(city => (
+                  <option key={city.key} value={city.key}>
+                    {isFrench ? city.fr : city.ar}
+                  </option>
+                ))}
+                <option value="Autre">{tr('Autre ville', 'مدينة أخرى')}</option>
+              </select>
             </div>
 
             {/* 6. حالة القطعة (ÉTAT DU BIJOU) */}

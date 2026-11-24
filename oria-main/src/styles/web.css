@@ -3644,7 +3644,7 @@ body.dark-theme .cart-drawer-footer {
   box-shadow: 0 6px 16px rgba(212, 175, 55, 0.45);
 }
 
-/* Phone input styling */
+/* Phone input styling with absolute immunity against character overlapping */
 .auth-phone-input-wrap {
   position: relative;
   display: flex;
@@ -3652,44 +3652,64 @@ body.dark-theme .cart-drawer-footer {
   width: 100%;
 }
 
-.auth-country-flag {
+.auth-phone-input-wrap .auth-country-flag {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   left: 14px;
   right: auto;
-  font-size: 1.25rem;
-  line-height: 1;
   pointer-events: none;
-  z-index: 5;
+  z-index: 10;
   user-select: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 24px;
 }
 
-[dir="rtl"] .auth-country-flag {
-  left: auto;
-  right: 14px;
+[dir="rtl"] .auth-phone-input-wrap .auth-country-flag,
+.auth-phone-input-wrap.is-rtl .auth-country-flag,
+.auth-modal-card[dir="rtl"] .auth-country-flag {
+  left: auto !important;
+  right: 14px !important;
 }
 
-/* Internal padding: generous clearance so typed digits NEVER overlap the country flag/badge in LTR and RTL */
+[dir="ltr"] .auth-phone-input-wrap .auth-country-flag,
+.auth-phone-input-wrap.is-ltr .auth-country-flag,
+.auth-modal-card[dir="ltr"] .auth-country-flag {
+  left: 14px !important;
+  right: auto !important;
+}
+
+/* Internal padding: generous 64px clearance so typed digits NEVER overlap the country flag/badge in LTR and RTL */
 .auth-phone-input,
 .auth-phone-input-wrap input.auth-phone-input,
-.auth-input-container input.auth-phone-input,
-.auth-input-container input.auth-phone-input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+.auth-input-container.auth-phone-input-wrap input,
+.auth-input-container.auth-phone-input-wrap input.auth-phone-input,
+.auth-input-container.auth-phone-input-wrap input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+.auth-phone-input-wrap.is-ltr input,
 input.auth-phone-input {
-  padding-left: 58px !important;
+  padding-left: 64px !important;
   padding-right: 18px !important;
+  text-align: left !important;
+  direction: ltr !important;
 }
 
 [dir="rtl"] .auth-phone-input,
 [dir="rtl"] .auth-phone-input-wrap input.auth-phone-input,
-[dir="rtl"] .auth-input-container input.auth-phone-input,
-[dir="rtl"] .auth-input-container input.auth-phone-input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
-[dir="rtl"] input.auth-phone-input {
-  padding-right: 58px !important;
+[dir="rtl"] .auth-input-container.auth-phone-input-wrap input,
+[dir="rtl"] .auth-input-container.auth-phone-input-wrap input.auth-phone-input,
+[dir="rtl"] .auth-input-container.auth-phone-input-wrap input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+[dir="rtl"] input.auth-phone-input,
+.auth-phone-input-wrap.is-rtl input,
+.auth-phone-input-wrap.is-rtl input.auth-phone-input,
+.auth-phone-input-wrap.is-rtl input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+.auth-modal-card[dir="rtl"] .auth-phone-input-wrap input {
+  padding-right: 64px !important;
   padding-left: 18px !important;
+  text-align: right !important;
+  direction: ltr !important;
 }
 
 .auth-field-micro-hint {

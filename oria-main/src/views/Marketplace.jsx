@@ -12,6 +12,29 @@ import { API_URL } from '../config/api';
 let cachedMarketplaceProducts = null;
 let cachedMarketplaceCategories = null;
 
+const CATEGORY_ALIASES = {
+  cat_rings: ['cat_rings', 'bague', 'bagues', 'alliance', 'alliances', 'solitaire', 'خاتم', 'خواتم', 'محبس'],
+  cat_y2od2qll9: ['cat_y2od2qll9', 'cat_bracelets', 'bracelet', 'bracelets', 'jonc', 'gourmette', 'براسلي', 'براسليات', 'سوار', 'اساور', 'رافنتي', 'دملج'],
+  cat_bracelets: ['cat_y2od2qll9', 'cat_bracelets', 'bracelet', 'bracelets', 'jonc', 'gourmette', 'براسلي', 'براسليات', 'سوار', 'اساور', 'رافنتي', 'دملج'],
+  cat_q0euze9d3: ['cat_q0euze9d3', 'cat_necklaces', 'collier', 'colliers', 'chaine', 'chaines', 'سلسلة', 'سلاسل', 'سناسل', 'قلادة', 'عقد'],
+  cat_necklaces: ['cat_q0euze9d3', 'cat_necklaces', 'collier', 'colliers', 'chaine', 'chaines', 'سلسلة', 'سلاسل', 'سناسل', 'قلادة', 'عقد'],
+  cat_i754ll1yi: ['cat_i754ll1yi', 'cat_qfel', 'قفل بلدي', 'مقفل', 'قفل'],
+  cat_a4y7fuan7: ['cat_a4y7fuan7', 'cat_earrings', 'boucle', 'boucles', 'créole', 'creole', 'حلقات', 'حلق', 'أقراط', 'خراصات', 'خرصات'],
+  cat_earrings: ['cat_a4y7fuan7', 'cat_earrings', 'boucle', 'boucles', 'كولي', 'كولي رومي', 'حلقات', 'أقراط'],
+  cat_1w9hmgxu5: ['cat_1w9hmgxu5', 'cat_pendants', 'pendentif', 'علاقة', 'علاقات', 'تعليقة', 'تعليقه'],
+  cat_sets: ['cat_sets', 'parure', 'parures', 'طقم', 'أطقم', 'بارور'],
+  cat_watches: ['cat_watches', 'montre', 'montres', 'ساعة', 'ساعات']
+};
+
+export const matchesCategory = (product, selectedCategory) => {
+  if (!selectedCategory) return true;
+  if (product.category_id === selectedCategory) return true;
+  const aliases = CATEGORY_ALIASES[selectedCategory] || [selectedCategory];
+  if (aliases.includes(product.category_id)) return true;
+  const searchableText = `${product.titre_fr || ''} ${product.titre || ''} ${product.titre_ar || ''} ${product.description_fr || ''} ${product.description || ''} ${product.description_ar || ''}`.toLowerCase();
+  return aliases.some(alias => searchableText.includes(alias.toLowerCase()));
+};
+
 export default function Marketplace({ 
   onSelectProduct, 
   onOpenFinder, 
@@ -129,8 +152,8 @@ export default function Marketplace({
       return false;
     }
 
-    // 4. Category
-    if (selectedCategory && product.category_id !== selectedCategory) {
+    // 4. Category (matching ID, aliases and Moroccan terms in description)
+    if (selectedCategory && !matchesCategory(product, selectedCategory)) {
       return false;
     }
 
