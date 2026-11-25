@@ -23,7 +23,10 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
     if (filters.searchQuery && !matchProduct(product, filters.searchQuery)) return false;
     if (filters.saleUniverse === 'AUCTION') {
       if (product.disponibilite !== 'enchere' && product.type_vente !== 'AUCTION') return false;
-    } else if (filters.saleUniverse && filters.saleUniverse !== 'ALL' && product.type_vente !== filters.saleUniverse) return false;
+    } else if (filters.saleUniverse && filters.saleUniverse !== 'ALL') {
+      if (filters.saleUniverse === 'FIRST_HAND' && !(product.type_vente === 'FIRST_HAND' || (product.type_vente === 'direct' && product.etat === 'Neuf'))) return false;
+      if (filters.saleUniverse === 'SECOND_HAND' && !(product.type_vente === 'SECOND_HAND' || (product.type_vente === 'direct' && product.etat !== 'Neuf') || product.type_vente === 'OCCASION')) return false;
+    }
     if (filters.selectedCategory && product.category_id !== filters.selectedCategory) return false;
     if (filters.selectedMaterial && filters.selectedMaterial !== 'ALL' && (product.matiere || '').toLowerCase() !== filters.selectedMaterial.toLowerCase()) return false;
     if (filters.selectedCondition && filters.selectedCondition !== 'ALL' && product.etat !== filters.selectedCondition) return false;
@@ -31,7 +34,7 @@ export default function MobileCityPicker({ isOpen, onClose, selectedCity, onSele
     if (filters.selectedOccasion && filters.selectedOccasion !== 'ALL' && (product.occasion || '').toLowerCase() !== filters.selectedOccasion.toLowerCase()) return false;
     if (filters.verifiedOnly && product.authentifie !== 'Vérifié') return false;
     if (filters.dealsOnly && (!product.ancien_prix || product.ancien_prix <= product.prix)) return false;
-    if (Number.isFinite(filters.priceMax) && product.prix > filters.priceMax) return false;
+    if (Number.isFinite(filters.priceMax) && filters.priceMax < 35000 && product.prix > filters.priceMax) return false;
     return true;
   });
   const getCityCount = (city) => city === ALL_CITIES_OPTION

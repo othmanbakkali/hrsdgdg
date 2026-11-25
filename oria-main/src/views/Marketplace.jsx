@@ -148,6 +148,12 @@ export default function Marketplace({
       if (product.disponibilite !== 'enchere' && product.type_vente !== 'AUCTION') {
         return false;
       }
+    } else if (saleUniverse === 'FIRST_HAND') {
+      const isFirst = product.type_vente === 'FIRST_HAND' || (product.type_vente === 'direct' && product.etat === 'Neuf');
+      if (!isFirst) return false;
+    } else if (saleUniverse === 'SECOND_HAND') {
+      const isSecond = product.type_vente === 'SECOND_HAND' || (product.type_vente === 'direct' && product.etat !== 'Neuf') || product.type_vente === 'OCCASION';
+      if (!isSecond) return false;
     } else if (saleUniverse !== 'ALL' && product.type_vente !== saleUniverse) {
       return false;
     }
@@ -187,8 +193,8 @@ export default function Marketplace({
       return false;
     }
 
-    // 11. Max price
-    if (product.prix > priceMax) {
+    // 11. Max price (35000 means unlimited / all budgets)
+    if (priceMax < 35000 && product.prix > priceMax) {
       return false;
     }
 
@@ -200,7 +206,10 @@ export default function Marketplace({
     if (sortBy === 'price_asc') return a.prix - b.prix;
     if (sortBy === 'price_desc') return b.prix - a.prix;
     if (sortBy === 'rating') return (b.note || 0) - (a.note || 0);
-    if (sortBy === 'popular') return (b.favoris_count || 0) - (a.favoris_count || 0);
+    if (sortBy === 'popular') {
+      const diff = (b.favoris_count || 0) - (a.favoris_count || 0);
+      if (diff !== 0) return diff;
+    }
     if (searchQuery) {
       const relevanceDiff = scoreProductRelevance(b, searchQuery) - scoreProductRelevance(a, searchQuery);
       if (relevanceDiff !== 0) return relevanceDiff;
@@ -390,7 +399,7 @@ export default function Marketplace({
                 className={`filter-universe-btn first ${saleUniverse === 'FIRST_HAND' ? 'active' : ''}`}
               >
                 <span>✨ {lang === 'ar' ? 'مجوهرات جديدة' : 'Première Main (Neuf)'}</span>
-                <span className="count-tag">{products.filter(p => p.type_vente === 'FIRST_HAND').length}</span>
+                <span className="count-tag">{products.filter(p => p.type_vente === 'FIRST_HAND' || (p.type_vente === 'direct' && p.etat === 'Neuf')).length}</span>
               </button>
 
               <button 
@@ -398,7 +407,7 @@ export default function Marketplace({
                 className={`filter-universe-btn second ${saleUniverse === 'SECOND_HAND' ? 'active' : ''}`}
               >
                 <span>♻️ {lang === 'ar' ? 'مجوهرات مستعملة' : 'Seconde Main (Occasion)'}</span>
-                <span className="count-tag second">{products.filter(p => p.type_vente === 'SECOND_HAND').length}</span>
+                <span className="count-tag second">{products.filter(p => p.type_vente === 'SECOND_HAND' || (p.type_vente === 'direct' && p.etat !== 'Neuf') || p.type_vente === 'OCCASION').length}</span>
               </button>
             </div>
           </div>

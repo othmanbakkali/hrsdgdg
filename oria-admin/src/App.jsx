@@ -1164,13 +1164,18 @@ function AdminLayout() {
     const finalDescAr = (productForm.description_ar || productForm.description || productForm.description_fr || '').trim();
     const finalDescFr = (productForm.description_fr || productForm.description || productForm.description_ar || '').trim();
 
+    const resolvedTypeVente = productForm.type_vente === 'enchere'
+      ? 'SECOND_HAND'
+      : (productForm.etat === 'Neuf' ? 'FIRST_HAND' : 'SECOND_HAND');
+
     const bodyData = { 
       ...productForm,
+      type_vente: resolvedTypeVente,
       purete: productForm.purete || '18k',
       stock: 1,
       statut: productForm.statut || (editingProduct ? editingProduct.statut : 'Validated'),
       commercant_id: isMerchant ? adminUser.id : (productForm.commercant_id || defaultMerchant),
-      vendeur_nom: isMerchant ? (adminUser?.shopName || adminUser?.nom) : (productForm.vendeur_nom || ''),
+      vendeur_nom: isMerchant ? (adminUser?.shopName || adminUser?.nom) : (productForm.vendeur_nom || adminUser?.nom || ''),
       etat: productForm.etat || 'Neuf',
       pierre: productForm.pierre || 'Aucune',
       taille: productForm.taille || 'Unique',

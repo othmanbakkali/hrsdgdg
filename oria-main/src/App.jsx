@@ -297,7 +297,7 @@ function MainLayout() {
     setVerifiedOnly(false);
     setDealsOnly(false);
     setPriceMax(35000);
-    setSortBy('popular');
+    setSortBy('newest');
   };
 
   const handleToggleCompare = (productId) => {

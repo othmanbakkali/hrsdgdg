@@ -1434,7 +1434,13 @@ app.get('/api/bijoux', (req, res) => {
     });
   }
   if (type_vente && type_vente !== 'ALL') {
-    results = results.filter(b => b.type_vente === type_vente);
+    if (type_vente === 'FIRST_HAND') {
+      results = results.filter(b => b.type_vente === 'FIRST_HAND' || (b.type_vente === 'direct' && b.etat === 'Neuf'));
+    } else if (type_vente === 'SECOND_HAND') {
+      results = results.filter(b => b.type_vente === 'SECOND_HAND' || (b.type_vente === 'direct' && b.etat !== 'Neuf') || b.type_vente === 'OCCASION');
+    } else {
+      results = results.filter(b => b.type_vente === type_vente);
+    }
   }
   if (etat && etat !== 'ALL') {
     results = results.filter(b => b.etat === etat);
@@ -1463,7 +1469,7 @@ app.get('/api/bijoux', (req, res) => {
   if (priceMin) {
     results = results.filter(b => b.prix >= parseFloat(priceMin));
   }
-  if (priceMax) {
+  if (priceMax && parseFloat(priceMax) < 35000) {
     results = results.filter(b => b.prix <= parseFloat(priceMax));
   }
   if (weightMin) {
@@ -1783,7 +1789,7 @@ app.post('/api/bijoux', (req, res) => {
   const processedProductImages = processImages(images);
   const finalTypeVente = (type_vente === 'AUCTION' || req.body.type_vente === 'enchere')
     ? 'SECOND_HAND'
-    : (type_vente || 'FIRST_HAND');
+    : (type_vente === 'FIRST_HAND' || (type_vente !== 'SECOND_HAND' && requestedEtat === 'Neuf') ? 'FIRST_HAND' : 'SECOND_HAND');
   const requestedEtat = etat || (finalTypeVente === 'SECOND_HAND' ? 'Très bon état' : 'Neuf');
   const finalEtat = finalTypeVente === 'SECOND_HAND' && String(requestedEtat).trim().toLowerCase().includes('neuf') && !String(requestedEtat).trim().toLowerCase().includes('comme neuf')
     ? 'Comme neuf'
